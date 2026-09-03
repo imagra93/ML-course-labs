@@ -10,6 +10,15 @@ local install required.
 
 ---
 
+## Part 0 — Prerequisites
+
+Work through this **before the first session**. It covers the subset of Python, NumPy
+and pandas the labs assume, and ends with a miniature end-to-end ML workflow.
+
+| # | Lab | Topics | Colab |
+|---|-----|--------|-------|
+| 0 | [Python for Machine Learning](python_course_0.ipynb) | Python essentials, OOP (`fit`/`predict`), NumPy, pandas, Matplotlib | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/python_course_0.ipynb) |
+
 ## Part 1 — Classical Machine Learning
 
 Scikit-learn / NumPy. Small datasets, runs comfortably on a laptop CPU.
@@ -93,7 +102,7 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
 
 Nothing needs to be downloaded by hand:
 
-- Labs 1–6, 7, 8, 15 use synthetic data or the small datasets bundled with
+- Lab 0 and labs 1–6, 7, 8, 15 use synthetic data or the small datasets bundled with
   scikit-learn (Iris, Wine, Breast Cancer, Diabetes).
 - Labs 9–10 download **Fashion-MNIST** through `torchvision.datasets` on first run.
 - Lab 11 downloads the **IMDB** review dataset through `tf.keras.datasets`.
