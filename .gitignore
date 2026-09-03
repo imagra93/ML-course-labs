@@ -1,0 +1,19 @@
+.ipynb_checkpoints/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Datasets and artefacts downloaded by the notebooks
+data/
+deep_learning/data/
+lightning_logs/
+checkpoints/
+*.ckpt
+*.pth
+*.zip
+
+.DS_Store
+.vscode/
+.idea/
