@@ -1,0 +1,22 @@
+# Deep learning labs — install on top of requirements.txt:
+#   pip install -r requirements.txt -r requirements-dl.txt
+#
+# These are CPU wheels by default. For an NVIDIA GPU, install torch from
+# the official index first, e.g.:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+
+torch>=2.2
+torchvision>=0.17
+torchsummary>=1.5.1        # Demo_Multiclass, Demo_CNN_Multiclass
+
+lightning>=2.2             # task_face_notebook
+torchmetrics>=1.3          # task_face_notebook
+
+pillow>=10.0               # face labs
+gdown>=5.1                 # downloads the face dataset from Google Drive
+
+transformers>=4.40         # Text_Generation_with_Transformers (see README note)
+
+# Only needed by LSTM_sentiment.ipynb, and only to load the Keras IMDB
+# dataset. It is a ~600 MB install — skip it unless you run that lab.
+# tensorflow>=2.16
