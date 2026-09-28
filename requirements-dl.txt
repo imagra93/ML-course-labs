@@ -17,6 +17,9 @@ gdown>=5.1                 # downloads the face dataset from Google Drive
 
 transformers>=4.40         # Text_Generation_with_Transformers (see README note)
 
+ultralytics>=8.3           # notes_NN/07_object_detection_yolo (YOLO11)
+gradio>=4.0                # notes_NN/yolo_app.py
+
 # Only needed by LSTM_sentiment.ipynb, and only to load the Keras IMDB
 # dataset. It is a ~600 MB install — skip it unless you run that lab.
 # tensorflow>=2.16
