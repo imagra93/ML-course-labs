@@ -12,7 +12,7 @@
 <script src="assets/mathjax-config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
 </head>
-<body data-deck="2 · Linear regression">
+<body data-deck="2 · Linear regression" data-prev="01_supervised_learning.html" data-next="03_logistic_regression.html">
 <div id="viewport"><div id="stage">
 <section class="slide cover">
   <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Linear Regression</p></div>
@@ -39,14 +39,14 @@
 <section class="slide">
   <h2>Linear Regression</h2>
   <div class="cols">
-    <div class="widget" data-fig="fit-iter">
+    <div class="widget" data-fig="fit-iter" data-auto="k=1 :: Iteration 1: the line starts to tilt towards the data|k=5 :: Iteration 5: J drops fast at first|k=20 :: Iteration 20: nearly there, the steps get smaller|k=80 :: Iteration 80: converged, θ stops changing">
       <svg class="fig" aria-label="Data and the fitted line after k iterations of gradient descent"></svg>
       <div class="ctl"><label for="fit-iter-k">Gradient-descent iteration</label><input type="range" id="fit-iter-k" data-k="k" min="0" max="80" step="1" value="0"><span class="v" data-v="k">0</span></div>
       <div class="ro"><div class="m"><span>θ₀</span><b data-r="t0">–</b></div><div class="m"><span>θ₁</span><b data-r="t1">–</b></div><div class="m"><span>J(θ)</span><b data-r="j">–</b></div></div>
     </div>
     <div class="stack" style="gap:16px">
       <p>Approximate $y$ as a linear function of $\bx$:</p>
-      <div class="eq big">$$h_{\bth}(\bx)=\theta_0+\theta_1x_1+\dots+\theta_nx_n=\sum_{i=0}^{n}\theta_ix_i=\bth^\top\bx$$</div>
+      <div class="eq">$$h_{\bth}(\bx)=\theta_0+\theta_1x_1+\dots+\theta_nx_n=\sum_{i=0}^{n}\theta_ix_i=\bth^\top\bx$$</div>
       <p>$\theta$'s are called the <b>parameters</b> (also called weights). For $n=1$, $\theta_0$ is often denoted as the intercept and $\theta_1$ the slope.</p>
       <p>Notice that for convenience we made $x_0=1$.</p>
       <p class="step" style="font-size:28px;margin-top:10px">How do we select the $\theta$'s?</p>
@@ -57,7 +57,7 @@
 <section class="slide">
   <h2>Linear Regression</h2>
   <div class="cols">
-    <div class="widget" data-fig="resid">
+    <div class="widget" data-fig="resid" data-auto="t=0.3 :: θ = 0.3, too flat: large squares, large J|t=1.5 :: θ ≈ 1.5, close to the best: the squares shrink|t=2.6 :: θ = 2.6, too steep: J grows again on this side of the bowl">
       <svg class="fig" aria-label="Points with residuals drawn as squares, and the cost J as a function of theta"></svg>
       <div class="ctl"><label for="resid-t">Slope θ (model h = θx)</label><input type="range" id="resid-t" data-k="t" min="0" max="3" step="0.01" value="0.6"><span class="v" data-v="t">0.60</span></div>
       <div class="ro"><div class="m"><span>J(θ)</span><b data-r="j">–</b></div><div class="m"><span>best θ</span><b data-r="ts">–</b></div></div>
@@ -69,7 +69,7 @@
       <p>Least-squares cost function that gives rise to the <b>ordinary least squares</b> regression model.</p>
       <p>How do we minimize the Cost function $J$?</p>
       <ul><li class="step">Derivate and equal to zero.</li><li class="step">Apply gradient descent.</li></ul>
-      <div class="step"><svg class="fig" data-fig="convex" aria-label="A convex curve with one minimum and a non-convex curve with a local and a global minimum"></svg>
+      <div class="step"><svg class="fig" data-fig="convex" style="max-height:130px" aria-label="A convex curve with one minimum and a non-convex curve with a local and a global minimum"></svg>
       <p class="why">Linear regression: convex function (a single global minimum).</p></div>
     </div>
   </div>
@@ -88,7 +88,7 @@
       </ul>
       <p class="why">Try α = 0.3, 1.0, 1.7 and 2.1 on the right (here J″ = 1).</p>
     </div>
-    <div class="widget" data-fig="gd1">
+    <div class="widget" data-fig="gd1" data-auto="a=0.3 :: α = 0.3: small steps, converges smoothly|a=1 :: α = 1: lands on the minimum in one step (here J″ = 1)|a=1.7 :: α = 1.7: overshoots, oscillates, still converges|a=2.1 :: α = 2.1: each step is worse than the last, it diverges">
       <svg class="fig" aria-label="Gradient descent steps on a parabola"></svg>
       <div class="ctl"><label for="gd1-a">Learning rate α</label><input type="range" id="gd1-a" data-k="a" min="0.05" max="2.3" step="0.05" value="0.3"><span class="v" data-v="a">0.30</span></div>
       <div class="ro"><div class="m"><span>error factor 1 − α</span><b data-r="f">–</b></div><div class="m" style="flex:1"><span>behaviour</span><b data-r="b">–</b></div></div>
@@ -105,16 +105,16 @@
 
 <section class="slide u">
   <h2>Linear Regression – Gradient Descent</h2>
-  <p>Repeat until convergence (and <b><u>simultaneously</u></b> among all parameters, i.e. for $j\in\{0,\dots,n\}$): $\quad\theta_j:=\theta_j-\alpha\,\dfrac{\partial J(\bth)}{\partial\theta_j}$. &nbsp;What is $\dfrac{\partial J(\bth)}{\partial\theta_j}$?</p>
+  <p>The update $\theta_j:=\theta_j-\alpha\,\dfrac{\partial J(\bth)}{\partial\theta_j}$ needs the partial derivative. Let's compute $\dfrac{\partial J(\bth)}{\partial\theta_j}$ step by step:</p>
   <div class="cols c64">
     <div class="stack" style="gap:4px">
-      <div class="eq">$$\frac{\partial J(\bth)}{\partial\theta_j}=\frac{\partial\Big(\frac{1}{2m}\sum_{i=1}^m\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)^2\Big)}{\partial\theta_j}$$</div>
-      <div class="eq step">$$=\frac{1}{2m}\sum_{i=1}^m\frac{\partial\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)^2}{\partial\theta_j}\qquad\text{(the derivative of a sum is the sum of derivatives)}$$</div>
-      <div class="eq step">$$=\frac{1}{m}\sum_{i=1}^m\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)\cdot\frac{\partial\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)}{\partial\theta_j}\qquad\text{(chain rule: the 2 cancels the }\tfrac12)$$</div>
-      <div class="eq step">$$=\frac{1}{m}\sum_{i=1}^m\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)\cdot x_j^{(i)}\qquad\Big(h_{\bth}=\textstyle\sum_k\theta_kx_k\ \Rightarrow\ \frac{\partial h_{\bth}}{\partial\theta_j}=x_j\Big)$$</div>
+      <div class="eq s">$$\frac{\partial J(\bth)}{\partial\theta_j}=\frac{\partial}{\partial\theta_j}\Big(\frac{1}{2m}\sum_{i=1}^m\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)^2\Big)$$</div>
+      <div class="step"><div class="eq s">$$=\frac{1}{2m}\sum_{i=1}^m\frac{\partial}{\partial\theta_j}\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)^2$$</div><p class="why">the derivative of a sum is the sum of the derivatives</p></div>
+      <div class="step"><div class="eq s">$$=\frac{1}{m}\sum_{i=1}^m\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)\cdot\frac{\partial\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)}{\partial\theta_j}$$</div><p class="why">chain rule: $(u^2)'=2u\,u'$, and the 2 cancels the $\tfrac12$</p></div>
+      <div class="step"><div class="eq s">$$=\frac{1}{m}\sum_{i=1}^m\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)\cdot x_j^{(i)}$$</div><p class="why">$h_{\bth}=\sum_k\theta_kx_k$, so $\partial h_{\bth}/\partial\theta_j=x_j$ (and $y^{(i)}$ does not depend on $\theta$)</p></div>
     </div>
     <div class="stack step" style="gap:18px;padding-top:40px">
-      <div class="bluebox">$$\theta_j:=\theta_j-\alpha\,\frac{1}{m}\sum_{i=1}^{m}\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)\cdot x_j^{(i)}$$</div>
+      <div class="bluebox" style="font-size:20px">$$\theta_j:=\theta_j-\alpha\,\frac{1}{m}\sum_{i=1}^{m}\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)\cdot x_j^{(i)}$$</div>
       <p>"<b>batch</b>" gradient descent.<br>(the $m$ training samples in each step).</p>
       <p class="why">Each example pushes $\theta_j$ by (its error) × (its input). Examples already well predicted barely push.</p>
     </div>
@@ -128,19 +128,19 @@
     <li>$J(\bth)$ decreases for every step. If not, $\alpha$ is too large or there is a bug.</li>
     <li>If it decreases too slowly, $\alpha$ is too small.</li>
   </ul>
-  <svg class="fig" data-fig="loss-curves" aria-label="Loss against epoch for four learning rates, and loss against learning rate on a log scale"></svg>
+  <svg class="fig" data-fig="loss-curves" style="max-height:320px" aria-label="Loss against epoch for four learning rates, and loss against learning rate on a log scale"></svg>
   <p>Try and select a consistent $\alpha$. Examples: 0.001, 0.003, 0.01, 0.03 <span class="muted">(right: a learning-rate sweep; pick a value just before the loss blows up).</span></p>
 </section>
 
 <section class="slide u">
   <h2>Linear Regression – Normal Equation.</h2>
   <div class="stack" style="gap:8px">
-    <div class="cols c46" style="align-items:center"><p>Matrix notation:</p>
-      <div class="eq">$$\by=\begin{pmatrix}y^{(1)}\\y^{(2)}\\\vdots\\y^{(m)}\end{pmatrix}_{m\times1},\quad \bth=\begin{pmatrix}\theta_0\\\theta_1\\\vdots\\\theta_n\end{pmatrix}_{(n+1)\times1},\quad \bX=\begin{pmatrix}-(\bx^{(1)})^\top-\\-(\bx^{(2)})^\top-\\\vdots\\-(\bx^{(m)})^\top-\end{pmatrix}=\begin{pmatrix}1&amp;x_1^{(1)}&amp;\cdots&amp;x_n^{(1)}\\1&amp;x_1^{(2)}&amp;\cdots&amp;x_n^{(2)}\\\vdots&amp;\vdots&amp;\ddots&amp;\vdots\\1&amp;x_1^{(m)}&amp;\cdots&amp;x_n^{(m)}\end{pmatrix}_{m\times(n+1)}$$</div></div>
-    <div class="cols c46 step" style="align-items:center"><p>Taking this into account:</p>
-      <div class="eq">$$\hat\by=\bX\bth=\begin{pmatrix}(\bx^{(1)})^\top\bth\\\vdots\\(\bx^{(m)})^\top\bth\end{pmatrix}_{m\times1},\qquad \mathbf{E}_{m\times1}=\by-\hat\by=\by-\bX\bth$$</div></div>
-    <div class="cols c46 step" style="align-items:center"><p>And finally:</p>
-      <div class="eq">$$J(\bth)=(\by-\bX\bth)^\top(\by-\bX\bth)=\by^\top\by-\by^\top\bX\bth-\bth^\top\bX^\top\by+\bth^\top\bX^\top\bX\bth$$</div></div>
+    <div class="lrow"><p>Matrix notation:</p>
+      <div class="eq s">$$\by=\begin{pmatrix}y^{(1)}\\y^{(2)}\\\vdots\\y^{(m)}\end{pmatrix}_{m\times1},\quad \bth=\begin{pmatrix}\theta_0\\\theta_1\\\vdots\\\theta_n\end{pmatrix}_{(n+1)\times1},\quad \bX=\begin{pmatrix}-(\bx^{(1)})^\top-\\-(\bx^{(2)})^\top-\\\vdots\\-(\bx^{(m)})^\top-\end{pmatrix}=\begin{pmatrix}1&amp;x_1^{(1)}&amp;\cdots&amp;x_n^{(1)}\\1&amp;x_1^{(2)}&amp;\cdots&amp;x_n^{(2)}\\\vdots&amp;\vdots&amp;\ddots&amp;\vdots\\1&amp;x_1^{(m)}&amp;\cdots&amp;x_n^{(m)}\end{pmatrix}_{m\times(n+1)}$$</div></div>
+    <div class="lrow step"><p>Taking this into account:</p>
+      <div class="eq s">$$\hat\by=\bX\bth=\begin{pmatrix}(\bx^{(1)})^\top\bth\\\vdots\\(\bx^{(m)})^\top\bth\end{pmatrix}_{m\times1},\qquad \mathbf{E}_{m\times1}=\by-\hat\by=\by-\bX\bth$$</div></div>
+    <div class="lrow step"><p>And finally:</p>
+      <div class="eq s">$$J(\bth)=(\by-\bX\bth)^\top(\by-\bX\bth)=\by^\top\by-\by^\top\bX\bth-\bth^\top\bX^\top\by+\bth^\top\bX^\top\bX\bth$$</div></div>
     <div class="cols step" style="align-items:center">
       <p>We can optimize by equating $\nabla_{\bth}J=\bzero$ &nbsp;$\big((n+1)\times1\big)$.</p>
       <p><b>It turns out that there is a known closed-form solution!</b></p>
@@ -161,9 +161,10 @@
     </div>
     <div class="stack">
       <div class="hint"><div class="hd">HINT 1</div><div class="bd">
-        <div class="eq" style="font-size:19px">$$\nabla_{\bth}(\ba^\top\bth)=\nabla_{\bth}(a_0\theta_0+\dots+a_n\theta_n)=\ba,\qquad\nabla_{\bth}(\bth^\top\ba)=\ba$$</div></div></div>
+        <div class="eq xs">$$\nabla_{\bth}(\ba^\top\bth)=\nabla_{\bth}(a_0\theta_0+\dots+a_n\theta_n)=\ba$$
+        $$\nabla_{\bth}(\bth^\top\ba)=\ba\quad\text{(same number)}$$</div></div></div>
       <div class="hint"><div class="hd">HINT 2</div><div class="bd">
-        <div class="eq" style="font-size:18px">$$\nabla_{\bth}(\bth^\top\bX^\top\bX\bth)=2\bX^\top\bX\bth$$
+        <div class="eq xs">$$\nabla_{\bth}(\bth^\top\bX^\top\bX\bth)=2\bX^\top\bX\bth$$
         $$\bth^\top\bX^\top\bX\bth=\sum_{i=0}^n\sum_{j=0}^n[\bX^\top\bX]_{ij}\theta_i\theta_j$$
         $$\frac{\partial}{\partial\theta_k}=\sum_{j}[\bX^\top\bX]_{kj}\theta_j+\sum_{i}[\bX^\top\bX]_{ik}\theta_i=2\big[\bX^\top\bX\bth\big]_k$$</div>
         <p class="why">using that $\bX^\top\bX$ is symmetric.</p></div></div>
@@ -190,11 +191,12 @@
       <p>Newton's method for optimization updates a guess $\bth_{\text{old}}$ via:</p>
       <div class="eq">$$\bth_{\text{new}}=\bth_{\text{old}}-\big[\nabla^2_{\bth}J(\bth_{\text{old}})\big]^{-1}\nabla_{\bth}J(\bth_{\text{old}})$$</div>
       <p class="step">Plug in the results from the previous slides:</p>
-      <div class="eq step">$$\nabla_{\bth}J(\bth_{\text{old}})=-2\bX^\top\by+2\bX^\top\bX\bth_{\text{old}},\qquad\nabla^2_{\bth}J(\bth_{\text{old}})=2\bX^\top\bX\ \ (\text{constant})$$</div>
+      <div class="eq s step">$$\nabla_{\bth}J(\bth_{\text{old}})=-2\bX^\top\by+2\bX^\top\bX\bth_{\text{old}}$$
+      $$\nabla^2_{\bth}J(\bth_{\text{old}})=2\bX^\top\bX\ \ (\text{constant, does not depend on }\bth)$$</div>
       <p class="step">Substituting, starting from <i>any</i> $\bth_{\text{old}}$:</p>
-      <div class="eq step">$$\bth_{\text{new}}=\bth_{\text{old}}-(2\bX^\top\bX)^{-1}\big(-2\bX^\top\by+2\bX^\top\bX\bth_{\text{old}}\big)$$
-      $$=\bth_{\text{old}}-(\bX^\top\bX)^{-1}\bX^\top\bX\,\bth_{\text{old}}+(\bX^\top\bX)^{-1}\bX^\top\by=\bth_{\text{old}}-\bth_{\text{old}}+(\bX^\top\bX)^{-1}\bX^\top\by$$
-      $$=(\bX^\top\bX)^{-1}\bX^\top\by$$</div>
+      <div class="eq s step">$$\bth_{\text{new}}=\bth_{\text{old}}-(2\bX^\top\bX)^{-1}\big(-2\bX^\top\by+2\bX^\top\bX\bth_{\text{old}}\big)$$
+      $$=\bth_{\text{old}}-\underbrace{(\bX^\top\bX)^{-1}\bX^\top\bX}_{=\,\bI}\,\bth_{\text{old}}+(\bX^\top\bX)^{-1}\bX^\top\by$$
+      $$=\bth_{\text{old}}-\bth_{\text{old}}+(\bX^\top\bX)^{-1}\bX^\top\by=(\bX^\top\bX)^{-1}\bX^\top\by$$</div>
     </div>
     <div class="stack step" style="gap:14px;padding-top:30px">
       <div class="note"><p>The $\bth_{\text{old}}$ terms cancel exactly, regardless of the starting point.</p></div>
@@ -224,7 +226,7 @@
         <li>Polynomial regression. Make new features $x_1^p$ for any $p$.</li>
         <li>Logarithmic regression.</li>
       </ul>
-      <svg class="fig" data-fig="feat-log" aria-label="Data following a logarithmic curve, fitted with a log feature"></svg>
+      <svg class="fig" data-fig="feat-log" style="max-height:230px" aria-label="Data following a logarithmic curve, fitted with a log feature"></svg>
     </div>
     <div class="stack" style="gap:20px">
       <svg class="fig" data-fig="lin-poly" aria-label="A straight line and a quadratic fitted to the same curved data"></svg>
@@ -275,8 +277,8 @@
       <ul class="small"><li>Data does not follow a Gaussian distribution (Normalization?)</li><li>Outliers do not affect standardization as much.</li></ul>
       <p class="tiny"><a href="https://www.analyticsvidhya.com/blog/2020/04/feature-scaling-machine-learning-normalization-standardization/" target="_blank" rel="noopener">analyticsvidhya.com: feature scaling, normalization vs standardization</a></p>
     </div>
-    <div class="widget" data-fig="gd2">
-      <svg class="fig" aria-label="Contours of the cost with a gradient descent path, before and after scaling"></svg>
+    <div class="widget" data-fig="gd2" data-auto="mode=raw :: Without scaling: elongated contours, a zig-zag path, many steps|mode=std :: After scaling: round contours, a straight path, a handful of steps">
+      <svg class="fig" style="max-height:330px" aria-label="Contours of the cost with a gradient descent path, before and after scaling"></svg>
       <div class="ctl"><span class="seg" role="group" aria-label="Feature scaling"><button type="button" data-mode="raw" aria-pressed="true">Without scaling</button><button type="button" data-mode="std" aria-pressed="false">After scaling</button></span></div>
       <div class="ro"><div class="m"><span>condition number</span><b data-r="k">–</b></div><div class="m"><span>steps to converge</span><b data-r="n">–</b></div></div>
       <p class="why">After scaling, gradient-descent steps are updated at the same rate for all the features.</p>
@@ -295,8 +297,8 @@
       <ul class="small"><li><b>Underfitting</b>: too simple, high error everywhere.</li><li><b>Just right</b>: follows the pattern, not the noise.</li><li><b>Overfitting</b>: memorises the noise, fails on new samples.</li></ul>
       <p class="small">Move the <b>degree</b> to see underfitting, "just right" and overfitting. Then, at degree 15, raise <b>λ</b>: the impact of regularization.</p>
     </div>
-    <div class="widget" data-fig="overfit">
-      <svg class="fig" aria-label="Polynomial fit to 20 noisy points from a sine curve"></svg>
+    <div class="widget" data-fig="overfit" data-auto="d=1 :: Degree 1: underfitting, high error on train and test|d=3 :: Degree 3: just right, follows the pattern|d=15 :: Degree 15: overfitting, train RMSE tiny, test RMSE explodes|d=15;l=-2 :: Degree 15 with λ = 0.01: the penalty tames the wiggles|d=15;l=1 :: λ = 10: too much, back to underfitting">
+      <svg class="fig" style="max-height:340px" aria-label="Polynomial fit to 20 noisy points from a sine curve"></svg>
       <div class="ctl"><label for="overfit-d">Degree</label><input type="range" id="overfit-d" data-k="d" min="0" max="15" step="1" value="1"><span class="v" data-v="d">1</span></div>
       <div class="ctl"><label for="overfit-l">λ (log scale)</label><input type="range" id="overfit-l" data-k="l" min="-6" max="1" step="0.25" value="-6"><span class="v" data-v="l">0</span></div>
       <div class="ro"><div class="m"><span>train RMSE</span><b data-r="tr">–</b></div><div class="m"><span>test RMSE</span><b data-r="te">–</b></div><div class="m" style="flex:1"><span>verdict</span><b data-r="vd">–</b></div></div>
@@ -307,14 +309,15 @@
 <section class="slide u">
   <h2>Linear Regression – Regularization</h2>
   <p>Add a penalization in the cost function to the weights!</p>
-  <ul>
+  <ul class="small" style="gap:4px">
     <li><b>L2 (Ridge regression)</b>: $\ J(\bth)=\dfrac{1}{2m}\displaystyle\sum_{i=1}^m\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)^2+\lambda\sum_{j=1}^n\theta_j^2\ $ (not $j=0$)
       <ul><li>Shrinks the coefficients.</li></ul></li>
     <li><b>L1 (Lasso regression)</b>: $\ J(\bth)=\dfrac{1}{2m}\displaystyle\sum_{i=1}^m\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)^2+\lambda\sum_{j=1}^n|\theta_j|$
       <ul><li>Forces some of the coefficients to be zero and results in a simpler model (feature selection).</li><li>Not differentiable at 0.</li></ul></li>
     <li><b>Elastic Net</b>: the combination of the L1 and L2 regularization.</li>
   </ul>
-  <svg class="fig" data-fig="l1l2" aria-label="Loss contours touching an L1 diamond at a corner, an L2 circle, and an elastic-net shape"></svg>
+  <svg class="fig" data-fig="l1l2" style="max-height:200px" aria-label="Loss contours touching an L1 diamond at a corner, an L2 circle, and an elastic-net shape"></svg>
+  <p class="why">Chapter 05 goes through regularization slowly: where the formulas come from, why L1 gives exact zeros, and how to pick λ.</p>
 </section>
 
 <section class="slide u">
@@ -357,11 +360,11 @@
       <p class="small">which implies that</p>
       <div class="eq">$$p(y^{(i)}\mid\bx^{(i)};\bth)=\frac{1}{\sigma\sqrt{2\pi}}\exp\Big(-\frac{(y^{(i)}-\bth^\top\bx^{(i)})^2}{2\sigma^2}\Big)$$</div>
       <p class="small step">Given $\bX$ and $\bth$, the probability of the data is $p(\by\mid\bX;\bth)$. As a function of $\bth$: $L(\bth)=p(\by\mid\bX;\bth)$. Assuming i.i.d. samples:</p>
-      <div class="eq step">$$L(\bth)=\prod_{i=1}^mp(y^{(i)}\mid\bx^{(i)};\bth)=\prod_{i=1}^m\frac{1}{\sigma\sqrt{2\pi}}\exp\Big(-\frac{(y^{(i)}-\bth^\top\bx^{(i)})^2}{2\sigma^2}\Big)$$</div>
+      <div class="eq xs step">$$L(\bth)=\prod_{i=1}^mp(y^{(i)}\mid\bx^{(i)};\bth)=\prod_{i=1}^m\frac{1}{\sigma\sqrt{2\pi}}\exp\Big(-\frac{(y^{(i)}-\bth^\top\bx^{(i)})^2}{2\sigma^2}\Big)$$</div>
     </div>
     <div class="stack" style="gap:6px">
       <p class="small step">To make the problem simpler we maximize the log of $L(\bth)$ (monotonically increasing function):</p>
-      <div class="eq step">$$\ell(\bth)=\log L(\bth)=\sum_{i=1}^m\log\Big(\frac{1}{\sigma\sqrt{2\pi}}\exp\Big(-\frac{(y^{(i)}-\bth^\top\bx^{(i)})^2}{2\sigma^2}\Big)\Big)$$
+      <div class="eq s step">$$\ell(\bth)=\log L(\bth)=\sum_{i=1}^m\log\Big(\frac{1}{\sigma\sqrt{2\pi}}\exp\Big(-\frac{(y^{(i)}-\bth^\top\bx^{(i)})^2}{2\sigma^2}\Big)\Big)$$
       $$=m\log\frac{1}{\sigma\sqrt{2\pi}}-\frac{1}{2\sigma^2}\sum_{i=1}^m\big(y^{(i)}-\bth^\top\bx^{(i)}\big)^2$$</div>
       <p class="small step">The first term does not depend on $\bth$. Equivalent to minimizing:</p>
       <div class="bluebox step">$$\frac{1}{2m}\sum_{i=1}^m\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)^2$$</div>
@@ -371,7 +374,7 @@
 </section>
 
 <section class="slide cover">
-  <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Next: Logistic Regression</p></div>
+  <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Next: Logistic Regression</p><p class="go">Press → to continue with the next topic</p></div>
   <p class="mail">imanolgranada@gmail.com</p>
 </section>
 </div></div>

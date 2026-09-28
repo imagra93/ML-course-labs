@@ -12,7 +12,7 @@
 <script src="assets/mathjax-config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
 </head>
-<body data-deck="4 · Softmax regression">
+<body data-deck="4 · Softmax regression" data-prev="03_logistic_regression.html" data-next="05_regularization.html">
 <div id="viewport"><div id="stage">
 <section class="slide cover">
   <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Softmax Regression</p></div>
@@ -37,6 +37,30 @@
 </section>
 
 <section class="slide">
+  <h2>Softmax Regression – Representing the classes</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:10px">
+      <p>The label is one of $K$ names: <i>setosa</i>, <i>versicolor</i>, <i>virginica</i>. How do we write it as numbers?</p>
+      <div class="step"><p><b>Option A · an integer</b> $y\in\{1,\dots,K\}$: setosa = 1, versicolor = 2, virginica = 3.</p>
+        <p class="small why">Compact, but it invents an order and distances: it says virginica is "twice" versicolor and "further" from setosa. None of that is true. Fine for storing labels, wrong as a regression target.</p></div>
+      <div class="step"><p><b>Option B · one-hot vector</b> $\by\in\{0,1\}^K$: a 1 in the position of the true class, 0 elsewhere.</p>
+        <div class="eq">$$y=2\ \longrightarrow\ \by=(0,\,1,\,0)\qquad\text{in general }\ y_k=\mathbb 1[y=k]$$</div>
+        <p class="small why">No order, all classes at the same distance. It is a <b>probability distribution</b> that puts all its mass on the true class. Same trick as one-hot <b>input</b> encoding in chapter 02, now used for the <b>output</b>.</p></div>
+    </div>
+    <div class="stack" style="gap:12px;padding-top:6px">
+      <table class="t" style="font-size:18px">
+        <tr><th>label</th><th>$y$</th><th>one-hot $\by$</th></tr>
+        <tr><td>setosa</td><td>1</td><td>(1, 0, 0)</td></tr>
+        <tr><td>versicolor</td><td>2</td><td>(0, 1, 0)</td></tr>
+        <tr><td>virginica</td><td>3</td><td>(0, 0, 1)</td></tr>
+      </table>
+      <p class="step small">The model will output a vector $\bp=(p_1,p_2,p_3)$ of probabilities, e.g. $(0.1,\,0.7,\,0.2)$. Training pushes $\bp$ towards the one-hot target $(0,1,0)$: the two vectors are directly comparable.</p>
+      <p class="step small">For the whole dataset: $\bY\in\{0,1\}^{m\times K}$, one one-hot row per example. Each row sums to 1.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
   <h2>Softmax Regression – The model</h2>
   <div class="cols">
     <div class="stack" style="gap:10px">
@@ -47,7 +71,7 @@
       <div class="bluebox">$$P(y=k\mid\bx;\boldsymbol\Theta)=\mathrm{softmax}(\bz)_k=\frac{e^{z_k}}{\sum_{l=1}^Ke^{z_l}}$$</div>
       <p>Prediction: $\ \hat y=\arg\max_k\,\mathrm{softmax}(\bz)_k=\arg\max_k\,\bth_k^\top\bx$.</p>
     </div>
-    <div class="widget" data-fig="soft">
+    <div class="widget" data-fig="soft" data-auto="z1=2;z2=1;z3=-1;s=1 :: Scores 2, 1, −1 → probabilities 0.71, 0.26, 0.04: they sum to 1|z1=2;z2=2;z3=-1;s=1 :: A tie between z₁ and z₂ → equal probabilities|z1=2;z2=1;z3=-1;s=4 :: Multiply every score by 4: almost one-hot, the arg-max wins|z1=2;z2=1;z3=-1;s=0.2 :: Multiply by 0.2: almost uniform, the model is unsure">
       <svg class="fig" aria-label="Three scores and their softmax probabilities"></svg>
       <div class="ctl"><label for="sm-1">z₁</label><input type="range" id="sm-1" data-k="z1" min="-4" max="4" step="0.1" value="2"><span class="v" data-v="z1">2.0</span></div>
       <div class="ctl"><label for="sm-2">z₂</label><input type="range" id="sm-2" data-k="z2" min="-4" max="4" step="0.1" value="1"><span class="v" data-v="z2">1.0</span></div>
@@ -86,14 +110,14 @@
   <h2>Softmax Regression – Cost function</h2>
   <div class="cols">
     <div class="stack" style="gap:10px">
-      <p>Encode the label as a <b>one-hot</b> vector: $y^{(i)}_k=\mathbb 1[y^{(i)}=k]$. E.g. class 2 of 3 → $(0,1,0)$.</p>
+      <p>Labels as <b>one-hot</b> vectors (slide 4): $y^{(i)}_k=\mathbb 1[y^{(i)}=k]$, e.g. class 2 of 3 → $(0,1,0)$.</p>
       <p>Write $p^{(i)}_k=P(y=k\mid\bx^{(i)};\boldsymbol\Theta)$.</p>
       <p class="step">The model says $y^{(i)}$ is <b>categorical</b>. One formula for every class (only the true class's factor is not 1):</p>
       <div class="eq step">$$P(y^{(i)}\mid\bx^{(i)};\boldsymbol\Theta)=\prod_{k=1}^K\big(p^{(i)}_k\big)^{y^{(i)}_k}$$</div>
     </div>
     <div class="stack" style="gap:10px">
       <p class="step">Take minus the mean log-likelihood: the <b>categorical cross-entropy</b>,</p>
-      <div class="bluebox step">$$J(\boldsymbol\Theta)=-\frac1m\sum_{i=1}^m\sum_{k=1}^Ky^{(i)}_k\log p^{(i)}_k=-\frac1m\sum_{i=1}^m\log p^{(i)}_{y^{(i)}}$$</div>
+      <div class="bluebox step" style="font-size:20px">$$J(\boldsymbol\Theta)=-\frac1m\sum_{i=1}^m\sum_{k=1}^Ky^{(i)}_k\log p^{(i)}_k=-\frac1m\sum_{i=1}^m\log p^{(i)}_{y^{(i)}}$$</div>
       <p class="step">Minus the log of the probability given to the <b>correct</b> class. For $K=2$ it is exactly the binary cross-entropy.</p>
       <p class="step small">Useful form for the derivation: $\ -\log p_y=-z_y+\log\sum_le^{z_l}$.</p>
     </div>
@@ -105,7 +129,7 @@
   <div class="cols c64">
     <div class="stack" style="gap:8px">
       <p><b>Step 1 · derivative by the scores.</b> One example with true class $y$: $\ \ell=-z_y+\log\sum_le^{z_l}$.</p>
-      <div class="eq step">$$\frac{\partial\ell}{\partial z_k}=-\mathbb 1[y=k]+\frac{e^{z_k}}{\sum_le^{z_l}}=p_k-y_k\qquad\Rightarrow\qquad\nabla_{\bz}\ell=\bp-\by$$</div>
+      <div class="eq s step">$$\frac{\partial\ell}{\partial z_k}=-\mathbb 1[y=k]+\frac{e^{z_k}}{\sum_le^{z_l}}=p_k-y_k\qquad\Rightarrow\qquad\nabla_{\bz}\ell=\bp-\by$$</div>
       <p class="step small">Predicted distribution minus the one-hot target.</p>
       <p class="step"><b>Step 2 · chain rule.</b> $z_k=\bth_k^\top\bx$ depends only on $\bth_k$, and $\nabla_{\bth_k}z_k=\bx$:</p>
       <div class="eq step">$$\nabla_{\bth_k}J=\frac1m\sum_{i=1}^m\big(p^{(i)}_k-y^{(i)}_k\big)\,\bx^{(i)}$$</div>
@@ -137,7 +161,7 @@
 <section class="slide">
   <h2>Softmax Regression – Training it</h2>
   <div class="cols c64">
-    <div class="widget" data-fig="soft-regions">
+    <div class="widget" data-fig="soft-regions" data-auto="k=0 :: Iteration 0: Θ = 0, every class has probability ⅓|k=5 :: Iteration 5: three regions appear|k=30 :: Iteration 30|k=150 :: Iteration 150: straight boundaries, colours saturate away from them">
       <svg class="fig" aria-label="Decision regions of softmax regression during gradient descent on three classes"></svg>
       <div class="ctl"><label for="sr-k">Gradient-descent iteration</label><input type="range" id="sr-k" data-k="k" min="0" max="150" step="1" value="0"><span class="v" data-v="k">0</span></div>
       <div class="ro"><div class="m"><span>J(Θ)</span><b data-r="j">–</b></div><div class="m"><span>train accuracy</span><b data-r="acc">–</b></div></div>
@@ -189,7 +213,7 @@
   </table>
 </section>
 <section class="slide cover">
-  <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Next: Regularization</p></div>
+  <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Next: Regularization</p><p class="go">Press → to continue with the next topic</p></div>
   <p class="mail">imanolgranada@gmail.com</p>
 </section>
 </div></div>

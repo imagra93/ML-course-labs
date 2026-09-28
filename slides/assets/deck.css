@@ -37,7 +37,9 @@ code{font-family:var(--mono);font-size:.82em;background:#f2f2f2;padding:1px 5px;
 .cols.c3{grid-template-columns:repeat(3,1fr);gap:20px}
 .stack{display:flex;flex-direction:column;gap:10px;min-width:0}
 .center{align-items:center;justify-content:center;text-align:center}
-.eq{font-size:22px;overflow-x:auto;overflow-y:hidden}
+.eq{font-size:22px;overflow:visible}
+.eq.s{font-size:19px} .eq.xs{font-size:17px}
+.lrow{display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:center}
 .eq.big{font-size:26px}
 .eq mjx-container[display="true"]{margin:4px 0 !important}
 .bluebox{background:var(--blue);color:#fff;padding:10px 18px;align-self:flex-start;font-size:24px}
@@ -92,6 +94,9 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(-
 .ro .m b{font-size:21px;font-variant-numeric:tabular-nums}
 .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:16px;color:var(--muted)}
 .legend i{display:inline-block;width:16px;height:4px;margin-right:6px;vertical-align:middle}
+/* scripted demo steps (data-auto): caption shown under the widget as → advances */
+.demo-cap{font-size:17px;color:var(--ink);background:var(--gold-soft);border-left:4px solid var(--gold);padding:4px 10px;line-height:1.3}
+.widget.demo-on .ctl input[type=range]{accent-color:var(--orange)}
 /* data-split diagrams */
 .bar3{display:flex;gap:18px;align-items:flex-end}
 .bar3 .seg3{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:22px;color:var(--ink)}
@@ -113,6 +118,7 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(-
 .cover .rule{width:56px;height:2px;background:#fff;margin-top:18px}
 .cover .sub{font-size:26px;color:#fff}
 .cover .topic{font-size:34px;color:#fff;opacity:.92}
+.cover .go{font-size:20px;color:#fff;opacity:.7;margin-top:30px}
 .cover .mail{position:absolute;right:88px;bottom:72px;font-size:22px;font-style:italic;color:#fff}
 .cover .foot .band{display:none}
 .cover .foot .pg{color:#bfbfbf}
@@ -129,6 +135,7 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(-
 #bar .prog i{display:block;height:100%;width:0;background:var(--gold);transition:width .2s}
 #bar button{font:700 15px var(--font);color:#000;background:#e6e6e6;border:0;height:30px;min-width:38px;padding:0 10px;cursor:pointer}
 #bar .count{font-variant-numeric:tabular-nums;min-width:64px;text-align:center}
+#bar a.nx{margin-left:6px;color:var(--gold)}
 /* phone: stacked, scrolling */
 body.flow{overflow:auto;padding:12px 16px}
 body.flow #viewport{position:static;display:block}

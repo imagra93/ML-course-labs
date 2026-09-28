@@ -12,7 +12,7 @@
 <script src="assets/mathjax-config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
 </head>
-<body data-deck="5 · Regularization">
+<body data-deck="5 · Regularization" data-prev="04_softmax_regression.html" data-next="06_decision_trees.html">
 <div id="viewport"><div id="stage">
 <section class="slide cover">
   <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Regularization</p></div>
@@ -34,11 +34,37 @@
       </ol>
       <div class="note"><p class="small">Regularization accepts a little more training error (<b>bias</b>) in exchange for a more stable model (less <b>variance</b>).</p></div>
     </div>
-    <div class="widget" data-fig="overfit">
-      <svg class="fig" aria-label="Polynomial fit to noisy points"></svg>
+    <div class="widget" data-fig="overfit" data-auto="d=15;l=-6 :: Degree 15, λ = 0: the curve passes through the noise, huge coefficients|d=15;l=-3 :: λ = 0.001: the wiggles start to calm down|d=15;l=-1.5 :: λ ≈ 0.03: close to the true sine, best test RMSE|d=15;l=1 :: λ = 10: over-penalized, the curve flattens: underfitting">
+      <svg class="fig" style="max-height:330px" aria-label="Polynomial fit to noisy points"></svg>
       <div class="ctl"><label for="of-d">Degree</label><input type="range" id="of-d" data-k="d" min="0" max="15" step="1" value="15"><span class="v" data-v="d">15</span></div>
       <div class="ctl"><label for="of-l">λ (log scale)</label><input type="range" id="of-l" data-k="l" min="-6" max="1" step="0.25" value="-6"><span class="v" data-v="l">0</span></div>
       <div class="ro"><div class="m"><span>train RMSE</span><b data-r="tr">–</b></div><div class="m"><span>test RMSE</span><b data-r="te">–</b></div><div class="m" style="flex:1"><span>verdict</span><b data-r="vd">–</b></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Regularization – The idea in one picture</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:12px">
+      <p>The degree-15 curve on the previous slide passes through every noisy point. Its coefficients look like this:</p>
+      <div class="eq s">$$\theta\approx(0.2,\ 3,\ -41,\ 312,\ -1\,840,\ 6\,100,\ \dots)$$</div>
+      <p class="step"><b>Wiggles need huge coefficients with alternating signs.</b> A smooth curve has small ones. So: make large coefficients <b>expensive</b>.</p>
+      <div class="eq big step">$$\text{minimize}\quad\underbrace{J(\bth)}_{\text{fit the data}}\ +\ \lambda\cdot\underbrace{\text{size}(\bth)}_{\text{a tax on big }\theta\text{'s}}$$</div>
+      <ul class="step">
+        <li>$\lambda$ is the <b>tax rate</b>. $\lambda=0$: no tax, plain least squares. $\lambda\to\infty$: any non-zero $\theta_j$ is ruinous, all go to 0, a flat line.</li>
+        <li>In between, the model gives up a little training error to keep $\bth$ small. Less wiggle, better on new data.</li>
+      </ul>
+    </div>
+    <div class="stack" style="gap:12px;padding-top:10px">
+      <p class="step"><b>Two ways to measure "size":</b></p>
+      <table class="t step" style="font-size:19px">
+        <tr><th>Name</th><th>size$(\bth)$</th></tr>
+        <tr><td>L2 · Ridge</td><td>$\sum_{j=1}^n\theta_j^2$</td></tr>
+        <tr><td>L1 · Lasso</td><td>$\sum_{j=1}^n|\theta_j|$</td></tr>
+      </table>
+      <p class="step small">Squares punish big coefficients hard and small ones hardly at all. Absolute values punish every coefficient at the same rate, even tiny ones. That difference is the whole story of Ridge vs Lasso.</p>
+      <div class="note step"><p class="small">Bias–variance: a bit more <b>bias</b> (worse fit on train) for a lot less <b>variance</b> (stability on new data).</p></div>
     </div>
   </div>
 </section>
@@ -56,24 +82,54 @@
     <div class="stack" style="gap:10px">
       <p><b>Two rules that always apply:</b></p>
       <ul class="small">
-        <li class="step"><b>Do not penalize the intercept</b> $\theta_0$ (the sums start at $j=1$). It only sets the average level.</li>
-        <li class="step"><b>Standardize the features first.</b> The size of $\theta_j$ depends on the units of $x_j$: income in € vs k€ changes it 1000×. Without scaling, the penalty is arbitrary.</li>
+        <li class="step"><b>Do not penalize the intercept</b> $\theta_0$ (the sums start at $j=1$). It only sets the average level of $y$; shrinking it would bias every prediction.</li>
+        <li class="step"><b>Standardize the features first.</b> The size of $\theta_j$ depends on the units of $x_j$: income in € vs k€ changes it 1000×. Without scaling, the tax is arbitrary.</li>
       </ul>
-      <p class="step small">$\lambda=0$: no regularization. $\lambda\to\infty$: all $\theta_{j\ge1}\to0$ (a constant model). $\lambda$ is a hyperparameter, chosen by cross-validation. scikit-learn often uses $C=1/\lambda$.</p>
+      <p class="step small">$\lambda$ is a hyperparameter, chosen by cross-validation (later slide). scikit-learn often writes $C=1/\lambda$: large $C$ = weak regularization.</p>
     </div>
   </div>
 </section>
 
 <section class="slide">
-  <h2>Regularization – L2 (Ridge regression)</h2>
-  <div class="stack" style="gap:10px">
-    <div class="eq">$$J(\bth)=\frac1{2m}\Big[\norm{\bX\bth-\by}^2+\lambda\sum_{j=1}^n\theta_j^2\Big],\qquad\mathbf L=\mathrm{diag}(0,1,\dots,1)\ \Rightarrow\ \textstyle\sum_{j\ge1}\theta_j^2=\bth^\top\mathbf L\bth$$</div>
-    <div class="cols step" style="align-items:center"><p><b>Gradient descent = "weight decay".</b> Each step first <b>shrinks</b> $\theta_j$ by a constant factor, then applies the usual data gradient:</p>
-      <div class="eq">$$\theta_j:=\hl{\theta_j\Big(1-\frac{\alpha\lambda}{m}\Big)}-\frac\alpha m\sum_i\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)x^{(i)}_j$$</div></div>
-    <div class="cols step" style="align-items:center"><p><b>Closed form.</b> Set $\nabla J=\frac1m\big[\bX^\top(\bX\bth-\by)+\lambda\mathbf L\bth\big]=\bzero$:</p>
-      <div class="bluebox" style="justify-self:start">$$\bth^*_{\text{ridge}}=(\bX^\top\bX+\lambda\mathbf L)^{-1}\bX^\top\by$$</div></div>
-    <p class="step"><b>This inverse always exists for $\lambda\gt0$</b>, even with duplicated features or $n\gt m$. For $\bv\ne\bzero$: $\ \bv^\top(\bX^\top\bX+\lambda\mathbf L)\bv=\norm{\bX\bv}^2+\lambda\sum_{j\ge1}v_j^2\gt0$. The second term is positive unless only $v_0\ne0$, and then $\bX\bv=v_0\mathbf 1\ne\bzero$. Positive definite: <b>a unique minimum</b>. $\blacksquare$</p>
-    <p class="step"><b>One standardized feature:</b> $\ \theta_{\text{ridge}}=\dfrac{\theta_{\text{OLS}}}{1+\lambda/m}$. Smaller, but <b>never exactly zero</b>.</p>
+  <h2>Regularization – L2 (Ridge): the gradient, slowly</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:8px">
+      <p>We write the L2 penalty with a $\frac{1}{2m}$ in front, only so that the derivative comes out clean:</p>
+      <div class="eq">$$J_{\text{reg}}(\bth)=J(\bth)+\frac{\lambda}{2m}\sum_{j=1}^n\theta_j^2$$</div>
+      <p class="step"><b>Step 1 · derivative of the penalty</b> with respect to one $\theta_j$. Only the $j$-th term of the sum contains $\theta_j$; the others are constants:</p>
+      <div class="eq step">$$\frac{\partial}{\partial\theta_j}\Big(\frac{\lambda}{2m}\sum_{k=1}^n\theta_k^2\Big)=\frac{\lambda}{2m}\cdot2\theta_j=\frac{\lambda}{m}\,\theta_j$$</div>
+      <p class="step"><b>Step 2 · add it to the data gradient</b> (whatever $J$ is: least squares or cross-entropy):</p>
+      <div class="eq step">$$\frac{\partial J_{\text{reg}}}{\partial\theta_j}=\frac{\partial J}{\partial\theta_j}+\frac{\lambda}{m}\,\theta_j\qquad(j\ge1;\ \text{for }\theta_0\text{ nothing changes})$$</div>
+    </div>
+    <div class="stack" style="gap:10px;padding-top:10px">
+      <p class="step"><b>Step 3 · plug into gradient descent</b> and regroup the $\theta_j$ terms:</p>
+      <div class="eq s step">$$\theta_j:=\theta_j-\alpha\Big(\frac{\partial J}{\partial\theta_j}+\frac{\lambda}{m}\theta_j\Big)$$ $$=\hl{\theta_j\Big(1-\frac{\alpha\lambda}{m}\Big)}-\alpha\frac{\partial J}{\partial\theta_j}$$</div>
+      <div class="note step"><p class="small"><b>Weight decay.</b> Every step first multiplies $\theta_j$ by a number slightly below 1 (e.g. $\alpha=0.1$, $\lambda=1$, $m=100$: by 0.999), then takes the usual gradient step. Coefficients that the data does not keep pushing up slowly decay towards 0.</p></div>
+      <p class="step small why">This is exactly what <code>weight_decay</code> does in neural-network optimizers.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Regularization – L2 (Ridge): the closed form, slowly</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:8px">
+      <p>For linear regression, $J=\frac1{2m}\norm{\bX\bth-\by}^2$ and its gradient is (chapter 02) $\ \nabla J=\frac1m\bX^\top(\bX\bth-\by)$.</p>
+      <p class="step"><b>Step 1 · the penalty gradient as a matrix.</b> Step 1 of the previous slide for all $j$ at once, with a 0 for the intercept:</p>
+      <div class="eq step">$$\nabla\Big(\frac{\lambda}{2m}\sum_{j\ge1}\theta_j^2\Big)=\frac{\lambda}{m}\bL\bth,\qquad\bL=\mathrm{diag}(0,1,\dots,1)$$</div>
+      <p class="step"><b>Step 2 · set the total gradient to zero</b> and drop the common $\frac1m$:</p>
+      <div class="eq step">$$\bX^\top(\bX\bth-\by)+\lambda\bL\bth=\bzero$$</div>
+      <p class="step"><b>Step 3 · collect the $\bth$ terms</b> on the left, the rest on the right:</p>
+      <div class="eq step">$$\bX^\top\bX\bth+\lambda\bL\bth=\bX^\top\by\ \Rightarrow\ (\bX^\top\bX+\lambda\bL)\,\bth=\bX^\top\by$$</div>
+      <div class="bluebox step">$$\bth^*_{\text{ridge}}=(\bX^\top\bX+\lambda\bL)^{-1}\bX^\top\by$$</div>
+    </div>
+    <div class="stack" style="gap:10px;padding-top:10px">
+      <p class="step small">Compare with the normal equation $(\bX^\top\bX)^{-1}\bX^\top\by$: Ridge just <b>adds $\lambda$ to the diagonal</b> of $\bX^\top\bX$ (except the intercept entry).</p>
+      <div class="step"><p><b>One standardized feature</b> ($\bX^\top\bX=m$, no intercept). Let $z=\bX^\top\by/m$ be the OLS coefficient:</p>
+        <div class="eq s">$$(m+\lambda)\,\theta=\bX^\top\by=m\,z\ \Rightarrow\ \theta_{\text{ridge}}=\frac{z}{1+\lambda/m}$$</div>
+        <p class="small"><b>Ridge divides.</b> Smaller than OLS, but never exactly zero.</p></div>
+      <p class="step small why"><b>The inverse always exists</b> for $\lambda\gt0$, even with duplicated features or $n\gt m$: for $\bv\ne\bzero$, $\ \bv^\top(\bX^\top\bX+\lambda\bL)\bv=\norm{\bX\bv}^2+\lambda\sum_{j\ge1}v_j^2\gt0$ (if all $v_{j\ge1}=0$ then $\bX\bv=v_0\mathbf 1\ne\bzero$). Positive definite → a unique minimum.</p>
+    </div>
   </div>
 </section>
 
@@ -81,15 +137,16 @@
   <h2>Regularization – L1 (Lasso): why exact zeros?</h2>
   <div class="cols c64">
     <div class="stack" style="gap:9px">
-      <p>One standardized feature with OLS solution $z$. We must minimize</p>
+      <p>Same one-feature setting: OLS coefficient $z$, and (up to a constant) the cost is a parabola centred at $z$ plus the L1 tax:</p>
       <div class="eq">$$g(\theta)=\tfrac12(\theta-z)^2+\lambda|\theta|$$</div>
+      <p class="small why">$|\theta|$ has a <b>kink</b> at 0: slope $+\lambda$ on the right, $-\lambda$ on the left, no derivative at 0. So we look at the three cases separately.</p>
       <p class="step"><b>If $\theta\gt0$:</b> $\ g'=\theta-z+\lambda=0\Rightarrow\theta=z-\lambda$, valid only if $z\gt\lambda$.</p>
       <p class="step"><b>If $\theta\lt0$:</b> $\ g'=\theta-z-\lambda=0\Rightarrow\theta=z+\lambda$, valid only if $z\lt-\lambda$.</p>
       <p class="step"><b>Otherwise</b> ($|z|\le\lambda$) the minimum sits at the kink: $\theta=0$.</p>
       <div class="bluebox step">$$\theta_{\text{lasso}}=\mathrm{sign}(z)\,\max\big(|z|-\lambda,\,0\big)$$</div>
-      <p class="step small"><b>Soft-thresholding.</b> The L2 penalty's slope $2\theta$ vanishes near 0, so it never pushes all the way. The L1 penalty pushes with constant force $\lambda$, however small $\theta$ is.</p>
+      <p class="step small"><b>Lasso subtracts, Ridge divides.</b> The L2 penalty's slope $2\theta$ vanishes near 0, so it never pushes all the way. The L1 penalty pushes with constant force $\lambda$, however small $\theta$ is: anything with $|z|\le\lambda$ is pushed <b>exactly</b> to 0.</p>
     </div>
-    <div class="widget" data-fig="shrink">
+    <div class="widget" data-fig="shrink" data-auto="l=0 :: λ = 0: Ridge and Lasso both equal OLS (the diagonal)|l=0.5 :: λ = 0.5: Ridge divides by 1.5; Lasso subtracts 0.5 and zeroes every |z| ≤ 0.5|l=1.5 :: λ = 1.5: a wide dead zone, only large coefficients survive Lasso">
       <svg class="fig" aria-label="Regularized coefficient against the OLS coefficient for OLS, Ridge and Lasso"></svg>
       <div class="ctl"><label for="sh-l">λ</label><input type="range" id="sh-l" data-k="l" min="0" max="2" step="0.05" value="0.8"><span class="v" data-v="l">0.80</span></div>
       <div class="legend"><span><i style="background:var(--muted)"></i>OLS</span><span><i style="background:var(--blue)"></i>Ridge</span><span><i style="background:var(--red)"></i>Lasso</span></div>
@@ -238,7 +295,7 @@
   </div>
 </section>
 <section class="slide cover">
-  <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Next: Decision Trees</p></div>
+  <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Next: Decision Trees</p><p class="go">Press → to continue with the next topic</p></div>
   <p class="mail">imanolgranada@gmail.com</p>
 </section>
 </div></div>

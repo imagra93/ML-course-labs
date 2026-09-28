@@ -76,6 +76,23 @@ FIG['roc-dist']=root=>{const svg=initSvg(svgOf(root),640,300);const P=Plot(svg,{
     const roc=[];for(let i=0;i<=200;i++){const u=-6+15*i/200;roc.push([1-Phi(u),1-Phi(u-d)])}Q.path(roc,'ln sk');Q.dot(1-Phi(t),1-Phi(t-d),6,'fr pt');
     setR(root,'auc',fmt(Phi(d/Math.SQRT2),3));setR(root,'tpr',fmt(1-Phi(t-d),2));setR(root,'fpr',fmt(1-Phi(t),2))}
   id.addEventListener('input',draw);it.addEventListener('input',draw);draw()};
+/* odds and log-odds as functions of p */
+FIG['odds']=root=>{const svg=initSvg(svgOf(root),600,250);
+  const P=Plot(svg,{at:[0,0],w:290,h:250,x:[0,1],y:[0,10],m:{l:40,r:10,t:26,b:36}});P.axes({xt:[0,0.25,0.5,0.75,1],yt:[0,1,3,5,9],xl:'probability p',yl:'odds  p / (1 − p)'});T(P.root,165,16,'odds: from 0 to +∞, not symmetric','lab');
+  P.fn(p=>p/(1-p),'ln sb',0.001,0.92);P.line(0,1,1,1,'ln thin sm dash');P.dot(0.5,1,5,'fr pt');P.text(0.5,1,'p = 0.5 → odds 1','', 'start',8,-10);P.dot(0.75,3,4,'fk');P.text(0.75,3,'0.75 → 3','', 'end',-8,-4);P.dot(0.9,9,4,'fk');P.text(0.9,9,'0.9 → 9','', 'end',-8,4);P.dot(0.1,1/9,4,'fk');P.text(0.1,1/9,'0.1 → 0.11','', 'start',8,-12);
+  const Q=Plot(svg,{at:[305,0],w:295,h:250,x:[0,1],y:[-4.5,4.5],m:{l:40,r:10,t:26,b:36}});Q.axes({xt:[0,0.25,0.5,0.75,1],yt:[-4,-2,0,2,4],xl:'probability p',yl:'log-odds  log(p / (1 − p))'});T(Q.root,168,16,'log-odds: from −∞ to +∞, symmetric','lab');
+  Q.fn(p=>Math.log(p/(1-p)),'ln sr',0.011,0.989);Q.line(0,0,1,0,'ln thin sm dash');Q.dot(0.5,0,5,'fr pt');Q.text(0.5,0,'p = 0.5 → 0','', 'start',8,-6);Q.dot(0.9,Math.log(9),4,'fk');Q.text(0.9,Math.log(9),'0.9 → +2.2','', 'end',-8,-4);Q.dot(0.1,-Math.log(9),4,'fk');Q.text(0.1,-Math.log(9),'0.1 → −2.2','', 'start',8,10)};
+/* AUC as the probability that a random positive outscores a random negative */
+FIG['auc-pairs']=root=>{const r0=rng(21);const neg=[],pos=[];for(let i=0;i<14;i++)neg.push(sig(-1.3+1.1*randn(r0)));for(let i=0;i<7;i++)pos.push(sig(1.0+1.0*randn(r0)));
+  let ok=0,tot=0;neg.forEach(a=>pos.forEach(b=>{tot++;if(b>a)ok++;else if(b===a)ok+=0.5}));const auc=ok/tot;const r=rng(5);let n=0,good=0,last=null;
+  const P=Plot(svgOf(root),{w:600,h:250,x:[0,1],y:[-1.6,1.6],m:{l:14,r:14,t:30,b:36}});P.axes({xt:[0,0.25,0.5,0.75,1],grid:false,xl:'predicted probability of fraud (model score)'});
+  P.line(0,0,1,0,'ax',P.bg);P.text(0,1,'7 fraud claims (y = 1)','lab','start',0,-10,P.bg);P.text(0,-1,'14 legit claims (y = 0)','lab','start',0,22,P.bg);
+  neg.forEach((s0,i)=>P.dot(s0,-1+(i%2?0.35:0),6,'pt fo',P.bg));pos.forEach((s0,i)=>P.dot(s0,1-(i%2?0.35:0),6,'pt fb',P.bg));setR(root,'auc',fmt(auc,2));
+  function draw(){P.clear();if(last){const [a,b,ia,ib]=last;const ya=-1+(ia%2?0.35:0),yb=1-(ib%2?0.35:0);P.line(a,ya,b,yb,b>a?'ln sg':'ln sr');P.dot(a,ya,9,'nof').setAttribute('style','stroke:#000;stroke-width:2');P.dot(b,yb,9,'nof').setAttribute('style','stroke:#000;stroke-width:2');
+      P.text(0.5,1.55,(b>a?'✓ fraud '+fmt(b,2)+' > legit '+fmt(a,2)+': ranked correctly':'✗ fraud '+fmt(b,2)+' < legit '+fmt(a,2)+': ranked wrongly'),'lab','middle')}
+    setR(root,'n',n);setR(root,'ok',good);setR(root,'frac',n?fmt(good/n,2):'–')}
+  function one(){const ia=Math.floor(r()*neg.length),ib=Math.floor(r()*pos.length);n++;if(pos[ib]>neg[ia])good++;last=[neg[ia],pos[ib],ia,ib]}
+  root.querySelector('[data-k="one"]').addEventListener('click',()=>{one();draw()});root.querySelector('[data-k="many"]').addEventListener('click',()=>{for(let i=0;i<200;i++)one();draw()});draw()};
 FIG['imbalance']=root=>{const svg=initSvg(svgOf(root),640,230);
   const bars=(x0,title,vals,cols)=>{T(svg,x0+85,18,title,'lab');const mx=950;vals.forEach((v,i)=>{const h=170*v/mx;E('rect',{x:x0+20+i*62,y:200-h,width:48,height:h,fill:cols[i]},svg)});E('line',{x1:x0+10,x2:x0+160,y1:200,y2:200,class:'ax'},svg)};
   bars(0,'Original: 950 vs 50',[950,50],['#4472c4','#ed7d31']);bars(215,'Undersampling',[50,50],['#4472c4','#ed7d31']);bars(430,'Oversampling',[950,950],['#4472c4','#ed7d31']);

@@ -14,14 +14,28 @@ One HTML file per topic. Open `index.html` in a browser (or via GitHub Pages) to
 | `08_svm.html` | Support vector machines | slides 86–113 |
 
 ## Presenting
-→ / Space: next step · ← back · F: full screen · the URL `#12` jumps to slide 12.
+→ / Space: next step · ← back · F: full screen · the URL `#12` jumps to slide 12 (`#last` = last slide).
+Topics are chained: → on the last slide opens the next topic, ← on the first slide goes back to the previous one
+(`data-prev` / `data-next` on `<body>`). N / P jump to the next / previous topic from anywhere.
 Equations need internet (MathJax from a CDN).
+
+### Scripted demos (no mouse needed)
+Every interactive figure has a `data-auto` script. Pressing → walks through it, one preset per press, with a
+yellow caption under the figure; ← walks back. You can still drag the sliders at any time.
+
+```html
+<div class="widget" data-fig="overfit" data-auto="d=1 :: Degree 1: underfitting|d=15 :: Overfitting|d=15;l=-2 :: λ tames it">
+```
+Steps are separated by `|`, assignments by `;`, and `:: text` is the caption. `key=value` sets the slider with
+`data-k="key"`, or presses the segment button with `data-key="value"` (e.g. `mode=std`). `key=click` presses a plain
+button with `data-k="key"` once (e.g. `go=click`). Steps and `.step` reveals are played in document order.
 
 ## Editing a topic
 Each slide is one `<section class="slide">` block. Just edit the text.
 
 - Title: `<h2>…</h2>`. Add class `u` to the section for the underlined title style.
-- Math: `$inline$` and `$$display$$` (LaTeX, MathJax). Write `\lt` / `\gt` instead of `<` / `>`.
+- Math: `$inline$` and `$$display$$` (LaTeX, MathJax). Write `\lt` / `\gt` instead of `<` / `>`. A wide equation: give the `.eq` the class `s` (19 px) or `xs` (17 px), or split it into two `$$…$$` lines; never rely on scrolling.
+- Macros: `\bx \bX \by \bth \bz \bp \bP \bL \bTh \bv \bzero \norm{}` (see `assets/mathjax-config.js`).
 - Reveal one line at a time: add `class="step"` to any element.
 - Key formula box: `<div class="bluebox">$$…$$</div>`. Yellow hint: `<div class="hint"><div class="hd">HINT</div><div class="bd">…</div></div>`.
 - Two columns: `<div class="cols">…</div>` (`c64` / `c46` for 60/40 splits).
