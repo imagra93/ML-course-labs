@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="author" content="Imanol Granada (imanolgranada@gmail.com)">
+<title>Linear Regression</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="assets/deck.css">
+<script src="assets/mathjax-config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
+</head>
+<body data-deck="2 · Linear regression">
+<div id="viewport"><div id="stage">
+<section class="slide cover">
+  <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Linear Regression</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+
+<section class="slide divider">
+  <div class="card">
+    <h1><b>Linear</b><br>Regression</h1>
+    <svg class="fig" data-fig="lr-divider" aria-label="Scatter of points with a fitted line"></svg>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Linear Regression – Real World examples.</h2>
+  <div class="cols c46" style="align-items:center">
+    <ul style="gap:22px">
+      <li>Market sales.</li><li>Medical insurance costs.</li><li>Real Estate prices.</li><li>Red Wine Quality.</li><li>Taxi Fares.</li><li>Life Expectancy.</li>
+    </ul>
+    <svg class="fig" data-fig="house" aria-label="Scatter of house prices against living area"></svg>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Linear Regression</h2>
+  <div class="cols">
+    <div class="widget" data-fig="fit-iter">
+      <svg class="fig" aria-label="Data and the fitted line after k iterations of gradient descent"></svg>
+      <div class="ctl"><label for="fit-iter-k">Gradient-descent iteration</label><input type="range" id="fit-iter-k" data-k="k" min="0" max="80" step="1" value="0"><span class="v" data-v="k">0</span></div>
+      <div class="ro"><div class="m"><span>θ₀</span><b data-r="t0">–</b></div><div class="m"><span>θ₁</span><b data-r="t1">–</b></div><div class="m"><span>J(θ)</span><b data-r="j">–</b></div></div>
+    </div>
+    <div class="stack" style="gap:16px">
+      <p>Approximate $y$ as a linear function of $\bx$:</p>
+      <div class="eq big">$$h_{\bth}(\bx)=\theta_0+\theta_1x_1+\dots+\theta_nx_n=\sum_{i=0}^{n}\theta_ix_i=\bth^\top\bx$$</div>
+      <p>$\theta$'s are called the <b>parameters</b> (also called weights). For $n=1$, $\theta_0$ is often denoted as the intercept and $\theta_1$ the slope.</p>
+      <p>Notice that for convenience we made $x_0=1$.</p>
+      <p class="step" style="font-size:28px;margin-top:10px">How do we select the $\theta$'s?</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Linear Regression</h2>
+  <div class="cols">
+    <div class="widget" data-fig="resid">
+      <svg class="fig" aria-label="Points with residuals drawn as squares, and the cost J as a function of theta"></svg>
+      <div class="ctl"><label for="resid-t">Slope θ (model h = θx)</label><input type="range" id="resid-t" data-k="t" min="0" max="3" step="0.01" value="0.6"><span class="v" data-v="t">0.60</span></div>
+      <div class="ro"><div class="m"><span>J(θ)</span><b data-r="j">–</b></div><div class="m"><span>best θ</span><b data-r="ts">–</b></div></div>
+      <p class="why">Each orange square has side = the error of one example. J is their average area / 2.</p>
+    </div>
+    <div class="stack" style="gap:12px">
+      <p>Define a function that measures, for each $\theta$, how "close" $h_{\bth}(\bx^{(i)})$ is to $y^{(i)}$. <b>Cost Function $J(\bth)$</b>:</p>
+      <div class="eq big">$$J(\bth)=\frac{1}{2m}\sum_{i=1}^{m}\Big(h_{\bth}(\bx^{(i)})-y^{(i)}\Big)^2$$</div>
+      <p>Least-squares cost function that gives rise to the <b>ordinary least squares</b> regression model.</p>
+      <p>How do we minimize the Cost function $J$?</p>
+      <ul><li class="step">Derivate and equal to zero.</li><li class="step">Apply gradient descent.</li></ul>
+      <div class="step"><svg class="fig" data-fig="convex" aria-label="A convex curve with one minimum and a non-convex curve with a local and a global minimum"></svg>
+      <p class="why">Linear regression: convex function (a single global minimum).</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide u">
+  <h2>Linear Regression – Gradient Descent</h2>
+  <p>Repeat until convergence (and <b><u>simultaneously</u></b> among all parameters, i.e. for $j\in\{0,\dots,n\}$):</p>
+  <div class="cols">
+    <div class="stack">
+      <div class="eq big">$$\theta_j:=\theta_j-\alpha\,\frac{\partial J(\bth)}{\partial\theta_j}$$</div>
+      <ul>
+        <li>Initial values of $\theta_j$? Random (convex function).</li>
+        <li>$\alpha$ is the <b>learning rate</b>. What value?</li>
+        <li>$\dfrac{\partial J(\bth)}{\partial\theta_j}$ is the gradient (direction of maximum slope). We step the opposite way: downhill.</li>
+      </ul>
+      <p class="why">Try α = 0.3, 1.0, 1.7 and 2.1 on the right (here J″ = 1).</p>
+    </div>
+    <div class="widget" data-fig="gd1">
+      <svg class="fig" aria-label="Gradient descent steps on a parabola"></svg>
+      <div class="ctl"><label for="gd1-a">Learning rate α</label><input type="range" id="gd1-a" data-k="a" min="0.05" max="2.3" step="0.05" value="0.3"><span class="v" data-v="a">0.30</span></div>
+      <div class="ro"><div class="m"><span>error factor 1 − α</span><b data-r="f">–</b></div><div class="m" style="flex:1"><span>behaviour</span><b data-r="b">–</b></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide u">
+  <h2>Linear Regression – Gradient Descent</h2>
+  <p>How do we select the correct $\alpha$?</p>
+  <svg class="fig" data-fig="alpha3" aria-label="Gradient descent with a too low, a good and a too high learning rate"></svg>
+  <div class="note step"><p>Each step multiplies the distance to the minimum by $(1-\alpha J'')$. It shrinks only if $|1-\alpha J''|\lt1$, i.e. $0\lt\alpha\lt 2/J''$. With many parameters: $0\lt\alpha\lt 2/\lambda_{\max}\big(\tfrac1m\bX^\top\bX\big)$.</p></div>
+</section>
+
+<section class="slide u">
+  <h2>Linear Regression – Gradient Descent</h2>
+  <p>Repeat until convergence (and <b><u>simultaneously</u></b> among all parameters, i.e. for $j\in\{0,\dots,n\}$): $\quad\theta_j:=\theta_j-\alpha\,\dfrac{\partial J(\bth)}{\partial\theta_j}$. &nbsp;What is $\dfrac{\partial J(\bth)}{\partial\theta_j}$?</p>
+  <div class="cols c64">
+    <div class="stack" style="gap:4px">
+      <div class="eq">$$\frac{\partial J(\bth)}{\partial\theta_j}=\frac{\partial\Big(\frac{1}{2m}\sum_{i=1}^m\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)^2\Big)}{\partial\theta_j}$$</div>
+      <div class="eq step">$$=\frac{1}{2m}\sum_{i=1}^m\frac{\partial\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)^2}{\partial\theta_j}\qquad\text{(the derivative of a sum is the sum of derivatives)}$$</div>
+      <div class="eq step">$$=\frac{1}{m}\sum_{i=1}^m\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)\cdot\frac{\partial\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)}{\partial\theta_j}\qquad\text{(chain rule: the 2 cancels the }\tfrac12)$$</div>
+      <div class="eq step">$$=\frac{1}{m}\sum_{i=1}^m\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)\cdot x_j^{(i)}\qquad\Big(h_{\bth}=\textstyle\sum_k\theta_kx_k\ \Rightarrow\ \frac{\partial h_{\bth}}{\partial\theta_j}=x_j\Big)$$</div>
+    </div>
+    <div class="stack step" style="gap:18px;padding-top:40px">
+      <div class="bluebox">$$\theta_j:=\theta_j-\alpha\,\frac{1}{m}\sum_{i=1}^{m}\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)\cdot x_j^{(i)}$$</div>
+      <p>"<b>batch</b>" gradient descent.<br>(the $m$ training samples in each step).</p>
+      <p class="why">Each example pushes $\theta_j$ by (its error) × (its input). Examples already well predicted barely push.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide u">
+  <h2>Linear Regression – Gradient Descent</h2>
+  <p>How do we make sure G.D. is working?</p>
+  <ul>
+    <li>$J(\bth)$ decreases for every step. If not, $\alpha$ is too large or there is a bug.</li>
+    <li>If it decreases too slowly, $\alpha$ is too small.</li>
+  </ul>
+  <svg class="fig" data-fig="loss-curves" aria-label="Loss against epoch for four learning rates, and loss against learning rate on a log scale"></svg>
+  <p>Try and select a consistent $\alpha$. Examples: 0.001, 0.003, 0.01, 0.03 <span class="muted">(right: a learning-rate sweep; pick a value just before the loss blows up).</span></p>
+</section>
+
+<section class="slide u">
+  <h2>Linear Regression – Normal Equation.</h2>
+  <div class="stack" style="gap:8px">
+    <div class="cols c46" style="align-items:center"><p>Matrix notation:</p>
+      <div class="eq">$$\by=\begin{pmatrix}y^{(1)}\\y^{(2)}\\\vdots\\y^{(m)}\end{pmatrix}_{m\times1},\quad \bth=\begin{pmatrix}\theta_0\\\theta_1\\\vdots\\\theta_n\end{pmatrix}_{(n+1)\times1},\quad \bX=\begin{pmatrix}-(\bx^{(1)})^\top-\\-(\bx^{(2)})^\top-\\\vdots\\-(\bx^{(m)})^\top-\end{pmatrix}=\begin{pmatrix}1&amp;x_1^{(1)}&amp;\cdots&amp;x_n^{(1)}\\1&amp;x_1^{(2)}&amp;\cdots&amp;x_n^{(2)}\\\vdots&amp;\vdots&amp;\ddots&amp;\vdots\\1&amp;x_1^{(m)}&amp;\cdots&amp;x_n^{(m)}\end{pmatrix}_{m\times(n+1)}$$</div></div>
+    <div class="cols c46 step" style="align-items:center"><p>Taking this into account:</p>
+      <div class="eq">$$\hat\by=\bX\bth=\begin{pmatrix}(\bx^{(1)})^\top\bth\\\vdots\\(\bx^{(m)})^\top\bth\end{pmatrix}_{m\times1},\qquad \mathbf{E}_{m\times1}=\by-\hat\by=\by-\bX\bth$$</div></div>
+    <div class="cols c46 step" style="align-items:center"><p>And finally:</p>
+      <div class="eq">$$J(\bth)=(\by-\bX\bth)^\top(\by-\bX\bth)=\by^\top\by-\by^\top\bX\bth-\bth^\top\bX^\top\by+\bth^\top\bX^\top\bX\bth$$</div></div>
+    <div class="cols step" style="align-items:center">
+      <p>We can optimize by equating $\nabla_{\bth}J=\bzero$ &nbsp;$\big((n+1)\times1\big)$.</p>
+      <p><b>It turns out that there is a known closed-form solution!</b></p>
+    </div>
+  </div>
+</section>
+
+<section class="slide u">
+  <h2>Linear Regression – Normal Equation.</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:10px">
+      <div class="eq">$$\nabla_{\bth}J(\bth)=\nabla_{\bth}\big(\by^\top\by-\by^\top\bX\bth-\bth^\top\bX^\top\by+\bth^\top\bX^\top\bX\bth\big)$$</div>
+      <div class="eq step">$$=0-\bX^\top\by-\bX^\top\by+2\bX^\top\bX\bth=-2\bX^\top\by+2\bX^\top\bX\bth$$</div>
+      <p class="step">So we want to solve $\ \bX^\top\bX\bth=\bX^\top\by$ &nbsp;(the "normal equations").</p>
+      <div class="bluebox step">$$\bth=(\bX^\top\bX)^{-1}\bX^\top\by$$</div>
+      <ul class="step"><li>Unique only if $\bX^\top\bX$ is invertible (can be replaced with the pseudo-inverse).</li><li>Slow if $n\gt10\,000$ (use gradient descent).</li></ul>
+      <p class="why step">Geometrically: $\bX^\top(\by-\bX\bth)=\bzero$ says the error is perpendicular to every column of $\bX$. $\hat\by$ is the projection of $\by$ onto the columns.</p>
+    </div>
+    <div class="stack">
+      <div class="hint"><div class="hd">HINT 1</div><div class="bd">
+        <div class="eq" style="font-size:19px">$$\nabla_{\bth}(\ba^\top\bth)=\nabla_{\bth}(a_0\theta_0+\dots+a_n\theta_n)=\ba,\qquad\nabla_{\bth}(\bth^\top\ba)=\ba$$</div></div></div>
+      <div class="hint"><div class="hd">HINT 2</div><div class="bd">
+        <div class="eq" style="font-size:18px">$$\nabla_{\bth}(\bth^\top\bX^\top\bX\bth)=2\bX^\top\bX\bth$$
+        $$\bth^\top\bX^\top\bX\bth=\sum_{i=0}^n\sum_{j=0}^n[\bX^\top\bX]_{ij}\theta_i\theta_j$$
+        $$\frac{\partial}{\partial\theta_k}=\sum_{j}[\bX^\top\bX]_{kj}\theta_j+\sum_{i}[\bX^\top\bX]_{ik}\theta_i=2\big[\bX^\top\bX\bth\big]_k$$</div>
+        <p class="why">using that $\bX^\top\bX$ is symmetric.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide u">
+  <h2>Linear Regression – Normal Equation.</h2>
+  <div class="stack" style="gap:12px;max-width:1080px">
+    <p>A critical point (where $\nabla_{\bth}J=\bzero$) is not automatically a minimum: this requires a second-order check. The Hessian is</p>
+    <div class="eq big">$$\nabla^2_{\bth}J(\bth)=2\bX^\top\bX.$$</div>
+    <p class="step"><b>Positive semi-definiteness holds for any $\bX$.</b> For an arbitrary vector $\bv$:</p>
+    <div class="eq big step">$$\bv^\top(\bX^\top\bX)\bv=(\bX\bv)^\top(\bX\bv)=\norm{\bX\bv}^2\ge0$$</div>
+    <p class="step">Since the Hessian is positive semi-definite everywhere, $J(\bth)$ is a <b>convex</b> function of $\bth$. For a convex function, every critical point is automatically a <b>global minimum</b>: there are no saddle points or local maxima to worry about.</p>
+    <p class="step"><b>If $\bX^\top\bX$ is invertible</b>, it is positive semi-definite with no zero eigenvalues, hence <b>positive definite</b>: $\norm{\bX\bv}^2\gt0$ for all $\bv\ne\bzero$. This makes $J(\bth)$ <b>strictly convex</b>, so the minimum is not merely global but <b>unique</b>, consistent with the uniqueness argument above.</p>
+  </div>
+</section>
+
+<section class="slide u">
+  <h2>Linear Regression – Newton method.</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:8px">
+      <p>Newton's method for optimization updates a guess $\bth_{\text{old}}$ via:</p>
+      <div class="eq">$$\bth_{\text{new}}=\bth_{\text{old}}-\big[\nabla^2_{\bth}J(\bth_{\text{old}})\big]^{-1}\nabla_{\bth}J(\bth_{\text{old}})$$</div>
+      <p class="step">Plug in the results from the previous slides:</p>
+      <div class="eq step">$$\nabla_{\bth}J(\bth_{\text{old}})=-2\bX^\top\by+2\bX^\top\bX\bth_{\text{old}},\qquad\nabla^2_{\bth}J(\bth_{\text{old}})=2\bX^\top\bX\ \ (\text{constant})$$</div>
+      <p class="step">Substituting, starting from <i>any</i> $\bth_{\text{old}}$:</p>
+      <div class="eq step">$$\bth_{\text{new}}=\bth_{\text{old}}-(2\bX^\top\bX)^{-1}\big(-2\bX^\top\by+2\bX^\top\bX\bth_{\text{old}}\big)$$
+      $$=\bth_{\text{old}}-(\bX^\top\bX)^{-1}\bX^\top\bX\,\bth_{\text{old}}+(\bX^\top\bX)^{-1}\bX^\top\by=\bth_{\text{old}}-\bth_{\text{old}}+(\bX^\top\bX)^{-1}\bX^\top\by$$
+      $$=(\bX^\top\bX)^{-1}\bX^\top\by$$</div>
+    </div>
+    <div class="stack step" style="gap:14px;padding-top:30px">
+      <div class="note"><p>The $\bth_{\text{old}}$ terms cancel exactly, regardless of the starting point.</p></div>
+      <p class="small"><b>Interpretation.</b> Because $J(\bth)$ is exactly quadratic, its Hessian $2\bX^\top\bX$ is constant. Newton's method, which normally needs many iterations, lands <b>exactly</b> on the global minimum in a <b>single step</b>, from any starting point.</p>
+      <p class="small">The normal equation is precisely this one Newton step. Gradient descent takes many small steps to the same point; Newton reaches it at once, at the cost of computing and inverting $\bX^\top\bX$. That is why it is impractical for large $n$ (slow if $n\gt10\,000$).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide u">
+  <h2>Linear Regression – lab 0: OLS from scratch</h2>
+  <div class="stack center grow" style="gap:24px">
+    <div class="note" style="max-width:820px;text-align:left"><p><b>Simple Linear Regression.</b> The goal of this notebook is to demonstrate a linear regression model from the ground up using NumPy: the cost function, gradient descent, the normal equation, vectorisation, and the effect of the initial θ and the learning rate.</p></div>
+    <p style="font-size:30px"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/machina_learning/lab%20-%20Ordinary%20Least%20Squares%20Regression.ipynb" target="_blank" rel="noopener">Lab OLR</a></p>
+    <p class="muted">machina_learning/lab - Ordinary Least Squares Regression.ipynb</p>
+  </div>
+</section>
+
+<section class="slide u">
+  <h2>Linear Regression – Feature engineering</h2>
+  <div class="cols">
+    <div class="stack">
+      <ul>
+        <li>Make new features that represent important qualities. For example:
+          <ul><li>$x_1$ is the length of a property.</li><li>$x_2$ is the width of a property.
+            <ul><li>Make the new feature $x_3=x_1\cdot x_2$: just a new column of your dataset.</li></ul></li></ul></li>
+        <li>Polynomial regression. Make new features $x_1^p$ for any $p$.</li>
+        <li>Logarithmic regression.</li>
+      </ul>
+      <svg class="fig" data-fig="feat-log" aria-label="Data following a logarithmic curve, fitted with a log feature"></svg>
+    </div>
+    <div class="stack" style="gap:20px">
+      <svg class="fig" data-fig="lin-poly" aria-label="A straight line and a quadratic fitted to the same curved data"></svg>
+      <p class="small">Still <b>linear regression</b>: linear in the parameters $\bth$, whatever the features are.</p>
+      <ul><li>Feature scaling for s.g.d.</li><li>Regularization.</li></ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide u">
+  <h2>Linear Regression – Feature encoding</h2>
+  <p>Data is not always numerical. You must encode the categorical data to numbers before fitting your model.</p>
+  <div class="cols c64">
+    <ul>
+      <li>Ordinal Variables.
+        <ul><li>The "categories" argument as a list with the rank order of all expected labels.</li><li>Ordinal Encoding: substitute names for numbers between 1 and C.
+          <ul><li>Bad → 1, Good → 2, Excellent → 3</li></ul></li></ul></li>
+      <li>Nominal Variables (no ordered relation).
+        <ul><li>One-Hot Encoding – 1 bit per category (new "features")
+          <ul><li>Cow → [1,0,0], Dog → [0,1,0], Cat → [0,0,1]</li></ul></li>
+        <li>Dummy Encoding – C categories with C−1 binary variables.
+          <ul><li>Cow → [1,0], Dog → [0,1], Cat → [0,0]</li><li>Same data is represented.</li><li>For algorithms with intercept term (such as linear regression).</li><li>One-Hot Encoding makes $\bX^\top\bX$ non-invertible (linear dependence).</li></ul></li></ul></li>
+    </ul>
+    <div class="stack" style="gap:14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:center;font-size:19px">
+        <div style="grid-column:span 2;justify-self:center;background:var(--orange);color:#fff;padding:6px 18px">Categorical</div>
+        <div style="background:var(--green);color:#fff;padding:6px">Nominal</div><div style="background:var(--blue);color:#fff;padding:6px">Ordinal</div>
+        <div style="border:1px solid var(--line);padding:8px">pen · pencil · eraser</div><div style="border:1px solid var(--line);padding:8px">excellent · good · bad</div>
+        <div style="border:1px solid var(--line);padding:8px">cow · dog · cat</div><div style="border:1px solid var(--line);padding:8px">fantastic · okay · don't like</div>
+      </div>
+      <div class="warnbox step"><p class="small"><b>Why the trap?</b> Every row has exactly one 1, so $d_1+\dots+d_C=1=x_0$. One column is a combination of others → $\bX^\top\bX$ is singular. Dropping one level (the reference) fixes it.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide u">
+  <h2>Linear Regression – Feature scaling</h2>
+  <div class="cols">
+    <div class="stack">
+      <ul>
+        <li>Why? It helps with convergence.</li>
+        <li>Normalization (or Min-Max scaling):
+          <ul><li>$X'=\dfrac{X-X_{\min}}{X_{\max}-X_{\min}}$</li><li>Values between 0 and 1.</li></ul></li>
+        <li>Standardization (values are centered around the mean with a unit standard deviation):
+          <ul><li>$X'=\dfrac{X-\mu}{\sigma}$</li><li>Not restricted to a particular range.</li></ul></li>
+      </ul>
+      <p>When to use each? Not clear.</p>
+      <ul class="small"><li>Data does not follow a Gaussian distribution (Normalization?)</li><li>Outliers do not affect standardization as much.</li></ul>
+      <p class="tiny"><a href="https://www.analyticsvidhya.com/blog/2020/04/feature-scaling-machine-learning-normalization-standardization/" target="_blank" rel="noopener">analyticsvidhya.com: feature scaling, normalization vs standardization</a></p>
+    </div>
+    <div class="widget" data-fig="gd2">
+      <svg class="fig" aria-label="Contours of the cost with a gradient descent path, before and after scaling"></svg>
+      <div class="ctl"><span class="seg" role="group" aria-label="Feature scaling"><button type="button" data-mode="raw" aria-pressed="true">Without scaling</button><button type="button" data-mode="std" aria-pressed="false">After scaling</button></span></div>
+      <div class="ro"><div class="m"><span>condition number</span><b data-r="k">–</b></div><div class="m"><span>steps to converge</span><b data-r="n">–</b></div></div>
+      <p class="why">After scaling, gradient-descent steps are updated at the same rate for all the features.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide u">
+  <h2>Linear Regression – Regularization</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:14px">
+      <ul>
+        <li>Polynomial regression of degree $m-1$ through $m$ points → $J(\bth)=0$.</li>
+        <li>Good model for unseen samples?</li>
+      </ul>
+      <ul class="small"><li><b>Underfitting</b>: too simple, high error everywhere.</li><li><b>Just right</b>: follows the pattern, not the noise.</li><li><b>Overfitting</b>: memorises the noise, fails on new samples.</li></ul>
+      <p class="small">Move the <b>degree</b> to see underfitting, "just right" and overfitting. Then, at degree 15, raise <b>λ</b>: the impact of regularization.</p>
+    </div>
+    <div class="widget" data-fig="overfit">
+      <svg class="fig" aria-label="Polynomial fit to 20 noisy points from a sine curve"></svg>
+      <div class="ctl"><label for="overfit-d">Degree</label><input type="range" id="overfit-d" data-k="d" min="0" max="15" step="1" value="1"><span class="v" data-v="d">1</span></div>
+      <div class="ctl"><label for="overfit-l">λ (log scale)</label><input type="range" id="overfit-l" data-k="l" min="-6" max="1" step="0.25" value="-6"><span class="v" data-v="l">0</span></div>
+      <div class="ro"><div class="m"><span>train RMSE</span><b data-r="tr">–</b></div><div class="m"><span>test RMSE</span><b data-r="te">–</b></div><div class="m" style="flex:1"><span>verdict</span><b data-r="vd">–</b></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide u">
+  <h2>Linear Regression – Regularization</h2>
+  <p>Add a penalization in the cost function to the weights!</p>
+  <ul>
+    <li><b>L2 (Ridge regression)</b>: $\ J(\bth)=\dfrac{1}{2m}\displaystyle\sum_{i=1}^m\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)^2+\lambda\sum_{j=1}^n\theta_j^2\ $ (not $j=0$)
+      <ul><li>Shrinks the coefficients.</li></ul></li>
+    <li><b>L1 (Lasso regression)</b>: $\ J(\bth)=\dfrac{1}{2m}\displaystyle\sum_{i=1}^m\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)^2+\lambda\sum_{j=1}^n|\theta_j|$
+      <ul><li>Forces some of the coefficients to be zero and results in a simpler model (feature selection).</li><li>Not differentiable at 0.</li></ul></li>
+    <li><b>Elastic Net</b>: the combination of the L1 and L2 regularization.</li>
+  </ul>
+  <svg class="fig" data-fig="l1l2" aria-label="Loss contours touching an L1 diamond at a corner, an L2 circle, and an elastic-net shape"></svg>
+</section>
+
+<section class="slide u">
+  <h2>Linear Regression – Metrics</h2>
+  <p>Metrics are used to monitor and measure the performance of a model (during training and testing), and don't need to be differentiable (as losses).</p>
+  <ul style="gap:10px">
+    <li>Mean Square Error (MSE): $\ \dfrac1m\displaystyle\sum_i(y_i-\hat y_i)^2$
+      <ul><li>Squaring factor → more prone to outliers.</li><li>Interpreted in square form.</li></ul></li>
+    <li>Mean Absolute Error (MAE): $\ \dfrac1m\displaystyle\sum_i|y_i-\hat y_i|$
+      <ul><li>Robust towards outliers.</li><li>Non-differentiable.</li><li>Interpretable (used only as metric).</li></ul></li>
+    <li>Root Mean Square Error (RMSE): $\ \sqrt{\dfrac1m\displaystyle\sum_i(y_i-\hat y_i)^2}$
+      <ul><li>Retains the differentiable property of MSE.</li><li>Error interpretation can be done smoothly (same units as $y$).</li></ul></li>
+  </ul>
+</section>
+
+<section class="slide u">
+  <h2>Linear Regression – Metrics</h2>
+  <p><b>"How much (what %) of the total variation in Y (target) is explained by the variation in X (regression line)"</b></p>
+  <div class="cols c64">
+    <div class="stack" style="gap:14px">
+      <ul>
+        <li>Coefficient of determination $\ R^2=1-\dfrac{\sum_i^m(y_i-\hat y_i)^2}{\sum_i^m(y_i-\bar y)^2}$
+          <ul><li>close to 1 (ideal)</li><li>close to 0: couldn't capture any variance</li><li>Vanilla $R^2$ keeps improving when the model overfits the data</li></ul></li>
+      </ul>
+      <p style="padding-left:24px">Best predictor before I knew $X$ vs knowing it<br>(weight of a person vs weight after knowing their height).</p>
+      <ul><li>Adjusted $\ R_a^2=1-\Big(\dfrac{m-1}{m-n-1}\Big)(1-R^2)$, where $m$ is the number of samples and $n$ the number of independent variables.
+        <ul><li>Only increases if adding the actual feature really helps.</li></ul></li></ul>
+    </div>
+    <svg class="fig" data-fig="r2" aria-label="Total variation of a point split into explained and unexplained parts"></svg>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Linear Regression – Probabilistic interpretation</h2>
+  <div class="cols">
+    <div class="stack" style="gap:6px">
+      <p>Assume target variables and inputs are related via:</p>
+      <div class="eq">$$y^{(i)}=\bth^\top\bx^{(i)}+e^{(i)},\qquad e^{(i)}\sim\mathcal N(0,\sigma^2)\ \text{i.i.d.}$$</div>
+      <div class="eq">$$p(e^{(i)})=\frac{1}{\sigma\sqrt{2\pi}}\exp\Big(-\frac{(e^{(i)})^2}{2\sigma^2}\Big)$$</div>
+      <p class="small">which implies that</p>
+      <div class="eq">$$p(y^{(i)}\mid\bx^{(i)};\bth)=\frac{1}{\sigma\sqrt{2\pi}}\exp\Big(-\frac{(y^{(i)}-\bth^\top\bx^{(i)})^2}{2\sigma^2}\Big)$$</div>
+      <p class="small step">Given $\bX$ and $\bth$, the probability of the data is $p(\by\mid\bX;\bth)$. As a function of $\bth$: $L(\bth)=p(\by\mid\bX;\bth)$. Assuming i.i.d. samples:</p>
+      <div class="eq step">$$L(\bth)=\prod_{i=1}^mp(y^{(i)}\mid\bx^{(i)};\bth)=\prod_{i=1}^m\frac{1}{\sigma\sqrt{2\pi}}\exp\Big(-\frac{(y^{(i)}-\bth^\top\bx^{(i)})^2}{2\sigma^2}\Big)$$</div>
+    </div>
+    <div class="stack" style="gap:6px">
+      <p class="small step">To make the problem simpler we maximize the log of $L(\bth)$ (monotonically increasing function):</p>
+      <div class="eq step">$$\ell(\bth)=\log L(\bth)=\sum_{i=1}^m\log\Big(\frac{1}{\sigma\sqrt{2\pi}}\exp\Big(-\frac{(y^{(i)}-\bth^\top\bx^{(i)})^2}{2\sigma^2}\Big)\Big)$$
+      $$=m\log\frac{1}{\sigma\sqrt{2\pi}}-\frac{1}{2\sigma^2}\sum_{i=1}^m\big(y^{(i)}-\bth^\top\bx^{(i)}\big)^2$$</div>
+      <p class="small step">The first term does not depend on $\bth$. Equivalent to minimizing:</p>
+      <div class="bluebox step">$$\frac{1}{2m}\sum_{i=1}^m\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)^2$$</div>
+      <p class="step"><b>Maximum likelihood</b>: choose $\bth$ to make the data as highly probable as possible, i.e., maximize $L(\bth)$. Least squares = MLE under Gaussian noise.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide cover">
+  <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Next: Logistic Regression</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+</div></div>
+<script src="assets/figures.js"></script>
+<script src="assets/deck.js"></script>
+</body>
+</html>

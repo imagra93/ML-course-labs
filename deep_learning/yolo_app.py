@@ -1,6 +1,6 @@
-"""A small object-detection web app around a trained YOLO model (notes_NN/07_object_detection_yolo.ipynb).
+"""A small object-detection web app around a trained YOLO model (deep_learning/object_detection_yolo.ipynb).
 
-Usage, from the notes_NN folder:
+Usage, from the deep_learning folder:
     python yolo_app.py --weights runs/wildlife/weights/best.pt
     python yolo_app.py --weights runs/wildlife/weights/best.pt --share    # temporary public link
 """

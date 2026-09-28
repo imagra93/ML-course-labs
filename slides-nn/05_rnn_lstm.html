@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="author" content="Imanol Granada (imanolgranada@gmail.com)">
+<title>RNNs and LSTMs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="../slides/assets/deck.css">
+<script src="../slides/assets/mathjax-config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
+</head>
+<body data-deck="5 · Recurrent networks and LSTMs">
+<div id="viewport"><div id="stage">
+<section class="slide cover">
+  <div class="inner"><h1>Neural Networks</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Recurrent neural networks and LSTMs</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+<section class="slide">
+  <h2>Recurrent Neural Networks:</h2>
+  <div class="cols">
+    <div class="stack" style="gap:12px">
+      <p>If we want to build a NN for <b>sequential data</b>, a CNN may not be the best fit: speech, text, the S&amp;P 500, Bitcoin…</p>
+      <ul class="small">
+        <li>Sequences have <b>different lengths</b>: an MLP needs a fixed-size input.</li>
+        <li>The <b>order</b> matters, and what happened earlier affects what comes next.</li>
+        <li>The same pattern can appear at any time step: we want to <b>share weights</b> across time, as a CNN shares them across space.</li>
+      </ul>
+      <p class="step"><b>Recurrent neural networks</b>: a class of networks that allow previous outputs to be used as inputs while having <b>hidden states</b>.</p>
+    </div>
+    <svg class="fig" data-fig="embed" aria-label="One-hot vectors versus a word embedding where similar words are close"></svg>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Word embeddings - word2vec</h2>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p>Text → tokens (words or sub-words) → integers → <b>vectors</b>.</p>
+      <ul class="small">
+        <li><b>One-hot</b> $\mathbf o_w\in\{0,1\}^{|V|}$: very sparse, high-dimensional, and every pair of words is equally far apart. No similarity information.</li>
+        <li><b>Embedding</b>: a dense vector $\mathbf e_w\in\R^d$, $d\ll|V|$ (e.g. 50–1,024). Similar words end up close.</li>
+      </ul>
+      <p>An embedding matrix $\bE\in\R^{|V|\times d}$ has one row per word:</p>
+      <div class="bluebox">$$\mathbf e_w=\bE^\top\mathbf o_w\qquad(\text{just a row lookup})$$</div>
+    </div>
+    <div class="stack" style="gap:10px">
+      <p class="step small">$\bE$ is learned like any other weight: by the task itself (<code>nn.Embedding</code>), or beforehand with <b>target/context likelihood models</b>:</p>
+      <ul class="small step"><li><b>word2vec</b>: predict the words around a word (skip-gram), or the word from its neighbours (CBOW).</li><li>Words used in similar contexts get similar vectors: <i>king − man + woman ≈ queen</i>.</li></ul>
+      <p class="step small">The same idea gives embeddings for sentences and documents: the basis of semantic search and RAG (chapter 6).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Typical Recurrent Neural Networks:</h2>
+  <svg class="fig" data-fig="rnn-unroll" aria-label="An RNN cell with a loop, and the same cell unrolled over time steps"></svg>
+  <div class="cols">
+    <div class="eq">$$\bh^{\langle t\rangle}=g_1\big(\bx^{\langle t\rangle}\bW_x+\bh^{\langle t-1\rangle}\bW_h+\bb_h\big)$$</div>
+    <div class="eq">$$\hat\by^{\langle t\rangle}=g_2\big(\bh^{\langle t\rangle}\bW_y+\bb_y\big)$$</div>
+  </div>
+  <p class="small">$\bx^{\langle t\rangle}$: feature vector at time $t$ (e.g. a new word of a sentence). $\hat\by^{\langle t\rangle}$: output at time $t$ (e.g. is this word an entity?). $g_1$ is usually tanh. The hidden state $\bh$ carries the memory.</p>
+</section>
+
+<section class="slide">
+  <h2>Typical Recurrent Neural Networks:</h2>
+  <div class="cols">
+    <table class="t" style="font-size:18px"><tr><th>Advantages</th><th>Drawbacks</th></tr>
+      <tr><td style="font-weight:400">Can process inputs of any length</td><td>Computation is slow (sequential)</td></tr>
+      <tr><td style="font-weight:400">Model size doesn't grow with the input length</td><td>Difficult to access information from a long time ago</td></tr>
+      <tr><td style="font-weight:400">Computation takes historical information into account</td><td>Cannot consider future inputs for the current state</td></tr>
+      <tr><td style="font-weight:400">Weights are shared across time</td><td></td></tr></table>
+    <div class="stack" style="gap:10px">
+      <p><b>Loss function</b>: summed over the time steps,</p>
+      <div class="eq">$$L(\hat\by,\by)=\sum_{t=1}^{T_y}L\big(\hat\by^{\langle t\rangle},\by^{\langle t\rangle}\big)$$</div>
+      <p><b>How do we learn?</b> Backpropagation is done at each point in time: <b>backpropagation through time</b> (BPTT), ordinary backprop on the unrolled graph.</p>
+      <div class="eq">$$\frac{\partial L}{\partial\bW}=\sum_{t=1}^{T}\frac{\partial L^{\langle t\rangle}}{\partial\bW}\Big|_{(t)}$$</div>
+      <p class="small">$\bW_h$ is used at every step, so its gradient is the <b>sum</b> of the per-step contributions (shared weights → gradients add up).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Recurrent Neural Networks - Applications:</h2>
+  <svg class="fig" data-fig="rnn-types" aria-label="One-to-many, many-to-one and many-to-many recurrent networks"></svg>
+  <table class="t" style="font-size:17px"><tr><th>Type</th><th>Example</th><th>How</th></tr>
+    <tr><td>One-to-many</td><td>music or text generation</td><td>feed each output back as the next input</td></tr>
+    <tr><td>Many-to-one</td><td>sentiment of a review</td><td>classify from the last hidden state</td></tr>
+    <tr><td>Many-to-many, same length</td><td>named entity recognition</td><td>one output per input token</td></tr>
+    <tr><td>Many-to-many, different length</td><td>machine translation</td><td>encoder reads everything, decoder writes</td></tr></table>
+</section>
+
+<section class="slide">
+  <h2>Recurrent Neural Networks: vanishing gradients</h2>
+  <div class="cols">
+    <div class="stack" style="gap:8px">
+      <p class="small">RNNs tend to fail when accessing information from a long time ago. Why? With $\bh_t=\tanh(\mathbf a_t)$:</p>
+      <div class="eq step">$$\frac{\partial\bh_t}{\partial\bh_{t-1}}=\mathrm{diag}\big(1-\bh_t^2\big)\bW_h^\top\ \Rightarrow\ \frac{\partial J}{\partial\bh_k}=\frac{\partial J}{\partial\bh_T}\prod_{t=k+1}^T\mathrm{diag}\big(1-\bh_t^2\big)\bW_h^\top$$</div>
+      <p class="step small">Take norms. $\tanh'\le1$, so $\norm{\mathrm{diag}(1-\bh_t^2)}\le1$ and</p>
+      <div class="eq step">$$\Big\lVert\frac{\partial J}{\partial\bh_k}\Big\rVert\le\Big\lVert\frac{\partial J}{\partial\bh_T}\Big\rVert\,\norm{\bW_h}^{\,T-k}$$</div>
+      <ul class="small step"><li>$\norm{\bW_h}\lt1$: the signal from $T-k$ steps back shrinks <b>exponentially</b> (vanishing).</li><li>Largest singular value $\gt1$: it can blow up (exploding) → gradient clipping.</li></ul>
+    </div>
+    <div class="widget" data-fig="vanish">
+      <svg class="fig" aria-label="Gradient size against steps back in time for an RNN and an LSTM"></svg>
+      <div class="ctl"><label for="va-w">RNN: ‖Wₕ‖·tanh′</label><input type="range" id="va-w" data-k="w" min="0.5" max="1.3" step="0.01" value="0.8"><span class="v" data-v="w">0.80</span></div>
+      <div class="ctl"><label for="va-f">LSTM: forget gate f</label><input type="range" id="va-f" data-k="f" min="0.8" max="1" step="0.005" value="0.98"><span class="v" data-v="f">0.98</span></div>
+      <div class="ro"><div class="m"><span>RNN, 50 steps back</span><b data-r="r">–</b></div><div class="m"><span>LSTM, 50 steps back</span><b data-r="l">–</b></div></div>
+      <div class="legend"><span><i style="background:var(--red)"></i>RNN</span><span><i style="background:var(--blue)"></i>LSTM memory path</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>GRU and LSTMs: gates</h2>
+  <div class="cols">
+    <div class="stack" style="gap:12px">
+      <p>To remedy this, several versions of <b>gates</b> have been designed, each with its own purpose, but all with a similar structure:</p>
+      <div class="bluebox">$$\Gamma=\sigma\big(\bx^{\langle t\rangle}\bW+\bh^{\langle t-1\rangle}\mathbf U+\bb\big)\in(0,1)$$</div>
+      <p class="small">A gate is a sigmoid: a <b>soft switch</b> between 0 (block) and 1 (let through), applied element-wise. Although all have the same format, each has its own weights and is used in a different way!</p>
+    </div>
+    <table class="t" style="font-size:18px"><tr><th>Type of gate</th><th>Role</th><th>Used in</th></tr>
+      <tr><td>Update gate $\Gamma_u$</td><td>How much should the past matter now?</td><td>GRU, LSTM</td></tr>
+      <tr><td>Relevance gate $\Gamma_r$</td><td>Drop previous information?</td><td>GRU, LSTM</td></tr>
+      <tr><td>Forget gate $\Gamma_f$</td><td>Erase a cell or not?</td><td>LSTM</td></tr>
+      <tr><td>Output gate $\Gamma_o$</td><td>How much to reveal of a cell?</td><td>LSTM</td></tr></table>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>GRU and LSTMs: the LSTM cell</h2>
+  <div class="cols">
+    <div class="stack" style="gap:4px">
+      <div class="eq" style="font-size:20px">$$\begin{aligned}\bff_t&amp;=\sigma\big([\bh_{t-1},\bx_t]\bW_f+\bb_f\big)&amp;&amp;\text{forget: how much old memory to keep}\\\bi_t&amp;=\sigma\big([\bh_{t-1},\bx_t]\bW_i+\bb_i\big)&amp;&amp;\text{input: how much new content to write}\\\tilde\bc_t&amp;=\tanh\big([\bh_{t-1},\bx_t]\bW_c+\bb_c\big)&amp;&amp;\text{candidate content}\\\bc_t&amp;=\hl{\bff_t\odot\bc_{t-1}+\bi_t\odot\tilde\bc_t}&amp;&amp;\text{memory update (additive)}\\\bo_t&amp;=\sigma\big([\bh_{t-1},\bx_t]\bW_o+\bb_o\big)&amp;&amp;\text{output: how much memory to expose}\\\bh_t&amp;=\bo_t\odot\tanh(\bc_t)\end{aligned}$$</div>
+      <p class="small">Parameters: 4 gate blocks, $4\big(d_h(d_h+d)+d_h\big)$.</p>
+    </div>
+    <svg class="fig" data-fig="lstm-cell" aria-label="An LSTM cell with forget, input and output gates on the cell-state line"></svg>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>GRU and LSTMs: why the gradient survives</h2>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p>Along the memory path:</p>
+      <div class="eq big">$$\frac{\partial\bc_t}{\partial\bc_{t-1}}=\mathrm{diag}(\bff_t)\ \ \Rightarrow\ \ \frac{\partial\bc_T}{\partial\bc_k}\approx\prod_{t=k+1}^T\mathrm{diag}(\bff_t)$$</div>
+      <p class="step">No weight matrix and no squashing derivative in this product: only the forget gates. When the network has learned to remember ($\bff_t\approx1$), the gradient flows back almost unchanged over many steps.</p>
+      <p class="step small">The same idea as the residual connection $\bh=\bx+F(\bx)$: an <b>additive path</b> with a near-identity Jacobian. Tip: initialize the forget-gate bias to a positive value, so the LSTM starts out remembering.</p>
+    </div>
+    <div class="stack" style="gap:10px">
+      <p><b>GRU</b> (Gated Recurrent Unit): a lighter cousin with 2 gates and no separate cell state.</p>
+      <div class="eq">$$\tilde\bh_t=\tanh\big([\Gamma_r\odot\bh_{t-1},\bx_t]\bW+\bb\big),\qquad\bh_t=\Gamma_u\odot\tilde\bh_t+(1-\Gamma_u)\odot\bh_{t-1}$$</div>
+      <p class="small">3 weight blocks instead of 4. Similar accuracy in practice; the LSTM is the safe default for long dependencies.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Other RNN:</h2>
+  <div class="stack" style="gap:12px">
+    <ul class="small">
+      <li>What happens if we model a very non-linear problem? <b>Deep RNNs</b>: stack recurrent layers, the outputs of one are the inputs of the next.</li>
+      <li>What if the output should not only depend on the past (e.g. S&amp;P 500 values) but also on the future (e.g. classifying words in a sentence)? <b>Bidirectional RNNs</b>: one RNN reads left-to-right, another right-to-left; concatenate their states.</li>
+    </ul>
+    <svg class="fig" data-fig="birnn" aria-label="A bidirectional RNN and a deep RNN"></svg>
+    <p class="small"><b>Practicalities:</b> pad sequences to a common length within a batch (and mask the padding), clip gradients (<code>clip_grad_norm_</code>), use the last hidden state (or the mean over time) for many-to-one tasks.</p>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Demo RNN – Sentiment Analysis:</h2>
+  <div class="stack center grow" style="gap:20px">
+    <div class="note" style="max-width:840px;text-align:left"><p class="small"><b>Review sentiment analysis.</b> We build an LSTM recurrent neural network that reaches about 87–88 % accuracy on the IMDB movie-review sentiment dataset. In Colab, select Runtime → Change runtime type → GPU.</p></div>
+    <p style="font-size:28px"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/deep_learning/LSTM_sentiment.ipynb" target="_blank" rel="noopener">Lab LSTM</a></p>
+  </div>
+</section>
+<section class="slide cover">
+  <div class="inner"><h1>Neural Networks</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Next: Attention and transformers</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+</div></div>
+<script src="../slides/assets/figures.js"></script>
+<script src="assets/nn-core.js"></script>
+<script src="assets/fig-nn-rnn.js"></script>
+<script src="../slides/assets/deck.js"></script>
+</body>
+</html>

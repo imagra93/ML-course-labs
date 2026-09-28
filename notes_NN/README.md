@@ -7,9 +7,9 @@ in VS Code or in Colab without running anything.
 
 Everything runs on a CPU in about a minute per notebook, with no downloads: small built-in datasets
 (scikit-learn digits, synthetic data) stand in for Fashion-MNIST, IMDB, the face dataset and GPT-2 used in the labs.
-The exception is notebook 07, which downloads a small detection dataset (≈100 MB) and pretrained YOLO weights
-(≈5 MB), fine-tunes the model (about 1 minute on a GPU, 5–10 on a CPU) and ends with a small web app
-([`yolo_app.py`](yolo_app.py)).
+
+Object detection with YOLO, formerly notebook 07 here, is now a lab:
+[`deep_learning/object_detection_yolo.ipynb`](../deep_learning/object_detection_yolo.ipynb).
 
 | # | Notebook | Contents | Related labs |
 |---|---|---|---|
@@ -20,7 +20,7 @@ The exception is notebook 07, which downloads a small detection dataset (≈100 
 | 04 | [Embeddings, RNNs and LSTMs](04_rnn_lstm.ipynb) | tokens and embeddings, RNN, BPTT and vanishing gradients (derivation), LSTM/GRU and why the gradient survives, practicalities, memory experiment | LSTM_sentiment |
 | 05 | [Attention and transformers](05_attention_transformers.ipynb) | language modelling, BPE, attention, the √d scaling (derivation), permutation equivariance (proof), causal mask, multi-head, transformer block, GPT parameter count, a tiny GPT trained from scratch, decoding strategies | Text_Generation_with_Transformers |
 | 06 | [Embeddings, retrieval and RAG](06_embeddings_rag.ipynb) | cosine vs Euclidean, TF-IDF, LSA/SVD, word2vec and contrastive encoders, nearest-neighbour search, recall@k/MRR, the RAG pipeline | rag_embeddings_demo |
-| 07 | [Object detection with YOLO](07_object_detection_yolo.ipynb) | detection vs classification, box formats, IoU/GIoU (scale invariance, IoU 0.5 = shift by L/3), dense prediction and the YOLO11 head (anchor-free, DFL), Task-Aligned assignment and the loss, NMS from scratch, precision–recall and mAP from scratch (checked against Ultralytics), label errors, fine-tuning YOLO11n on African Wildlife, ONNX export, a Gradio app | Demo_CNN_Multiclass |
+| – | [Object detection with YOLO](../deep_learning/object_detection_yolo.ipynb) (now a lab) | detection vs classification, box formats, IoU/GIoU (scale invariance, IoU 0.5 = shift by L/3), dense prediction and the YOLO11 head (anchor-free, DFL), Task-Aligned assignment and the loss, NMS from scratch, precision–recall and mAP from scratch (checked against Ultralytics), label errors, fine-tuning YOLO11n on African Wildlife, ONNX export, a Gradio app | Demo_CNN_Multiclass |
 
 ## Notation
 

@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="author" content="Imanol Granada (imanolgranada@gmail.com)">
+<title>Training Neural Networks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="../slides/assets/deck.css">
+<script src="../slides/assets/mathjax-config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
+</head>
+<body data-deck="3 · Training: optimizers, regularization and layers">
+<div id="viewport"><div id="stage">
+<section class="slide cover">
+  <div class="inner"><h1>Neural Networks</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Training: mini-batches, optimizers, dropout, BatchNorm</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+<section class="slide">
+  <h2>Gradient Descent for NN:</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:10px">
+      <p>To optimize the weights of a neural network we apply gradient descent, <b>but</b>:</p>
+      <ul>
+        <li>Multi-layer NN are <b>not convex</b>.
+          <ul><li>Small NN → seed it at random points.</li><li>Large NN have more freedom and will likely escape from potential local-minima traps (empirical observation).</li><li>Optimizers → different from vanilla gradient descent.</li></ul></li>
+        <li>Some activation functions are not differentiable.
+          <ul><li>Only at some points (e.g. 0 for ReLU).</li><li>We still have sub-derivatives.</li></ul></li>
+      </ul>
+      <p class="tiny"><a href="https://www.quora.com/Are-neural-nets-always-convex-with-respect-to-the-weights-And-if-not-how-does-gradient-descent-work-so-well" target="_blank" rel="noopener">Why does gradient descent work so well on non-convex nets?</a> · <a href="https://www.quora.com/Why-does-ReLU-work-with-backprops-if-its-non-differentiable" target="_blank" rel="noopener">ReLU and backprop</a></p>
+    </div>
+    <div class="stack" style="gap:12px">
+      <div class="note"><p class="small">In high dimensions most flat points are <b>saddle points</b>, not bad local minima: some directions go up, others go down. Noise in the gradient (mini-batches) and momentum help to leave them.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Gradient Descent variations:</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:8px">
+      <ul class="small">
+        <li><b>Batch gradient descent:</b> feed the entire dataset, average the cost, calculate derivatives and update. Used in LinReg and LogReg (convex problems).</li>
+        <li><b>Stochastic gradient descent:</b> feed 1 sample, calculate the cost and derivatives, and update. Many more updates, not always towards the minimum (which can be good with non-convexity).</li>
+        <li><b>Mini-batch gradient descent:</b> feed a mini-batch of samples, average the cost, calculate derivatives and update.
+          <ul><li>The same benefits as stochastic, but the calculation for the mini-batch is <b>vectorized</b>: speed.</li><li>Typically 16, 32, 64 or 128 (computers are prepared to parallelize this).</li></ul></li>
+      </ul>
+      <div class="eq">$$\bth:=\bth-\alpha\,\frac{1}{|\mathcal B|}\sum_{i\in\mathcal B}\nabla_{\bth}\ell\big(\bx^{(i)},y^{(i)};\bth\big)$$</div>
+      <p class="small">One <b>epoch</b> = one pass over the data = $m/|\mathcal B|$ updates. The mini-batch gradient is an unbiased but noisy estimate of the full one: its variance shrinks like $1/|\mathcal B|$.</p>
+    </div>
+    <div class="widget" data-fig="gd-variants">
+      <svg class="fig" aria-label="Paths of batch, stochastic and mini-batch gradient descent on the loss contours of a linear regression"></svg>
+      <div class="ctl"><span class="seg" role="group" aria-label="Variant"><button type="button" data-k="batch" aria-pressed="true">Batch</button><button type="button" data-k="sgd" aria-pressed="false">Stochastic</button><button type="button" data-k="mini" aria-pressed="false">Mini-batch (16)</button></span></div>
+      <div class="ro"><div class="m" style="flex:1"><span>what happens</span><b data-r="i" style="font-size:17px">–</b></div><div class="m"><span>updates</span><b data-r="n">–</b></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Optimizers - Idea:</h2>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p>Mini-batch updates are very noisy → <b>optimizers</b>. First idea: <b>use momentum!</b></p>
+      <ul class="small"><li>It accelerates the convergence towards the relevant direction and reduces the fluctuation in the irrelevant one.</li><li>Helps with plateaus and local minima: like a ball rolling downhill.</li></ul>
+      <div class="bluebox">$$\bm\leftarrow\beta\,\bm+(1-\beta)\,\nabla_{\bth}J,\qquad\bth\leftarrow\bth-\alpha\,\bm$$</div>
+      <p class="step small"><b>What is $\bm$?</b> Unroll it: $\ \bm_t=(1-\beta)\sum_{k=1}^t\beta^{t-k}\bg_k$. An <b>exponential moving average</b> of the past gradients, over roughly the last $\frac{1}{1-\beta}$ steps ($\beta=0.9$ → 10 steps).</p>
+      <p class="step small">Components that keep the same sign add up; components that flip sign (the zig-zag) cancel out.</p>
+    </div>
+    <pre style="font-family:var(--mono);font-size:15px;line-height:1.55;background:#f2f2f2;padding:14px 18px;margin:0;white-space:pre;align-self:start">velocity = 0
+beta = 0.9                     # momentum factor
+while loss &gt; 0.01:             # optimization loop
+    loss, grad = get_current_parameters(w)
+    velocity = beta * velocity + (1 - beta) * grad
+    w = w - learning_rate * velocity</pre>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Optimizers - RMSProp and Adam</h2>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p><b>RMSProp</b> divides each parameter's step by a running RMS of its gradient: every parameter moves at a similar rate, whatever its gradient scale.</p>
+      <div class="eq">$$\bs\leftarrow\beta_2\bs+(1-\beta_2)\,\bg\odot\bg,\qquad\bth\leftarrow\bth-\alpha\frac{\bg}{\sqrt{\bs}+\varepsilon}$$</div>
+      <p class="step"><b>Adam</b> = momentum + RMSProp + bias correction:</p>
+      <div class="eq step">$$\bm_t=\beta_1\bm_{t-1}+(1-\beta_1)\bg_t,\quad\bs_t=\beta_2\bs_{t-1}+(1-\beta_2)\bg_t^2$$</div>
+      <div class="bluebox step">$$\hat\bm_t=\frac{\bm_t}{1-\beta_1^t},\ \ \hat\bs_t=\frac{\bs_t}{1-\beta_2^t},\ \ \bth_t=\bth_{t-1}-\alpha\frac{\hat\bm_t}{\sqrt{\hat\bs_t}+\varepsilon}$$</div>
+      <p class="step small">Defaults: $\beta_1=0.9$, $\beta_2=0.999$, $\varepsilon=10^{-8}$, $\alpha=10^{-3}$. The most popular method.</p>
+    </div>
+    <div class="stack" style="gap:10px">
+      <p class="step"><b>Why the bias correction?</b> Both averages start at 0. With $\bm_0=\bzero$:</p>
+      <div class="eq step">$$\E[\bm_t]=(1-\beta_1)\sum_{k=1}^t\beta_1^{t-k}\,\E[\bg]=(1-\beta_1)\frac{1-\beta_1^t}{1-\beta_1}\E[\bg]=(1-\beta_1^t)\,\E[\bg]$$</div>
+      <p class="step small">(a geometric series). Dividing by $1-\beta_1^t$ removes the bias towards 0 in the first steps. Same for $\bs_t$.</p>
+      <table class="t step" style="font-size:16px"><tr><th>Method</th><th>Idea</th><th>to tune</th></tr><tr><td>Momentum</td><td>dampens oscillations</td><td>α, β</td></tr><tr><td>RMSProp</td><td>per-parameter step size</td><td>α, β₂</td></tr><tr><td>Adam</td><td>both, bias-corrected</td><td>α, β₁, β₂, ε</td></tr></table>
+      <p class="tiny"><a href="https://www.deeplearning.ai/ai-notes/optimization/index.html" target="_blank" rel="noopener">deeplearning.ai: optimization</a></p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Optimizers - Examples:</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="optim">
+      <svg class="fig" aria-label="Paths of gradient descent, momentum, RMSProp and Adam on a narrow valley"></svg>
+      <div class="ctl"><label for="op-lr">learning rate α (log)</label><input type="range" id="op-lr" data-k="lr" min="-2" max="0.3" step="0.05" value="-0.5"><span class="v" data-v="lr">0.316</span></div>
+    </div>
+    <div class="stack" style="gap:10px">
+      <p class="small">A narrow valley: the loss is 25× more curved along $w_2$ than along $w_1$. 60 steps each, from the same start.</p>
+      <div class="ro" style="flex-direction:column">
+        <div class="m"><span style="color:#7f7f7f">● gradient descent · final loss</span><b data-r="gd">–</b></div>
+        <div class="m"><span style="color:#4472c4">● momentum</span><b data-r="mom">–</b></div>
+        <div class="m"><span style="color:#70ad47">● RMSProp</span><b data-r="rms">–</b></div>
+        <div class="m"><span style="color:#c00000">● Adam</span><b data-r="adam">–</b></div>
+      </div>
+      <p class="why">GD zig-zags across the narrow direction and crawls along the long one; push α up and it diverges. Adam rescales both directions to a similar step size.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Learning-rate schedules and the training loop</h2>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <svg class="fig" data-fig="sched" aria-label="Constant, step decay and warm-up plus cosine learning-rate schedules"></svg>
+      <p class="small">Large steps early to move fast, small steps late to settle. <b>Warm-up</b> avoids huge first updates while Adam's statistics are still poor (standard for transformers).</p>
+    </div>
+    <pre style="font-family:var(--mono);font-size:15px;line-height:1.5;background:#f2f2f2;padding:14px 18px;margin:0;white-space:pre;align-self:start">model = MLP()
+opt = torch.optim.AdamW(model.parameters(),
+                        lr=1e-3, weight_decay=1e-2)
+sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs)
+for epoch in range(epochs):
+    model.train()                    # dropout / BN on
+    for xb, yb in train_loader:      # mini-batches
+        loss = loss_fn(model(xb), yb)
+        opt.zero_grad()
+        loss.backward()              # backprop
+        opt.step()                   # update
+    sched.step()
+    model.eval()                     # dropout off, BN running stats
+    with torch.no_grad():
+        val_loss = evaluate(model, val_loader)</pre>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Overfitting vs underfitting in NN:</h2>
+  <p>In neural networks we should always verify that the model is generalizing well. It is quite easy to overfit your data.</p>
+  <svg class="fig" data-fig="curves" aria-label="Training and validation loss for underfitting, a good fit and overfitting"></svg>
+  <div class="cols">
+    <div class="stack"><p class="small"><b>If your model under-fits your data:</b></p><ul class="small"><li>Make your model deeper (or wider).</li><li>Try new architectures.</li><li>Train longer, tune the learning rate.</li></ul></div>
+    <div class="stack"><p class="small"><b>If your model overfits your data:</b></p><ul class="small"><li>Use more data (also data augmentation).</li><li>Simplify your architecture (depth or number of units).</li><li>Apply L1 and/or L2 regularization to the weights; apply dropout; early stopping. Combine many of the above.</li></ul></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Regularization: weight decay</h2>
+  <div class="cols">
+    <div class="stack" style="gap:12px">
+      <p>Add $\frac\lambda2\norm{\bth}^2$ to the loss. The gradient gains $\lambda\bth$, so every SGD step first <b>shrinks</b> the weights:</p>
+      <div class="eq big">$$\bth\leftarrow(1-\alpha\lambda)\,\bth-\alpha\,\nabla_{\bth}J$$</div>
+      <p class="step">Same as Ridge in the ML part: a Gaussian prior on the weights, smoother functions.</p>
+      <p class="step small"><b>AdamW.</b> With Adam, adding $\lambda\bth$ to the gradient gets rescaled by $1/\sqrt{\hat\bs}$, so large-gradient weights are barely decayed. AdamW applies the decay <b>directly</b> to the weights, separate from the adaptive step. It is the standard for transformers.</p>
+    </div>
+    <div class="stack" style="gap:12px">
+      <p><b>Data augmentation.</b> Random, <b>label-preserving</b> transformations of the training inputs each epoch (flips, crops, rotations, colour jitter; noise for audio). The model rarely sees the same input twice: like having more data, and it builds in the invariances.</p>
+      <p class="small warnbox">Only use transformations that don't change the label: a horizontal flip is fine for clothes, not for digits.</p>
+      <p><b>Early stopping.</b> Monitor the validation loss, keep the best checkpoint, stop after <code>patience</code> epochs without improvement. Training time acts as a regularizer.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Dropout:</h2>
+  <div class="cols">
+    <div class="widget" data-fig="dropout">
+      <svg class="fig" aria-label="A network with a random set of hidden units switched off"></svg>
+      <div class="ctl"><label for="do-p">dropout rate p</label><input type="range" id="do-p" data-k="p" min="0" max="0.8" step="0.05" value="0.3"><span class="v" data-v="p">0.30</span>
+        <button type="button" data-k="new" style="border:1px solid var(--blue);background:#fff;color:var(--blue);font:700 15px var(--font);padding:5px 12px;cursor:pointer">new mini-batch</button></div>
+      <div class="ctl"><span class="seg" role="group" aria-label="Mode"><button type="button" data-m="train" aria-pressed="true">training</button><button type="button" data-m="eval" aria-pressed="false">prediction</button></span><span class="small">units off: <b data-r="n">–</b></span></div>
+    </div>
+    <div class="stack" style="gap:10px">
+      <p>Inactivate some neurons in <b>training</b> (helps with regularization), controlled by a "rate" $p$. All neurons are used in validation / prediction!</p>
+      <p class="step"><b>Inverted dropout:</b> survivors are scaled up so the expectation is preserved:</p>
+      <div class="eq step">$$\tilde a_j=\frac{r_j}{1-p}\,a_j,\quad r_j\sim\text{Bernoulli}(1-p)\ \Rightarrow\ \E[\tilde a_j]=\frac{1-p}{1-p}a_j=a_j$$</div>
+      <ul class="small step"><li>A unit cannot rely on any other unit being present: more robust, redundant features.</li><li>Like training a huge <b>ensemble</b> of thinned networks that share weights (compare bagging).</li><li>Typical $p$: 0.1–0.5. Validation loss below training loss? Normal with dropout: training runs a handicapped network.</li></ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Batchnorm layer:</h2>
+  <div class="cols">
+    <div class="stack" style="gap:8px">
+      <p class="small">Helps correct training that is slow or unstable. In gradient-based algorithms it's a good idea to put all your data on a common scale; maybe also normalizing <b>inside</b> the network would be better!</p>
+      <p class="small">A batch-normalization layer looks at each batch as it comes in, first normalizing it with its own mean and standard deviation, then putting it on a new scale with <b>two trainable parameters</b>:</p>
+      <div class="eq">$$\mu_{\mathcal B}=\frac1m\sum_iz_i,\quad\sigma^2_{\mathcal B}=\frac1m\sum_i(z_i-\mu_{\mathcal B})^2,\quad\hat z_i=\frac{z_i-\mu_{\mathcal B}}{\sqrt{\sigma^2_{\mathcal B}+\varepsilon}},\quad y_i=\gamma\hat z_i+\beta$$</div>
+      <ul class="small">
+        <li>Higher learning rates, faster training, mild regularization (batch noise).</li>
+        <li><b>Train vs eval:</b> batch statistics in training; running averages at test time (<code>model.eval()</code>).</li>
+        <li>Where? After the activation for S-shaped functions (tanh, logistic); before it for activations that give non-Gaussian outputs, like ReLU. Both are used.</li>
+        <li><b>LayerNorm</b>: normalize over the features of each example instead of over the batch. Independent of the batch size: used in RNNs and transformers.</li>
+      </ul>
+    </div>
+    <div class="widget" data-fig="bn">
+      <svg class="fig" aria-label="Histogram of a unit's pre-activations before and after batch normalization"></svg>
+      <div class="ctl"><label for="bn-g">γ</label><input type="range" id="bn-g" data-k="g" min="0.2" max="3" step="0.1" value="1"><span class="v" data-v="g">1.0</span></div>
+      <div class="ctl"><label for="bn-b">β</label><input type="range" id="bn-b" data-k="b" min="-4" max="8" step="0.1" value="0"><span class="v" data-v="b">0.0</span></div>
+      <div class="ro"><div class="m"><span>before: mean, std</span><b><span data-r="m0">–</span>, <span data-r="s0">–</span></b></div><div class="m"><span>after: mean, std</span><b><span data-r="m1">–</span>, <span data-r="s1">–</span></b></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Other layers: the building blocks</h2>
+  <table class="t" style="font-size:17px">
+    <tr><th style="width:22%">Layer</th><th style="width:30%">PyTorch</th><th>What it does</th></tr>
+    <tr><td>Fully connected</td><td><code>nn.Linear</code></td><td>$\bZ=\bA\bW+\bb$</td></tr>
+    <tr><td>Activation</td><td><code>nn.ReLU</code>, <code>nn.GELU</code>, <code>nn.Sigmoid</code></td><td>element-wise non-linearity</td></tr>
+    <tr><td>Dropout</td><td><code>nn.Dropout(p)</code></td><td>switches units off in training</td></tr>
+    <tr><td>Batch / layer norm</td><td><code>nn.BatchNorm1d/2d</code>, <code>nn.LayerNorm</code></td><td>normalize, then scale by γ and shift by β</td></tr>
+    <tr><td>Convolution, pooling</td><td><code>nn.Conv2d</code>, <code>nn.MaxPool2d</code></td><td>local, shared filters for images (chapter 4)</td></tr>
+    <tr><td>Flatten</td><td><code>nn.Flatten</code></td><td>tensor → vector, before the dense head</td></tr>
+    <tr><td>Embedding</td><td><code>nn.Embedding</code></td><td>token id → learned vector (chapters 5–6)</td></tr>
+    <tr><td>Recurrent</td><td><code>nn.LSTM</code>, <code>nn.GRU</code></td><td>sequences with a hidden state (chapter 5)</td></tr>
+    <tr><td>Attention</td><td><code>nn.MultiheadAttention</code></td><td>mixes information between positions (chapter 6)</td></tr>
+    <tr><td>Residual connection</td><td><code>x + f(x)</code> in <code>forward</code></td><td>a direct path for the gradient</td></tr>
+  </table>
+  <p class="small">Plus <b>gradient clipping</b> (<code>clip_grad_norm_</code>) against exploding gradients.</p>
+</section>
+
+<section class="slide">
+  <h2>Lab – Multiclass classification:</h2>
+  <div class="stack center grow" style="gap:20px">
+    <p style="max-width:820px">An MLP for multiclass images in PyTorch: softmax output, cross-entropy, mini-batches, Adam, dropout, BatchNorm, and learning curves to diagnose over- and underfitting.</p>
+    <p style="font-size:28px"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/deep_learning/Demo_Multiclass.ipynb" target="_blank" rel="noopener">Lab - multiclass classification</a></p>
+  </div>
+</section>
+<section class="slide cover">
+  <div class="inner"><h1>Neural Networks</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Next: Convolutional neural networks</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+</div></div>
+<script src="../slides/assets/figures.js"></script>
+<script src="assets/nn-core.js"></script>
+<script src="assets/fig-nn-training.js"></script>
+<script src="../slides/assets/deck.js"></script>
+</body>
+</html>
