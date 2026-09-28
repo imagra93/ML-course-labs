@@ -35,20 +35,21 @@ Scikit-learn / NumPy. Small datasets, runs comfortably on a laptop CPU.
 
 ## Part 2 — Deep Learning
 
-PyTorch (plus one Keras-dataset lab). The last few labs are much faster on a GPU —
+PyTorch. The last few labs are much faster on a GPU —
 in Colab, use **Runtime → Change runtime type → T4 GPU**.
 
 | # | Lab | Topics | GPU | Colab |
 |---|-----|--------|-----|-------|
 | 7 | [MLP from scratch (NumPy)](deep_learning/MLP_Numpy.ipynb) | Forward pass and backpropagation by hand, XOR / non-linear boundaries | – | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/deep_learning/MLP_Numpy.ipynb) |
 | 8 | [MLP with PyTorch](deep_learning/MLP_pytorch.ipynb) | Autograd, `nn.Module`, optimisers, training loops | – | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/deep_learning/MLP_pytorch.ipynb) |
-| 9 | [Multiclass classification (MLP)](deep_learning/Demo_Multiclass.ipynb) | Softmax, cross-entropy, Fashion-MNIST, `DataLoader` | opt. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/deep_learning/Demo_Multiclass.ipynb) |
-| 10 | [CNNs for image classification](deep_learning/Demo_CNN_Multiclass.ipynb) | Convolutions, pooling, feature maps, data augmentation | opt. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/deep_learning/Demo_CNN_Multiclass.ipynb) |
-| 11 | [LSTM sentiment analysis](deep_learning/LSTM_sentiment.ipynb) | Sequence models, embeddings, padding/packing, IMDB reviews | opt. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/deep_learning/LSTM_sentiment.ipynb) |
+| 9 | [Multiclass classification (MLP)](deep_learning/Demo_Multiclass.ipynb) | Softmax and cross-entropy (with proofs), train/val/test, early stopping, confusion matrix, dropout, why MLPs fail on shifted images | opt. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/deep_learning/Demo_Multiclass.ipynb) |
+| 10 | [CNNs for image classification](deep_learning/Demo_CNN_Multiclass.ipynb) | Convolution from scratch, output size, parameter count, equivariance, receptive field, feature maps, augmentation, dropout, BatchNorm | opt. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/deep_learning/Demo_CNN_Multiclass.ipynb) |
+| 10b | [Object detection with YOLO](deep_learning/object_detection_yolo.ipynb) | Box formats, IoU, the YOLO11 head, NMS and mAP from scratch, fine-tuning YOLO11n on African Wildlife, ONNX export, a Gradio app | opt. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/deep_learning/object_detection_yolo.ipynb) |
+| 11 | [LSTM sentiment analysis](deep_learning/LSTM_sentiment.ipynb) | TF-IDF baseline, embeddings, RNN and LSTM from scratch, BPTT and vanishing gradients, packing, RNN vs LSTM vs GRU, reading a review word by word | opt. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/deep_learning/LSTM_sentiment.ipynb) |
 | 12 | [Multi-task face analysis (plain PyTorch)](deep_learning/multitask_face_plain_pytorch.ipynb) | Shared backbone, multiple heads, combined losses, transfer learning | **yes** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/deep_learning/multitask_face_plain_pytorch.ipynb) |
 | 13 | [Multi-task face analysis (Lightning)](deep_learning/multitask_face_lightning.ipynb) | Three tasks (eyes + gender + age) with Lightning: `LightningModule`, `LightningDataModule`, callbacks, TorchMetrics, loss weighting | **yes** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/deep_learning/multitask_face_lightning.ipynb) |
-| 14 | [Text generation with Transformers](deep_learning/Text_Generation_with_Transformers.ipynb) | GPT-2, autoregressive decoding, greedy vs. sampling vs. beam search | opt. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/deep_learning/Text_Generation_with_Transformers.ipynb) |
-| 15 | [RAG: embeddings and similarity search](deep_learning/rag_embeddings_demo.ipynb) | Vector representations, cosine similarity, retrieval, PCA visualisation | – | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/deep_learning/rag_embeddings_demo.ipynb) |
+| 14 | [Text generation with Transformers](deep_learning/Text_Generation_with_Transformers.ipynb) | BPE from scratch, GPT-2 parameter count, perplexity and surprisal, causal attention, greedy/temperature/top-k/top-p from scratch, KV cache, beam search, few-shot prompting | opt. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/deep_learning/Text_Generation_with_Transformers.ipynb) |
+| 15 | [RAG: embeddings and similarity search](deep_learning/rag_embeddings_demo.ipynb) | Full RAG pipeline: TF-IDF, character n-grams, LSA and a neural encoder compared with hit rate@k and MRR, approximate search (IVF), chunking, grounded answers with a small LLM, hallucination and prompt injection | opt. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/deep_learning/rag_embeddings_demo.ipynb) |
 
 ## Part 3 — Time Series
 
@@ -118,26 +119,17 @@ Nothing needs to be downloaded by hand:
 - Lab 0, labs 1–6, labs 7, 8, 15 and lab 16 use synthetic data or the small datasets bundled with
   scikit-learn (Iris, Wine, Breast Cancer, Diabetes).
 - Labs 9–10 download **Fashion-MNIST** through `torchvision.datasets` on first run.
-- Lab 11 downloads the **IMDB** review dataset through `tf.keras.datasets`.
+- Lab 11 downloads the **IMDB** review dataset (the Keras version, about 19 MB) directly with `urllib`; no TensorFlow needed.
+- Lab 10b downloads the **African Wildlife** detection dataset (≈100 MB) and YOLO11n weights (≈5 MB) through Ultralytics.
 - Labs 12–13 download the face dataset from Google Drive with `gdown` and unzip
   it into `data/`.
-- Lab 14 downloads pretrained **GPT-2** weights from the Hugging Face Hub.
+- Lab 14 downloads pretrained **GPT-2** weights (≈500 MB) from the Hugging Face Hub.
+- Lab 15 downloads a multilingual sentence encoder (≈470 MB) and Qwen2.5-1.5B-Instruct plus Qwen2.5-0.5B-Instruct (≈4 GB) from the Hugging Face Hub.
 
 Downloaded data is git-ignored.
 
 ## Known caveats
 
-- **Lab 11 (LSTM)** imports TensorFlow *only* to load the Keras IMDB dataset; the
-  model itself is PyTorch. TensorFlow is therefore commented out in
-  `requirements-dl.txt` — uncomment it (or just run this lab in Colab, which
-  ships TensorFlow already) if you want to run it locally.
-- **Lab 14 (GPT-2)** imports `pytorch_transformers`, the 2019 predecessor of
-  Hugging Face `transformers`, which no longer installs cleanly on recent Python.
-  The modern equivalent is a drop-in swap for this notebook's usage:
-  ```python
-  from transformers import GPT2Tokenizer, GPT2LMHeadModel
-  ```
-  `requirements-dl.txt` installs `transformers` for this reason.
 - **Lab 6 (XGBoost)** needs the Graphviz *system* binaries for the tree plots
   (`sudo apt install graphviz` / `brew install graphviz`), not just the Python
   package.

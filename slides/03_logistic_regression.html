@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="author" content="Imanol Granada (imanolgranada@gmail.com)">
+<title>Logistic Regression</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="assets/deck.css">
+<script src="assets/mathjax-config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
+</head>
+<body data-deck="3 · Logistic regression">
+<div id="viewport"><div id="stage">
+<section class="slide cover">
+  <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Logistic Regression</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+<section class="slide divider">
+  <div class="card coral"><h1><b>Logistic</b><br><b>Regression</b></h1><svg class="fig" data-fig="logit-divider" aria-hidden="true"></svg></div>
+</section>
+
+<section class="slide">
+  <h2>Logistic Regression - Motivation</h2>
+  <div class="cols">
+    <div class="stack">
+      <p>Outputs belong to classes:</p>
+      <ul><li>Malign or benign cancer</li><li>Heart attack occurs</li><li>Credit is accepted or not</li><li>Email is spam or not</li><li>Sentiment analysis.</li><li>A military radio signal is from "the enemy"</li></ul>
+      <p style="margin-top:14px">Also non-binary examples:</p>
+      <ul><li>Hand digit recognition</li><li>(RF) Signal classification</li></ul>
+    </div>
+    <div class="stack" style="gap:18px;padding-top:30px">
+      <p style="font-size:24px;color:var(--blue);font-weight:700;text-align:center">Logistic Regression Model</p>
+      <div style="display:flex;align-items:center;gap:14px;justify-content:center;font-size:21px">
+        <div class="stack" style="gap:8px"><span class="bluebox" style="padding:4px 12px;font-size:20px">x₁</span><span class="bluebox" style="padding:4px 12px;font-size:20px;background:var(--green)">x₂</span><span class="bluebox" style="padding:4px 12px;font-size:20px;background:var(--orange)">x₃</span></div>
+        <span>→ θ₁, θ₂, θ₃ →</span><span style="border:2px solid var(--blue);padding:10px 14px">$\sigma(\bth^\top\bx)$</span><span>→</span>
+        <div class="stack" style="gap:8px"><span>$P(y=1\mid\bx)$</span><span class="muted">happy / sad</span></div>
+      </div>
+      <p class="why" style="text-align:center">A linear score, squashed into a probability.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Logistic Regression – Linear assumption</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="why-logit">
+      <svg class="fig" aria-label="Tumour size against malignant or benign labels, fitted with a straight line and thresholded at 0.5"></svg>
+      <div class="ctl"><span class="seg" role="group" aria-label="Extra data point"><button type="button" data-x="0" aria-pressed="true">Original data</button><button type="button" data-x="1" aria-pressed="false">Add one extra data point</button></span></div>
+      <div class="ro"><div class="m"><span>threshold at x =</span><b data-r="x">–</b></div><div class="m"><span>misclassified</span><b data-r="w">–</b></div></div>
+    </div>
+    <div class="stack" style="gap:16px">
+      <p>Approximate $y$ as a linear function of $\bx$:</p>
+      <div class="eq big">$$h(\bx)=\sum_{i=0}^n\theta_i\cdot x_i=\bth^\top\bx$$</div>
+      <p>First perform linear regression and then establish a threshold, e.g. 0.5.</p>
+      <p class="step"><b>One extra data point leads to bad results.</b> A clearly malignant tumour far to the right drags the line, and the 0.5 crossing moves into the malignant cases.</p>
+      <p class="step why">Also: $\bth^\top\bx$ is unbounded, so predictions like −0.3 or 1.4 are not probabilities.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Logistic Regression – Sigmoid function.</h2>
+  <div class="cols">
+    <div class="stack">
+      <svg class="fig" data-fig="lin-vs-sig" aria-label="Linear regression exceeds the 0 to 1 range while logistic regression stays inside it"></svg>
+      <p><i>The sigmoid function:</i></p>
+      <ul class="small">
+        <li>$0\le g(z)\le1$ is bounded.</li>
+        <li>$g(z)$ can be interpreted as the probability that the class is 1.
+          <ul><li>$h_{\bth}(\bx)=P(Y=1\mid\bx;\bth)$</li><li>$P(Y=0\mid\bx;\bth)=1-h_{\bth}(\bx)$</li></ul></li>
+        <li>Easy to establish a threshold (or at least it makes sense to establish one).</li>
+      </ul>
+    </div>
+    <div class="stack" style="gap:14px">
+      <p>Approximate $y$ as a <b>non-linear</b> function of $\bx$:</p>
+      <div class="eq big">$$h_{\bth}(\bx)=g(\bth^\top\bx)=\frac{1}{1+e^{-\bth^\top\bx}},$$</div>
+      <p>where</p>
+      <div class="eq big">$$g(z)=\frac{1}{1+e^{-z}}$$</div>
+      <ul><li>$g(z)$ is the <b>sigmoid</b> (logistic) function.</li></ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Logistic Regression – Sigmoid properties</h2>
+  <p>Four facts we use later. Each one is a two-line proof.</p>
+  <div class="cols">
+    <div class="stack" style="gap:14px">
+      <div class="step"><p><b>1 · Range.</b> $g(z)\in(0,1)$, $\ g(0)=\tfrac12$, $\ g(z)\to1$ as $z\to\infty$, $\ g(z)\to0$ as $z\to-\infty$.</p></div>
+      <div class="step"><p><b>2 · Symmetry.</b> $1-g(z)=g(-z)$:</p>
+        <div class="eq">$$1-\frac{1}{1+e^{-z}}=\frac{e^{-z}}{1+e^{-z}}=\frac{1}{e^{z}+1}=g(-z)$$</div></div>
+    </div>
+    <div class="stack" style="gap:14px">
+      <div class="step"><p><b>3 · Derivative.</b> $g'(z)=g(z)\big(1-g(z)\big)$:</p>
+        <div class="eq">$$g'(z)=\frac{e^{-z}}{(1+e^{-z})^2}=\frac{1}{1+e^{-z}}\cdot\frac{e^{-z}}{1+e^{-z}}=g(z)\,(1-g(z))$$</div></div>
+      <div class="step"><p><b>4 · Inverse (the logit).</b> If $p=g(z)$ then $z=\log\frac{p}{1-p}$:</p>
+        <div class="eq">$$p(1+e^{-z})=1\ \Rightarrow\ e^{-z}=\frac{1-p}{p}\ \Rightarrow\ z=\log\frac{p}{1-p}$$</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Logistic Regression – Log-odds</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:14px">
+      <p>By property 4, with $p=h_{\bth}(\bx)$, the <b>log-odds are linear</b>:</p>
+      <div class="eq big">$$\log\frac{p}{1-p}=\bth^\top\bx=\theta_0+\theta_1x_1+\dots+\theta_nx_n$$</div>
+      <p class="step"><b>Reading $\theta_j$.</b> Increasing $x_j$ by one unit (others fixed) adds $\theta_j$ to the log-odds, i.e. <b>multiplies the odds $\frac{p}{1-p}$ by $e^{\theta_j}$</b> (the odds ratio).</p>
+      <p class="step">Example: $\theta_j=0.7$ means the odds roughly double per unit of $x_j$ ($e^{0.7}\approx2$).</p>
+      <p class="step why">The effect on the probability itself is not constant: it is largest near $p=0.5$.</p>
+    </div>
+    <table class="t num" style="font-size:20px">
+      <tr><th>p</th><th>odds p/(1−p)</th><th>log-odds</th></tr>
+      <tr><td>0.10</td><td>0.11</td><td>−2.20</td></tr>
+      <tr><td>0.25</td><td>0.33</td><td>−1.10</td></tr>
+      <tr><td>0.50</td><td>1</td><td>0</td></tr>
+      <tr><td>0.75</td><td>3</td><td>+1.10</td></tr>
+      <tr><td>0.90</td><td>9</td><td>+2.20</td></tr>
+    </table>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Logistic Regression – Cost function.</h2>
+  <p>If we want to use the square error cost, the function $J(\bth)$ would no longer be convex. We define the <b>Binary Cross-Entropy</b> loss:</p>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <div class="eq">$$L\big(h_{\bth}(\bx^{(i)}),y^{(i)}\big)=\begin{cases}-\log\big(h_{\bth}(\bx^{(i)})\big)&amp;\text{if }y^{(i)}=1\\-\log\big(1-h_{\bth}(\bx^{(i)})\big)&amp;\text{if }y^{(i)}=0\end{cases}$$</div>
+      <p class="step">or in 1 line,</p>
+      <div class="eq step">$$L=-y^{(i)}\log\big(h_{\bth}(\bx^{(i)})\big)-(1-y^{(i)})\log\big(1-h_{\bth}(\bx^{(i)})\big)$$</div>
+      <ul class="step"><li>If $y^{(i)}=1$ we penalize very hard <b>low</b> probabilities.</li><li>If $y^{(i)}=0$ we penalize very hard <b>high</b> probabilities.</li></ul>
+      <p class="step why">For a small change in $p$ near the wrong end there is a large change in the loss: confident mistakes cost a fortune.</p>
+    </div>
+    <div class="stack">
+      <svg class="fig" data-fig="logloss" aria-label="Binary cross-entropy loss for y equals 1 and y equals 0"></svg>
+      <svg class="fig step" data-fig="ce-mse" style="max-height:230px" aria-label="Cross-entropy is convex while MSE with a sigmoid has a flat plateau"></svg>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Logistic Regression – Cost function.</h2>
+  <div class="stack" style="gap:18px;padding-top:10px">
+    <div class="eq">$$L\big(h_{\bth}(\bx^{(i)}),y^{(i)}\big)=\begin{cases}-\log\big(h_{\bth}(\bx^{(i)})\big)&amp;\text{if }y^{(i)}=1\\-\log\big(1-h_{\bth}(\bx^{(i)})\big)&amp;\text{if }y^{(i)}=0\end{cases}$$</div>
+    <p>or in 1 line, $\ L=-y^{(i)}\log(h_{\bth}(\bx^{(i)}))-(1-y^{(i)})\log(1-h_{\bth}(\bx^{(i)}))$.</p>
+    <p class="step">And the cost function ends up being</p>
+    <div class="eq big step">$$J(\bth)=\frac1m\sum_{i=1}^mL\big(h_{\bth}(\bx^{(i)}),y^{(i)}\big)=\frac1m\sum_{i=1}^m\Big(-y^{(i)}\log\big(h_{\bth}(\bx^{(i)})\big)-(1-y^{(i)})\log\big(1-h_{\bth}(\bx^{(i)})\big)\Big)$$</div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Logistic Regression – Probabilistic interpretation</h2>
+  <div class="cols">
+    <div class="stack" style="gap:8px">
+      <p>Another fit by maximum likelihood. Assume:</p>
+      <div class="eq">$$P(y^{(i)}=1\mid\bx^{(i)};\bth)=h_{\bth}(\bx^{(i)}),\qquad P(y^{(i)}=0\mid\bx^{(i)};\bth)=1-h_{\bth}(\bx^{(i)})$$</div>
+      <p class="step">That can be compacted to (plug in $y=1$ or $y=0$ to check):</p>
+      <div class="eq step">$$p(y^{(i)}\mid\bx^{(i)};\bth)=h_{\bth}(\bx^{(i)})^{y^{(i)}}\cdot\big(1-h_{\bth}(\bx^{(i)})\big)^{1-y^{(i)}}$$</div>
+      <p class="step">With $m$ i.i.d. training samples, the likelihood of the $\theta$'s is</p>
+      <div class="eq step">$$L(\bth)=p(\by\mid\bX;\bth)=\prod_{i=1}^mh_{\bth}(\bx^{(i)})^{y^{(i)}}\big(1-h_{\bth}(\bx^{(i)})\big)^{1-y^{(i)}}$$</div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="step">Once again, it is easier to maximize the log likelihood:</p>
+      <div class="eq step">$$\ell(\bth)=\log L(\bth)=\sum_{i=1}^m\Big[y^{(i)}\log h_{\bth}(\bx^{(i)})+(1-y^{(i)})\log\big(1-h_{\bth}(\bx^{(i)})\big)\Big]$$</div>
+      <p class="step">And maximizing $\ell$ is equivalent to minimizing its negative:</p>
+      <div class="bluebox step">$$J(\bth)=-\frac1m\,\ell(\bth)$$</div>
+      <p class="step why">Same recipe as linear regression: minimising the cost is maximum likelihood. Only the noise model changed, Bernoulli instead of Gaussian.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Logistic Regression – Optimization.</h2>
+  <p>It turns out that it is a <b>convex</b> optimization problem and we can apply gradient descent!</p>
+  <div class="cols c64">
+    <div class="stack" style="gap:2px">
+      <div class="eq">$$\frac{\partial J(\bth)}{\partial\theta_j}=\frac{\partial}{\partial\theta_j}\frac1m\sum_{i=1}^m\Big(-y^{(i)}\log h_{\bth}(\bx^{(i)})-(1-y^{(i)})\log\big(1-h_{\bth}(\bx^{(i)})\big)\Big)$$</div>
+      <div class="eq step">$$=\frac1m\sum_{i=1}^m\Big(-\frac{y^{(i)}}{h_{\bth}(\bx^{(i)})}+\frac{1-y^{(i)}}{1-h_{\bth}(\bx^{(i)})}\Big)\cdot\hl{\frac{\partial h_{\bth}(\bx^{(i)})}{\partial\theta_j}}$$</div>
+      <div class="eq step">$$=\frac1m\sum_{i=1}^m\frac{h_{\bth}(\bx^{(i)})-y^{(i)}}{h_{\bth}(\bx^{(i)})\big(1-h_{\bth}(\bx^{(i)})\big)}\cdot\hl{h_{\bth}(\bx^{(i)})\big(1-h_{\bth}(\bx^{(i)})\big)}\cdot\ho{\frac{\partial(\bth^\top\bx^{(i)})}{\partial\theta_j}}$$</div>
+      <div class="eq step">$$=\frac1m\sum_{i=1}^m\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)\cdot\ho{x_j^{(i)}}$$</div>
+    </div>
+    <div class="stack" style="gap:12px">
+      <div class="hint"><div class="hd">HINT</div><div class="bd"><div class="eq" style="font-size:19px">$$g'(z)=\frac{d}{dz}\frac{1}{1+e^{-z}}=\frac{e^{-z}}{(1+e^{-z})^2}=g(z)\,(1-g(z))$$</div></div></div>
+      <p class="step small">The blue factor $h(1-h)$ cancels the denominator exactly. That cancellation is why cross-entropy and the sigmoid work so well together.</p>
+      <p class="step small"><b>Convexity:</b> the Hessian is $\frac1m\sum_ih^{(i)}(1-h^{(i)})\bx^{(i)}\bx^{(i)\top}$, so $\bv^\top\nabla^2J\,\bv=\frac1m\sum_i\underbrace{h^{(i)}(1-h^{(i)})}_{\gt0}(\bv^\top\bx^{(i)})^2\ge0$.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Logistic Regression – Gradient descent.</h2>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p>Repeat until convergence (and <b>simultaneously</b> among all parameters, i.e. for $j\in\{0,\dots,n\}$):</p>
+      <div class="eq">$$\theta_j:=\theta_j-\alpha\,\frac{\partial J(\bth)}{\partial\theta_j}=\theta_j-\alpha\,\frac1m\sum_{i=1}^m\Big(\hl{h_{\bth}(\bx^{(i)})}-y^{(i)}\Big)\cdot x_j^{(i)}$$</div>
+      <p>Very similar to linear regression! (with its own non-linear hypothesis)</p>
+      <p>Vectorized:</p>
+      <div class="bluebox">$$\bth:=\bth-\alpha\,\frac1m\bX^\top\big(g(\bX\bth)-\by\big)$$</div>
+      <p class="why">No closed form this time: the unknown is inside the sigmoid. We iterate (GD, or Newton / L-BFGS in scikit-learn).</p>
+    </div>
+    <div class="widget" data-fig="logit-gd">
+      <svg class="fig" aria-label="Logistic regression curve and cost during gradient descent"></svg>
+      <div class="ctl"><label for="logit-gd-k">Iteration</label><input type="range" id="logit-gd-k" data-k="k" min="0" max="200" step="1" value="0"><span class="v" data-v="k">0</span></div>
+      <div class="ro"><div class="m"><span>J(θ)</span><b data-r="j">–</b></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Logistic Regression – Separable data</h2>
+  <div class="cols">
+    <div class="stack" style="gap:14px">
+      <p>If a line separates the classes perfectly, scaling $\bth\to c\,\bth$ with $c\to\infty$ pushes every $h_{\bth}(\bx^{(i)})$ to the correct 0 or 1.</p>
+      <ul>
+        <li class="step">$J\to0$ but never reaches it: the maximum likelihood solution <b>does not exist</b>.</li>
+        <li class="step">Gradient descent keeps increasing $\norm{\bth}$ forever: probabilities become over-confident.</li>
+        <li class="step"><b>Fix:</b> L2 regularization, $J+\frac{\lambda}{2m}\sum_{j\ge1}\theta_j^2$. scikit-learn does this by default with $C=1/\lambda=1$ (chapter 05).</li>
+      </ul>
+      <p class="step small"><b>A nice property</b> of the optimum (intercept equation): $\sum_ih_{\bth}(\bx^{(i)})=\sum_iy^{(i)}$. The predicted probabilities average to the observed positive rate.</p>
+    </div>
+    <div class="stack">
+      <svg class="fig" data-fig="steep" aria-label="Sigmoids that get steeper as theta is scaled up"></svg>
+      <p class="why">$g(c\,z)$ for $c=1,3,10$: the same boundary, ever more confident.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Logistic Regression – Decision</h2>
+  <div class="cols">
+    <div class="stack" style="gap:12px">
+      <ul><li>Need to apply a certain threshold:</li></ul>
+      <div class="eq">$$\hat y=\begin{cases}1&amp;\text{if }h_{\bth}(\bx^{(i)})\ge\text{threshold}\\0&amp;\text{otherwise}\end{cases}$$</div>
+      <ul><li>A common threshold is 0.5 but it can vary.</li></ul>
+      <p>It is application specific:</p>
+      <ul class="small">
+        <li>Higher thresholds → fewer false positives (only confident positives).
+          <ul><li>Spam detection.</li></ul></li>
+        <li>Lower thresholds → fewer false negatives (more false positives).
+          <ul><li>Medical image screening (before the doctor).</li></ul></li>
+      </ul>
+    </div>
+    <div class="widget" data-fig="sig-decision">
+      <svg class="fig" aria-label="Sigmoid function and threshold function"></svg>
+      <div class="ctl"><label for="sd-z">Score z</label><input type="range" id="sd-z" data-k="z" min="-6" max="6" step="0.1" value="1"><span class="v" data-v="z">1.0</span></div>
+      <div class="ctl"><label for="sd-t">Threshold</label><input type="range" id="sd-t" data-k="t" min="0.05" max="0.95" step="0.05" value="0.5"><span class="v" data-v="t">0.50</span></div>
+      <div class="ro"><div class="m"><span>h(x) = g(z)</span><b data-r="p">–</b></div><div class="m"><span>prediction ŷ</span><b data-r="y">–</b></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Logistic Regression – Decision boundary</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="boundary">
+      <svg class="fig" aria-label="Two classes in the plane with the logistic regression decision boundary"></svg>
+      <div class="ctl"><label for="bd-t">Threshold</label><input type="range" id="bd-t" data-k="t" min="0.02" max="0.98" step="0.01" value="0.5"><span class="v" data-v="t">0.50</span></div>
+    </div>
+    <div class="stack" style="gap:14px;padding-top:40px">
+      <ul>
+        <li>Line given by $h_{\bth}(\bx)=$ threshold.</li>
+        <li>Separates the feature space in 2.</li>
+      </ul>
+      <p class="step">Since $g$ is increasing and $g(0)=0.5$: $\ h_{\bth}(\bx)\ge0.5\iff\bth^\top\bx\ge0$. A <b>linear classifier</b>.</p>
+      <p class="step">Another threshold $\tau$ gives the parallel line $\bth^\top\bx=\log\frac{\tau}{1-\tau}$. Move the slider.</p>
+      <div class="ro"><div class="m"><span>fitted</span><b data-r="th" style="font-size:17px">–</b></div><div class="m"><span>predicted positive</span><b data-r="n">–</b></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Logistic Regression – Metrics.</h2>
+  <div class="cols c64" style="align-items:center">
+    <div class="stack"><p>Confusion matrix:</p><table class="cmx"><tr><td class="blank"></td><td class="blank"></td><th>Positive</th><th>Negative</th><td class="blank"></td></tr><tr><th rowspan="2" style="background:none;border:none">Actual<br>Class</th><th>Positive</th><td class="cell">True Positive (TP)</td><td class="cell">False Negative (FN)<span class="err">Type II Error</span></td><td class="mt"><b>Sensitivity</b><br>$\frac{TP}{TP+FN}$</td></tr><tr><th>Negative</th><td class="cell">False Positive (FP)<span class="err">Type I Error</span></td><td class="cell">True Negative (TN)</td><td class="mt"><b>Specificity</b><br>$\frac{TN}{TN+FP}$</td></tr><tr><td class="blank"></td><td class="blank"></td><td class="mt"><b>Precision</b><br>$\frac{TP}{TP+FP}$</td><td class="mt"><b>Negative Predictive Value</b><br>$\frac{TN}{TN+FN}$</td><td class="mt on"><b>Accuracy</b><br>$\frac{TP+TN}{TP+TN+FP+FN}$</td></tr></table><p class="tiny muted" style="margin-top:4px">Columns: predicted class.</p></div>
+    <div class="stack"><p><b>Accuracy:</b></p><ul class="small"><li>Correct predictions divided by the total.</li><li>Bad for imbalanced datasets (majority vote).</li><li>Every class is equally important.</li></ul></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Logistic Regression – Metrics.</h2>
+  <div class="cols c64" style="align-items:center">
+    <div class="stack"><p>Confusion matrix:</p><table class="cmx"><tr><td class="blank"></td><td class="blank"></td><th>Positive</th><th>Negative</th><td class="blank"></td></tr><tr><th rowspan="2" style="background:none;border:none">Actual<br>Class</th><th>Positive</th><td class="cell">True Positive (TP)</td><td class="cell">False Negative (FN)<span class="err">Type II Error</span></td><td class="mt"><b>Sensitivity</b><br>$\frac{TP}{TP+FN}$</td></tr><tr><th>Negative</th><td class="cell">False Positive (FP)<span class="err">Type I Error</span></td><td class="cell">True Negative (TN)</td><td class="mt"><b>Specificity</b><br>$\frac{TN}{TN+FP}$</td></tr><tr><td class="blank"></td><td class="blank"></td><td class="mt on"><b>Precision</b><br>$\frac{TP}{TP+FP}$</td><td class="mt"><b>Negative Predictive Value</b><br>$\frac{TN}{TN+FN}$</td><td class="mt"><b>Accuracy</b><br>$\frac{TP+TN}{TP+TN+FP+FN}$</td></tr></table><p class="tiny muted" style="margin-top:4px">Columns: predicted class.</p></div>
+    <div class="stack"><p><b>Precision:</b></p><ul class="small"><li>Ratio of true positives to all predicted positives.</li><li>Higher precision means that an algorithm returns more relevant results than irrelevant ones.</li><li>Example: potential clients. We do not want to waste money on ads.</li></ul></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Logistic Regression – Metrics.</h2>
+  <div class="cols c64" style="align-items:center">
+    <div class="stack"><p>Confusion matrix:</p><table class="cmx"><tr><td class="blank"></td><td class="blank"></td><th>Positive</th><th>Negative</th><td class="blank"></td></tr><tr><th rowspan="2" style="background:none;border:none">Actual<br>Class</th><th>Positive</th><td class="cell">True Positive (TP)</td><td class="cell">False Negative (FN)<span class="err">Type II Error</span></td><td class="mt on"><b>Sensitivity</b><br>$\frac{TP}{TP+FN}$</td></tr><tr><th>Negative</th><td class="cell">False Positive (FP)<span class="err">Type I Error</span></td><td class="cell">True Negative (TN)</td><td class="mt"><b>Specificity</b><br>$\frac{TN}{TN+FP}$</td></tr><tr><td class="blank"></td><td class="blank"></td><td class="mt"><b>Precision</b><br>$\frac{TP}{TP+FP}$</td><td class="mt"><b>Negative Predictive Value</b><br>$\frac{TN}{TN+FN}$</td><td class="mt"><b>Accuracy</b><br>$\frac{TP+TN}{TP+TN+FP+FN}$</td></tr></table><p class="tiny muted" style="margin-top:4px">Columns: predicted class.</p></div>
+    <div class="stack"><p><b>Sensitivity or Recall:</b></p><ul class="small"><li>True positives to all the actual positives.</li><li>The model didn't miss any true positives.</li><li>Example: cancer patients, we do not want false negatives.</li></ul></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Logistic Regression – All the metrics</h2>
+  <table class="t">
+    <tr><th style="width:22%">Metric</th><th style="width:30%">Formula</th><th>Question it answers</th></tr>
+    <tr><td>Accuracy</td><td>$\frac{TP+TN}{TP+TN+FP+FN}$</td><td>What fraction of all predictions is right?</td></tr>
+    <tr><td>Precision</td><td>$\frac{TP}{TP+FP}$</td><td>Of the ones I flagged, how many are really positive?</td></tr>
+    <tr><td>Recall · sensitivity · TPR</td><td>$\frac{TP}{TP+FN}$</td><td>Of the real positives, how many did I catch?</td></tr>
+    <tr><td>Specificity · TNR</td><td>$\frac{TN}{TN+FP}$</td><td>Of the real negatives, how many did I leave alone?</td></tr>
+    <tr><td>False positive rate</td><td>$\frac{FP}{FP+TN}=1-\text{specificity}$</td><td>Of the real negatives, how many did I flag?</td></tr>
+    <tr><td>$F_1$</td><td>$\frac{2\cdot\text{Prec}\cdot\text{Rec}}{\text{Prec}+\text{Rec}}=\frac{2TP}{2TP+FP+FN}$</td><td>Harmonic mean: high only if <b>both</b> are high.</td></tr>
+    <tr><td>$F_\beta$</td><td>$\frac{(1+\beta^2)\,\text{Prec}\cdot\text{Rec}}{\beta^2\,\text{Prec}+\text{Rec}}$</td><td>Recall counts $\beta$ times as much as precision.</td></tr>
+  </table>
+  <p class="why">Harmonic mean: precision 1.0 with recall 0.01 gives $F_1\approx0.02$, not 0.5.</p>
+</section>
+
+<section class="slide">
+  <h2>Metrics – Worked example: 1,000 insurance claims</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:14px">
+      <p>50 claims are fraudulent (5 %). The detector flags 60 claims, 40 of which are really fraud.</p>
+      <table class="t num" style="font-size:21px"><tr><th></th><th>flagged no</th><th>flagged yes</th></tr><tr><td>legit · 950</td><td>TN = 930</td><td>FP = 20</td></tr><tr><td>fraud · 50</td><td>FN = 10</td><td>TP = 40</td></tr></table>
+    </div>
+    <div class="stack" style="gap:12px">
+      <p class="step">Accuracy $=\frac{40+930}{1000}=$ <b>0.97</b>. Looks great.</p>
+      <p class="step">Precision $=\frac{40}{60}=$ <b>0.67</b>: a third of the investigated claims are false alarms.</p>
+      <p class="step">Recall $=\frac{40}{50}=$ <b>0.80</b>: one fraud in five gets through.</p>
+      <p class="step">$F_1=\frac{2\cdot40}{80+20+10}=$ <b>0.73</b>.</p>
+      <div class="warnbox step"><p>The trivial model "nothing is fraud" has accuracy <b>0.95</b>, recall <b>0</b> and undefined precision. With imbalanced classes, accuracy mostly reflects the majority class.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Logistic Regression – Prec. vs Recall tradeoff.</h2>
+  <p>By varying the threshold, you can either improve precision or sensitivity/recall – but not both.</p>
+  <div class="cols">
+    <svg class="fig" data-fig="pr" aria-label="Precision-recall curve"></svg>
+    <div class="stack" style="gap:12px">
+      <p class="small">This tradeoff highly impacts real-world scenarios, therefore precision and recall alone aren't very good metrics to rely on and work with.</p>
+      <div class="eq">$$F_1=\frac{2}{\frac{1}{\text{Recall}}+\frac{1}{\text{Precision}}}$$</div>
+      <ul class="small">
+        <li>Widely used, "good" for comparing.</li>
+        <li>Good balance even on <a href="https://machinelearningmastery.com/what-is-imbalanced-classification/" target="_blank" rel="noopener">imbalanced classification problems</a>.</li>
+        <li>A low $F_1$ doesn't say which cases it failed (poor information if alone).</li>
+        <li>The <b>PR curve</b> baseline is the positive rate, not a diagonal. Summarised by <b>average precision</b> (AP).</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Metrics – Move the threshold</h2>
+  <div class="widget" data-fig="thr">
+    <div class="cols c64" style="gap:24px">
+      <div class="stack" style="gap:6px">
+        <svg class="fig" data-k="hist" aria-label="Histogram of predicted probabilities for legit and fraudulent claims, with the threshold"></svg>
+        <div class="legend"><span><i style="background:var(--orange)"></i>900 legit claims (y = 0)</span><span><i style="background:var(--blue)"></i>100 fraud (y = 1)</span></div>
+        <div class="ctl"><label for="thr-t">Threshold</label><input type="range" id="thr-t" data-k="t" min="0.02" max="0.98" step="0.01" value="0.5"><span class="v" data-v="t">0.50</span></div>
+        <div class="ro"><div class="m"><span>accuracy</span><b data-r="acc">–</b></div><div class="m"><span>precision</span><b data-r="pr">–</b></div><div class="m"><span>recall</span><b data-r="rc">–</b></div><div class="m"><span>F1</span><b data-r="f1">–</b></div><div class="m"><span>FPR</span><b data-r="fpr">–</b></div></div>
+      </div>
+      <div class="stack" style="gap:8px">
+        <table class="t num" style="font-size:19px"><tr><th></th><th>pred 0</th><th>pred 1</th></tr><tr><td>y = 0</td><td>TN <b data-r="tn">–</b></td><td>FP <b data-r="fp">–</b></td></tr><tr><td>y = 1</td><td>FN <b data-r="fn">–</b></td><td>TP <b data-r="tp">–</b></td></tr></table>
+        <svg class="fig" data-k="roc" aria-label="ROC curve with the current threshold marked"></svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Logistic Regression – ROC.</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="roc-dist">
+      <svg class="fig" aria-label="Score distributions for negatives and positives with a threshold, and the ROC curve"></svg>
+      <div class="ctl"><label for="rd-t">Threshold</label><input type="range" id="rd-t" data-k="t" min="-3" max="6" step="0.1" value="1"><span class="v" data-v="t">1.0</span></div>
+      <div class="ctl"><label for="rd-d">Model quality (separation)</label><input type="range" id="rd-d" data-k="d" min="0" max="4" step="0.1" value="2"><span class="v" data-v="d">2.0</span></div>
+      <div class="ro"><div class="m"><span>TPR</span><b data-r="tpr">–</b></div><div class="m"><span>FPR</span><b data-r="fpr">–</b></div><div class="m"><span>AUC</span><b data-r="auc">–</b></div></div>
+    </div>
+    <div class="stack" style="gap:10px">
+      <p class="small"><b>Receiver operating characteristic</b> curve: TPR against FPR, computed for many different thresholds on a single graph.</p>
+      <ul class="small">
+        <li>The diagonal assumes random selection (and a balanced dataset).</li>
+        <li>Good for comparing different classifiers: set separation to 0 and the curve collapses to the diagonal (AUC ≈ 0.5).</li>
+        <li>Not good with large class imbalances.</li>
+        <li>Good to answer: what TPR can I obtain if I want to fix FPR to 0.02?</li>
+      </ul>
+      <div class="note"><p class="small">1 metric → <b>AUC-ROC</b>, the area under the curve, between 0.5 (random) and 1 (perfect).</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Metrics – AUC meaning, and choosing the threshold</h2>
+  <div class="cols">
+    <div class="stack" style="gap:12px">
+      <p><b>AUC has a probabilistic meaning:</b></p>
+      <div class="eq big">$$\text{AUC}=P\big(h(\bx^+)\gt h(\bx^-)\big)$$</div>
+      <p class="small step">The probability that a random positive gets a higher score than a random negative. Sweeping the threshold down, each negative passed moves the curve right by $1/N_-$; the area added is the fraction of positives already above it. Summed: the fraction of (positive, negative) pairs ranked correctly.</p>
+      <p class="small step">AUC ignores the threshold and the class balance. That is also its weakness with rare positives.</p>
+    </div>
+    <div class="stack" style="gap:12px">
+      <p><b>Known error costs?</b> A false negative costs $c_{FN}$, a false positive $c_{FP}$. With calibrated probabilities, flag when</p>
+      <div class="eq step">$$p\,c_{FN}\gt(1-p)\,c_{FP}\iff p\gt\frac{c_{FP}}{c_{FP}+c_{FN}}$$</div>
+      <div class="bluebox step">$$\tau^*=\frac{c_{FP}}{c_{FP}+c_{FN}}$$</div>
+      <p class="step small">Missing a fraud costs 9× more than investigating a legitimate claim → $\tau^*=\frac{1}{10}$. Choose the threshold on the <b>validation</b> set, never on the test set.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Class imbalances.</h2>
+  <p>Appear in many domains, such as fraud detection, spam filtering, … Problem! High accuracy just by predicting the <b>majority class</b>.</p>
+  <div class="cols c46">
+    <div class="stack">
+      <p>Solutions:</p>
+      <ul class="small">
+        <li>Resampling techniques:
+          <ul><li>Undersampling: reduces the amount of data.</li><li>Oversampling: can cause overfitting (if exact copies).</li></ul></li>
+        <li>Improvements: Tomek links and SMOTE.</li>
+        <li>Class weights in the loss (<code>class_weight="balanced"</code>).</li>
+        <li>Use precision, recall, F1, PR curves instead of accuracy.</li>
+      </ul>
+    </div>
+    <div class="stack">
+      <svg class="fig" data-fig="imbalance" aria-label="Class counts before and after undersampling and oversampling"></svg>
+      <svg class="fig" data-fig="smote" aria-label="Imbalanced data, Tomek links and SMOTE synthetic points"></svg>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Metrics – Probabilities and calibration</h2>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p>Often we use the probability itself (pricing, risk scores, expected cost).</p>
+      <ul class="small">
+        <li><b>Log-loss</b> ($=J$ on the test set) and <b>Brier score</b> $\frac1m\sum_i(p^{(i)}-y^{(i)})^2$: lower is better.</li>
+        <li><b>Calibration:</b> among claims with predicted $p\approx0.3$, about 30 % should be fraud. The reliability diagram should follow the diagonal.</li>
+        <li>Logistic regression tends to be well calibrated; SVMs and trees often are not. AUC does not see calibration.</li>
+      </ul>
+      <table class="t" style="font-size:17px">
+        <tr><th>Situation</th><th>Use</th></tr>
+        <tr><td>Balanced classes, equal costs</td><td>accuracy + confusion matrix</td></tr>
+        <tr><td>Rare positives</td><td>precision, recall, F1, PR curve</td></tr>
+        <tr><td>Compare rankers</td><td>ROC AUC</td></tr>
+        <tr><td>Probability is used</td><td>log-loss, Brier, reliability</td></tr>
+        <tr><td>Known costs</td><td>expected cost, $\tau^*$</td></tr>
+      </table>
+    </div>
+    <svg class="fig" data-fig="calib" aria-label="Reliability diagram: a calibrated model on the diagonal and an over-confident one"></svg>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Logistic Regression – More than 2 classes?</h2>
+  <div class="cols c64">
+    <div class="stack"><p><b>One-vs-all (one-vs-rest):</b></p><svg class="fig" data-fig="ovr" aria-label="Three classes and three one-versus-rest binary problems"></svg></div>
+    <div class="stack" style="gap:16px;padding-top:40px">
+      <p>If we have K classes, repeat for each class:</p>
+      <ul><li>The class label is set to 1 and the rest to 0.</li><li>Learn a binary classifier.</li></ul>
+      <p>Run all classifiers and select the one with the highest $h_{\bth}(\bx)$.</p>
+      <div class="note"><p>Note: <b>softmax</b> regression does it in one model (next chapter).</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Linear regression models - Summary</h2>
+  <div class="cols">
+    <ul>
+      <li>Pros:
+        <ul><li>Simple model and interpretability.</li><li>Computationally efficient.</li></ul></li>
+      <li>Cons:
+        <ul><li>Overly-simplistic (linearity assumptions).</li><li>Affected by outliers.</li><li>Assumes the features are not correlated (rare): multicollinearity!
+          <ul><li>Solution: dimensionality reduction techniques (like PCA), or regularization.</li></ul></li><li>Assumes homoscedasticity: constant variance around the mean (linear regression).</li></ul></li>
+    </ul>
+    <svg class="fig" data-fig="homo" aria-label="Constant error variance versus error variance that grows with x"></svg>
+  </div>
+</section>
+
+<section class="slide u">
+  <h2>Logistic Regression – labs</h2>
+  <div class="cols" style="padding-top:40px">
+    <div class="stack center" style="gap:16px">
+      <div class="note" style="text-align:left"><p class="small"><b>lab 2: LogReg from scratch.</b> Python implementation of logistic regression: sigmoid, cross-entropy, gradient descent, decision boundary and metrics, then the same with scikit-learn.</p></div>
+      <p style="font-size:26px"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/machina_learning/lab%20-%20Logistic%20Regression.ipynb" target="_blank" rel="noopener">Lab logistic regression</a></p>
+    </div>
+    <div class="stack center" style="gap:16px">
+      <div class="note" style="text-align:left"><p class="small"><b>lab 3: Polynomial regression.</b> Underfitting, overfitting, train vs test error, Ridge and Lasso with cross-validation.</p></div>
+      <p style="font-size:26px"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/machina_learning/lab%20-%20Polynomial%20Regression%20and%20Regularisation.ipynb" target="_blank" rel="noopener">Polynomial regression</a></p>
+    </div>
+  </div>
+</section>
+<section class="slide cover">
+  <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Next: Softmax Regression</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+</div></div>
+<script src="assets/figures.js"></script>
+<script src="assets/fig-logistic.js"></script>
+<script src="assets/deck.js"></script>
+</body>
+</html>

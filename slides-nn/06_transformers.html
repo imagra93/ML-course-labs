@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="author" content="Imanol Granada (imanolgranada@gmail.com)">
+<title>Attention and Transformers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="../slides/assets/deck.css">
+<script src="../slides/assets/mathjax-config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
+</head>
+<body data-deck="6 · Attention and transformers">
+<div id="viewport"><div id="stage">
+<section class="slide cover">
+  <div class="inner"><h1>Neural Networks</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Attention and the transformer architecture</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+<section class="slide">
+  <h2>Problems with LSTMs:</h2>
+  <div class="cols">
+    <div class="stack" style="gap:12px">
+      <ul>
+        <li>Inputs are <b>sequential</b>: no parallelization. Step $t$ must wait for step $t-1$.</li>
+        <li>No explicit modelling of long- and short-range dependencies.</li>
+        <li>The distance between positions matters: information from far away must survive many steps.</li>
+        <li>Memory problems.</li>
+      </ul>
+      <p><b>What we want:</b></p>
+      <ul><li>handle inputs of different lengths,</li><li>parallel processing of the entire input,</li><li>shared parameters (like CNNs).</li></ul>
+    </div>
+    <div class="stack center" style="gap:14px">
+      <div class="note" style="text-align:center;padding:24px 30px"><p style="font-size:30px"><b>Attention Is All You Need</b></p><p class="small">Vaswani, Shazeer, Parmar, Uszkoreit, Jones, Gomez, Kaiser, Polosukhin · 2017</p></div>
+      <p class="why">The paper that introduced the transformer: no recurrence, no convolution, only attention.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Why attention:</h2>
+  <div class="stack" style="gap:20px;max-width:1000px;padding-top:30px">
+    <p style="font-size:26px">Before attention, sequence models (RNNs and LSTMs) <b>compressed an entire input sequence into a single fixed-size vector</b> before decoding it. Long sequences lost information by the time they reached the output.</p>
+    <p style="font-size:26px" class="step">Attention fixes this by letting the model <b>look back at every input position</b> every time it produces an output, and decide how much each one matters.</p>
+    <p class="step small">Language modelling, the task behind GPT: predict the next token from all the previous ones, $\ P(x_t\mid x_1,\dots,x_{t-1})$. Text is first split into sub-word <b>tokens</b> (byte-pair encoding), each mapped to an embedding vector.</p>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Attention mechanism: a soft dictionary lookup</h2>
+  <div class="cols">
+    <div class="stack" style="gap:12px">
+      <p>A Python dictionary returns the value whose key <b>exactly</b> matches the query. Attention returns a <b>weighted mix</b> of all the values, weighted by how well each key matches:</p>
+      <ul class="small">
+        <li><b>Query</b> $\bq$: what am I looking for?</li>
+        <li><b>Keys</b> $\bk_j$: what does each position offer?</li>
+        <li><b>Values</b> $\mathbf v_j$: what does each position pass on?</li>
+      </ul>
+      <div class="eq big">$$\alpha_j=\mathrm{softmax}_j\big(\bq^\top\bk_j\big),\qquad\text{output}=\sum_j\alpha_j\,\mathbf v_j$$</div>
+    </div>
+    <div class="stack" style="gap:12px">
+      <p class="step">The weights are positive and sum to 1: the output is a <b>linear combination of the values</b>.</p>
+      <p class="step">Every position can attend to every other position in <b>one step</b>, whatever their distance, and all positions are computed <b>in parallel</b>.</p>
+      <p class="step why">It is called attention because the softmax looks for relationships between input words: where to pay attention, and then it mixes the information.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Self-attention:</h2>
+  <div class="cols">
+    <div class="stack" style="gap:8px">
+      <p class="small">A sequence of $n$ tokens $\{\bx_1,\dots,\bx_n\}$, each a vector of size $d_{\text{model}}$. For each token we create three vectors with learned matrices:</p>
+      <div class="eq">$$\bq_i=\bx_i\bW_Q,\qquad\bk_i=\bx_i\bW_K,\qquad\mathbf v_i=\bx_i\bW_V$$</div>
+      <p class="small">$\bW_Q,\bW_K\in\R^{d_{\text{model}}\times d_k}$, $\bW_V\in\R^{d_{\text{model}}\times d_v}$ (typically $d_k=d_v=d_{\text{model}}/h$).</p>
+      <p class="step small">How much token $i$ should focus on token $j$:</p>
+      <div class="eq step">$$\text{score}(i,j)=\frac{\bq_i\cdot\bk_j}{\sqrt{d_k}},\qquad\alpha_{ij}=\frac{\exp(\text{score}(i,j))}{\sum_{k=1}^n\exp(\text{score}(i,k))}$$</div>
+      <div class="eq step">$$\mathrm{Attention}(\bx_i)=\sum_{j=1}^n\alpha_{ij}\,\mathbf v_j$$</div>
+    </div>
+    <div class="stack" style="gap:12px">
+      <p class="step">All tokens at once, in matrix form ($\bQ=\bX\bW_Q$, $\bK=\bX\bW_K$, $\bV=\bX\bW_V$):</p>
+      <div class="bluebox step">$$\mathrm{Attention}(\bQ,\bK,\bV)=\mathrm{softmax}\Big(\frac{\bQ\bK^\top}{\sqrt{d_k}}\Big)\bV$$</div>
+      <p class="step small">$\bQ\bK^\top$ is $n\times n$: every token against every token. The softmax is taken row by row. Each token ends up as a combination of all the tokens in the sequence, weighted by the attention scores.</p>
+      <p class="step small why">Cost $O(n^2)$ in the sequence length: why context windows are limited.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Self-attention: what does "it" refer to?</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="attn">
+      <svg class="fig" aria-label="Attention weights from a query token to every token of the sentence"></svg>
+      <div class="ctl"><label for="at-q">query token</label><input type="range" id="at-q" data-k="q" min="0" max="9" step="1" value="7"><span class="v" data-v="q" style="min-width:100px">"it"</span></div>
+      <div class="ctl"><span class="seg" role="group" aria-label="Last word"><button type="button" data-w="tired" aria-pressed="true">… it was tired</button><button type="button" data-w="wide" aria-pressed="false">… it was wide</button></span></div>
+    </div>
+    <div class="stack" style="gap:12px;padding-top:30px">
+      <p>"The animal didn't cross the street because it was <b>tired</b>": <i>it</i> = the animal.<br>"…because it was <b>wide</b>": <i>it</i> = the street.</p>
+      <div class="ro"><div class="m"><span>"it" attends most to</span><b data-r="top" style="font-size:18px">–</b></div></div>
+      <p class="small">Change one word at the end and the representation of <i>it</i> changes: attention builds <b>context-dependent</b> word vectors. The weights shown are illustrative; in a trained model each head learns its own.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Why divide by $\sqrt{d_k}$?</h2>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p>Suppose the components of $\bq$ and $\bk$ are independent with mean 0 and variance 1:</p>
+      <div class="eq step">$$\E[\bq^\top\bk]=\sum_{i=1}^{d_k}\E[q_i]\,\E[k_i]=0$$</div>
+      <div class="eq step">$$\mathrm{Var}(\bq^\top\bk)=\sum_{i=1}^{d_k}\mathrm{Var}(q_ik_i)=\sum_{i=1}^{d_k}\E[q_i^2]\,\E[k_i^2]=d_k$$</div>
+      <p class="step">Raw dot products have standard deviation $\sqrt{d_k}$ (8 for $d_k=64$). Large scores push the softmax into <b>saturation</b>: nearly one-hot, where its gradient is nearly 0.</p>
+      <p class="step">Dividing by $\sqrt{d_k}$ brings the variance back to 1, whatever the dimension. $\blacksquare$</p>
+    </div>
+    <div class="widget" data-fig="sqrtd">
+      <svg class="fig" aria-label="Softmax of raw and scaled attention scores"></svg>
+      <div class="ctl"><label for="sq-d">dₖ (log scale)</label><input type="range" id="sq-d" data-k="d" min="0" max="9" step="1" value="6"><span class="v" data-v="d">64</span></div>
+      <div class="ro"><div class="m"><span>max weight, raw</span><b data-r="mx">–</b></div><div class="m"><span>max weight, scaled</span><b data-r="ms">–</b></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Self-Attention and multihead:</h2>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p>Train several attentions <b>in parallel</b> and let each focus on different things (syntax, coreference, position…).</p>
+      <div class="eq">$$\mathrm{head}_i=\mathrm{Attention}\big(\bX\bW_Q^{(i)},\bX\bW_K^{(i)},\bX\bW_V^{(i)}\big)$$</div>
+      <div class="bluebox">$$\mathrm{MultiHead}(\bX)=\mathrm{Concat}(\mathrm{head}_1,\dots,\mathrm{head}_h)\,\bW_O$$</div>
+      <p class="small">With $h$ heads of size $d_k=d/h$, the cost is about the same as one big head. Each head can be computed by a different "worker" in parallel.</p>
+      <p class="small step"><b>Does the order of words matter?</b> Permute the input rows: $\bQ\bK^\top$ and the output are permuted the same way. Self-attention is <b>permutation-equivariant</b>: it has no idea of word order on its own.</p>
+    </div>
+    <svg class="fig" data-fig="mha" aria-label="Multi-head attention: linear projections of Q, K, V, parallel attention heads, concatenation and a final linear layer"></svg>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Positional encodings:</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:12px">
+      <p>Transformers have no notion of position, so we <b>add</b> an encoding to each embedded input:</p>
+      <div class="eq">$$\text{input}_t=\text{embedding}(\text{token}_t)+PE(t)$$</div>
+      <div class="eq">$$PE_{(pos,2i)}=\sin\Big(\frac{pos}{10000^{2i/d}}\Big),\qquad PE_{(pos,2i+1)}=\cos\Big(\frac{pos}{10000^{2i/d}}\Big)$$</div>
+      <p class="small">Each pair of dimensions is a clock at a different speed. Relative positions become easy to read: $PE(pos+k)$ is a fixed rotation of $PE(pos)$. GPT-style models instead <b>learn</b> a position embedding.</p>
+    </div>
+    <svg class="fig" data-fig="posenc" aria-label="Heat map of sinusoidal positional encodings"></svg>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Self-Attention mask:</h2>
+  <p>The mask is optional, but it is used where it does not make sense for a word to look at <b>future</b> words, because they are not available in reality: not for translation of a known sentence, but for <b>next-word prediction</b>.</p>
+  <svg class="fig" data-fig="mask" aria-label="Scores, the causal mask with minus infinity above the diagonal, and the resulting attention weights"></svg>
+  <div class="eq">$$\mathrm{softmax}\Big(\frac{\bQ\bK^\top}{\sqrt{d_k}}+\mathbf M\Big)\bV,\qquad M_{ij}=\begin{cases}0&amp;j\le i\\-\infty&amp;j\gt i\end{cases}$$</div>
+  <p class="small">$e^{-\infty}=0$: future tokens get exactly zero weight. And one forward pass trains all $n$ next-token predictions of a sequence at once.</p>
+</section>
+
+<section class="slide">
+  <h2>Transformer encoder-decoder:</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="block" aria-label="The transformer: an encoder stack and a decoder stack with masked attention and cross attention"></svg>
+    <div class="stack" style="gap:10px">
+      <p class="small">Each block (pre-norm version):</p>
+      <div class="eq">$$\bX\leftarrow\bX+\mathrm{MHA}\big(\mathrm{LN}(\bX)\big)$$$$\bX\leftarrow\bX+\mathrm{MLP}\big(\mathrm{LN}(\bX)\big)$$</div>
+      <ul class="small">
+        <li><b>Attention mixes information between positions</b>; the MLP ($d\to4d\to d$) processes each position separately.</li>
+        <li><b>Residual connections</b> and <b>LayerNorm</b> make deep stacks trainable.</li>
+        <li><b>BERT</b> = encoder only (sees the whole sentence: classification, embeddings).</li>
+        <li><b>GPT</b> = decoder only, with the causal mask (text generation).</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>GPT: counting the parameters</h2>
+  <div class="stack" style="gap:12px;max-width:1080px">
+    <p>Token + position embedding → $N$ identical blocks → final LayerNorm → linear layer to $|V|$ logits. Per block, ignoring biases and LayerNorms:</p>
+    <ul>
+      <li class="step">Attention: $\bW_Q,\bW_K,\bW_V,\bW_O$, each $d\times d$: $\ 4d^2$.</li>
+      <li class="step">MLP with hidden size $4d$: $\ d\cdot4d+4d\cdot d=8d^2$.</li>
+      <li class="step">Total: <b>$12d^2$ per block</b>.</li>
+    </ul>
+    <p class="step">GPT-2 small: $N=12$, $d=768$, $|V|=50{,}257$, 1,024 positions:</p>
+    <div class="eq big step">$$\underbrace{12\cdot12\cdot768^2}_{\text{blocks}}\approx84.9\text{M}+\underbrace{50{,}257\cdot768}_{\text{token emb.}}\approx38.6\text{M}+\underbrace{1024\cdot768}_{\text{positions}}\approx0.8\text{M}\approx\mathbf{124\text{M}}$$</div>
+    <p class="step small">The output layer usually reuses the embedding matrix (weight tying): $\mathbf z_t=\bh_t\bE^\top$.</p>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Decoding: from probabilities to text</h2>
+  <div class="cols">
+    <div class="widget" data-fig="decode">
+      <svg class="fig" aria-label="Next-token probabilities after temperature and top-k"></svg>
+      <div class="ctl"><label for="dc-t">temperature</label><input type="range" id="dc-t" data-k="t" min="0.1" max="2.5" step="0.05" value="1"><span class="v" data-v="t">1.00</span></div>
+      <div class="ctl"><label for="dc-k">top-k</label><input type="range" id="dc-k" data-k="k" min="1" max="8" step="1" value="8"><span class="v" data-v="k">8</span>
+        <button type="button" class="bluebox" data-k="go" style="border:0;cursor:pointer;font:700 16px var(--font);padding:5px 14px">Sample a word</button><span class="small">→ <b data-r="s">–</b></span></div>
+    </div>
+    <div class="stack" style="gap:10px">
+      <p>"Can you please come <b>here</b>?": the history, and the word being predicted.</p>
+      <ul class="small">
+        <li><b>Greedy</b>: always the most likely token. Safe, but repetitive.</li>
+        <li><b>Temperature</b> $T$: sample from $\mathrm{softmax}(\mathbf z/T)$. $T\to0$ is greedy; $T\gt1$ flattens the distribution (more creative, more errors).</li>
+        <li><b>Top-k / top-p</b>: keep only the $k$ most likely tokens (or the smallest set with probability $p$), renormalize, sample.</li>
+      </ul>
+      <p class="small">The chosen token is appended to the input and the model runs again: one token at a time (autoregressive).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Demo GPT:</h2>
+  <div class="stack center grow" style="gap:20px">
+    <p style="font-size:30px">Can you please come <span style="color:var(--red)">here</span> ?</p>
+    <p class="muted">history → word being predicted</p>
+    <p style="font-size:28px"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/deep_learning/Text_Generation_with_Transformers.ipynb" target="_blank" rel="noopener">Demo GPT</a></p>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>How do companies build bots with custom data?</h2>
+  <svg class="fig" data-fig="rag" aria-label="Retrieval-augmented generation: embed documents, store them, retrieve the most similar chunks and give them to the LLM"></svg>
+  <p><b>Retrieval-Augmented Generation (RAG):</b> the LLM is not retrained. Instead, the most relevant pieces of <b>your</b> documents are found by embedding similarity and pasted into the prompt, so the model answers from them.</p>
+</section>
+
+<section class="slide">
+  <h2>Chunking, embeddings and chunk selection:</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:12px">
+      <ul>
+        <li>Split each document into <b>chunks</b> (a few hundred tokens, with some overlap).</li>
+        <li>Turn each chunk into an embedding vector: dim 512, 768, 1,024…</li>
+        <li><b>Cosine similarity</b> to select the top-$k$ chunks for a question:</li>
+      </ul>
+      <div class="eq big">$$\cos(\mathbf a,\mathbf b)=\frac{\mathbf a\cdot\mathbf b}{\norm{\mathbf a}\,\norm{\mathbf b}}$$</div>
+      <p class="small">Evaluate retrieval with recall@k and MRR, before judging the generated answers.</p>
+      <p style="font-size:24px"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/deep_learning/rag_embeddings_demo.ipynb" target="_blank" rel="noopener">Lab embeddings</a></p>
+    </div>
+    <svg class="fig" data-fig="cosine" aria-label="A question vector and chunk vectors; the two with the highest cosine similarity are selected"></svg>
+  </div>
+</section>
+<section class="slide cover">
+  <div class="inner"><h1>Neural Networks</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Thank you!</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+</div></div>
+<script src="../slides/assets/figures.js"></script>
+<script src="assets/nn-core.js"></script>
+<script src="assets/fig-nn-transformer.js"></script>
+<script src="../slides/assets/deck.js"></script>
+</body>
+</html>

@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="author" content="Imanol Granada (imanolgranada@gmail.com)">
+<title>Regularization</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="assets/deck.css">
+<script src="assets/mathjax-config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
+</head>
+<body data-deck="5 · Regularization">
+<div id="viewport"><div id="stage">
+<section class="slide cover">
+  <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Regularization</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+<section class="slide divider">
+  <div class="card green"><h1><b>Regularization</b></h1><div class="eq big" style="text-align:center">$$J(\bth)+\lambda\,R(\bth)$$</div></div>
+</section>
+
+<section class="slide">
+  <h2>Regularization – Why?</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:12px">
+      <p>Three problems that all show up as <b>large, unstable parameters</b>:</p>
+      <ol>
+        <li><b>Overfitting:</b> many features (or a high polynomial degree) relative to $m$. The model fits the noise; the $\theta_j$ become huge with alternating signs.</li>
+        <li><b>Collinearity:</b> correlated features make $\bX^\top\bX$ nearly singular. Small changes in the data change $\bth$ a lot.</li>
+        <li><b>Separable classes</b> in logistic regression: $\norm{\bth}\to\infty$.</li>
+      </ol>
+      <div class="note"><p class="small">Regularization accepts a little more training error (<b>bias</b>) in exchange for a more stable model (less <b>variance</b>).</p></div>
+    </div>
+    <div class="widget" data-fig="overfit">
+      <svg class="fig" aria-label="Polynomial fit to noisy points"></svg>
+      <div class="ctl"><label for="of-d">Degree</label><input type="range" id="of-d" data-k="d" min="0" max="15" step="1" value="15"><span class="v" data-v="d">15</span></div>
+      <div class="ctl"><label for="of-l">λ (log scale)</label><input type="range" id="of-l" data-k="l" min="-6" max="1" step="0.25" value="-6"><span class="v" data-v="l">0</span></div>
+      <div class="ro"><div class="m"><span>train RMSE</span><b data-r="tr">–</b></div><div class="m"><span>test RMSE</span><b data-r="te">–</b></div><div class="m" style="flex:1"><span>verdict</span><b data-r="vd">–</b></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Regularization – The regularized cost</h2>
+  <div class="eq big">$$J_{\text{reg}}(\bth)=\underbrace{J(\bth)}_{\text{fit the data}}+\underbrace{\lambda\,R(\bth)}_{\text{keep }\bth\text{ small}},\qquad\lambda\ge0$$</div>
+  <div class="cols">
+    <table class="t">
+      <tr><th>Name</th><th>Penalty $R(\bth)$</th><th>Effect</th></tr>
+      <tr><td>L2 · Ridge · weight decay</td><td>$\sum_{j=1}^n\theta_j^2=\norm{\bth}_2^2$</td><td>shrinks all coefficients smoothly</td></tr>
+      <tr><td>L1 · Lasso</td><td>$\sum_{j=1}^n|\theta_j|=\norm{\bth}_1$</td><td>sets some <b>exactly to 0</b> (feature selection)</td></tr>
+      <tr><td>Elastic Net</td><td>a mix of both</td><td>sparse <b>and</b> stable with correlated features</td></tr>
+    </table>
+    <div class="stack" style="gap:10px">
+      <p><b>Two rules that always apply:</b></p>
+      <ul class="small">
+        <li class="step"><b>Do not penalize the intercept</b> $\theta_0$ (the sums start at $j=1$). It only sets the average level.</li>
+        <li class="step"><b>Standardize the features first.</b> The size of $\theta_j$ depends on the units of $x_j$: income in € vs k€ changes it 1000×. Without scaling, the penalty is arbitrary.</li>
+      </ul>
+      <p class="step small">$\lambda=0$: no regularization. $\lambda\to\infty$: all $\theta_{j\ge1}\to0$ (a constant model). $\lambda$ is a hyperparameter, chosen by cross-validation. scikit-learn often uses $C=1/\lambda$.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Regularization – L2 (Ridge regression)</h2>
+  <div class="stack" style="gap:10px">
+    <div class="eq">$$J(\bth)=\frac1{2m}\Big[\norm{\bX\bth-\by}^2+\lambda\sum_{j=1}^n\theta_j^2\Big],\qquad\mathbf L=\mathrm{diag}(0,1,\dots,1)\ \Rightarrow\ \textstyle\sum_{j\ge1}\theta_j^2=\bth^\top\mathbf L\bth$$</div>
+    <div class="cols step" style="align-items:center"><p><b>Gradient descent = "weight decay".</b> Each step first <b>shrinks</b> $\theta_j$ by a constant factor, then applies the usual data gradient:</p>
+      <div class="eq">$$\theta_j:=\hl{\theta_j\Big(1-\frac{\alpha\lambda}{m}\Big)}-\frac\alpha m\sum_i\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)x^{(i)}_j$$</div></div>
+    <div class="cols step" style="align-items:center"><p><b>Closed form.</b> Set $\nabla J=\frac1m\big[\bX^\top(\bX\bth-\by)+\lambda\mathbf L\bth\big]=\bzero$:</p>
+      <div class="bluebox" style="justify-self:start">$$\bth^*_{\text{ridge}}=(\bX^\top\bX+\lambda\mathbf L)^{-1}\bX^\top\by$$</div></div>
+    <p class="step"><b>This inverse always exists for $\lambda\gt0$</b>, even with duplicated features or $n\gt m$. For $\bv\ne\bzero$: $\ \bv^\top(\bX^\top\bX+\lambda\mathbf L)\bv=\norm{\bX\bv}^2+\lambda\sum_{j\ge1}v_j^2\gt0$. The second term is positive unless only $v_0\ne0$, and then $\bX\bv=v_0\mathbf 1\ne\bzero$. Positive definite: <b>a unique minimum</b>. $\blacksquare$</p>
+    <p class="step"><b>One standardized feature:</b> $\ \theta_{\text{ridge}}=\dfrac{\theta_{\text{OLS}}}{1+\lambda/m}$. Smaller, but <b>never exactly zero</b>.</p>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Regularization – L1 (Lasso): why exact zeros?</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:9px">
+      <p>One standardized feature with OLS solution $z$. We must minimize</p>
+      <div class="eq">$$g(\theta)=\tfrac12(\theta-z)^2+\lambda|\theta|$$</div>
+      <p class="step"><b>If $\theta\gt0$:</b> $\ g'=\theta-z+\lambda=0\Rightarrow\theta=z-\lambda$, valid only if $z\gt\lambda$.</p>
+      <p class="step"><b>If $\theta\lt0$:</b> $\ g'=\theta-z-\lambda=0\Rightarrow\theta=z+\lambda$, valid only if $z\lt-\lambda$.</p>
+      <p class="step"><b>Otherwise</b> ($|z|\le\lambda$) the minimum sits at the kink: $\theta=0$.</p>
+      <div class="bluebox step">$$\theta_{\text{lasso}}=\mathrm{sign}(z)\,\max\big(|z|-\lambda,\,0\big)$$</div>
+      <p class="step small"><b>Soft-thresholding.</b> The L2 penalty's slope $2\theta$ vanishes near 0, so it never pushes all the way. The L1 penalty pushes with constant force $\lambda$, however small $\theta$ is.</p>
+    </div>
+    <div class="widget" data-fig="shrink">
+      <svg class="fig" aria-label="Regularized coefficient against the OLS coefficient for OLS, Ridge and Lasso"></svg>
+      <div class="ctl"><label for="sh-l">λ</label><input type="range" id="sh-l" data-k="l" min="0" max="2" step="0.05" value="0.8"><span class="v" data-v="l">0.80</span></div>
+      <div class="legend"><span><i style="background:var(--muted)"></i>OLS</span><span><i style="background:var(--blue)"></i>Ridge</span><span><i style="background:var(--red)"></i>Lasso</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Regularization – The geometric picture</h2>
+  <svg class="fig" data-fig="l1l2" aria-label="Loss contours touching an L1 diamond at a corner, an L2 circle, and an elastic-net shape"></svg>
+  <div class="cols">
+    <p class="small">Minimizing $J+\lambda R$ is the same as minimizing $J$ subject to $R(\bth)\le t$. The solution (green) is where the contours of $J$ <b>first touch</b> the region. The L1 diamond has <b>corners on the axes</b>, so it usually touches at a corner, where $\theta_2=0$.</p>
+    <div class="stack">
+      <p class="small"><b>Elastic Net:</b> $\ \lambda\Big[\rho\norm{\bth}_1+\frac{1-\rho}{2}\norm{\bth}_2^2\Big],\ \rho\in[0,1]$.</p>
+      <p class="small">Lasso keeps one of a group of correlated features at random and drops the others. The L2 part makes them share the weight; the L1 part still gives sparsity.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Regularization – Coefficient paths</h2>
+  <p class="small">8 standardized features, only 3 truly matter (solid lines; dashed = irrelevant). Feature 5 (dark red, dashed) is a near-copy of feature 0 (blue).</p>
+  <svg class="fig" data-fig="paths" aria-label="Ridge and Lasso coefficient paths as lambda grows"></svg>
+  <p class="small">Ridge shrinks everything gradually. Lasso switches coefficients off one by one: at a moderate λ only the useful features survive. Which one of a correlated pair Lasso keeps is somewhat arbitrary.</p>
+</section>
+
+<section class="slide">
+  <h2>Regularization – A prior in disguise (MAP)</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:10px">
+      <p>Bayes: $p(\bth\mid\mathcal D)\propto p(\mathcal D\mid\bth)\,p(\bth)$. Maximize the posterior:</p>
+      <div class="eq step">$$\hat\bth_{\text{MAP}}=\arg\min_{\bth}\big[\underbrace{-\log p(\mathcal D\mid\bth)}_{\text{loss}}\ \underbrace{-\log p(\bth)}_{\text{penalty}}\big]$$</div>
+      <ul class="step">
+        <li><b>Gaussian prior</b> $\theta_j\sim\mathcal N(0,\tau^2)$: $\ -\log p(\bth)=\frac{1}{2\tau^2}\sum_j\theta_j^2+c$ → <b>L2</b>.</li>
+        <li><b>Laplace prior</b> $p(\theta_j)\propto e^{-|\theta_j|/b}$: $\ -\log p(\bth)=\frac1b\sum_j|\theta_j|+c$ → <b>L1</b>.</li>
+      </ul>
+      <p class="step">For linear regression with noise $\sigma^2$: <b>MAP = Ridge with $\lambda=\sigma^2/\tau^2$</b>. A strong prior (small $\tau$) or noisy data (large $\sigma$) means more regularization.</p>
+    </div>
+    <svg class="fig" data-fig="priors" aria-label="Gaussian and Laplace prior densities"></svg>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Regularization – Choosing λ</h2>
+  <div class="cols">
+    <svg class="fig" data-fig="cv-lambda" aria-label="Training and validation error as lambda varies"></svg>
+    <div class="stack" style="gap:14px">
+      <ul>
+        <li>Training error always prefers $\lambda=0$ (blue): it can't choose λ.</li>
+        <li>Validation error (orange) has a minimum: that is the λ we want.</li>
+        <li>Search λ on a <b>log grid</b> with $k$-fold cross-validation.</li>
+        <li>Put the scaling <b>inside</b> the CV loop (scikit-learn <code>Pipeline</code>), or the validation fold leaks into $\mu,\sigma$.</li>
+      </ul>
+      <div class="note"><p class="small"><code>RidgeCV</code>, <code>LassoCV</code>, <code>LogisticRegressionCV</code> do this for you.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Regularization – Logistic regression</h2>
+  <div class="stack" style="gap:12px">
+    <div class="eq">$$J(\bth)=-\frac1m\sum_{i=1}^m\Big[y^{(i)}\log h_{\bth}(\bx^{(i)})+(1-y^{(i)})\log\big(1-h_{\bth}(\bx^{(i)})\big)\Big]+\frac{\lambda}{2m}\sum_{j=1}^n\theta_j^2$$</div>
+    <div class="eq step">$$\nabla J=\frac1m\Big[\bX^\top\big(g(\bX\bth)-\by\big)+\lambda\mathbf L\bth\Big]$$</div>
+    <ul class="step">
+      <li>The Hessian gains $+\frac\lambda m\mathbf L$: strictly convex, and it <b>always has a finite solution</b>, even for separable data.</li>
+      <li>L1 works the same way and gives sparse logistic models.</li>
+      <li>scikit-learn's <code>LogisticRegression</code> is <b>L2-regularized by default</b> with $C=1/\lambda=1$. Large $C$ = weak regularization.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Regularization – Input variables</h2>
+  <div class="cols c3">
+    <div class="stack"><h3>Scale numerics</h3><p class="small">Standardize before GD and before any penalty. Compute $\mu_j,\sigma_j$ on the <b>training</b> data only and reuse them everywhere. After standardizing, $\theta_j$ = effect of +1 standard deviation: comparable across features.</p></div>
+    <div class="stack"><h3>One-hot categoricals</h3><p class="small">Keep $K-1$ dummies with an intercept (dummy trap). With L2, keeping all $K$ is also fine: the penalty makes the solution unique. High-cardinality categories: group rare levels, or target-encode inside the CV folds.</p></div>
+    <div class="stack"><h3>Add transforms</h3>
+      <table class="t" style="font-size:16px"><tr><th>pattern</th><th>feature</th></tr><tr><td>curved</td><td>$x^2$, splines</td></tr><tr><td>skewed</td><td>$\log(1+x)$</td></tr><tr><td>interaction</td><td>$x_1x_2$</td></tr><tr><td>periodic</td><td>$\sin\frac{2\pi t}{T},\cos\frac{2\pi t}{T}$</td></tr></table></div>
+  </div>
+  <div class="warnbox"><p class="small">More features means more variance: pair them with regularization and CV. Watch for <b>leakage features</b>, known only after the outcome (e.g. "claim paid amount" when predicting fraud at claim opening).</p></div>
+</section>
+
+<section class="slide">
+  <h2>Regularization – Collinearity</h2>
+  <div class="stack" style="gap:12px;max-width:1100px">
+    <p>Under the model assumptions, with $\hat\bth=(\bX^\top\bX)^{-1}\bX^\top\by$ and $\by=\bX\bth+\boldsymbol\varepsilon$:</p>
+    <div class="eq step">$$\hat\bth=\bth+(\bX^\top\bX)^{-1}\bX^\top\boldsymbol\varepsilon\quad\Rightarrow\quad\E[\hat\bth]=\bth\ \ \text{(unbiased)}$$</div>
+    <div class="eq step">$$\mathrm{Cov}(\hat\bth)=\sigma^2(\bX^\top\bX)^{-1}$$</div>
+    <p class="step">Nearly dependent columns → $\bX^\top\bX$ has a tiny eigenvalue → its inverse has a huge one → <b>the variance of the coefficients explodes</b>. Predictions barely suffer; interpretations do.</p>
+    <div class="cols step" style="align-items:center">
+      <div class="bluebox" style="justify-self:start">$$\mathrm{VIF}_j=\frac{1}{1-R_j^2}$$</div>
+      <p class="small">$R_j^2$ = the $R^2$ of regressing $x_j$ on all the other features. VIF above 5–10 signals a problem. Remedies: drop or combine features, or use Ridge.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Assumptions – Linear regression</h2>
+  <table class="t" style="font-size:17px">
+    <tr><th style="width:18%">Assumption</th><th style="width:22%">Formal</th><th>If violated</th><th>How to check</th></tr>
+    <tr><td>Linearity</td><td>$\E[y\mid\bx]=\bth^\top\bx$</td><td>biased predictions</td><td>residuals vs fitted show a curve</td></tr>
+    <tr><td>Exogeneity</td><td>$\E[\varepsilon\mid\bx]=0$</td><td>biased, not causal</td><td>domain knowledge</td></tr>
+    <tr><td>Independence</td><td>$\varepsilon^{(i)}$ independent</td><td>over-confident standard errors</td><td>residuals vs time</td></tr>
+    <tr><td>Homoscedasticity</td><td>$\mathrm{Var}(\varepsilon\mid\bx)=\sigma^2$</td><td>wrong standard errors</td><td>residuals fan out</td></tr>
+    <tr><td>Normal errors</td><td>$\varepsilon\sim\mathcal N(0,\sigma^2)$</td><td>only exact tests</td><td>Q-Q plot</td></tr>
+    <tr><td>No perfect collinearity</td><td>independent columns</td><td>not unique</td><td>rank, VIF</td></tr>
+  </table>
+  <svg class="fig" data-fig="resid-diag" style="max-height:220px" aria-label="Three residual plots: healthy, curved and funnel-shaped"></svg>
+  <p class="tiny muted">Gauss–Markov: under 1–4 and 6, OLS is the Best Linear Unbiased Estimator (BLUE).</p>
+</section>
+
+<section class="slide">
+  <h2>Assumptions – Logistic regression</h2>
+  <div class="cols c64">
+    <table class="t">
+      <tr><th style="width:36%">Assumption</th><th>Notes and check</th></tr>
+      <tr><td>Bernoulli outcome</td><td>multiclass → softmax</td></tr>
+      <tr><td>Independent observations</td><td>repeated measures break it: grouped CV</td></tr>
+      <tr><td>Linear log-odds</td><td>bin a feature, plot $\log\frac{\bar y}{1-\bar y}$ per bin: roughly straight?</td></tr>
+      <tr><td>No perfect collinearity</td><td>VIF</td></tr>
+      <tr><td>No perfect separation</td><td>else $\norm{\bth}\to\infty$: use L2</td></tr>
+      <tr><td>Enough data</td><td>~10–20 events of the rarer class per feature</td></tr>
+    </table>
+    <div class="stack" style="gap:12px">
+      <p><b>Not assumed:</b></p>
+      <ul class="small"><li>normally distributed features,</li><li>a linear relation between $\bx$ and $p$ itself (it is S-shaped by design),</li><li>equal variance: $p(1-p)$ is part of the model.</li></ul>
+      <div class="note"><p class="small">There is no error term, so no normality or homoscedasticity is needed.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Regularization – Summary and lab</h2>
+  <div class="cols c64">
+    <ul class="small">
+      <li>Regularization = loss + $\lambda\times$ penalty; don't penalize $\theta_0$; standardize first; choose $\lambda$ by CV.</li>
+      <li><b>L2 (Ridge):</b> closed form $(\bX^\top\bX+\lambda\mathbf L)^{-1}\bX^\top\by$, always unique; shrinks, never zeroes; Gaussian prior; weight decay in GD.</li>
+      <li><b>L1 (Lasso):</b> soft-thresholding, exact zeros, feature selection; Laplace prior. <b>Elastic Net</b> for correlated features.</li>
+      <li>Logistic regression: L2 guarantees a finite solution; scikit-learn uses $C=1/\lambda$.</li>
+      <li>Inputs: scale, one-hot with $K-1$ dummies, transforms, watch collinearity (VIF) and leakage.</li>
+    </ul>
+    <div class="stack center" style="gap:16px">
+      <div class="note" style="text-align:left"><p class="small"><b>lab 3: Polynomial Regression and Regularisation.</b> Overfitting, train vs test error, Ridge, λ by cross-validation, Ridge vs Lasso coefficients.</p></div>
+      <p style="font-size:26px"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/machina_learning/lab%20-%20Polynomial%20Regression%20and%20Regularisation.ipynb" target="_blank" rel="noopener">Polynomial regression lab</a></p>
+    </div>
+  </div>
+</section>
+<section class="slide cover">
+  <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Next: Decision Trees</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+</div></div>
+<script src="assets/figures.js"></script>
+<script src="assets/fig-regularization.js"></script>
+<script src="assets/deck.js"></script>
+</body>
+</html>
