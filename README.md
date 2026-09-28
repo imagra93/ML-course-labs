@@ -46,9 +46,21 @@ in Colab, use **Runtime → Change runtime type → T4 GPU**.
 | 10 | [CNNs for image classification](deep_learning/Demo_CNN_Multiclass.ipynb) | Convolutions, pooling, feature maps, data augmentation | opt. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/deep_learning/Demo_CNN_Multiclass.ipynb) |
 | 11 | [LSTM sentiment analysis](deep_learning/LSTM_sentiment.ipynb) | Sequence models, embeddings, padding/packing, IMDB reviews | opt. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/deep_learning/LSTM_sentiment.ipynb) |
 | 12 | [Multi-task face analysis (plain PyTorch)](deep_learning/multitask_face_plain_pytorch.ipynb) | Shared backbone, multiple heads, combined losses, transfer learning | **yes** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/deep_learning/multitask_face_plain_pytorch.ipynb) |
-| 13 | [Multi-task face analysis (Lightning)](deep_learning/task_face_notebook.ipynb) | Same task with PyTorch Lightning: `LightningModule`, callbacks, logging | **yes** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/deep_learning/task_face_notebook.ipynb) |
+| 13 | [Multi-task face analysis (Lightning)](deep_learning/multitask_face_lightning.ipynb) | Three tasks (eyes + gender + age) with Lightning: `LightningModule`, `LightningDataModule`, callbacks, TorchMetrics, loss weighting | **yes** | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/deep_learning/multitask_face_lightning.ipynb) |
 | 14 | [Text generation with Transformers](deep_learning/Text_Generation_with_Transformers.ipynb) | GPT-2, autoregressive decoding, greedy vs. sampling vs. beam search | opt. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/deep_learning/Text_Generation_with_Transformers.ipynb) |
 | 15 | [RAG: embeddings and similarity search](deep_learning/rag_embeddings_demo.ipynb) | Vector representations, cosine similarity, retrieval, PCA visualisation | – | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/deep_learning/rag_embeddings_demo.ipynb) |
+
+## Part 3 — Time Series
+
+The methodology lab. Linear regression again, but with data where the i.i.d. assumption
+fails — and where the usual validation habits silently produce worthless models.
+
+| # | Lab | Topics | Colab |
+|---|-----|--------|-------|
+| 16 | [Linear Regression for Time Series](machina_learning/lab%20-%20Linear%20Regression%20for%20Time%20Series.ipynb) | Why random splits leak, chronological & rolling-origin validation (`TimeSeriesSplit`), causal lag/rolling/calendar features, look-ahead bias, MASE vs. R², baselines and residual diagnostics | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/machina_learning/lab%20-%20Linear%20Regression%20for%20Time%20Series.ipynb) |
+
+Best placed at the end of the course: it assumes Labs 1 and 2, and it re-examines the
+train/validation discipline students have been applying since Lab 1.
 
 ---
 
@@ -103,7 +115,7 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
 
 Nothing needs to be downloaded by hand:
 
-- Lab 0 and labs 1–6, 7, 8, 15 use synthetic data or the small datasets bundled with
+- Lab 0, labs 1–6, labs 7, 8, 15 and lab 16 use synthetic data or the small datasets bundled with
   scikit-learn (Iris, Wine, Breast Cancer, Diabetes).
 - Labs 9–10 download **Fashion-MNIST** through `torchvision.datasets` on first run.
 - Lab 11 downloads the **IMDB** review dataset through `tf.keras.datasets`.
