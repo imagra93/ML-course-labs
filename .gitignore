@@ -17,3 +17,10 @@ checkpoints/
 .DS_Store
 .vscode/
 .idea/
+
+# Training artefacts written by the deep_learning notebooks
+checkpoints_plain/
+deep_learning/checkpoints_plain/
+logs/
+logs_lightning/
+deep_learning/logs_lightning/
