@@ -14,6 +14,11 @@ checkpoints/
 *.pth
 *.zip
 
+# YOLO weights, exports and training runs (notes_NN/07_object_detection_yolo)
+*.pt
+*.onnx
+runs/
+
 .DS_Store
 .vscode/
 .idea/
