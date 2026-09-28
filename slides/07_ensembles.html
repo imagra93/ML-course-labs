@@ -12,7 +12,7 @@
 <script src="assets/mathjax-config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
 </head>
-<body data-deck="7 · Bagging, random forest and boosting">
+<body data-deck="7 · Bagging, random forest and boosting" data-prev="06_decision_trees.html" data-next="08_svm.html">
 <div id="viewport"><div id="stage">
 <section class="slide cover">
   <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Bagging, Random Forest and Boosting</p></div>
@@ -33,7 +33,7 @@
       <p class="step">With correlation $\rho$ between the models:</p>
       <div class="bluebox step">$$\mathrm{Var}(\bar h)=\rho\,\sigma^2+\frac{1-\rho}{B}\,\sigma^2$$</div>
     </div>
-    <div class="widget" data-fig="avg">
+    <div class="widget" data-fig="avg" data-auto="r=0;b=10 :: ρ = 0: the variance falls like 1/B|r=0.3;b=100 :: B = 100 with ρ = 0.3: almost at the floor ρσ²|r=0.8;b=100 :: ρ = 0.8: correlated models, averaging barely helps">
       <svg class="fig" aria-label="Variance of an average of B models as B grows, with the floor rho sigma squared"></svg>
       <div class="ctl"><label for="av-r">correlation ρ</label><input type="range" id="av-r" data-k="r" min="0" max="1" step="0.01" value="0.3"><span class="v" data-v="r">0.30</span></div>
       <div class="ctl"><label for="av-b">models B</label><input type="range" id="av-b" data-k="b" min="1" max="100" step="1" value="10"><span class="v" data-v="b">10</span></div>
@@ -57,7 +57,7 @@
 <section class="slide">
   <h2>Ensemble methods – The bootstrap</h2>
   <div class="cols">
-    <div class="widget" data-fig="boot">
+    <div class="widget" data-fig="boot" data-auto="go=click :: A new bootstrap sample: some points twice, some never|go=click :: Another one|go100=click :: 100 more: the left-out fraction settles near 0.35">
       <p class="small">Original training set, m = 10:</p>
       <div data-k="orig" style="line-height:52px"></div>
       <p class="small">One bootstrap sample: drawn <b>with replacement</b> (×n = drawn n times, dashed = never drawn):</p>
@@ -107,7 +107,7 @@
 <section class="slide">
   <h2>Random Forest – One tree vs a forest</h2>
   <div class="cols c64">
-    <div class="widget" data-fig="forest">
+    <div class="widget" data-fig="forest" data-auto="m=tree :: One deep tree: jagged boxes around single noisy points|m=forest;b=3 :: A forest of 3 trees|m=forest;b=50 :: 50 trees: smooth boundary, graded probabilities, better test accuracy">
       <svg class="fig" aria-label="Decision regions of a single deep tree or of a random forest"></svg>
       <div class="ctl"><span class="seg" role="group" aria-label="Model"><button type="button" data-m="tree" aria-pressed="false">One deep tree</button><button type="button" data-m="forest" aria-pressed="true">Random forest</button></span></div>
       <div class="ctl"><label for="fo-b">number of trees</label><input type="range" id="fo-b" data-k="b" min="1" max="50" step="1" value="25"><span class="v" data-v="b">25</span></div>
@@ -165,7 +165,7 @@
 <section class="slide">
   <h2>AdaBoost</h2>
   <div class="stack" style="gap:14px">
-    <svg class="fig" data-fig="adaboost" aria-label="Two weak learners on re-weighted data combined into a strong learner"></svg>
+    <svg class="fig" data-fig="adaboost" style="max-height:300px" aria-label="Two weak learners on re-weighted data combined into a strong learner"></svg>
     <div class="cols c3">
       <div class="stack"><h3>Weak learners</h3><p class="small">Usually decision <b>stumps</b>: trees with a single split.</p></div>
       <div class="stack"><h3>Weights on data points</h3><p class="small">Every example starts with equal weight. After each learner, the weights of the <b>misclassified</b> examples are increased: the next learner focuses on the hard ones.</p></div>
@@ -187,7 +187,7 @@
       </ol>
       <p class="small why">For any loss, the residual is replaced by the negative gradient $-\partial\ell/\partial F$: gradient descent in function space. For log-loss it is $y-p$.</p>
     </div>
-    <div class="widget" data-fig="boost">
+    <div class="widget" data-fig="boost" data-auto="m=1;nu=0.3 :: M = 1: one shallow tree, a rough staircase|m=20;nu=0.3 :: M = 20: the residuals are being fitted|m=200;nu=0.3 :: M = 200: train MSE keeps falling, validation MSE rises: overfitting|m=200;nu=1 :: ν = 1: bigger steps, overfits sooner|m=200;nu=0.1 :: ν = 0.1: slower, needs more trees, more robust">
       <svg class="fig" aria-label="Data and the boosted model after M trees, and train and validation error"></svg>
       <div class="ctl"><label for="bo-m">trees M</label><input type="range" id="bo-m" data-k="m" min="0" max="200" step="1" value="5"><span class="v" data-v="m">5</span>
         <span class="seg" role="group" aria-label="Learning rate"><button type="button" data-nu="0.1" aria-pressed="false">ν 0.1</button><button type="button" data-nu="0.3" aria-pressed="true">ν 0.3</button><button type="button" data-nu="1" aria-pressed="false">ν 1.0</button></span></div>
@@ -230,7 +230,7 @@
   </div>
 </section>
 <section class="slide cover">
-  <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Next: Support Vector Machines</p></div>
+  <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Next: Support Vector Machines</p><p class="go">Press → to continue with the next topic</p></div>
   <p class="mail">imanolgranada@gmail.com</p>
 </section>
 </div></div>

@@ -45,8 +45,10 @@ function solve(A,b){const n=b.length;A=A.map(r=>r.slice());b=b.slice();
 const fmt=(v,d)=>(Math.abs(v)<1e-12?0:v).toFixed(d===undefined?2:d);
 function equalY(w,h,m,xr,yc){const aw=w-m.l-m.r,ah=h-m.t-m.b;const span=(xr[1]-xr[0])*ah/aw;return [yc-span/2,yc+span/2]}
 const q=(root,k)=>root.querySelector('[data-k="'+k+'"]');
-const setV=(root,k,v)=>root.querySelectorAll('[data-v="'+k+'"]').forEach(e=>e.textContent=v);
-const setR=(root,k,v)=>root.querySelectorAll('[data-r="'+k+'"]').forEach(e=>e.textContent=v);
+/* Output boxes may live outside the widget (e.g. in the text column): fall back to the whole slide. */
+const scope=(root,sel)=>{let n=root.querySelectorAll(sel);if(!n.length){const s=root.closest('.slide');if(s)n=s.querySelectorAll(sel)}return n};
+const setV=(root,k,v)=>scope(root,'[data-v="'+k+'"]').forEach(e=>e.textContent=v);
+const setR=(root,k,v)=>scope(root,'[data-r="'+k+'"]').forEach(e=>e.textContent=v);
 const svgOf=root=>root.tagName.toLowerCase()==='svg'?root:root.querySelector('svg');
 
 const FIG={};

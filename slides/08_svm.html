@@ -12,7 +12,7 @@
 <script src="assets/mathjax-config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
 </head>
-<body data-deck="8 · Support vector machines">
+<body data-deck="8 · Support vector machines" data-prev="07_ensembles.html" data-next="../slides-nn/index.html" data-next-title="Neural networks">
 <div id="viewport"><div id="stage">
 <section class="slide cover">
   <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Support Vector Machines</p></div>
@@ -62,10 +62,10 @@
 <section class="slide">
   <h2>Support Vector Machine (SVM): Dot Product</h2>
   <div class="cols">
-    <svg class="fig" data-fig="dotprod" aria-label="The shadow of x on the direction of w"></svg>
+    <svg class="fig" data-fig="dotprod" style="max-height:315px" aria-label="The shadow of x on the direction of w"></svg>
     <div class="stack" style="gap:10px">
       <p>It has two equivalent forms:</p>
-      <div class="eq">$$\mathbf w^\top\bx=w_1x_1+\dots+w_nx_n=\norm{\mathbf w}\,\norm{\bx}\cos\alpha,\qquad\norm{\mathbf w}=\sqrt{\textstyle\sum_jw_j^2}$$</div>
+      <div class="eq s">$$\mathbf w^\top\bx=w_1x_1+\dots+w_nx_n=\norm{\mathbf w}\,\norm{\bx}\cos\alpha$$ $$\text{with }\norm{\mathbf w}=\sqrt{\textstyle\sum_jw_j^2}$$</div>
       <p class="small">$\norm{\bx}\cos\alpha$ is the length of the <b>projection</b> (the "shadow") of $\bx$ on $\mathbf w$. $\norm{\mathbf w}$ only gets in the way, so we use the unit vector:</p>
       <div class="eq">$$\hat{\mathbf w}=\frac{\mathbf w}{\norm{\mathbf w}}\ \Rightarrow\ \hat{\mathbf w}^\top\bx=\frac{\mathbf w^\top\bx}{\norm{\mathbf w}}=\norm{\bx}\cos\alpha$$</div>
       <p class="step">Distances along $\mathbf w$ are differences of shadows, so the <b>signed distance</b> from $\bx$ to the hyperplane is</p>
@@ -82,7 +82,7 @@
     <div class="stack" style="gap:10px">
       <div class="eq">$$\text{Decision boundary}=\begin{cases}+1&amp;\text{if }\mathbf w\cdot\bx+b\ge\hl{+1}\\-1&amp;\text{if }\mathbf w\cdot\bx+b\le\hl{-1}\end{cases}$$</div>
       <p>The goal is to find $\mathbf w$ and $b$ (the hyperplane) such that:</p>
-      <div class="eq">$$\begin{cases}\mathbf w\cdot\bx^{(i)}+b\ge1,&amp;\forall i\text{ with }y^{(i)}=+1\\\mathbf w\cdot\bx^{(i)}+b\le-1,&amp;\forall i\text{ with }y^{(i)}=-1\end{cases}\iff y^{(i)}\big(\mathbf w\cdot\bx^{(i)}+b\big)\ge1$$</div>
+      <div class="eq s">$$\begin{cases}\mathbf w\cdot\bx^{(i)}+b\ge1,&amp;\forall i\text{ with }y^{(i)}=+1\\\mathbf w\cdot\bx^{(i)}+b\le-1,&amp;\forall i\text{ with }y^{(i)}=-1\end{cases}$$ $$\iff\ y^{(i)}\big(\mathbf w\cdot\bx^{(i)}+b\big)\ge1$$</div>
       <p>Or equivalently (and only for the <b>support vectors</b>):</p>
       <div class="eq">$$y^{(i)}\big(\mathbf w\cdot\bx^{(i)}+b\big)-1=0$$</div>
       <p class="step small"><b>Why ±1?</b> $\mathbf w$ of any scale gives the same line: $(c\mathbf w,cb)$ with $c\gt0$ changes nothing. We spend that freedom by putting the closest points at $f=\pm1$.</p>
@@ -96,7 +96,7 @@
     <svg class="fig" data-fig="margin" aria-label="Margin between the two dashed lines"></svg>
     <div class="stack" style="gap:10px">
       <p>How do we measure the margin? <b>Projecting!</b> Take a support vector on each side, $\bx_+$ and $\bx_-$:</p>
-      <div class="eq">$$d_+=\frac{\mathbf w\cdot\bx_+}{\norm{\mathbf w}},\quad d_-=\frac{\mathbf w\cdot\bx_-}{\norm{\mathbf w}}\ \Rightarrow\ d=d_+-d_-=\frac{1}{\norm{\mathbf w}}\big(\mathbf w\cdot\bx_+-\mathbf w\cdot\bx_-\big)$$</div>
+      <div class="eq s">$$d_+=\frac{\mathbf w\cdot\bx_+}{\norm{\mathbf w}},\qquad d_-=\frac{\mathbf w\cdot\bx_-}{\norm{\mathbf w}}$$ $$d=d_+-d_-=\frac{1}{\norm{\mathbf w}}\big(\mathbf w\cdot\bx_+-\mathbf w\cdot\bx_-\big)$$</div>
       <p class="step">For the support vectors, $y^{(i)}(\mathbf w\cdot\bx^{(i)}+b)-1=0$ gives $\mathbf w\cdot\bx_+=1-b$ and $\mathbf w\cdot\bx_-=-1-b$:</p>
       <div class="eq step">$$d=\frac{1}{\norm{\mathbf w}}\big((1-b)-(-1-b)\big)=\frac{1}{\norm{\mathbf w}}(1-b+1+b)$$</div>
       <div class="bluebox step">$$d=\frac{2}{\norm{\mathbf w}}$$</div>
@@ -108,7 +108,7 @@
 <section class="slide">
   <h2>Support Vector Machine (SVM): Optimization</h2>
   <div class="cols c64">
-    <div class="widget" data-fig="angle">
+    <div class="widget" data-fig="angle" data-auto="p=90 :: Direction 90°: the projections almost touch, a tiny gap|p=140 :: Direction 140°: the classes overlap in this direction, no margin at all|p=36 :: Direction 36°: the widest gap between the classes. This is the direction of w|p=250 :: Keep turning: no margin again">
       <svg class="fig" aria-label="Points projected on a direction; the widest band in that direction; the gap for every direction"></svg>
       <div class="ctl"><label for="an-p">Direction of w</label><input type="range" id="an-p" data-k="p" min="0" max="359" step="1" value="20"><span class="v" data-v="p">20°</span></div>
       <div class="ro"><div class="m"><span>margin in this direction</span><b data-r="w">–</b></div></div>
@@ -116,7 +116,7 @@
     <div class="stack" style="gap:8px">
       <div class="eq">$$\max_{\mathbf w,b}\ \frac{2}{\norm{\mathbf w}}\quad\text{s.t. }y^{(i)}(\mathbf w\cdot\bx^{(i)}+b)-1\ge0,\ \forall i$$</div>
       <p class="small step">Maximizing $2/a$ is minimizing $a$, and minimizing $\frac12a^2$ (no square root, cleaner derivative):</p>
-      <div class="bluebox step">$$\min_{\mathbf w,b}\ \frac12\norm{\mathbf w}^2=\frac12\mathbf w^\top\mathbf w\quad\text{s.t. }y^{(i)}(\mathbf w\cdot\bx^{(i)}+b)-1\ge0,\ \forall i$$</div>
+      <div class="bluebox step" style="font-size:20px">$$\min_{\mathbf w,b}\ \frac12\norm{\mathbf w}^2=\frac12\mathbf w^\top\mathbf w$$ $$\text{s.t. }y^{(i)}(\mathbf w\cdot\bx^{(i)}+b)-1\ge0,\ \forall i$$</div>
       <p class="small step">Only some constraints will affect: the support vectors (circled). This problem is <b>convex</b> and can be solved with quadratic programming (QP) software, or with <b>Lagrange multipliers</b>.</p>
     </div>
   </div>
@@ -176,7 +176,7 @@
   <div class="cols c64">
     <div class="stack" style="gap:6px">
       <p class="small">Now substitute $\mathbf w=\sum_i\alpha_iy_i\bx_i$ and $\sum_i\alpha_iy_i=0$ into the Lagrangian (the $b$ term vanishes):</p>
-      <div class="eq step">$$\mathcal L(\boldsymbol\alpha)=\frac12\Big(\sum_i\alpha_iy_i\bx_i\Big)^\top\Big(\sum_j\alpha_jy_j\bx_j\Big)-\sum_i\alpha_iy_i\Big(\sum_j\alpha_jy_j\bx_j\Big)^\top\bx_i+\sum_i\alpha_i$$</div>
+      <div class="eq s step">$$\mathcal L(\boldsymbol\alpha)=\frac12\Big(\sum_i\alpha_iy_i\bx_i\Big)^\top\Big(\sum_j\alpha_jy_j\bx_j\Big)$$ $$\qquad-\sum_i\alpha_iy_i\Big(\sum_j\alpha_jy_j\bx_j\Big)^\top\bx_i+\sum_i\alpha_i$$</div>
       <p class="small step">Both double sums equal $\sum_{i,j}\alpha_i\alpha_jy_iy_j\bx_i^\top\bx_j$: half of it minus all of it leaves minus half.</p>
       <p class="small step">Thus, the <b>dual</b> optimization problem is:</p>
       <div class="bluebox step">$$\max_{\boldsymbol\alpha}\ \sum_i\alpha_i-\frac12\sum_{i}\sum_{j}\alpha_i\alpha_jy_iy_j\,\hl{\bx_i^\top\bx_j}\quad\text{s.t. }\sum_i\alpha_iy_i=0,\ \ \alpha_i\ge0$$</div>
@@ -206,7 +206,7 @@
 
 <section class="slide">
   <h2>Support Vector Machine (SVM): Kernels</h2>
-  <svg class="fig" data-fig="circles" aria-label="Concentric classes that no line separates, and the same data lifted with a third feature"></svg>
+  <svg class="fig" data-fig="circles" style="max-height:290px" aria-label="Concentric classes that no line separates, and the same data lifted with a third feature"></svg>
   <div class="cols">
     <div class="eq">$$\phi(\bx)=\big(x_1,\ x_2,\ e^{-(x_1^2+x_2^2)}\big)\in\R^3$$</div>
     <div class="eq">$$\langle\phi(\bx),\phi(\mathbf z)\rangle=x_1z_1+x_2z_2+e^{-(x_1^2+x_2^2)}e^{-(z_1^2+z_2^2)}$$</div>
@@ -229,8 +229,8 @@
     </div>
     <div class="stack" style="gap:10px">
       <p class="step"><b>Why the polynomial kernel works</b> (2-D, $c=1$, $d=2$):</p>
-      <div class="eq step">$$(\bx^\top\mathbf z+1)^2=x_1^2z_1^2+x_2^2z_2^2+2x_1x_2z_1z_2+2x_1z_1+2x_2z_2+1$$</div>
-      <div class="eq step">$$=\phi(\bx)^\top\phi(\mathbf z),\quad\phi(\bx)=\big(1,\sqrt2x_1,\sqrt2x_2,x_1^2,x_2^2,\sqrt2x_1x_2\big)$$</div>
+      <div class="eq s step">$$(\bx^\top\mathbf z+1)^2=x_1^2z_1^2+x_2^2z_2^2+2x_1x_2z_1z_2$$ $$\qquad+2x_1z_1+2x_2z_2+1$$</div>
+      <div class="eq s step">$$=\phi(\bx)^\top\phi(\mathbf z),\quad\phi(\bx)=\big(1,\sqrt2x_1,\sqrt2x_2,x_1^2,x_2^2,\sqrt2x_1x_2\big)$$</div>
       <p class="step small">One 2-D dot product instead of building 6 coordinates. For $n=100$ features and degree 3, $\phi$ would have 176,851 coordinates.</p>
     </div>
   </div>
@@ -246,7 +246,7 @@
       <div class="eq">$$f(\bx)=\sum_{i\in\text{SV}}\alpha_iy_i\,\hl{K(\bx_i,\bx)}+b$$</div>
       <p class="small"><b>RBF:</b> $f(\bx)$ is a <b>sum of Gaussian bumps</b>, one per support vector, up for $+1$, down for $-1$. $\gamma$ sets their width.</p>
     </div>
-    <div class="widget" data-fig="rbf">
+    <div class="widget" data-fig="rbf" data-auto="g=-1.5 :: Small γ: wide bumps, a smooth boundary (may underfit)|g=0 :: γ = 1|g=1.3 :: Large γ: narrow bumps around each support vector, memorises the training set">
       <svg class="fig" aria-label="Gaussian bumps centred on support vectors and their sum"></svg>
       <div class="ctl"><label for="rbf-g">γ (log scale)</label><input type="range" id="rbf-g" data-k="g" min="-1.5" max="1.3" step="0.05" value="0"><span class="v" data-v="g">1.00</span></div>
       <p class="why">Small γ: wide bumps, smooth boundary (may underfit). Large γ: narrow bumps that memorize the training set. Tune C and γ together by CV.</p>
@@ -269,14 +269,14 @@
 <section class="slide">
   <h2>Support Vector Machine (SVM): Soft-Margin</h2>
   <div class="cols">
-    <div class="widget" data-fig="softc">
+    <div class="widget" data-fig="softc" data-auto="c=-2 :: C = 0.01: wide margin, many violations tolerated|c=0 :: C = 1|c=2 :: C = 100: narrow margin, few violations, fits the training data tightly">
       <svg class="fig" aria-label="Soft-margin SVM on overlapping data with support vectors circled"></svg>
       <div class="ctl"><label for="sc-c">C (log scale)</label><input type="range" id="sc-c" data-k="c" min="-2" max="2" step="0.1" value="0"><span class="v" data-v="c">1.00</span></div>
       <div class="ro"><div class="m"><span>margin 2/‖w‖</span><b data-r="w">–</b></div><div class="m"><span>support vectors</span><b data-r="s">–</b></div><div class="m"><span>inside margin</span><b data-r="i">–</b></div><div class="m"><span>misclassified</span><b data-r="e">–</b></div></div>
     </div>
     <div class="stack" style="gap:8px">
       <p class="small"><b>Primal formulation for soft-margin SVM.</b> Real data overlap, so allow each point a slack:</p>
-      <div class="eq">$$\min_{\mathbf w,b,\boldsymbol\xi}\ \frac12\norm{\mathbf w}^2+\hl{C\sum_{i=1}^n\xi_i}\quad\text{s.t. }y_i(\mathbf w^\top\bx_i+b)\ge1-\hl{\xi_i},\ \ \xi_i\ge0$$</div>
+      <div class="eq s">$$\min_{\mathbf w,b,\boldsymbol\xi}\ \frac12\norm{\mathbf w}^2+\hl{C\sum_{i=1}^n\xi_i}$$ $$\text{s.t. }y_i(\mathbf w^\top\bx_i+b)\ge1-\hl{\xi_i},\ \ \xi_i\ge0$$</div>
       <ul class="small">
         <li>$\xi_i$ are <b>slack variables</b> that allow some points to be on the wrong side of the margin or the decision boundary: $\xi=0$ outside, $0\lt\xi\le1$ inside the margin, $\xi\gt1$ misclassified.</li>
         <li>$C$ is the <b>regularization parameter</b>: the trade-off between maximizing the margin and minimizing the violations.

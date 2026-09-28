@@ -12,7 +12,7 @@
 <script src="assets/mathjax-config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
 </head>
-<body data-deck="6 · Decision trees and CART">
+<body data-deck="6 · Decision trees and CART" data-prev="05_regularization.html" data-next="07_ensembles.html">
 <div id="viewport"><div id="stage">
 <section class="slide cover">
   <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Decision Trees and CART</p></div>
@@ -85,7 +85,7 @@
       <ul class="small"><li>$p_i$ = proportion of examples in class $i$.</li><li>$H(S)$ = entropy of dataset $S$.</li></ul>
       <p class="small">If all examples are in one class: $H(S)=0$ (pure).<br>If examples are evenly split across classes: $H(S)$ is maximized.</p>
       <p class="step">If the dataset has 8 Yes and 8 No:</p>
-      <div class="eq step">$$p_{\text{Yes}}=\tfrac{8}{16}=0.5,\ p_{\text{No}}=0.5\ \Rightarrow\ H(S)=-(0.5\log_20.5+0.5\log_20.5)=1$$</div>
+      <div class="eq s step">$$p_{\text{Yes}}=\tfrac{8}{16}=0.5,\quad p_{\text{No}}=0.5$$ $$H(S)=-(0.5\log_20.5+0.5\log_20.5)=1$$</div>
     </div>
     <svg class="fig" data-fig="entropy" aria-label="Entropy, Gini and misclassification error as a function of the class proportion"></svg>
   </div>
@@ -140,7 +140,7 @@
       <p class="small">Eight points, one feature. Root: 4 A, 4 B.</p>
       <p class="small">Only <b>midpoints between sorted values</b> change the partition, so those are the thresholds we try. With the feature sorted once, all of them are scored in one pass.</p>
     </div>
-    <div class="widget" data-fig="split">
+    <div class="widget" data-fig="split" data-auto="s=1 :: Threshold 1.5: one A on the left, tiny gain|s=3 :: Threshold 3.5: three A on the left, the gain grows|s=4 :: Threshold 4.5: the best split, both children are purer|s=6 :: Threshold 6.5: worse again|c=ent;s=4 :: Entropy instead of Gini: different numbers, same best split">
       <svg class="fig" aria-label="Eight labelled points with a split and the impurity decrease for every threshold"></svg>
       <div class="ctl"><label for="sp-s">Threshold</label><input type="range" id="sp-s" data-k="s" min="1" max="7" step="1" value="3"><span class="v" data-v="s">3.5</span>
         <span class="seg" role="group" aria-label="Impurity"><button type="button" data-c="gini" aria-pressed="true">Gini</button><button type="button" data-c="ent" aria-pressed="false">Entropy</button></span></div>
@@ -198,7 +198,7 @@
 <section class="slide">
   <h2>Decision Trees: Depth and overfitting</h2>
   <div class="cols c64">
-    <div class="widget" data-fig="tree-depth">
+    <div class="widget" data-fig="tree-depth" data-auto="d=1 :: Depth 1: a single split, underfits the wave|d=3 :: Depth 3: follows the wave, best test accuracy|d=6 :: Depth 6: small boxes around noisy points appear|d=10 :: Depth 10: memorises the noise, train accuracy ≈ 1, test accuracy drops">
       <svg class="fig" aria-label="Decision regions of a CART tree and its train and test accuracy against depth"></svg>
       <div class="ctl"><label for="td-d">max_depth</label><input type="range" id="td-d" data-k="d" min="1" max="10" step="1" value="2"><span class="v" data-v="d">2</span></div>
     </div>
@@ -259,7 +259,7 @@
   </div>
 </section>
 <section class="slide cover">
-  <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Next: Bagging, Random Forest and Boosting</p></div>
+  <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Next: Bagging, Random Forest and Boosting</p><p class="go">Press → to continue with the next topic</p></div>
   <p class="mail">imanolgranada@gmail.com</p>
 </section>
 </div></div>
