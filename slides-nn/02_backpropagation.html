@@ -9,15 +9,34 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
 <link rel="stylesheet" href="../slides/assets/deck.css">
+<link rel="stylesheet" href="assets/nn.css">
 <script src="../slides/assets/mathjax-config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
 </head>
-<body data-deck="2 · Forward and backward propagation">
+<body data-deck="2 · Forward and backward propagation" data-prev="01_neural_networks.html" data-next="03_training.html">
 <div id="viewport"><div id="stage">
 <section class="slide cover">
   <div class="inner"><h1>Neural Networks</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Forward and backward propagation</p></div>
   <p class="mail">imanolgranada@gmail.com</p>
 </section>
+
+<section class="slide">
+  <h2>Where we are</h2>
+  <div class="pipe" style="justify-content:center;padding-top:10px">
+    <div class="pb g"><b>data</b>x, y</div><span class="ar">→</span><div class="pb b"><b>forward</b>ŷ = h(x)</div><span class="ar">→</span><div class="pb o"><b>loss</b>L(ŷ, y)</div><span class="ar">→</span><div class="pb y"><b>backward</b>∂L/∂θ for every θ</div><span class="ar">→</span><div class="pb k"><b>update</b>θ ← θ − α ∂L/∂θ</div>
+  </div>
+  <div class="cols" style="padding-top:10px">
+    <div class="stack" style="gap:12px">
+      <p>Chapter 1 gave us the <b>forward</b> pass and the <b>loss</b>. Gradient descent needs one more thing: the derivative of the loss with respect to <b>every</b> weight and bias.</p>
+      <p class="step">A small MLP has thousands of parameters; GPT-2 has 124 million. We need a method that gets <b>all</b> the gradients cheaply and mechanically.</p>
+    </div>
+    <div class="stack" style="gap:12px">
+      <div class="note step"><p><b>Backpropagation</b> = the chain rule, applied from the loss backwards, reusing what the forward pass already computed.</p></div>
+      <p class="step why">This chapter: the chain rule on a graph with numbers, one neuron with numbers, the tiny network with numbers, then the general formulas, then two practical topics (initialization, vanishing gradients).</p>
+    </div>
+  </div>
+</section>
+
 <section class="slide">
   <h2>Gradient Calculation:</h2>
   <div class="cols">
@@ -39,13 +58,63 @@
 </section>
 
 <section class="slide">
+  <h2>A computation is a graph: $f=(a+b)\cdot c$</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="graph-num" data-auto="s=1 :: forward: q = a + b = 2 + 5 = 7 | s=2 :: forward: f = q · c = 7 · (−4) = −28 | s=3 :: backward starts at the output: ∂f/∂f = 1 | s=4 :: multiply node: ∂f/∂q = c = −4 and ∂f/∂c = q = 7 | s=5 :: add node: ∂f/∂a = ∂f/∂q · ∂q/∂a = (−4)·1 = −4, same for b">
+      <svg class="fig" aria-label="The computational graph of (a plus b) times c with forward values and backward gradients"></svg>
+      <div class="ctl"><label for="gn-s">step</label><input type="range" id="gn-s" data-k="s" min="0" max="5" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:10px">
+      <p class="small">Every node does one simple operation. <b>Forward</b>: compute each node from its inputs, left to right.</p>
+      <p class="small"><b>Backward</b>: start with $\partial f/\partial f=1$ and walk right to left. At each node,</p>
+      <div class="bluebox" style="font-size:20px">gradient of an input = (gradient of the output) × (local derivative)</div>
+      <p class="small step">Meaning of the result: increase $a$ by a tiny $\epsilon$ and $f$ changes by $-4\epsilon$. Check: $a=2.01\Rightarrow f=7.01\cdot(-4)=-28.04$. ✓</p>
+      <p class="small step">Each node needs only its <b>own</b> local derivative and the number coming from the right. No node has to know the whole formula. That is why it scales to millions of parameters and any architecture.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Three gates to remember</h2>
+  <svg class="fig" data-fig="gates" style="max-height:260px" aria-label="Add, multiply and max gates with their forward values and how they route the upstream gradient"></svg>
+  <div class="cols c3">
+    <p class="small"><b>Add</b> (biases, residual connections): the local derivative is 1 for each input, so the upstream gradient is <b>copied</b> to both branches.</p>
+    <p class="small"><b>Multiply</b> (weight × input): each input's gradient is the upstream gradient times the <b>other</b> input. A weight's gradient is proportional to the activation feeding it: $\partial L/\partial w=\delta\cdot a$.</p>
+    <p class="small"><b>Max</b> (ReLU, max-pooling): the gradient goes entirely to the input that won; the others get exactly 0.</p>
+  </div>
+  <p class="why">Every layer in this course is built from these plus the element-wise functions (sigmoid: local derivative $a(1-a)$; tanh: $1-a^2$).</p>
+</section>
+
+<section class="slide">
+  <h2>One neuron, forward and backward with numbers</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="neuron-bp" data-auto="s=1 :: loss node: ∂L/∂a = −1/a = −3.014 (L = −log a, y = 1) | s=2 :: sigmoid node: ∂L/∂z = ∂L/∂a · a(1−a) = −3.014 · 0.222 = −0.668, which is a − y | s=3 :: multiply and add nodes: ∂L/∂w = ∂L/∂z · x = −1.336, ∂L/∂b = ∂L/∂z = −0.668 | s=4 :: gradient descent step, α = 0.5: both parameters move against their gradient | s=5 :: forward again: the loss dropped from 1.103 to 0.321">
+      <svg class="fig" aria-label="The graph of one neuron with forward values in blue and gradients in red"></svg>
+      <div class="ctl"><label for="nb-s">step</label><input type="range" id="nb-s" data-k="s" min="0" max="5" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:6px">
+      <p class="small">$x=2$, $w=-0.5$, $b=0.3$, label $y=1$, loss $L=-\log a$ (cross-entropy).</p>
+      <div class="panels" style="min-height:190px">
+        <div data-i="0"><p class="small"><b>Forward.</b> $z=wx+b=-0.7$, $a=\sigma(-0.7)=0.332$, $L=-\log0.332=1.103$. The neuron says 33 % for a positive example: wrong-ish.</p></div>
+        <div data-i="1"><p class="small">$\dfrac{\partial L}{\partial a}=-\dfrac1a=-3.014$. Raising $a$ would lower the loss a lot.</p></div>
+        <div data-i="2"><p class="small">$\dfrac{\partial L}{\partial z}=\dfrac{\partial L}{\partial a}\cdot\sigma'(z)=-3.014\cdot0.222=-0.668$. Note: $=a-y$, the familiar logistic-regression error.</p></div>
+        <div data-i="3"><p class="small">$\dfrac{\partial L}{\partial w}=\dfrac{\partial L}{\partial z}\cdot x=-1.336$, $\ \dfrac{\partial L}{\partial b}=\dfrac{\partial L}{\partial z}=-0.668$. Both negative: increase $w$ and $b$.</p></div>
+        <div data-i="4"><p class="small">$w\leftarrow-0.5-0.5\cdot(-1.336)=0.168$, $\ b\leftarrow0.3-0.5\cdot(-0.668)=0.634$.</p></div>
+        <div data-i="5"><p class="small">$z=0.970$, $a=0.725$, $L=0.321$. One step of gradient descent, and the neuron went from 33 % to 73 % on this example.</p></div>
+      </div>
+      <p class="why">Blue numbers were computed left to right and stored. Every red number reuses a blue one.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
   <h2>Why backpropagation is efficient</h2>
   <div class="cols">
     <div class="stack" style="gap:12px">
       <p><b>Naive way:</b> nudge each of the $P$ parameters and re-run the network: $P$ forward passes. A small network has $10^5$ parameters; GPT-2 has $1.2\times10^8$.</p>
       <p class="step"><b>Backpropagation</b> = the chain rule applied from the loss backwards, <b>reusing</b> the partial results of the layer above.</p>
-      <ul class="step small"><li>One forward pass: store every $\bZ^{[l]}$ and $\bA^{[l]}$.</li><li>One backward pass: every gradient, at roughly the cost of one more forward pass.</li></ul>
-      <p class="step why">This is "reverse-mode automatic differentiation". It is why training networks with billions of weights is possible at all.</p>
+      <ul class="step small"><li>One forward pass: store every $\bZ^{[l]}$ and $\bA^{[l]}$.</li><li>One backward pass: every gradient, at roughly the cost of two forward passes.</li></ul>
+      <p class="step why">This is "reverse-mode automatic differentiation". It is why training networks with billions of weights is possible at all. Side effect: training needs several times the memory of inference, because all the activations are kept.</p>
     </div>
     <svg class="fig" data-fig="net-back" aria-label="The error signal flowing from the loss back to the input layer"></svg>
   </div>
@@ -68,14 +137,14 @@
       <p>A network with one hidden layer, the same example for all the derivations.</p>
       <p><b>Forward</b>: compute and <b>store</b> every intermediate result from $\bX$ to $L$.</p>
       <p><b>Backward</b>: go from $L$ back to $\bX$, turning each stored result into a gradient.</p>
-      <p class="why">Next slide: walk through both, one step at a time.</p>
+      <p class="why">Next slide: walk through both, one step at a time. Then the same walk with the numbers of the tiny network.</p>
     </div>
   </div>
 </section>
 
 <section class="slide">
   <h2>Forward and backward propagation: step by step</h2>
-  <div class="widget" data-fig="fb-walk">
+  <div class="widget" data-fig="fb-walk" data-auto="s=1 :: | s=2 :: | s=3 :: | s=4 :: | s=5 :: | s=6 :: | s=7 :: | s=8 :: | s=9 :: | s=10 :: | s=11 ::">
     <svg class="fig" style="max-height:190px" aria-label="Forward chain X, Z1, A1, Z2, A2, L and backward chain of gradients"></svg>
     <div class="ctl"><label for="fb-s">Step</label><input type="range" id="fb-s" data-k="s" min="0" max="11" step="1" value="0"><span class="v" data-v="s" style="min-width:150px">forward 1/6</span></div>
     <div style="min-height:230px;background:#f5f7fb;padding:14px 20px">
@@ -87,10 +156,33 @@
       <div data-i="5"><p><b>5 · The loss</b> compares predictions and targets: $\ L(\bA_2,\bY)$. Forward done: every $\bZ$ and $\bA$ is stored.</p></div>
       <div data-i="6"><p><b>Backward starts at the loss.</b> The error signal travels backward, the mirror image of the forward pass.</p></div>
       <div data-i="7"><p><b>Error term at the output, $\bdelta_2$.</b> By the chain rule:</p><div class="eq big">$$\bdelta_2=\frac{\partial L}{\partial\bZ_2}=\frac{\partial L}{\partial\bA_2}\odot\phi'(\bZ_2)$$</div><p class="small">"How sensitive the loss is to the output layer's raw input." For sigmoid + BCE or softmax + CE it simplifies to $\frac1m(\bA_2-\bY)$.</p></div>
-      <div data-i="8"><p><b>Gradient with respect to $\bW_2$ and $\bb_2$.</b> Since $\bZ_2=\bA_1\bW_2+\bb_2$:</p><div class="eq big">$$\frac{\partial L}{\partial\bW_2}=\bA_1^\top\bdelta_2,\qquad\frac{\partial L}{\partial\bb_2}=\sum_{i=1}^m\bdelta_2^{(i)}$$</div><p class="small">The bias gradient sums $\bdelta_2$ over all $m$ samples, since every sample shares the same bias.</p></div>
+      <div data-i="8"><p><b>Gradient with respect to $\bW_2$ and $\bb_2$.</b> Since $\bZ_2=\bA_1\bW_2+\bb_2$ (multiply gate: "the other input"):</p><div class="eq big">$$\frac{\partial L}{\partial\bW_2}=\bA_1^\top\bdelta_2,\qquad\frac{\partial L}{\partial\bb_2}=\sum_{i=1}^m\bdelta_2^{(i)}$$</div><p class="small">The bias gradient sums $\bdelta_2$ over all $m$ samples, since every sample shares the same bias.</p></div>
       <div data-i="9"><p><b>Send the error back through $\bW_2$:</b></p><div class="eq big">$$\frac{\partial L}{\partial\bA_1}=\bdelta_2\bW_2^\top$$</div><p class="small">This is why it's called back-propagation: $\bdelta_2$ flows backward through $\bW_2^\top$ to reach the hidden layer.</p></div>
       <div data-i="10"><p><b>Error term at the hidden layer, $\bdelta_1$.</b> Same chain rule, one layer further back:</p><div class="eq big">$$\bdelta_1=\frac{\partial L}{\partial\bZ_1}=\big(\bdelta_2\bW_2^\top\big)\odot\phi'(\bZ_1)$$</div></div>
       <div data-i="11"><p><b>Gradient with respect to $\bW_1$ and $\bb_1$.</b> Exactly the same shape as step 8, one layer earlier ($\bX$ plays the role $\bA_1$ played):</p><div class="eq big">$$\frac{\partial L}{\partial\bW_1}=\bX^\top\bdelta_1,\qquad\frac{\partial L}{\partial\bb_1}=\sum_{i=1}^m\bdelta_1^{(i)}$$</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The tiny network: backward with numbers</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="net-num" data-auto="s=1 :: output error: δ₂ = ŷ − y = 0.632 − 1 = −0.368 (sigmoid + cross-entropy) | s=2 :: gradients of layer 2: ∂W₂ = a₁ᵀ δ₂, ∂b₂ = δ₂ (multiply gate: the other input) | s=3 :: send δ₂ back through W₂: ∂a = δ₂ · W₂ᵀ = (−0.368·0.7, −0.368·(−0.5)) | s=4 :: through the tanh: δ₁ = ∂a ⊙ (1 − a²) = (−0.257·0.420, 0.184·0.856) | s=5 :: gradients of layer 1: ∂W₁ = xᵀ δ₁ (x = (1, 2)), ∂b₁ = δ₁ | s=6 :: update every parameter: θ ← θ − 0.5 · ∂θ | s=7 :: forward again with the new weights">
+      <svg class="fig" aria-label="The 2-2-1 network with forward values and every gradient written next to the nodes"></svg>
+      <div class="ctl"><label for="nn2-s">step</label><input type="range" id="nn2-s" data-k="s" min="0" max="7" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:6px">
+      <p class="small">Same network and example as chapter 1: $\bx=(1,2)$, $y=1$, $\hat y=0.632$, loss <b data-r="l0">–</b>.</p>
+      <div class="panels" style="min-height:210px">
+        <div data-i="0"><p class="small">Forward values are stored: $\bz_1=(1.0,0.4)$, $\ba_1=(0.762,0.380)$, $z_2=0.543$, $\hat y=0.632$.</p></div>
+        <div data-i="1"><p class="small">$\delta_2=\hat y-y=-0.368$. Negative: the output should go <b>up</b>.</p></div>
+        <div data-i="2"><p class="small">$\partial\bW_2=\ba_1^\top\delta_2=(0.762,0.380)\cdot(-0.368)=(-0.280,-0.140)$. The unit with the larger activation gets the larger gradient.</p></div>
+        <div data-i="3"><p class="small">$\partial\ba_1=\delta_2\bW_2^\top=(-0.257,\,0.184)$: hidden unit 1 (positive weight 0.7) should grow, unit 2 (weight −0.5) should shrink.</p></div>
+        <div data-i="4"><p class="small">$\bdelta_1=(-0.257\cdot0.420,\ 0.184\cdot0.856)=(-0.108,\,0.157)$. Unit 1 is already fairly saturated ($a=0.76$), so its gradient is damped: $1-a^2=0.42$.</p></div>
+        <div data-i="5"><p class="small">$\partial\bW_1=\bx^\top\bdelta_1=\begin{pmatrix}-0.108&0.157\\-0.216&0.314\end{pmatrix}$, $\ \partial\bb_1=(-0.108,0.157)$. Row 2 is twice row 1 because $x_2=2x_1$.</p></div>
+        <div data-i="6"><p class="small">$\bW_2\leftarrow(0.840,-0.430)$, $b_2\leftarrow0.384$, $\bW_1\leftarrow\begin{pmatrix}0.554&-0.379\\0.308&0.243\end{pmatrix}$, $\bb_1\leftarrow(0.154,-0.179)$.</p></div>
+        <div data-i="7"><p class="small">New loss <b data-r="l1">–</b>, down from <b data-r="l0">–</b>. With a mini-batch, every gradient is the <b>average</b> of these numbers over the examples.</p></div>
+      </div>
     </div>
   </div>
 </section>
@@ -110,6 +202,7 @@
     <div class="stack" style="gap:12px">
       <div class="note step"><p class="small"><b>Sanity check with shapes.</b> $\bA^{[l-1]\top}\bdelta^{[l]}$ is $(n_{l-1}\times m)(m\times n_l)=n_{l-1}\times n_l$, the shape of $\bW^{[l]}$. $\ \bdelta^{[l]}\bW^{[l]\top}$ is $m\times n_{l-1}$, the shape of $\bZ^{[l-1]}$. If you forget the formulas, the shapes almost force them.</p></div>
       <p class="step small"><b>Link to the ML classes.</b> With one layer ($\bA^{[0]}=\bX$): $\nabla_{\bW}J=\frac1m\bX^\top(\hat\bY-\bY)$. Exactly the gradients of linear and logistic regression: you already knew how to start!</p>
+      <p class="step small"><b>Link to the gates.</b> (b) is the multiply gate ("times the other input", summed over the batch), (c) is the multiply gate the other way round plus a sum over the units, and $\odot g'$ is the element-wise gate.</p>
     </div>
   </div>
 </section>
@@ -122,35 +215,42 @@
       <p class="small">Start: $\ \bA_0=\bX$</p>
       <p class="small">For each layer $k=1,\dots,K+1$:</p>
       <div class="eq">$$\bZ_k=\bA_{k-1}\bW_k+\bb_k,\qquad\bA_k=\phi_k(\bZ_k)$$</div>
-      <p class="small">Loss, at the last layer: $\ L(\bA_{K+1},\bY)$</p>
+      <p class="small">Loss, at the last layer: $\ L(\bA_{K+1},\bY)$. Keep every $\bZ_k,\bA_k$ in memory.</p>
     </div>
     <div class="stack" style="gap:6px;background:#f8eef3;padding:14px 18px">
       <p><b>← Backward</b></p>
-      <p class="small">Start at the output, $k=K+1$: $\ \bdelta_{K+1}=\dfrac{\partial L}{\partial\bA_{K+1}}\odot\phi'_{K+1}(\bZ_{K+1})$</p>
+      <p class="small">Start at the output, $k=K+1$: $\ \bdelta_{K+1}=\dfrac{\partial L}{\partial\bA_{K+1}}\odot\phi'_{K+1}(\bZ_{K+1})$ $\ \big(=\frac1m(\bA_{K+1}-\bY)$ for the matching loss$\big)$</p>
       <p class="small">For each layer $k=K+1,\dots,1$:</p>
       <div class="eq">$$\frac{\partial L}{\partial\bW_k}=\bA_{k-1}^\top\bdelta_k,\quad\frac{\partial L}{\partial\bb_k}=\sum_i\bdelta_k^{(i)},\quad\bdelta_{k-1}=\big(\bdelta_k\bW_k^\top\big)\odot\phi'_{k-1}(\bZ_{k-1})$$</div>
     </div>
   </div>
   <p><b>Update parameters</b> with gradient descent (learning rate $\eta$):</p>
   <div class="bluebox">$$\bW_k:=\bW_k-\eta\frac{\partial L}{\partial\bW_k},\qquad\bb_k:=\bb_k-\eta\frac{\partial L}{\partial\bb_k}$$</div>
+  <p class="why">Three matrix products per layer in the backward pass. Any layer type (conv, attention…) just needs its own version of these three lines.</p>
 </section>
 
 <section class="slide">
-  <h2>Gradient checking</h2>
+  <h2>Gradient checking, and autograd</h2>
   <div class="cols">
     <div class="stack" style="gap:12px">
       <p>A backprop implementation can be subtly wrong and still "train". Check it against a <b>numerical derivative</b>, one parameter at a time:</p>
       <div class="eq big">$$\frac{\partial J}{\partial\theta}\approx\frac{J(\theta+\varepsilon)-J(\theta-\varepsilon)}{2\varepsilon},\qquad\varepsilon\approx10^{-5}$$</div>
       <p class="step">The centred difference has error $O(\varepsilon^2)$, much better than the one-sided $O(\varepsilon)$.</p>
       <p class="step">Compare with the <b>relative error</b> $\dfrac{\norm{g_{\text{bp}}-g_{\text{num}}}}{\norm{g_{\text{bp}}}+\norm{g_{\text{num}}}}$: below $10^{-7}$ is correct; above $10^{-3}$ is a bug.</p>
+      <p class="step small">Try it on the tiny network: $J(W_2[0]+\varepsilon)-J(W_2[0]-\varepsilon)$ over $2\varepsilon$ gives $-0.280$, the number on the slide before.</p>
     </div>
     <div class="stack" style="gap:12px">
       <p><b>Automatic differentiation in PyTorch</b> does all of this for you:</p>
-      <pre style="font-family:var(--mono);font-size:16px;line-height:1.5;background:#f2f2f2;padding:14px 18px;margin:0;white-space:pre">logits = model(X)             # forward: builds the graph
+      <pre class="code">logits = model(X)             <span class="c"># forward: builds the graph</span>
 loss = loss_fn(logits, y)
-optimizer.zero_grad()
-loss.backward()               # backward: fills p.grad
-optimizer.step()              # update</pre>
+optimizer.zero_grad()         <span class="c"># .grad accumulates: reset it</span>
+loss.backward()               <span class="c"># backward: fills p.grad</span>
+optimizer.step()              <span class="c"># update</span></pre>
+      <ul class="small">
+        <li>Every tensor with <code>requires_grad=True</code> records the operations applied to it (the graph).</li>
+        <li><code>backward()</code> runs exactly the algorithm of the previous slide, for any graph.</li>
+        <li><code>with torch.no_grad():</code> for evaluation: no graph, less memory.</li>
+      </ul>
       <p class="why">Gradient checking is still the way to test your own layers, and it is what the NumPy lab does.</p>
     </div>
   </div>
@@ -166,13 +266,13 @@ optimizer.step()              # update</pre>
         <li class="step">A deep linear chain: $\hat y=\bW^{[L]}\bW^{[L-1]}\cdots\bW^{[1]}\bx$. With every $\bW=1.5\,\bI$: $\hat y=1.5^{L-1}x$, <b>exploding</b>. With $0.5\,\bI$: $0.5^{L-1}x$, <b>vanishing</b>.</li>
       </ul>
       <p class="step small"><b>How large?</b> For zero-mean independent weights: $\ \mathrm{Var}(z_k)=n_{\text{in}}\,\mathrm{Var}(w)\,\E[a^2]$. Through $L$ layers these factors <b>multiply</b>: we want each to be 1.</p>
-      <ul class="small step"><li><b>tanh:</b> $\mathrm{Var}(w)=\frac{1}{n_{\text{in}}}$ (Xavier/Glorot: $\frac{2}{n_{\text{in}}+n_{\text{out}}}$).</li><li><b>ReLU</b> zeroes half the signal, $\E[\mathrm{ReLU}(z)^2]=\frac12\E[z^2]$, so $\mathrm{Var}(w)=\frac{2}{n_{\text{in}}}$ (He / Kaiming).</li></ul>
+      <ul class="small step"><li><b>tanh:</b> $\mathrm{Var}(w)=\frac{1}{n_{\text{in}}}$ (Xavier/Glorot: $\frac{2}{n_{\text{in}}+n_{\text{out}}}$).</li><li><b>ReLU</b> zeroes half the signal, $\E[\mathrm{ReLU}(z)^2]=\frac12\E[z^2]$, so $\mathrm{Var}(w)=\frac{2}{n_{\text{in}}}$ (He / Kaiming). PyTorch's defaults are close to these; biases start at 0.</li></ul>
       <p class="tiny"><a href="https://www.deeplearning.ai/ai-notes/initialization/index.html" target="_blank" rel="noopener">deeplearning.ai: initialization</a></p>
     </div>
-    <div class="widget" data-fig="init">
+    <div class="widget" data-fig="init" data-auto="init=small :: too small: activations and gradients shrink layer by layer | init=large :: too large: tanh saturates, gradients die | init=good :: Xavier: both stay near 1 | act=relu; init=good :: ReLU needs He (2/n), and then stays near 1 too">
       <svg class="fig" aria-label="Size of the activations and gradients layer by layer for different initializations"></svg>
-      <div class="ctl"><span class="seg" data-g="act" role="group" aria-label="Activation"><button type="button" data-v="tanh" aria-pressed="true">tanh</button><button type="button" data-v="relu" aria-pressed="false">ReLU</button></span>
-        <span class="seg" data-g="init" role="group" aria-label="Initialization"><button type="button" data-v="small" aria-pressed="false">too small</button><button type="button" data-v="good" aria-pressed="true">Xavier / He</button><button type="button" data-v="large" aria-pressed="false">too large</button></span></div>
+      <div class="ctl"><span class="seg" data-g="act" role="group" aria-label="Activation"><button type="button" data-v="tanh" data-act="tanh" aria-pressed="true">tanh</button><button type="button" data-v="relu" data-act="relu" aria-pressed="false">ReLU</button></span>
+        <span class="seg" data-g="init" role="group" aria-label="Initialization"><button type="button" data-v="small" data-init="small" aria-pressed="false">too small</button><button type="button" data-v="good" data-init="good" aria-pressed="true">Xavier / He</button><button type="button" data-v="large" data-init="large" aria-pressed="false">too large</button></span></div>
       <div class="ro"><div class="m"><span>rule</span><b data-r="v" style="font-size:17px">–</b></div><div class="m"><span>activations, layer 10</span><b data-r="a">–</b></div><div class="m"><span>gradient, layer 1</span><b data-r="g">–</b></div></div>
       <p class="why">10 layers of 100 units, 200 random inputs. The dashed line is "size 1".</p>
     </div>
@@ -181,21 +281,40 @@ optimizer.step()              # update</pre>
 
 <section class="slide">
   <h2>Vanishing and exploding gradients</h2>
-  <div class="stack" style="gap:12px">
+  <div class="stack" style="gap:10px">
     <p>Unroll the backward formula from the output down to layer $l$:</p>
-    <div class="eq">$$\bdelta^{[l]}=\Big(\cdots\big(\bdelta^{[L]}\bW^{[L]\top}\odot g'(\bZ^{[L-1]})\big)\cdots\bW^{[l+1]\top}\Big)\odot g'(\bZ^{[l]})$$</div>
-    <p class="step">The gradient reaching an early layer is a <b>product</b> of $L-l$ factors "weight matrix × activation derivative". Products of many numbers shrink or blow up <b>exponentially</b>.</p>
+    <div class="eq s">$$\bdelta^{[l]}=\Big(\cdots\big(\bdelta^{[L]}\bW^{[L]\top}\odot g'(\bZ^{[L-1]})\big)\cdots\bW^{[l+1]\top}\Big)\odot g'(\bZ^{[l]})$$</div>
+    <p class="step small">The gradient reaching an early layer is a <b>product</b> of $L-l$ factors "weight matrix × activation derivative". Products of many numbers shrink or blow up <b>exponentially</b>.</p>
+    <svg class="fig step" data-fig="vanish-chain" style="max-height:190px" aria-label="Two chains of ten layers with arrows whose width shows the gradient size, shrinking for sigmoid and constant for ReLU"></svg>
     <div class="cols step">
       <div class="note"><p class="small"><b>Sigmoid</b> has $\sigma'\le\frac14$: after 10 layers the gradient can be $4^{-10}\approx10^{-6}$. Early layers barely learn: <b>vanishing gradients</b>. Large weights: <b>exploding</b> (loss becomes NaN).</p></div>
-      <div class="note"><p class="small"><b>Remedies:</b> ReLU activations · proper initialization · normalization layers (BatchNorm / LayerNorm) · <b>residual connections</b> $\ba^{[l+1]}=\ba^{[l]}+F(\ba^{[l]})$, whose Jacobian contains the identity · gradient clipping.</p></div>
+      <div class="note"><p class="small"><b>Remedies:</b> ReLU activations · proper initialization · normalization layers (BatchNorm / LayerNorm, ch. 3) · <b>residual connections</b> $\ba^{[l+1]}=\ba^{[l]}+F(\ba^{[l]})$, whose Jacobian contains the identity (ch. 4) · gradient clipping (ch. 5).</p></div>
     </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Vocabulary of chapter 2</h2>
+  <div class="cols">
+    <dl class="gloss">
+      <dt>computational graph</dt><dd>the network written as nodes of simple operations. PyTorch builds it during the forward pass.</dd>
+      <dt>chain rule</dt><dd>gradient of an input = upstream gradient × local derivative; sum over paths.</dd>
+      <dt>backpropagation</dt><dd>the chain rule run from the loss backwards, reusing stored forward values.</dd>
+      <dt>error signal $\bdelta^{[l]}$</dt><dd>$\partial J/\partial\bZ^{[l]}$: how much the loss would change if the layer's pre-activations moved.</dd>
+    </dl>
+    <dl class="gloss">
+      <dt>autograd</dt><dd>PyTorch's automatic backprop: <code>loss.backward()</code> fills every <code>.grad</code>.</dd>
+      <dt>gradient checking</dt><dd>comparing backprop with finite differences to catch bugs.</dd>
+      <dt>Xavier / He init</dt><dd>random weights with variance $1/n_{\text{in}}$ (tanh) or $2/n_{\text{in}}$ (ReLU) so signals keep their size.</dd>
+      <dt>vanishing / exploding</dt><dd>gradients that shrink or grow exponentially with depth, because they are long products.</dd>
+    </dl>
   </div>
 </section>
 
 <section class="slide">
   <h2>Demo MLP with numpy:</h2>
   <div class="stack center grow" style="gap:22px">
-    <p style="max-width:820px">Construct a simple MLP with NumPy and do mini-batch gradient descent: forward, backward, update. Then repeat it with PyTorch.</p>
+    <p style="max-width:820px">Construct a simple MLP with NumPy and do mini-batch gradient descent: forward, backward, update, with gradient checking. Then repeat it with PyTorch and autograd.</p>
     <p style="font-size:28px"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/deep_learning/MLP_Numpy.ipynb" target="_blank" rel="noopener">Lab - MLP in numpy</a></p>
     <p style="font-size:28px"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/deep_learning/MLP_pytorch.ipynb" target="_blank" rel="noopener">Lab - MLP in pytorch</a></p>
   </div>
