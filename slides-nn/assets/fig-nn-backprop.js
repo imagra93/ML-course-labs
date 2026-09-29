@@ -16,15 +16,17 @@ FIG['net-back']=root=>{const svg=initSvg(svgOf(root),520,300);drawNet(svg,[2,4,1
   T(svg,260,292,'The error starts at the loss and travels backward: output → δ₂ → hidden → δ₁ → input','','middle')};
 /* ---- (a+b)·c computational graph with numbers ---- */
 FIG['graph-num']=root=>{const svg=svgOf(root);
-  stepper(root,s=>{initSvg(svg,600,300);const node=(x,y,t,c)=>{E('circle',{cx:x,cy:y,r:26,fill:c,stroke:'#404040'},svg);T(svg,x,y+6,t,'lab big')};
-    const fw=(x,y,t)=>{const tt=T(svg,x,y,t,'lab');tt.style.fill='#1f3864'};const bw=(x,y,t)=>{const tt=T(svg,x,y,t,'lab');tt.style.fill='#c00000'};
-    node(70,70,'a','#c5e0b4');node(70,170,'b','#c5e0b4');node(70,270,'c','#c5e0b4');node(250,120,'+','#dae3f3');node(430,195,'×','#dae3f3');
-    arrowPx(svg,96,70,224,112,'ln thin sk','fk');arrowPx(svg,96,170,224,128,'ln thin sk','fk');arrowPx(svg,276,120,404,185,'ln thin sk','fk');arrowPx(svg,96,270,404,205,'ln thin sk','fk');arrowPx(svg,456,195,540,195,'ln thin sk','fk');
-    T(svg,320,148,'q = a + b','');T(svg,565,200,'f','lab big');T(svg,500,180,'f = q · c','');
-    fw(70,32,'a = 2');fw(70,132,'b = 5');fw(70,232,'c = −4');if(s>=1)fw(250,84,'q = 7');if(s>=2)fw(565,172,'f = −28');
-    if(s>=3)bw(565,226,'∂f/∂f = 1');if(s>=4){bw(250,164,'∂f/∂q = c = −4');bw(150,300,'∂f/∂c = q = 7');E('line',{x1:404,y1:195,x2:276,y2:120,stroke:'#c00000','stroke-width':2,'stroke-dasharray':'5 4'},svg)}
-    if(s>=5){bw(150,52,'∂f/∂a = −4 · 1 = −4');bw(150,196,'∂f/∂b = −4 · 1 = −4');E('line',{x1:224,y1:112,x2:96,y2:70,stroke:'#c00000','stroke-width':2,'stroke-dasharray':'5 4'},svg);E('line',{x1:224,y1:128,x2:96,y2:170,stroke:'#c00000','stroke-width':2,'stroke-dasharray':'5 4'},svg)}
-    T(svg,300,292,s<3?'blue: forward values, left to right':'red: gradients ∂f/∂(node), right to left, each = upstream gradient × local derivative','','middle')})};
+  stepper(root,s=>{initSvg(svg,600,330);const node=(x,y,t,c)=>{E('circle',{cx:x,cy:y,r:26,fill:c,stroke:'#404040'},svg);T(svg,x,y+6,t,'lab big')};
+    const fw=(x,y,t,a)=>{const tt=T(svg,x,y,t,'lab',a);tt.style.fill='#1f3864'};const bw=(x,y,t,a)=>{const tt=T(svg,x,y,t,'lab',a);tt.style.fill='#c00000'};
+    const A=[80,62],B=[80,172],C=[80,270],Q=[270,115],M=[450,200],F=[565,200];
+    node(...A,'a','#c5e0b4');node(...B,'b','#c5e0b4');node(...C,'c','#c5e0b4');node(...Q,'+','#dae3f3');node(...M,'×','#dae3f3');
+    arrowPx(svg,96,66,244,109,'ln thin sk','fk');arrowPx(svg,96,164,244,122,'ln thin sk','fk');arrowPx(svg,294,127,425,188,'ln thin sk','fk');arrowPx(svg,96,275,424,207,'ln thin sk','fk');arrowPx(svg,476,200,548,200,'ln thin sk','fk');T(svg,F[0]+8,F[1]+7,'f','lab big');
+    fw(A[0],A[1]-34,'a = 2');fw(B[0]-34,B[1]+5,'b = 5','end');fw(C[0]-34,C[1]+5,'c = −4','end');
+    if(s>=1)fw(Q[0],Q[1]-36,'q = a + b = 7');if(s>=2)fw(F[0],F[1]-30,'f = q·c = −28');
+    const dash=(x1,y1,x2,y2)=>E('line',{x1,y1,x2,y2,stroke:'#c00000','stroke-width':2.5,'stroke-dasharray':'6 4'},svg);
+    if(s>=3)bw(F[0],F[1]+36,'∂f/∂f = 1');
+    if(s>=4){dash(425,190,294,128);dash(424,210,96,282);bw(Q[0],Q[1]+50,'∂f/∂q = −4');bw(C[0],C[1]+46,'∂f/∂c = 7')}
+    if(s>=5){dash(244,111,96,68);dash(244,124,96,166);bw(A[0],A[1]+46,'∂f/∂a = −4');bw(B[0],B[1]+46,'∂f/∂b = −4')}})};
 /* ---- the three gates ---- */
 FIG['gates']=root=>{const svg=initSvg(svgOf(root),960,230);
   const gate=(x0,title,op,a,b,out,ga,gb,rule)=>{T(svg,x0+150,20,title,'lab big');const node=(x,y,t,c)=>{E('circle',{cx:x,cy:y,r:22,fill:c,stroke:'#404040'},svg);T(svg,x,y+5,t,'lab')};
@@ -49,15 +51,16 @@ FIG['net-num']=root=>{const svg=svgOf(root);const N=NET;const F=tinyForward(N);c
   const d2=F.yh-N.y;const dW2=F.a1.map(v=>v*d2);const db2=d2;const dA1=[d2*N.W2[0][0],d2*N.W2[1][0]];const d1=dA1.map((v,j)=>v*(1-F.a1[j]**2));const dW1=[[N.x[0]*d1[0],N.x[0]*d1[1]],[N.x[1]*d1[0],N.x[1]*d1[1]]];
   const N2={x:N.x,y:N.y,W1:N.W1.map((r,i)=>r.map((v,j)=>+(v-al*dW1[i][j]).toFixed(3))),b1:N.b1.map((v,j)=>+(v-al*d1[j]).toFixed(3)),W2:N.W2.map((r,i)=>[+(r[0]-al*dW2[i]).toFixed(3)]),b2:[+(N.b2[0]-al*db2).toFixed(3)]};const F2=tinyForward(N2);
   setR(root,'l0',f3(F.L));setR(root,'l1',f3(F2.L));
-  stepper(root,s=>{initSvg(svg,600,330);const upd=s>=6;const pos=drawTiny(svg,upd?N2:N,upd?F2:F,5,{hiEdge:(s===2||s===3)?2:s===5?1:0});
-    const bw=(xx,yy,t,anchor)=>{const tt=T(svg,xx,yy,t,'lab',anchor);tt.style.fill='#c00000';return tt};
-    if(s>=1&&!upd)bw(pos[2][0][0],pos[2][0][1]+80,'δ₂ = ŷ − y = '+f3(d2));
-    if(s>=2&&!upd){bw(pos[2][0][0]-60,pos[2][0][1]-58,'∂W₂ = ('+f3(dW2[0])+', '+f3(dW2[1])+')');bw(pos[2][0][0]-60,pos[2][0][1]-40,'∂b₂ = '+f3(db2))}
-    if(s>=3&&!upd){[0,1].forEach(j=>bw(pos[1][j][0]+40,pos[1][j][1]-32+(j?64:0),'∂a'+(j+1)+' = '+f3(dA1[j])))}
-    if(s>=4&&!upd){[0,1].forEach(j=>bw(pos[1][j][0]+40,pos[1][j][1]-14+(j?64:0),'δ = '+f3(d1[j])))}
-    if(s>=5&&!upd){bw(pos[0][0][0]-10,pos[0][0][1]-48,'∂W₁ = [[ '+f3(dW1[0][0])+', '+f3(dW1[0][1])+' ],','start');bw(pos[0][0][0]-10,pos[0][0][1]-30,'         [ '+f3(dW1[1][0])+', '+f3(dW1[1][1])+' ]]','start');bw(pos[0][1][0]-10,pos[0][1][1]+58,'∂b₁ = ('+f3(d1[0])+', '+f3(d1[1])+')','start')}
-    if(upd){box(svg,20,290,560,32,s===6?'weights updated with α = 0.5: every parameter moved against its gradient':'forward again with the new weights: ŷ = '+f3(F2.yh)+', loss '+f3(F2.L)+' (was '+f3(F.L)+')','#e2f0d9',{cls:''})}
-    else T(svg,300,318,s===0?'forward pass done: every z and a is stored (blue / red numbers)':'red: gradients, computed from the output backwards','','middle')})};
+  stepper(root,s=>{initSvg(svg,600,420);const upd=s>=6;const pos=drawTiny(svg,upd?N2:N,upd?F2:F,5,{hiEdge:(s===2||s===3)?2:s===5?1:0});
+    const X=[pos[0][0][0],pos[1][0][0],pos[2][0][0]];E('rect',{x:10,y:292,width:580,height:122,rx:8,fill:'#fdf2f2',stroke:'#e6b8b8'},svg);
+    T(svg,20,310,upd?'updated parameters (α = 0.5)':'gradients (backward pass, right to left)','lab','start').style.fill='#c00000';
+    const bw=(col,row,t)=>{const tt=T(svg,X[col],330+row*20+10,t,'','middle');tt.style.fill='#c00000';tt.style.fontSize='15px'};
+    if(!upd){if(s>=1)bw(2,0,'δ₂ = ŷ − y = '+f3(d2));if(s>=2){bw(2,1,'∂W₂ = ('+f3(dW2[0])+', '+f3(dW2[1])+')');bw(2,2,'∂b₂ = '+f3(db2))}
+      if(s>=3)bw(1,0,'∂a = ('+f3(dA1[0])+', '+f3(dA1[1])+')');if(s>=4)bw(1,1,'δ₁ = ('+f3(d1[0])+', '+f3(d1[1])+')');
+      if(s>=5){bw(0,0,'∂W₁ = ['+f3(dW1[0][0])+', '+f3(dW1[0][1])+']');bw(0,1,'        ['+f3(dW1[1][0])+', '+f3(dW1[1][1])+']');bw(0,2,'∂b₁ = ('+f3(d1[0])+', '+f3(d1[1])+')')}
+      if(s===0)T(svg,300,360,'forward pass done: every z and a is stored','','middle')}
+    else{bw(2,0,'W₂ = ('+N2.W2[0][0]+', '+N2.W2[1][0]+')');bw(2,1,'b₂ = '+N2.b2[0]);bw(0,0,'W₁ = ['+N2.W1[0].join(', ')+']');bw(0,1,'       ['+N2.W1[1].join(', ')+']');bw(1,0,'b₁ = ('+N2.b1.join(', ')+')');
+      if(s>=7)bw(1,2,'new loss '+f3(F2.L)+'  (was '+f3(F.L)+')')}})};
 function initSim(scale,act){const r=rng(5);const n=100,m=200,L=10;let A=[...Array(m)].map(()=>[...Array(n)].map(()=>randn(r)));const Ws=[],As=[A],Zs=[];const stdA=[];
   const g=act==='relu'?(z=>z>0?z:0):Math.tanh;const gd=act==='relu'?((z,a)=>z>0?1:0):((z,a)=>1-a*a);
   for(let l=0;l<L;l++){const s=scale/Math.sqrt(n);const W=[...Array(n)].map(()=>[...Array(n)].map(()=>s*randn(r)));Ws.push(W);const Z=A.map(row=>{const z=new Array(n).fill(0);for(let i=0;i<n;i++){const ai=row[i];if(ai===0)continue;const Wi=W[i];for(let j=0;j<n;j++)z[j]+=ai*Wi[j]}return z});

@@ -14,12 +14,12 @@ FIG['neuron-num']=root=>{const svg=svgOf(root);const X=[2,-1,0.5],W=[0.4,-0.3,1.
     ys.forEach((y,i)=>{E('circle',{cx:50,cy:y,r:20,fill:'#70ad47',stroke:'#404040'},svg);T(svg,50,y+5,'x'+['₁','₂','₃'][i],'lab').style.fill='#fff';T(svg,50,y-28,String(X[i]),'lab');
       arrowPx(svg,72,y,262,150,'ln thin sm','fm');const wx=125+0.4*(0),wy=y+(150-y)*0.32;E('rect',{x:wx-22,y:wy-13,width:44,height:24,fill:'#dae3f3',stroke:'#4472c4'},svg);T(svg,wx,wy+4,String(W[i]),'');
       if(s>=1){const px=205,py=y+(150-y)*0.62;E('rect',{x:px-26,y:py-13,width:52,height:24,fill:'#fff2cc',stroke:'#bf9000'},svg);T(svg,px,py+4,f2(P[i]),'')}});
-    T(svg,50,290,'inputs','');T(svg,125,290,'weights','');if(s>=1)T(svg,205,290,'products','');
+    T(svg,50,278,'inputs','');T(svg,125,278,'weights','');if(s>=1)T(svg,205,278,'products','');
     E('circle',{cx:290,cy:150,r:30,fill:s>=2?'#ffc000':'#fff',stroke:'#404040','stroke-width':1.5},svg);T(svg,290,158,'Σ','lab big');T(svg,290,200,'+ b = '+b,'');
     if(s>=2){T(svg,290,225,'z = '+f2(z),'lab')}
     arrowPx(svg,322,150,372,150,'ln thin sk','fk');E('rect',{x:374,y:120,width:80,height:60,rx:6,fill:s>=3?'#4472c4':'#9dafd6'},svg);T(svg,414,156,'σ(z)','lab').style.fill='#fff';
     arrowPx(svg,456,150,512,150,'ln thin sk','fk');T(svg,545,156,s>=3?f3(a):'ŷ','lab big');if(s>=3)T(svg,545,182,'= ŷ','');
-    T(svg,300,275,s===0?'x = (2, −1, 0.5), θ = (0.4, −0.3, 1.0), b = 0.1':s===1?'multiply each input by its weight':s===2?'add everything up (plus the bias)':'squash into (0, 1) with the sigmoid','','middle')})};
+    T(svg,390,298,s===0?'x = (2, −1, 0.5), θ = (0.4, −0.3, 1.0), b = 0.1':s===1?'multiply each input by its weight':s===2?'add everything up (plus the bias)':'squash into (0, 1) with the sigmoid','','middle')})};
 FIG['mlp']=root=>{const svg=initSvg(svgOf(root),520,330);drawNet(svg,[3,4,1],{x0:60,y0:40,w:380,h:260,r:16,titles:['Input layer','Hidden layer','Output layer'],label:(l,i)=>l===0?'x'+(i+1):l===1?'a'+(i+1):'ŷ'});
   T(svg,150,320,'W⁽¹⁾ ∈ ℝ³ˣ⁴, b⁽¹⁾ ∈ ℝ⁴','');T(svg,380,320,'W⁽²⁾ ∈ ℝ⁴ˣ¹, b⁽²⁾ ∈ ℝ','')};
 FIG['fwd-num']=root=>{const svg=svgOf(root);const F=tinyForward(NET);stepper(root,s=>{initSvg(svg,600,320);drawTiny(svg,NET,F,s,{hiEdge:s===1?1:s===3?2:0})})};
@@ -34,16 +34,16 @@ FIG['hidden-feats']=root=>{const {X,y}=circleData(3,200);const mdl=trainMLP(X,y,
   const panel=(x0,title,fn,cls)=>{const P=Plot(svg,{at:[x0,0],w:180,h:210,x:[-1,1],y:[-1,1],m:{l:6,r:6,t:26,b:6}});P.axes({grid:false});T(P.root,90,16,title,'lab');
     for(let a=0;a<N;a++)for(let b=0;b<N;b++){const xx=[-1+2*(a+0.5)/N,-1+2*(b+0.5)/N];const v=fn(xx);const rc=P.rect(-1+2*a/N,-1+2*b/N,-1+2*(a+1)/N,-1+2*(b+1)/N,'');rc.setAttribute('fill',heat(v,cls==='mono'));rc.setAttribute('stroke','none')}
     X.forEach((x,i)=>P.dot(x[0],x[1],1.8,y[i]?'fb':'fo'));return P};
-  for(let j=0;j<4;j++)panel(j*190,'hidden unit a'+(j+1),x=>mdl.forward(x)[1][j]);T(svg,760+90,16,'output ŷ','lab');panel(780,'output ŷ = σ(Σ w a + b)',x=>mdl.forward(x)[2][0],'mono');
+  for(let j=0;j<4;j++)panel(j*190,'hidden unit a'+(j+1),x=>mdl.forward(x)[1][j]);panel(780,'output ŷ = σ(Σ w a + b)',x=>mdl.forward(x)[2][0],'mono');
   const wv=mdl.W[1].map(r=>r[0]);T(svg,380,240,'Each hidden unit is a soft half-plane (a tilted sigmoid / tanh in x₁, x₂). The output layer adds them with weights','','middle');
   T(svg,380,262,'w = ('+wv.map(v=>f2(v)).join(', ')+') and b = '+f2(mdl.B[1][0])+': four "walls" combine into a closed region. That is what "learned features" means.','','middle');
   T(svg,380,290,'blue = +1, orange = −1 (hidden units, tanh) · dark blue = high probability (output)','','middle')};
 FIG['loss-shapes']=root=>{const svg=initSvg(svgOf(root),620,270);
   const P=Plot(svg,{at:[0,0],w:310,h:270,x:[0,1],y:[0,5],m:{l:40,r:10,t:26,b:36}});P.axes({xt:[0,0.5,1],yt:[0,2,4],xl:'predicted probability ŷ',yl:'loss'});T(P.root,170,16,'Binary cross-entropy','lab');
-  P.fn(p=>Math.min(5,-Math.log(p)),'ln sb',0.005,1,300);P.fn(p=>Math.min(5,-Math.log(1-p)),'ln so',0,0.995,300);P.text(0.35,3.2,'y = 1: −log ŷ','', 'start');P.text(0.65,3.2,'y = 0: −log(1−ŷ)','', 'end');
-  P.dot(0.9,-Math.log(0.9),4,'fb');P.text(0.9,-Math.log(0.9),'confident & right: 0.1','', 'end',-6,-8);P.dot(0.1,-Math.log(0.1),4,'fb');P.text(0.1,-Math.log(0.1),'confident & wrong: 2.3','', 'start',8,0);
+  P.fn(p=>Math.min(5,-Math.log(p)),'ln sb',0.005,1,300);P.fn(p=>Math.min(5,-Math.log(1-p)),'ln so',0,0.995,300);P.text(0.28,4.6,'— y = 1: −log ŷ','', 'start').style.fill='#4472c4';P.text(0.28,4.15,'— y = 0: −log(1 − ŷ)','', 'start').style.fill='#ed7d31';
+  P.dot(0.9,-Math.log(0.9),4,'fb');P.text(0.9,-Math.log(0.9),'right: 0.1','', 'end',-6,-8);P.dot(0.1,-Math.log(0.1),4,'fb');P.text(0.1,-Math.log(0.1),'confident & wrong: 2.3','', 'start',8,0);
   const Q=Plot(svg,{at:[320,0],w:300,h:270,x:[-3,3],y:[0,5],m:{l:40,r:10,t:26,b:36}});Q.axes({xt:[-2,0,2],yt:[0,2,4],xl:'error ŷ − y',yl:'loss'});T(Q.root,160,16,'Mean squared error (regression)','lab');
-  Q.fn(e=>Math.min(5,0.5*e*e),'ln sb',-3,3,200);Q.fn(e=>Math.min(5,Math.abs(e)),'ln so dash',-3,3,200);Q.text(1.9,2.4,'½ e²','', 'start');Q.text(2.6,2.1,'|e| (L1)','', 'end',0,18)};
+  Q.fn(e=>Math.min(5,0.5*e*e),'ln sb',-3,3,200);Q.fn(e=>Math.min(5,Math.abs(e)),'ln so dash',-3,3,200);Q.text(-1.3,4.6,'— ½ e² (MSE)','', 'start').style.fill='#4472c4';Q.text(-1.3,4.15,'- - |e| (L1)','', 'start').style.fill='#ed7d31'};
 const ACTS={sigmoid:[z=>1/(1+Math.exp(-z)),z=>{const s=1/(1+Math.exp(-z));return s*(1-s)},"σ′(z) = σ(z)(1 − σ(z)) ≤ 1/4"],tanh:[z=>Math.tanh(z),z=>1-Math.tanh(z)**2,"tanh′(z) = 1 − tanh²(z) ≤ 1"],
   relu:[z=>Math.max(0,z),z=>z>0?1:0,"ReLU′(z) = 0 if z < 0, 1 if z > 0"],leaky:[z=>z>0?z:0.2*z,z=>z>0?1:0.2,"LeakyReLU′(z) = 0.2 if z < 0, 1 if z > 0"],gelu:[z=>0.5*z*(1+Math.tanh(0.7978845608*(z+0.044715*z*z*z))),z=>{const h=1e-4;const g=v=>0.5*v*(1+Math.tanh(0.7978845608*(v+0.044715*v*v*v)));return (g(z+h)-g(z-h))/(2*h)},"GELU: a smooth ReLU (transformers)"],linear:[z=>z,z=>1,"g′(z) = 1"]};
 FIG['act']=root=>{const P=Plot(svgOf(root),{w:540,h:340,x:[-5,5],y:[-1.5,3],m:{l:40,r:14,t:14,b:36}});P.axes({xt:[-4,-2,0,2,4],yt:[-1,0,1,2,3],xl:'z',yl:''});P.line(-5,0,5,0,'ax',P.bg);P.line(0,-1.5,0,3,'ax',P.bg);
@@ -63,11 +63,11 @@ FIG['playground']=root=>{const {X,y}=circleData(3,200);const P=Plot(svgOf(root),
     setR(root,'acc',fmt(acc,3));setR(root,'loss',fmt(mdl.losses[mdl.losses.length-1],3));
     let np=0;const s=[2].concat(hidden,[1]);for(let i=0;i<s.length-1;i++)np+=s[i]*s[i+1]+s[i+1];setR(root,'np',np);setR(root,'what',u===0?'logistic regression':(act==='linear'?'still a linear model':'a neural network'))}
   btns.forEach(b=>b.addEventListener('click',()=>{act=b.dataset.a;btns.forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));draw()}));iu.addEventListener('change',draw);il.addEventListener('change',draw);iu.addEventListener('input',()=>{setV(root,'u',iu.value);draw()});il.addEventListener('input',()=>{setV(root,'l',il.value);draw()});draw()};
-FIG['pipeline']=root=>{const svg=initSvg(svgOf(root),600,250);const bx=(x,y,w,t,c)=>{E('rect',{x:x,y:y,width:w,height:46,rx:6,fill:c},svg);T(svg,x+w/2,y+28,t,'lab').style.fill='#fff'};
-  T(svg,300,24,'Traditional machine learning','lab big');bx(20,40,90,'Input','#7f7f7f');bx(150,40,150,'Feature extraction (by hand)','#ed7d31');bx(340,40,120,'Classifier','#4472c4');bx(500,40,80,'Output','#7f7f7f');
-  [[110,63,148],[300,63,338],[460,63,498]].forEach(a=>arrowPx(svg,a[0],a[1],a[2],a[1],'ln thin sk','fk'));
-  T(svg,300,150,'Deep learning','lab big');bx(20,166,90,'Input','#7f7f7f');bx(150,166,310,'Feature extraction + classification (learned together)','#4472c4');bx(500,166,80,'Output','#7f7f7f');
-  [[110,189,148],[460,189,498]].forEach(a=>arrowPx(svg,a[0],a[1],a[2],a[1],'ln thin sk','fk'))};
+FIG['pipeline']=root=>{const svg=initSvg(svgOf(root),600,260);const bx=(x,y,w,t,c)=>box(svg,x,y,w,54,t,c,{stroke:c,tcol:'#fff',lh:18})
+  T(svg,300,22,'Traditional machine learning','lab big');bx(10,38,80,'Input','#7f7f7f');bx(120,38,170,'Feature extraction\n(designed by hand)','#ed7d31');bx(320,38,140,'Classifier\n(learned)','#4472c4');bx(490,38,100,'Output','#7f7f7f');
+  [[90,65,118],[290,65,318],[460,65,488]].forEach(a=>arrowPx(svg,a[0],a[1],a[2],a[1],'ln thin sk','fk'));
+  T(svg,300,152,'Deep learning','lab big');bx(10,168,80,'Input','#7f7f7f');bx(120,168,340,'Feature extraction + classification\n(learned together, end to end)','#4472c4');bx(490,168,100,'Output','#7f7f7f');
+  [[90,195,118],[460,195,488]].forEach(a=>arrowPx(svg,a[0],a[1],a[2],a[1],'ln thin sk','fk'))};
 FIG['workflow']=root=>{const svg=initSvg(svgOf(root),460,330);const bx=(x,y,w,h,t,c,tc)=>{E('rect',{x:x,y:y,width:w,height:h,rx:8,fill:c,stroke:'#404040'},svg);T(svg,x+w/2,y+h/2+5,t,'lab').style.fill=tc||'#000'};
   T(svg,230,16,'Input X','');bx(140,26,180,42,'Layer (weights)','#ffe699');bx(140,88,180,42,'Layer (weights)','#ffe699');bx(140,150,180,36,'Predictions Ŷ','#fff');bx(330,150,110,36,'True targets Y','#fff');
   bx(250,220,150,40,'Loss function','#8ea9db');bx(20,220,150,40,'Optimizer','#f4b183');bx(275,286,100,30,'Loss score','#fff');

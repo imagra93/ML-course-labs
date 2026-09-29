@@ -24,7 +24,7 @@ FIG['attn-num']=root=>{const svg=svgOf(root);const toks=['I','love','pizza'];con
 /* ---------- the matrix pipeline ---------- */
 FIG['qkv']=root=>{const svg=initSvg(svgOf(root),960,250);const blk=(x,y,w,h,c,t,sh)=>{E('rect',{x:x,y:y,width:w,height:h,fill:c,stroke:'#404040'},svg);T(svg,x+w/2,y+h/2+6,t,'lab big');T(svg,x+w/2,y+h+18,sh,'')};
   blk(10,60,60,120,'#e2f0d9','X','n × d');[['Q','#fbe5d6',50],['K','#dae3f3',110],['V','#fff2cc',170]].forEach(([t,c,y],k)=>{arrowPx(svg,72,120,128,y+20-40*0+0,'ln thin sk','fk');blk(130,y-10,40,60,c,t,'')});
-  T(svg,100,40,'· W_Q, W_K, W_V','');T(svg,150,240,'n × dₖ each','');
+  T(svg,40,36,'· W_Q, W_K, W_V','','start');T(svg,150,240,'n × dₖ each','');
   arrowPx(svg,172,70,238,110,'ln thin sk','fk');arrowPx(svg,172,130,238,120,'ln thin sk','fk');blk(240,60,110,110,'#ededed','QKᵀ/√dₖ','n × n scores');
   arrowPx(svg,352,115,398,115,'ln thin sk','fk');T(svg,375,100,'softmax','');T(svg,375,140,'per row','');blk(400,60,110,110,'#f8cbad','A','n × n weights');
   arrowPx(svg,512,115,558,115,'ln thin sk','fk');T(svg,535,100,'· V','');E('path',{d:'M172,190 C400,240 520,220 560,140',fill:'none',stroke:'#bf9000','stroke-width':1.5,'stroke-dasharray':'5 4'},svg);
@@ -84,7 +84,7 @@ FIG['sqrtd']=root=>{const svg=svgOf(root);const inp=q(root,'d');
       p.forEach((v,i)=>{E('rect',{x:x0+20+i*34,y:250-200*v,width:26,height:200*v+0.5,fill:c},svg);T(svg,x0+33+i*34,272,fmt(s[i],1),'')});T(svg,x0+148,294,'scores (std ≈ '+(k?'1':'√'+d+' = '+fmt(Math.sqrt(d),1))+')','')});
     setR(root,'mx',fmt(Math.max(...pr),3));setR(root,'ms',fmt(Math.max(...ps),3))}inp.addEventListener('input',draw);draw()};
 FIG['mask']=root=>{const svg=initSvg(svgOf(root),620,250);const n=5;const r=rng(9);const S=[...Array(n)].map(()=>[...Array(n)].map(()=>randn(r)));const cs=34;
-  const grid=(x0,title,cell)=>{T(svg,x0+n*cs/2,18,title,'lab');for(let i=0;i<n;i++)for(let j=0;j<n;j++){const [fill,txt]=cell(i,j);E('rect',{x:x0+j*cs,y:30+i*cs,width:cs-2,height:cs-2,fill:fill},svg);T(svg,x0+j*cs+cs/2-1,30+i*cs+cs/2+4,txt,'')}};
+  const grid=(x0,title,cell)=>{T(svg,x0+n*cs/2,18,title,'lab');for(let i=0;i<n;i++)for(let j=0;j<n;j++){const [fill,txt]=cell(i,j);E('rect',{x:x0+j*cs,y:30+i*cs,width:cs-2,height:cs-2,fill:fill},svg);const tt=T(svg,x0+j*cs+cs/2-1,30+i*cs+cs/2+4,txt,'');if(fill==='#595959')tt.style.fill='#fff'}};
   grid(10,'scores QKᵀ/√d',(i,j)=>['#dae3f3',fmt(S[i][j],1)]);grid(220,'mask: −∞ if j > i',(i,j)=>j>i?['#595959','−∞']:['#dae3f3',fmt(S[i][j],1)]);
   const W=S.map((row,i)=>softmax(row.slice(0,i+1)).concat(new Array(n-i-1).fill(0)));grid(430,'softmax: weights',(i,j)=>j>i?['#f2f2f2','0']:['rgba(237,125,49,'+(0.2+0.8*W[i][j]).toFixed(2)+')',fmt(W[i][j],2)]);
   T(svg,310,232,'Row i = the token being predicted. It may only look at tokens 1…i, never at the future.','','middle')};
@@ -104,7 +104,7 @@ FIG['block']=root=>{const svg=initSvg(svgOf(root),620,400);const box=(x,y,w,h,t,
   box(380,340,160,26,'Output embedding + PE','#e2f0d9');arrowPx(svg,460,340,460,312,'ln thin sk','fk');T(svg,460,392,'outputs (shifted right)','');
   box(400,60,120,24,'Linear','#dae3f3');box(400,28,120,24,'Softmax','#dae3f3');arrowPx(svg,460,100,460,86,'ln thin sk','fk');T(svg,460,18,'next-token probabilities','');
   E('path',{d:'M155,170 C155,120 300,240 378,236',fill:'none',stroke:'#c00000','stroke-width':2},svg);T(svg,300,160,'K, V from the encoder','','middle');
-  T(svg,155,140,'Encoder (BERT)','lab big');T(svg,560,380,'Decoder (GPT)','lab big','end')};
+  T(svg,155,140,'Encoder (BERT)','lab big');T(svg,352,112,'Decoder (GPT)','lab big','end')};
 FIG['decode']=root=>{const words=['here','back','home','over','in','now','soon','inside'];const logits=[3.0,2.2,1.7,1.2,0.9,0.7,0.5,0.1];const svg=svgOf(root);const it=q(root,'t'),ik=q(root,'k');let picked='';
   function probs(){const t=+it.value,k=+ik.value;const z=logits.map(v=>v/t);const idx=z.map((v,i)=>i).sort((a,b)=>z[b]-z[a]).slice(0,k);const zz=z.map((v,i)=>idx.includes(i)?v:-1e9);return softmax(zz)}
   function draw(){setV(root,'t',fmt(+it.value,2));setV(root,'k',ik.value);const p=probs();initSvg(svg,600,300);T(svg,20,24,'Can you please come ___ ?','lab big','start');
@@ -114,10 +114,10 @@ FIG['decode']=root=>{const words=['here','back','home','over','in','now','soon',
 FIG['rag']=root=>{const svg=initSvg(svgOf(root),900,300);const box=(x,y,w,t,c)=>{E('rect',{x:x,y:y,width:w,height:48,rx:8,fill:c,stroke:'#404040'},svg);T(svg,x+w/2,y+29,t,'lab')};
   box(20,30,150,'Knowledge base','#ffe699');box(250,30,150,'Chunk + embed','#b4c7e7');box(480,30,150,'Vector database','#e2f0d9');arrowPx(svg,170,54,248,54,'ln thin sk','fk');arrowPx(svg,400,54,478,54,'ln thin sk','fk');T(svg,209,44,'1','');T(svg,439,44,'2 index','');
   box(20,170,150,'User question','#f8cbad');box(250,170,150,'Embed the question','#b4c7e7');arrowPx(svg,170,194,248,194,'ln thin sk','fk');arrowPx(svg,400,194,478,90,'ln thin sk','fk');T(svg,460,150,'3 similarity search','','end');
-  box(700,170,180,'LLM: prompt = question + top-k chunks','#dae3f3');arrowPx(svg,630,70,760,168,'ln thin sk','fk');T(svg,720,120,'4 relevant chunks','','start');box(700,250,180,'Answer','#c5e0b4');arrowPx(svg,790,218,790,248,'ln thin sk','fk');arrowPx(svg,170,210,698,210,'ln thin sm dash','fm')};
+  box(690,170,200,'LLM: question + chunks','#dae3f3');arrowPx(svg,630,70,760,168,'ln thin sk','fk');T(svg,720,120,'4 relevant chunks','','start');box(700,250,180,'Answer','#c5e0b4');arrowPx(svg,790,218,790,248,'ln thin sk','fk');arrowPx(svg,170,210,698,210,'ln thin sm dash','fm')};
 FIG['cosine']=root=>{const P=Plot(svgOf(root),{w:420,h:360,x:[-1.2,1.2],y:[-1.2,1.2],m:{l:10,r:10,t:10,b:10}});P.axes({grid:false,noaxes:true});P.line(-1.2,0,1.2,0,'ax');P.line(0,-1.2,0,1.2,'ax');
-  const qv=[0.6,0.8];const ch=[[0.5,0.85,'returns policy'],[0.75,0.55,'refund times'],[-0.8,0.5,'store hours'],[-0.4,-0.9,'job offers'],[0.95,-0.2,'shipping costs']];
+  const qv=[0.6,0.8];const ch=[[0.3,0.95,'returns policy'],[0.75,0.55,'refund times'],[-0.8,0.5,'store hours'],[-0.4,-0.9,'job offers'],[0.95,-0.2,'shipping costs']];
   const cos=(a,b)=>(a[0]*b[0]+a[1]*b[1])/(Math.hypot(...a.slice(0,2))*Math.hypot(...b.slice(0,2)));const ranked=ch.map(c=>[c,cos(qv,c)]).sort((a,b)=>b[1]-a[1]);
   ranked.forEach(([c,s],k)=>{P.line(0,0,c[0],c[1],k<2?'ln sg':'ln thin sm');P.dot(c[0],c[1],5,k<2?'fgr':'fm');P.text(c[0],c[1],c[2]+' ('+fmt(s,2)+')','', c[0]<0?'end':'start',c[0]<0?-8:8,4)});
-  P.line(0,0,qv[0],qv[1],'ln sr');P.dot(qv[0],qv[1],7,'fr');P.text(qv[0],qv[1],'question','lab','end',-8,-6)};
+  P.line(0,0,qv[0],qv[1],'ln sr');P.dot(qv[0],qv[1],7,'fr');P.text(qv[0],qv[1],'question','lab','start',10,14)};
 })();

@@ -8,9 +8,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
-<link rel="stylesheet" href="../slides/assets/deck.css">
-<link rel="stylesheet" href="assets/nn.css">
-<script src="../slides/assets/mathjax-config.js"></script>
+<link rel="stylesheet" href="../slides/assets/deck.css?v=20260929">
+<link rel="stylesheet" href="assets/nn.css?v=20260929">
+<script src="../slides/assets/mathjax-config.js?v=20260929"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
 </head>
 <body data-deck="5 · Recurrent networks and LSTMs" data-prev="04_cnn.html" data-next="06_transformers.html">
@@ -173,11 +173,10 @@ out, h_T = rnn(x)        <span class="c"># x: [B, T, 100] → out: [B, T, 128]</
       <p class="small">Plain RNN: each step back multiplies the gradient by roughly $\norm{\bW_h}\cdot\tanh'$. LSTM (next slides): along its memory path, only by the forget gate $f$.</p>
       <ul class="small"><li>RNN factor 0.8, 50 steps: $0.8^{50}\approx10^{-5}$.</li><li>LSTM with $f=0.98$: $0.98^{50}\approx0.36$.</li></ul>
       <p class="small"><b>Exploding gradients</b> have a cheap fix: <b>clip</b> the gradient norm (below). Vanishing ones need a new architecture.</p>
-      <svg class="fig" data-fig="clip" style="max-height:220px" aria-label="A long gradient vector rescaled to a maximum length"></svg>
-      <pre class="code s">torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)</pre>
+      <svg class="fig" data-fig="clip" style="max-height:170px" aria-label="A long gradient vector rescaled to a maximum length"></svg>
     </div>
     <div class="widget" data-fig="vanish" data-auto="w=0.8 :: RNN factor 0.8: 10⁻⁵ after 50 steps | w=1.1 :: factor 1.1: it explodes instead | w=0.9; f=0.99 :: LSTM with forget gate 0.99: almost no loss over 50 steps">
-      <svg class="fig" aria-label="Gradient size against steps back in time for an RNN and an LSTM"></svg>
+      <svg class="fig" style="max-height:300px" aria-label="Gradient size against steps back in time for an RNN and an LSTM"></svg>
       <div class="ctl"><label for="va-w">RNN: ‖Wₕ‖·tanh′</label><input type="range" id="va-w" data-k="w" min="0.5" max="1.3" step="0.01" value="0.8"><span class="v" data-v="w">0.80</span></div>
       <div class="ctl"><label for="va-f">LSTM: forget gate f</label><input type="range" id="va-f" data-k="f" min="0.8" max="1" step="0.005" value="0.98"><span class="v" data-v="f">0.98</span></div>
       <div class="ro"><div class="m"><span>RNN, 50 steps back</span><b data-r="r">–</b></div><div class="m"><span>LSTM, 50 steps back</span><b data-r="l">–</b></div></div>
@@ -208,8 +207,8 @@ out, h_T = rnn(x)        <span class="c"># x: [B, T, 100] → out: [B, T, 128]</
   <h2>The LSTM cell</h2>
   <div class="cols">
     <div class="stack" style="gap:4px">
-      <div class="eq" style="font-size:19px">$$\begin{aligned}\bff_t&amp;=\sigma\big([\bh_{t-1},\bx_t]\bW_f+\bb_f\big)&amp;&amp;\text{forget: how much old memory to keep}\\\bi_t&amp;=\sigma\big([\bh_{t-1},\bx_t]\bW_i+\bb_i\big)&amp;&amp;\text{input: how much new content to write}\\\tilde\bc_t&amp;=\tanh\big([\bh_{t-1},\bx_t]\bW_c+\bb_c\big)&amp;&amp;\text{candidate content}\\\bc_t&amp;=\hl{\bff_t\odot\bc_{t-1}+\bi_t\odot\tilde\bc_t}&amp;&amp;\text{memory update (additive)}\\\bo_t&amp;=\sigma\big([\bh_{t-1},\bx_t]\bW_o+\bb_o\big)&amp;&amp;\text{output: how much memory to expose}\\\bh_t&amp;=\bo_t\odot\tanh(\bc_t)\end{aligned}$$</div>
-      <p class="small">Two states travel along time: the <b>cell</b> $\bc_t$ (long-term memory) and the <b>hidden</b> $\bh_t$ (what is shown to the next layer). Parameters: 4 blocks, $4\big(d_h(d_h+d)+d_h\big)$.</p>
+      <div class="eq" style="font-size:21px">$$\begin{aligned}\bff_t&amp;=\sigma\big([\bh_{t-1},\bx_t]\bW_f+\bb_f\big)\\\bi_t&amp;=\sigma\big([\bh_{t-1},\bx_t]\bW_i+\bb_i\big)\\\tilde\bc_t&amp;=\tanh\big([\bh_{t-1},\bx_t]\bW_c+\bb_c\big)\\\bc_t&amp;=\hl{\bff_t\odot\bc_{t-1}+\bi_t\odot\tilde\bc_t}\\\bo_t&amp;=\sigma\big([\bh_{t-1},\bx_t]\bW_o+\bb_o\big)\\\bh_t&amp;=\bo_t\odot\tanh(\bc_t)\end{aligned}$$</div>
+      <p class="small">$\bff_t$ forget, $\bi_t$ input, $\bo_t$ output gates; $\tilde\bc_t$ candidate content. The memory update is a <b>sum</b>, highlighted in blue.</p><p class="small">Two states travel along time: the <b>cell</b> $\bc_t$ (long-term memory) and the <b>hidden</b> $\bh_t$ (what is shown to the next layer). Parameters: 4 blocks, $4\big(d_h(d_h+d)+d_h\big)$.</p>
     </div>
     <svg class="fig" data-fig="lstm-cell" aria-label="An LSTM cell with forget, input and output gates on the cell-state line"></svg>
   </div>
@@ -258,7 +257,7 @@ out, h_T = rnn(x)        <span class="c"># x: [B, T, 100] → out: [B, T, 128]</
 
 <section class="slide">
   <h2>GRU: a lighter cousin</h2>
-  <div class="cols c46">
+  <div class="cols">
     <svg class="fig" data-fig="gru-cell" aria-label="A GRU cell with reset and update gates mixing the previous state and a candidate"></svg>
     <div class="stack" style="gap:10px">
       <p><b>GRU</b> (Gated Recurrent Unit): 2 gates and no separate cell state.</p>
@@ -349,9 +348,9 @@ loss_fn = nn.BCEWithLogitsLoss()</pre>
   <p class="mail">imanolgranada@gmail.com</p>
 </section>
 </div></div>
-<script src="../slides/assets/figures.js"></script>
-<script src="assets/nn-core.js"></script>
-<script src="assets/fig-nn-rnn.js"></script>
-<script src="../slides/assets/deck.js"></script>
+<script src="../slides/assets/figures.js?v=20260929"></script>
+<script src="assets/nn-core.js?v=20260929"></script>
+<script src="assets/fig-nn-rnn.js?v=20260929"></script>
+<script src="../slides/assets/deck.js?v=20260929"></script>
 </body>
 </html>

@@ -36,7 +36,7 @@ FIG['rnn-cell']=root=>{const svg=initSvg(svgOf(root),560,260);E('rect',{x:120,y:
   E('circle',{cx:300,cy:110,r:16,fill:'#fff',stroke:'#404040'},svg);T(svg,300,116,'+','lab big');arrowPx(svg,250,90,286,104,'ln thin sk','fk');arrowPx(svg,284,152,294,126,'ln thin sk','fk');T(svg,300,82,'+ b','');
   box(svg,340,92,64,36,'tanh','#f4b183');arrowPx(svg,316,110,338,110,'ln thin sk','fk');E('line',{x1:404,y1:110,x2:540,y2:110,stroke:'#404040','stroke-width':2},svg);T(svg,536,100,'h⟨t⟩','lab','end');
   E('line',{x1:470,y1:110,x2:470,y2:30,stroke:'#404040','stroke-width':1.5},svg);arrowPx(svg,470,40,470,24,'ln thin sk','fk');T(svg,480,20,'→ output layer ŷ⟨t⟩','','start');
-  T(svg,280,232,'one dense layer whose input is [previous state, current input]','','middle')};
+  T(svg,240,24,'one dense layer on [previous state, current input]','lab','middle')};
 /* ---------- scalar RNN with numbers ---------- */
 FIG['rnn-num']=root=>{const svg=svgOf(root);const wx=+root.dataset.wx||1,wh=+root.dataset.wh||0.5;const X=[1,0,0,-1,0,0];const iw=q(root,'w');
   function hs(w){const H=[0];X.forEach(x=>H.push(Math.tanh(wx*x+w*H[H.length-1])));return H}
@@ -51,11 +51,11 @@ FIG['rnn-types']=root=>{const svg=initSvg(svgOf(root),960,250);const cell=(x,y,c
     if(ins.includes(i)){cell(x,190,'#c5e0b4');arrowPx(svg,x,176,x,136,'ln thin sk','fk')}if(outs.includes(i)){cell(x,50,'#f8cbad');arrowPx(svg,x,106,x,66,'ln thin sk','fk')}}T(svg,x0+100,235,ex,'','middle')};
   draw(0,'One-to-many','music generation, captioning',[0],[0,1,2,3],4);draw(240,'Many-to-one','sentiment classification',[0,1,2,3],[3],4);draw(480,'Many-to-many (Tx = Ty)','named entity recognition',[0,1,2,3],[0,1,2,3],4);draw(720,'Many-to-many (Tx ≠ Ty)','machine translation',[0,1],[2,3],4)};
 /* ---------- BPTT: the gradient travels back through every step ---------- */
-FIG['bptt']=root=>{const svg=initSvg(svgOf(root),940,220);const n=6;
+FIG['bptt']=root=>{const svg=initSvg(svgOf(root),940,250);const n=6;
   for(let k=0;k<n;k++){const x=80+k*150;node(svg,x,110,'h'+(k+1),'#bdd7ee');node(svg,x,190,'x'+(k+1),'#c5e0b4',50,30);arrowPx(svg,x,175,x,132,'ln thin sk','fk');if(k<n-1)arrowPx(svg,x+30,110,x+118,110,'ln thin sk','fk')}
   node(svg,80+(n-1)*150,30,'L','#fbe5d6',50,30);arrowPx(svg,80+(n-1)*150,88,80+(n-1)*150,47,'ln thin sk','fk');
   for(let k=n-1;k>0;k--){const x=80+k*150;const w=Math.max(0.6,7*Math.pow(0.6,n-1-k));E('path',{d:'M'+(x-30)+',95 C'+(x-60)+',70 '+(x-90)+',70 '+(x-120)+',95',fill:'none',stroke:'#c00000','stroke-width':w},svg);T(svg,x-75,62,'× Wₕᵀ·tanh′','').style.fill='#c00000'}
-  T(svg,470,215,'the gradient from the loss is multiplied by the same factor at every step back: after k steps, ~(‖Wₕ‖·tanh′)ᵏ','','middle')};
+  T(svg,470,240,'the gradient from the loss is multiplied by the same factor at every step back: after k steps, ~(‖Wₕ‖·tanh′)ᵏ','','middle')};
 FIG['vanish']=root=>{const P=Plot(svgOf(root),{w:560,h:340,x:[0,60],y:[-8,4],m:{l:44,r:14,t:14,b:36}});P.axes({xt:[0,10,20,30,40,50,60],yt:[-8,-6,-4,-2,0,2,4],fy:v=>'1e'+v,xl:'steps back in time (T − k)',yl:'gradient size'});P.line(0,0,60,0,'ln thin sm dash',P.bg);
   const iw=q(root,'w'),iff=q(root,'f');function draw(){const w=+iw.value,f=+iff.value;setV(root,'w',fmt(w,2));setV(root,'f',fmt(f,2));P.clear();
     P.fn(k=>Math.max(-8,Math.min(4,k*Math.log10(w))),'ln sr',0,60,120);P.fn(k=>Math.max(-8,k*Math.log10(f)),'ln sb',0,60,120);setR(root,'r',(Math.pow(w,50)).toExponential(1));setR(root,'l',(Math.pow(f,50)).toExponential(1))}
@@ -78,30 +78,33 @@ FIG['lstm-cell']=root=>{const svg=initSvg(svgOf(root),620,330);E('rect',{x:60,y:
 const STORY={t:['The','cat',',','which','ate','a','lot',',','was','sleepy'],
   f:[0.1,0.9,0.95,0.97,0.96,0.97,0.97,0.96,0.2,0.5],i:[0.1,0.95,0.05,0.05,0.1,0.02,0.05,0.02,0.1,0.8],o:[0.1,0.2,0.1,0.1,0.1,0.1,0.1,0.2,0.95,0.3],cand:[0,1,0,0,0,0,0,0,0,-0.2]};
 FIG['lstm-story']=root=>{const svg=svgOf(root);const n=STORY.t.length;const C=[0];for(let k=0;k<n;k++)C.push(STORY.f[k]*C[k]+STORY.i[k]*STORY.cand[k]);
-  stepper(root,s=>{initSvg(svg,960,300);const x0=150,dx=78;T(svg,20,40,'word','lab','start');T(svg,20,80,'forget f','','start');T(svg,20,112,'input i','','start');T(svg,20,144,'output o','','start');T(svg,20,210,'memory c','lab','start');
+  stepper(root,s=>{initSvg(svg,960,310);const x0=150,dx=78;T(svg,20,40,'word','lab','start');T(svg,20,80,'forget f','','start');T(svg,20,112,'input i','','start');T(svg,20,144,'output o','','start');T(svg,20,236,'memory c','lab','start');
     STORY.t.forEach((w,k)=>{const x=x0+k*dx;const on=k<s,cur=k===s-1;const tt=T(svg,x,40,w,cur?'lab big':'lab');tt.style.fill=on?(cur?'#c00000':'#1f1f1f'):'#bfbfbf';
       if(on){[['f','#4472c4',66],['i','#70ad47',98],['o','#ed7d31',130]].forEach(([g,c,y])=>{E('rect',{x:x-30,y:y,width:60,height:18,fill:'#f2f2f2'},svg);E('rect',{x:x-30,y:y,width:60*STORY[g][k],height:18,fill:c},svg);T(svg,x,y+14,f2(STORY[g][k]),'').style.fill=STORY[g][k]>0.5?'#fff':'#404040'});
-        const v=C[k+1];E('rect',{x:x-30,y:v>=0?210-60*v:210,width:60,height:Math.abs(60*v)+1,fill:'#7030a0','fill-opacity':0.7},svg);T(svg,x,v>=0?200-60*v:228+60*Math.abs(v),f2(v),'')}});
-    E('line',{x1:x0-40,y1:210,x2:x0+n*dx-30,y2:210,stroke:'#404040'},svg);
+        const v=C[k+1];E('rect',{x:x-30,y:v>=0?240-50*v:240,width:60,height:Math.abs(50*v)+1,fill:'#7030a0','fill-opacity':0.7},svg);T(svg,x,v>=0?234-50*v:256+50*Math.abs(v),f2(v),'')}});
+    E('line',{x1:x0-40,y1:240,x2:x0+n*dx-30,y2:240,stroke:'#404040'},svg);
     const notes=['An LSTM reading a sentence: watch the gates and the memory cell','"The": little to store','"cat": input gate opens, writes "subject = singular" into memory','"," …: forget ≈ 1, input ≈ 0: the memory is kept untouched','"which": a sub-clause starts; still keep the subject','"ate": not relevant for the verb agreement','"a"','"lot"','",": the sub-clause ends; the subject is still in memory','"was": output gate opens: read "singular" to choose was / were; then forget it','"sleepy": new content, the old subject is no longer needed'];
-    T(svg,480,285,notes[s],'lab','middle')})};
+    T(svg,480,300,notes[s],'lab','middle')})};
 /* LSTM gates on one step, with numbers */
 FIG['lstm-num']=root=>{const svg=svgOf(root);const cp=0.8,f=0.9,i=0.3,ct=-0.5,o=0.7;const c=f*cp+i*ct;const h=o*Math.tanh(c);
   stepper(root,s=>{initSvg(svg,600,260);box(svg,20,40,120,40,'c⟨t−1⟩ = '+cp,'#e4d7f5');
     const row=(y,t,v,show)=>{if(!show)return;box(svg,180,y,400,34,t+(v!==undefined?' = '+f3(v):''),'#fff',{cls:''})};
     row(30,'keep:  f · c⟨t−1⟩ = 0.9 · 0.8',f*cp,s>=1);row(74,'write: i · c̃ = 0.3 · (−0.5)',i*ct,s>=2);row(118,'new memory c⟨t⟩ = 0.72 + (−0.15)',c,s>=3);row(162,'output: h⟨t⟩ = o · tanh(c⟨t⟩) = 0.7 · tanh(0.57)',h,s>=4);
     T(svg,300,230,['gates (sigmoids of [h⟨t−1⟩, x⟨t⟩]): f = 0.9, i = 0.3, o = 0.7; candidate c̃ = −0.5','the forget gate keeps 90 % of the old memory','the input gate lets in 30 % of the new candidate','memory update: a sum, not a product through a squashing function','the output gate decides how much of the memory to show'][s],'','middle')})};
-FIG['gru-cell']=root=>{const svg=initSvg(svgOf(root),560,250);E('rect',{x:60,y:30,width:440,height:180,rx:16,fill:'#fff2cc',stroke:'#bf9000'},svg);
-  E('line',{x1:20,y1:70,x2:540,y2:70,stroke:'#404040','stroke-width':3},svg);T(svg,24,60,'h⟨t−1⟩','lab','start');T(svg,536,60,'h⟨t⟩','lab','end');
-  E('circle',{cx:300,cy:70,r:16,fill:'#fff',stroke:'#404040'},svg);T(svg,300,76,'mix','');box(svg,120,140,70,32,'σ  Γ_r','#ffc000');box(svg,220,140,70,32,'σ  Γ_u','#ffc000');box(svg,330,140,90,32,'tanh  h̃','#f4b183');
-  arrowPx(svg,255,138,295,88,'ln thin sk','fk');arrowPx(svg,375,138,308,88,'ln thin sk','fk');arrowPx(svg,190,156,328,156,'ln thin sm dash','fm');T(svg,260,190,'Γ_r: how much of h⟨t−1⟩ the candidate may use','');
-  E('line',{x1:100,y1:240,x2:100,y2:175,stroke:'#404040','stroke-width':1.5},svg);T(svg,100,248,'x⟨t⟩','lab');T(svg,300,110,'h⟨t⟩ = Γ_u ⊙ h̃ + (1 − Γ_u) ⊙ h⟨t−1⟩','lab')};
+FIG['gru-cell']=root=>{const svg=initSvg(svgOf(root),560,280);E('rect',{x:50,y:30,width:460,height:210,rx:16,fill:'#fff2cc',stroke:'#bf9000'},svg);
+  E('line',{x1:10,y1:70,x2:550,y2:70,stroke:'#404040','stroke-width':3},svg);T(svg,14,60,'h⟨t−1⟩','lab','start');T(svg,546,60,'h⟨t⟩','lab','end');
+  E('circle',{cx:400,cy:70,r:18,fill:'#fff',stroke:'#404040','stroke-width':1.5},svg);T(svg,400,76,'mix','');
+  box(svg,90,150,80,34,'σ  Γ_r','#ffc000');box(svg,220,150,80,34,'σ  Γ_u','#ffc000');box(svg,350,150,100,34,'tanh  h̃','#f4b183');
+  T(svg,136,212,'reset','','start');T(svg,266,212,'update','','start');T(svg,406,212,'candidate','','start');
+  arrowPx(svg,275,148,388,84,'ln thin sk','fk');arrowPx(svg,400,148,400,90,'ln thin sk','fk');E('path',{d:'M170,167 C230,120 300,120 348,160',fill:'none',stroke:'#7f7f7f','stroke-width':1.5,'stroke-dasharray':'5 4'},svg);
+  T(svg,262,128,'Γ_r ⊙ h⟨t−1⟩','');T(svg,470,114,'Γ_u·h̃ + (1−Γ_u)·h⟨t−1⟩','','end');
+  E('line',{x1:30,y1:272,x2:30,y2:225,stroke:'#404040','stroke-width':1.5},svg);E('line',{x1:30,y1:225,x2:400,y2:225,stroke:'#404040','stroke-width':1.5},svg);[130,260,400].forEach(x=>arrowPx(svg,x,225,x,187,'ln thin sk','fk'));T(svg,40,270,'x⟨t⟩','lab','start')};
 /* ---------- the memory experiment (notes 04, section 8) ---------- */
-FIG['memory-exp']=root=>{const svg=initSvg(svgOf(root),600,300);const P=Plot(svg,{w:600,h:300,x:[0,105],y:[0.4,1.02],m:{l:48,r:14,t:30,b:40}});P.axes({xt:[5,25,50,75,100],yt:[0.5,0.75,1],fy:v=>Math.round(v*100)+'%',xl:'distance to the relevant token (steps)',yl:'accuracy'});
+FIG['memory-exp']=root=>{const svg=initSvg(svgOf(root),600,320);const P=Plot(svg,{at:[0,0],w:600,h:300,x:[0,105],y:[0.4,1.02],m:{l:48,r:14,t:30,b:40}});P.axes({xt:[5,25,50,75,100],yt:[0.5,0.75,1],fy:v=>Math.round(v*100)+'%',xl:'distance to the relevant token (steps)',yl:'accuracy'});
   T(P.root,300,18,'Remember the first token of a random sequence (chance = 50 %)','lab');P.line(0,0.5,105,0.5,'ln thin sm dash',P.bg);
   const L=[5,10,25,50,100];const R={rnn:[1,1,0.5,0.52,0.51],lstm:[1,1,0.5,0.52,0.53],lstmf:[1,1,1,1,1]};
-  [['rnn','#7f7f7f','vanilla RNN'],['lstm','#4472c4','LSTM, default init'],['lstmf','#c00000','LSTM, forget bias = 5 (gate starts open)']].forEach(([k,c,lab],j)=>{const pa=P.path(L.map((l,i)=>[l,R[k][i]]),'ln');pa.setAttribute('stroke',c);L.forEach((l,i)=>{const d=P.dot(l,R[k][i],4,'');d.setAttribute('fill',c)});P.text(60,0.62-j*0.05,'● '+lab,'', 'start').style.fill=c});
-  T(svg,300,296,'800 Adam steps each, test on 2,000 fresh sequences (results of notes_NN/04, section 8)','','middle')};
+  [['rnn','#7f7f7f','vanilla RNN'],['lstm','#4472c4','LSTM, default init'],['lstmf','#c00000','LSTM, forget bias = 5 (gate starts open)']].forEach(([k,c,lab],j)=>{const pa=P.path(L.map((l,i)=>[l,R[k][i]]),'ln');pa.setAttribute('stroke',c);L.forEach((l,i)=>{const d=P.dot(l,R[k][i],4,'');d.setAttribute('fill',c)});P.text(32,0.9-j*0.055,'● '+lab,'', 'start').style.fill=c});
+  T(svg,300,316,'800 Adam steps each, test on 2,000 fresh sequences (results of notes_NN/04, section 8)','','middle')};
 FIG['birnn']=root=>{const svg=initSvg(svgOf(root),880,260);const cell=(x,y,c)=>E('rect',{x:x-16,y:y-14,width:32,height:28,rx:5,fill:c,stroke:'#404040'},svg);
   T(svg,200,18,'Bidirectional RNN','lab');for(let i=0;i<4;i++){const x=70+i*90;cell(x,70,'#f8cbad');cell(x,120,'#bdd7ee');cell(x,165,'#bdd7ee');cell(x,225,'#c5e0b4');arrowPx(svg,x,211,x,183,'ln thin sk','fk');arrowPx(svg,x,106,x,86,'ln thin sk','fk');
     if(i<3){arrowPx(svg,x+16,165,x+74,165,'ln thin sb','fb');arrowPx(svg,x+74,120,x+16,120,'ln thin sr','fr')}}

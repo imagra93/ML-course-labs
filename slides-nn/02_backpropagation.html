@@ -8,9 +8,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
-<link rel="stylesheet" href="../slides/assets/deck.css">
-<link rel="stylesheet" href="assets/nn.css">
-<script src="../slides/assets/mathjax-config.js"></script>
+<link rel="stylesheet" href="../slides/assets/deck.css?v=20260929">
+<link rel="stylesheet" href="assets/nn.css?v=20260929">
+<script src="../slides/assets/mathjax-config.js?v=20260929"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
 </head>
 <body data-deck="2 · Forward and backward propagation" data-prev="01_neural_networks.html" data-next="03_training.html">
@@ -167,16 +167,16 @@
 <section class="slide">
   <h2>The tiny network: backward with numbers</h2>
   <div class="cols c64">
-    <div class="widget" data-fig="net-num" data-auto="s=1 :: output error: δ₂ = ŷ − y = 0.632 − 1 = −0.368 (sigmoid + cross-entropy) | s=2 :: gradients of layer 2: ∂W₂ = a₁ᵀ δ₂, ∂b₂ = δ₂ (multiply gate: the other input) | s=3 :: send δ₂ back through W₂: ∂a = δ₂ · W₂ᵀ = (−0.368·0.7, −0.368·(−0.5)) | s=4 :: through the tanh: δ₁ = ∂a ⊙ (1 − a²) = (−0.257·0.420, 0.184·0.856) | s=5 :: gradients of layer 1: ∂W₁ = xᵀ δ₁ (x = (1, 2)), ∂b₁ = δ₁ | s=6 :: update every parameter: θ ← θ − 0.5 · ∂θ | s=7 :: forward again with the new weights">
+    <div class="widget" data-fig="net-num" data-auto="s=1 :: output error: δ₂ = ŷ − y = 0.633 − 1 = −0.367 (sigmoid + cross-entropy) | s=2 :: gradients of layer 2: ∂W₂ = a₁ᵀ δ₂, ∂b₂ = δ₂ (multiply gate: the other input) | s=3 :: send δ₂ back through W₂: ∂a = δ₂ · W₂ᵀ = (−0.367·0.7, −0.367·(−0.5)) | s=4 :: through the tanh: δ₁ = ∂a ⊙ (1 − a²) = (−0.257·0.420, 0.184·0.856) | s=5 :: gradients of layer 1: ∂W₁ = xᵀ δ₁ (x = (1, 2)), ∂b₁ = δ₁ | s=6 :: update every parameter: θ ← θ − 0.5 · ∂θ | s=7 :: forward again with the new weights">
       <svg class="fig" aria-label="The 2-2-1 network with forward values and every gradient written next to the nodes"></svg>
       <div class="ctl"><label for="nn2-s">step</label><input type="range" id="nn2-s" data-k="s" min="0" max="7" step="1" value="0"><span class="v" data-v="s"></span></div>
     </div>
     <div class="stack" style="gap:6px">
-      <p class="small">Same network and example as chapter 1: $\bx=(1,2)$, $y=1$, $\hat y=0.632$, loss <b data-r="l0">–</b>.</p>
+      <p class="small">Same network and example as chapter 1: $\bx=(1,2)$, $y=1$, $\hat y=0.633$, loss <b data-r="l0">–</b>.</p>
       <div class="panels" style="min-height:210px">
-        <div data-i="0"><p class="small">Forward values are stored: $\bz_1=(1.0,0.4)$, $\ba_1=(0.762,0.380)$, $z_2=0.543$, $\hat y=0.632$.</p></div>
-        <div data-i="1"><p class="small">$\delta_2=\hat y-y=-0.368$. Negative: the output should go <b>up</b>.</p></div>
-        <div data-i="2"><p class="small">$\partial\bW_2=\ba_1^\top\delta_2=(0.762,0.380)\cdot(-0.368)=(-0.280,-0.140)$. The unit with the larger activation gets the larger gradient.</p></div>
+        <div data-i="0"><p class="small">Forward values are stored: $\bz_1=(1.0,0.4)$, $\ba_1=(0.762,0.380)$, $z_2=0.543$, $\hat y=0.633$.</p></div>
+        <div data-i="1"><p class="small">$\delta_2=\hat y-y=-0.367$. Negative: the output should go <b>up</b>.</p></div>
+        <div data-i="2"><p class="small">$\partial\bW_2=\ba_1^\top\delta_2=(0.762,0.380)\cdot(-0.367)=(-0.280,-0.140)$. The unit with the larger activation gets the larger gradient.</p></div>
         <div data-i="3"><p class="small">$\partial\ba_1=\delta_2\bW_2^\top=(-0.257,\,0.184)$: hidden unit 1 (positive weight 0.7) should grow, unit 2 (weight −0.5) should shrink.</p></div>
         <div data-i="4"><p class="small">$\bdelta_1=(-0.257\cdot0.420,\ 0.184\cdot0.856)=(-0.108,\,0.157)$. Unit 1 is already fairly saturated ($a=0.76$), so its gradient is damped: $1-a^2=0.42$.</p></div>
         <div data-i="5"><p class="small">$\partial\bW_1=\bx^\top\bdelta_1=\begin{pmatrix}-0.108&0.157\\-0.216&0.314\end{pmatrix}$, $\ \partial\bb_1=(-0.108,0.157)$. Row 2 is twice row 1 because $x_2=2x_1$.</p></div>
@@ -221,7 +221,7 @@
       <p><b>← Backward</b></p>
       <p class="small">Start at the output, $k=K+1$: $\ \bdelta_{K+1}=\dfrac{\partial L}{\partial\bA_{K+1}}\odot\phi'_{K+1}(\bZ_{K+1})$ $\ \big(=\frac1m(\bA_{K+1}-\bY)$ for the matching loss$\big)$</p>
       <p class="small">For each layer $k=K+1,\dots,1$:</p>
-      <div class="eq">$$\frac{\partial L}{\partial\bW_k}=\bA_{k-1}^\top\bdelta_k,\quad\frac{\partial L}{\partial\bb_k}=\sum_i\bdelta_k^{(i)},\quad\bdelta_{k-1}=\big(\bdelta_k\bW_k^\top\big)\odot\phi'_{k-1}(\bZ_{k-1})$$</div>
+      <div class="eq s">$$\begin{aligned}\frac{\partial L}{\partial\bW_k}&amp;=\bA_{k-1}^\top\bdelta_k,\qquad\frac{\partial L}{\partial\bb_k}=\sum_i\bdelta_k^{(i)}\\\bdelta_{k-1}&amp;=\big(\bdelta_k\bW_k^\top\big)\odot\phi'_{k-1}(\bZ_{k-1})\end{aligned}$$</div>
     </div>
   </div>
   <p><b>Update parameters</b> with gradient descent (learning rate $\eta$):</p>
@@ -324,9 +324,9 @@ optimizer.step()              <span class="c"># update</span></pre>
   <p class="mail">imanolgranada@gmail.com</p>
 </section>
 </div></div>
-<script src="../slides/assets/figures.js"></script>
-<script src="assets/nn-core.js"></script>
-<script src="assets/fig-nn-backprop.js"></script>
-<script src="../slides/assets/deck.js"></script>
+<script src="../slides/assets/figures.js?v=20260929"></script>
+<script src="assets/nn-core.js?v=20260929"></script>
+<script src="assets/fig-nn-backprop.js?v=20260929"></script>
+<script src="../slides/assets/deck.js?v=20260929"></script>
 </body>
 </html>

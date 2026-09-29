@@ -26,7 +26,7 @@ function gray(v){const c=Math.round(255*(1-Math.max(0,Math.min(1,v))));return 'r
 function box(svg,x,y,w,h,t,fill,o){o=o||{};E('rect',{x:x,y:y,width:w,height:h,rx:o.rx===undefined?6:o.rx,fill:fill||'#fff',stroke:o.stroke||'#404040','stroke-width':o.sw||1,'stroke-dasharray':o.dash||''},svg);
   if(t!==undefined&&t!==null){const lines=String(t).split('\n');const lh=o.lh||17;lines.forEach((s,k)=>{const tt=T(svg,x+w/2,y+h/2+5+(k-(lines.length-1)/2)*lh,s,o.cls||'lab');if(o.tcol)tt.style.fill=o.tcol})}}
 /* step driver: <input data-k="s"> selects which [data-i="k"] / [data-from="k"] panels are visible; draw(s) redraws */
-function stepper(root,draw){const inp=root.querySelector('input[data-k="s"]');const panels=[...root.querySelectorAll('[data-i],[data-from]')];
+function stepper(root,draw){const inp=root.querySelector('input[data-k="s"]');const scope=root.closest('.slide')||root;const panels=[...scope.querySelectorAll('[data-i],[data-from]')].filter(p=>!p.closest('[data-fig]')||p.closest('[data-fig]')===root);
   function show(){const s=+inp.value;root.querySelectorAll('[data-v="s"]').forEach(e=>e.textContent=s+' / '+inp.max);panels.forEach(p=>{const ok=p.dataset.i!==undefined?p.dataset.i.split(',').map(Number).includes(s):(s>=+p.dataset.from&&(p.dataset.to===undefined||s<=+p.dataset.to));p.hidden=!ok});if(draw)draw(s)}
   inp.addEventListener('input',show);show();return show}
 /* segmented buttons: <span class="seg"><button data-KEY="value" aria-pressed>...; cb(value) */
@@ -58,13 +58,13 @@ function drawTiny(svg,N,F,s,o){o=o||{};const pos=drawNet(svg,[2,2,1],{x0:90,y0:7
   const wl=(a,b2,t,k)=>{const x=a[0]+(b2[0]-a[0])*k,y=a[1]+(b2[1]-a[1])*k;E('rect',{x:x-24,y:y-11,width:48,height:20,fill:'#fff',stroke:'#9dafd6'},svg);T(svg,x,y+4,t,'')};
   wl(pos[0][0],pos[1][0],'w='+N.W1[0][0],0.42);wl(pos[0][0],pos[1][1],'w='+N.W1[0][1],0.3);wl(pos[0][1],pos[1][0],'w='+N.W1[1][0],0.3);wl(pos[0][1],pos[1][1],'w='+N.W1[1][1],0.42);
   wl(pos[1][0],pos[2][0],'w='+N.W2[0][0],0.5);wl(pos[1][1],pos[2][0],'w='+N.W2[1][0],0.5);
-  T(svg,pos[1][0][0],pos[1][0][1]-30,'b='+N.b1[0],'');T(svg,pos[1][1][0],pos[1][1][1]+38,'b='+N.b1[1],'');T(svg,pos[2][0][0],pos[2][0][1]-30,'b='+N.b2[0],'');
+  T(svg,pos[1][0][0]-26,pos[1][0][1]-18,'b='+N.b1[0],'','end');T(svg,pos[1][1][0]-26,pos[1][1][1]+30,'b='+N.b1[1],'','end');T(svg,pos[2][0][0]+24,pos[2][0][1]-22,'b='+N.b2[0],'','start');
   /* values */
   const val=(p,t,c,dx)=>{const tt=T(svg,p[0]+(dx||0),p[1]+(dx?4:44),t,'lab');tt.style.fill=c||'#1f1f1f'};
   val(pos[0][0],'x₁ = '+N.x[0],'#385723',-52);val(pos[0][1],'x₂ = '+N.x[1],'#385723',-52);
   if(s>=1)[0,1].forEach(j=>val(pos[1][j],'z = '+f3(F.z1[j]),'#1f3864',0));if(s>=2)[0,1].forEach(j=>{const tt=T(svg,pos[1][j][0],pos[1][j][1]+60,'a = '+f3(F.a1[j]),'lab');tt.style.fill='#c00000'});
   if(s>=3)val(pos[2][0],'z = '+f3(F.z2),'#1f3864',0);if(s>=4){const tt=T(svg,pos[2][0][0],pos[2][0][1]+60,'ŷ = '+f3(F.yh),'lab');tt.style.fill='#c00000'}
-  if(s>=5){E('rect',{x:440,y:120,width:110,height:60,rx:6,fill:'#fbe5d6',stroke:'#ed7d31'},svg);T(svg,495,143,'y = '+N.y,'lab');T(svg,495,166,'loss = '+f3(F.L),'lab')}
+  if(s>=5){E('rect',{x:490,y:66,width:104,height:52,rx:6,fill:'#fbe5d6',stroke:'#ed7d31'},svg);T(svg,542,86,'y = '+N.y,'lab');T(svg,542,107,'loss = '+f3(F.L),'lab')}
   return pos}
 window.MLNN={drawNet,grid,cube,heat,gray,box,stepper,segs,ACT,sig,f2,f3,trainMLP,NET,tinyForward,drawTiny};
 })();
