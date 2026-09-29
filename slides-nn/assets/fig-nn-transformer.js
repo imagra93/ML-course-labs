@@ -3,6 +3,69 @@
 'use strict';
 const {FIG,lib}=window.MLFIG;const {E,T,initSvg,Plot,arrowPx,rng,randn,fmt,q,setV,setR,svgOf}=lib;
 const softmax=z=>{const m=Math.max(...z);const e=z.map(v=>Math.exp(v-m));const s=e.reduce((a,b)=>a+b,0);return e.map(v=>v/s)};
+
+const {grid,heat,box,stepper,f2,f3}=window.MLNN;
+/* ---------- translation: soft alignment ---------- */
+FIG['align']=root=>{const svg=initSvg(svgOf(root),560,330);const src=['the','black','cat','sleeps','.'],tgt=['el','gato','negro','duerme','.'];
+  const A=[[0.85,0.05,0.06,0.02,0.02],[0.06,0.12,0.78,0.02,0.02],[0.04,0.83,0.1,0.02,0.01],[0.02,0.02,0.08,0.86,0.02],[0.02,0.01,0.02,0.05,0.9]];const cs=52;
+  src.forEach((w,j)=>{const t=T(svg,150+j*cs+cs/2,40,w,'lab');t.setAttribute('transform','rotate(-30 '+(150+j*cs+cs/2)+' 40)')});tgt.forEach((w,i)=>T(svg,140,70+i*cs+cs/2+5,w,'lab','end'));
+  grid(svg,150,70,A,cs,(i,j,v)=>heat(v,true),(i,j,v)=>v>0.3?f2(v):'',{cls:'',tcol:'#fff',stroke:'#fff'});T(svg,295,350-8,'','');
+  T(svg,440,100,'row = a word being written','','start');T(svg,440,122,'column = a source word','','start');T(svg,440,150,'each row sums to 1','','start');T(svg,440,190,'"gato" looks at "cat",','','start');T(svg,440,212,'"negro" at "black":','','start');T(svg,440,234,'the order flip is learned','','start');T(svg,440,256,'from data, not programmed','','start')};
+/* ---------- attention with numbers ---------- */
+FIG['attn-num']=root=>{const svg=svgOf(root);const toks=['I','love','pizza'];const K=[[1,0],[0,1],[1,1]],V=[[1,0],[0,1],[0.5,0.5]];const qv=[2,1];const dk=2;
+  const s=K.map(k=>(k[0]*qv[0]+k[1]*qv[1])/Math.sqrt(dk));const a=softmax(s);const out=[0,1].map(d=>a.reduce((t,w,j)=>t+w*V[j][d],0));
+  stepper(root,st=>{initSvg(svg,620,300);T(svg,50,24,'token','lab');T(svg,140,24,'key k','lab');T(svg,230,24,'value v','lab');if(st>=1)T(svg,330,24,'q·k / √2','lab');if(st>=2)T(svg,430,24,'softmax α','lab');if(st>=3)T(svg,540,24,'α · v','lab');
+    toks.forEach((t,j)=>{const y=60+j*56;box(svg,15,y-18,70,36,t,'#e2f0d9');T(svg,140,y+5,'('+K[j].join(', ')+')','');T(svg,230,y+5,'('+V[j].join(', ')+')','');
+      if(st>=1)T(svg,330,y+5,f3(s[j]),'lab');if(st>=2){E('rect',{x:395,y:y-10,width:70*a[j],height:20,fill:'#ed7d31'},svg);T(svg,470,y+5,f3(a[j]),'','start')}
+      if(st>=3)T(svg,540,y+5,'('+f2(a[j]*V[j][0])+', '+f2(a[j]*V[j][1])+')','')});
+    box(svg,15,232,300,40,'query of "pizza": q = (2, 1)','#fbe5d6',{cls:''});
+    if(st>=4)box(svg,330,232,280,40,'output = Σ α v = ('+f2(out[0])+', '+f2(out[1])+')','#dae3f3',{cls:'lab'});
+    T(svg,310,292,['q is compared with every key','dot products, divided by √dₖ = √2','softmax: positive weights that sum to 1','each value is weighted by its α','the new vector for "pizza": mostly its own value, some of "I"'][st],'','middle')})};
+/* ---------- the matrix pipeline ---------- */
+FIG['qkv']=root=>{const svg=initSvg(svgOf(root),960,250);const blk=(x,y,w,h,c,t,sh)=>{E('rect',{x:x,y:y,width:w,height:h,fill:c,stroke:'#404040'},svg);T(svg,x+w/2,y+h/2+6,t,'lab big');T(svg,x+w/2,y+h+18,sh,'')};
+  blk(10,60,60,120,'#e2f0d9','X','n × d');[['Q','#fbe5d6',50],['K','#dae3f3',110],['V','#fff2cc',170]].forEach(([t,c,y],k)=>{arrowPx(svg,72,120,128,y+20-40*0+0,'ln thin sk','fk');blk(130,y-10,40,60,c,t,'')});
+  T(svg,100,40,'· W_Q, W_K, W_V','');T(svg,150,240,'n × dₖ each','');
+  arrowPx(svg,172,70,238,110,'ln thin sk','fk');arrowPx(svg,172,130,238,120,'ln thin sk','fk');blk(240,60,110,110,'#ededed','QKᵀ/√dₖ','n × n scores');
+  arrowPx(svg,352,115,398,115,'ln thin sk','fk');T(svg,375,100,'softmax','');T(svg,375,140,'per row','');blk(400,60,110,110,'#f8cbad','A','n × n weights');
+  arrowPx(svg,512,115,558,115,'ln thin sk','fk');T(svg,535,100,'· V','');E('path',{d:'M172,190 C400,240 520,220 560,140',fill:'none',stroke:'#bf9000','stroke-width':1.5,'stroke-dasharray':'5 4'},svg);
+  blk(560,60,60,120,'#c5e0b4','Z','n × dᵥ');T(svg,780,90,'row i of Z = new vector of token i:','','middle');T(svg,780,112,'a weighted average of all value rows,','','middle');T(svg,780,134,'weights = row i of A','','middle');T(svg,780,170,'three matrix products: fully parallel on a GPU','lab','middle')};
+/* ---------- a full attention matrix ---------- */
+FIG['attn-matrix']=root=>{const svg=initSvg(svgOf(root),560,400);const toks=TOK.slice();const S=scores('tired');const A=S.map(r=>softmax(r.map(v=>v*1.3)));const cs=36;
+  toks.forEach((w,j)=>{const t=T(svg,120+j*cs+cs/2,70,w,'');t.setAttribute('transform','rotate(-45 '+(120+j*cs+cs/2)+' 70)');t.setAttribute('text-anchor','start')});toks.forEach((w,i)=>T(svg,112,80+i*cs+cs/2+5,w,i===7?'lab':'','end'));
+  grid(svg,120,80,A,cs,(i,j,v)=>heat(Math.min(1,v*1.6),true),null,{stroke:'#fff'});E('rect',{x:120,y:80+7*cs,width:10*cs,height:cs,fill:'none',stroke:'#c00000','stroke-width':2.5},svg);
+  T(svg,300,30,'keys (what each word offers) →','lab');T(svg,20,260,'queries ↓','lab','start')};
+/* ---------- heads learn different patterns ---------- */
+FIG['heads']=root=>{const svg=initSvg(svgOf(root),960,290);const n=8;const cs=26;const toks=['the','cat','sat','on','the','mat','.','it'];
+  const pats=[['head 1: previous token',(i,j)=>j===i-1?1:(i===0&&j===0?1:0)],['head 2: same word / itself',(i,j)=>toks[i]===toks[j]?1:0.05],['head 3: "it" → noun',(i,j)=>i===7?(j===1?0.7:j===5?0.3:0):(j===i?0.6:0.05)],['head 4: broad average',(i,j)=>j<=i?1:0]];
+  pats.forEach(([name,f],k)=>{const x0=20+k*240;T(svg,x0+n*cs/2,20,name,'lab');const M=[];for(let i=0;i<n;i++){const r=[];for(let j=0;j<n;j++)r.push(f(i,j));const s=r.reduce((a,b)=>a+b,0)||1;M.push(r.map(v=>v/s))}
+    grid(svg,x0,32,M,cs,(i,j,v)=>heat(Math.min(1,v*1.3),true),null,{stroke:'#fff'});toks.forEach((w,i)=>{T(svg,x0+i*cs+cs/2,32+n*cs+14,w,'').style.fontSize='11px'})});
+  T(svg,480,282,'rows = queries, columns = keys (same 8 tokens). Patterns like these are really found in trained models.','','middle')};
+/* ---------- path length: RNN vs attention ---------- */
+FIG['paths']=root=>{const svg=initSvg(svgOf(root),960,240);const n=7;
+  T(svg,230,20,'RNN: information from word 1 to word 7','lab');for(let k=0;k<n;k++){const x=40+k*65;E('circle',{cx:x,cy:110,r:20,fill:k===0||k===n-1?'#ed7d31':'#bdd7ee',stroke:'#404040'},svg);T(svg,x,115,String(k+1),'lab');if(k<n-1)arrowPx(svg,x+21,110,x+43,110,'ln sr','fr')}
+  T(svg,230,170,'6 sequential steps: slow, and the signal fades','','middle');T(svg,230,192,'cost O(n) steps that cannot run in parallel','','middle');
+  T(svg,720,20,'Attention: every pair in one step','lab');for(let k=0;k<n;k++){const x=520+k*65;E('circle',{cx:x,cy:130,r:20,fill:k===0||k===n-1?'#ed7d31':'#bdd7ee',stroke:'#404040'},svg);T(svg,x,135,String(k+1),'lab')}
+  for(let a=0;a<n;a++)for(let b=a+1;b<n;b++){const x1=520+a*65,x2=520+b*65;const hi=a===0&&b===n-1;E('path',{d:'M'+x1+',108 Q'+((x1+x2)/2)+','+(108-(x2-x1)*0.35)+' '+x2+',108',fill:'none',stroke:hi?'#c00000':'#9dafd6','stroke-width':hi?2.5:0.8},svg)}
+  T(svg,720,190,'1 step between any two words, all pairs computed in parallel','','middle');T(svg,720,212,'price: n² pairs (memory and compute grow with n²)','','middle')};
+/* ---------- BPE ---------- */
+FIG['bpe']=root=>{const svg=svgOf(root);const rows=[['l o w','l o w e r','n e w e s t','w i d e s t'],['l o w','l o w e r','n e w es t','w i d es t'],['l o w','l o w e r','n e w est','w i d est'],['lo w','lo w e r','n e w est','w i d est'],['low','low e r','n e w est','w i d est']];const merges=['start: characters','merge "e"+"s" → "es" (most frequent pair)','merge "es"+"t" → "est"','merge "l"+"o" → "lo"','merge "lo"+"w" → "low"'];
+  stepper(root,s=>{initSvg(svg,600,230);T(svg,300,24,merges[s],'lab');rows[s].forEach((w,k)=>{const parts=w.split(' ');let x=40;const y=60+k*38;parts.forEach(p=>{const wd=16+p.length*12;box(svg,x,y,wd,28,p,'#dae3f3',{cls:'lab'});x+=wd+4})});
+    T(svg,300,218,'vocabulary grows by one symbol per merge; GPT-2 stops at 50,257','','middle')})};
+/* ---------- language-model training: shifted targets ---------- */
+FIG['lm-train']=root=>{const svg=initSvg(svgOf(root),960,200);const toks=['The','cat','sat','on','the','mat'];
+  T(svg,40,50,'input','lab','end');T(svg,40,150,'target','lab','end');toks.forEach((t,k)=>{const x=70+k*140;if(k<5){box(svg,x,30,110,34,t,'#e2f0d9');arrowPx(svg,x+55,66,x+55,128,'ln thin sk','fk');T(svg,x+60,100,'predict','','start')}if(k>0)box(svg,x-140,130,110,34,t,'#fbe5d6')});
+  T(svg,480,190,'one sequence of 6 tokens = 5 classification problems, trained in a single forward pass thanks to the causal mask','','middle')};
+/* ---------- encoder (BERT) vs decoder (GPT) masks ---------- */
+FIG['bert-gpt']=root=>{const svg=initSvg(svgOf(root),620,260);const n=6,cs=28;
+  [['BERT (encoder): sees both sides',(i,j)=>1,'fill-in-the-blank, classification, embeddings'],['GPT (decoder): sees only the past',(i,j)=>j<=i?1:0,'next-token prediction, generation']].forEach(([t,f,s],k)=>{const x0=40+k*310;T(svg,x0+n*cs/2,20,t,'lab');const M=[];for(let i=0;i<n;i++){const r=[];for(let j=0;j<n;j++)r.push(f(i,j));M.push(r)}
+    grid(svg,x0,34,M,cs,(i,j,v)=>v?'#4472c4':'#f2f2f2',null,{stroke:'#fff'});T(svg,x0+n*cs/2,34+n*cs+22,s,'')})};
+/* ---------- autoregressive generation loop ---------- */
+FIG['gen-loop']=root=>{const svg=svgOf(root);const words=['Can','you','please','come','here','?'];const P=[[],[],[],[],[['here',0.41],['back',0.22],['home',0.15]],[['?',0.62],['now',0.14],['.',0.1]],[['<end>',0.8],['Thanks',0.05],['I',0.03]]];
+  stepper(root,s=>{initSvg(svg,620,280);const n=4+s;const shown=words.slice(0,n);let x=20;shown.forEach((w,k)=>{const wd=20+w.length*11;box(svg,x,40,wd,32,w,k>=4?'#fbe5d6':'#e2f0d9');x+=wd+6});
+    box(svg,200,110,220,44,'GPT (N blocks)','#dae3f3');arrowPx(svg,310,74,310,108,'ln thin sk','fk');const pr=P[n];if(pr.length){arrowPx(svg,310,156,310,178,'ln thin sk','fk');
+      pr.forEach(([w,p],k)=>{const y=185+k*26;T(svg,250,y+14,w,'lab','end');E('rect',{x:258,y:y,width:260*p,height:20,fill:k===0?'#c00000':'#4472c4'},svg);T(svg,262+260*p,y+14,f2(p),'','start')})}
+    T(svg,540,130,s<2?'append the chosen token,':'<end>: stop','','middle');if(s<2)T(svg,540,150,'run the model again','','middle')})};
+
 const TOK=['The','animal','didn’t','cross','the','street','because','it','was','tired'];
 function scores(last){const n=10;const S=[...Array(n)].map((_,i)=>[...Array(n)].map((_,j)=>i===j?1.2:0));const set=(i,j,v)=>S[i][j]=v;
   set(1,0,1.5);set(3,1,2.2);set(3,5,2.2);set(2,3,1.8);set(5,4,1.6);set(6,3,1.2);set(8,7,1.8);set(9,7,1.5);
