@@ -7,14 +7,14 @@ env/
 
 # Datasets and artefacts downloaded by the notebooks
 data/
-deep_learning/data/
+notebooks/neural_networks/data/
 lightning_logs/
 checkpoints/
 *.ckpt
 *.pth
 *.zip
 
-# YOLO weights, exports and training runs (deep_learning/object_detection_yolo)
+# YOLO weights, exports and training runs (notebooks/neural_networks/object_detection_yolo)
 *.pt
 *.onnx
 runs/
@@ -23,9 +23,9 @@ runs/
 .vscode/
 .idea/
 
-# Training artefacts written by the deep_learning notebooks
+# Training artefacts written by the neural_networks notebooks
 checkpoints_plain/
-deep_learning/checkpoints_plain/
+notebooks/neural_networks/checkpoints_plain/
 logs/
 logs_lightning/
-deep_learning/logs_lightning/
+notebooks/neural_networks/logs_lightning/

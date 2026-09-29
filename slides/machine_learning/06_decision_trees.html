@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="author" content="Imanol Granada (imanolgranada@gmail.com)">
+<title>Decision Trees and CART</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="../assets/deck.css">
+<script src="../assets/mathjax-config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
+</head>
+<body data-deck="6 · Decision trees and CART" data-prev="05_regularization.html" data-next="07_ensembles.html">
+<div id="viewport"><div id="stage">
+<section class="slide cover">
+  <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Decision Trees and CART</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+<section class="slide divider">
+  <div class="card purple"><h1><b>Decision</b><br><b>Trees</b><br>and CART</h1><svg class="fig" data-fig="prune" aria-hidden="true"></svg></div>
+</section>
+
+<section class="slide">
+  <h2>Decision Trees: Example of Decision Trees.</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="tree-example" aria-label="A decision tree for buying a car"></svg>
+    <div class="stack" style="gap:14px;padding-top:30px">
+      <p>A tree predicts by asking a sequence of <b>yes/no questions</b> about single features until it reaches a leaf that holds a prediction.</p>
+      <p><b>CART</b> (Classification And Regression Trees, Breiman et al. 1984) is the standard algorithm to grow them, and it is what scikit-learn implements.</p>
+      <p class="why">A small tree is just a set of if / else rules: easy to explain to anyone.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Decision Trees: General idea</h2>
+  <div class="cols">
+    <svg class="fig" data-fig="part" aria-label="A tree as a partition of the plane into rectangles with a probability per region"></svg>
+    <div class="stack" style="gap:12px">
+      <ul class="small">
+        <li><b>Root node:</b> entire population.</li>
+        <li><b>Splitting:</b> divides a node into sub-nodes (depends on the variable and its type).</li>
+        <li><b>Decision node:</b> can be split.</li>
+        <li><b>Leaf node:</b> terminal node.</li>
+      </ul>
+      <ul class="small">
+        <li>Classification → probability of each class, from the population of the leaf node.</li>
+        <li>Regression → the mean of the leaf population.</li>
+      </ul>
+      <div class="eq">$$h(\bx)=\sum_{\ell=1}^Lc_\ell\,\mathbb 1[\bx\in R_\ell]\qquad\text{(piecewise constant)}$$</div>
+      <p style="background:var(--gold-soft);border:1px solid var(--gold);padding:8px 16px;align-self:flex-start">How do we design the tree?!</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Decision Trees: What a leaf predicts</h2>
+  <div class="cols">
+    <div class="stack" style="gap:12px">
+      <p>Given the examples in a leaf, the constant $c$ that minimizes the loss on them is:</p>
+      <ul>
+        <li><b>Squared error</b> (regression) → the <b>mean</b>.</li>
+        <li><b>Absolute error</b> → the <b>median</b>.</li>
+        <li><b>0–1 loss</b> (classification) → the <b>majority class</b>.</li>
+        <li><b>Log-loss</b> → the <b>class proportions</b> $\hat p_k=N_k/N$ (what <code>predict_proba</code> returns).</li>
+      </ul>
+    </div>
+    <div class="stack" style="gap:12px">
+      <p class="step"><b>Proof for the mean.</b> Minimize $\sum_i(y^{(i)}-c)^2$ over $c$:</p>
+      <div class="eq step">$$\frac{d}{dc}\sum_i\big(y^{(i)}-c\big)^2=-2\sum_i\big(y^{(i)}-c\big)=0\ \Rightarrow\ c=\frac1N\sum_iy^{(i)}=\bar y$$</div>
+      <p class="step"><b>For the majority class:</b> predicting class $k$ is wrong for a fraction $1-p_k$ of the leaf, smallest when $p_k$ is largest.</p>
+      <p class="step why">No gradient descent here: the structure is found by a <b>greedy search</b>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Decision Trees: Entropy</h2>
+  <div class="cols">
+    <div class="stack" style="gap:12px">
+      <p>Entropy measures the <b>uncertainty</b> (or impurity) of a set of examples. For a dataset $S$ with $k$ classes:</p>
+      <div class="eq big">$$H(S)=-\sum_{i=1}^kp_i\log_2(p_i)$$</div>
+      <ul class="small"><li>$p_i$ = proportion of examples in class $i$.</li><li>$H(S)$ = entropy of dataset $S$.</li></ul>
+      <p class="small">If all examples are in one class: $H(S)=0$ (pure).<br>If examples are evenly split across classes: $H(S)$ is maximized.</p>
+      <p class="step">If the dataset has 8 Yes and 8 No:</p>
+      <div class="eq s step">$$p_{\text{Yes}}=\tfrac{8}{16}=0.5,\quad p_{\text{No}}=0.5$$ $$H(S)=-(0.5\log_20.5+0.5\log_20.5)=1$$</div>
+    </div>
+    <svg class="fig" data-fig="entropy" aria-label="Entropy, Gini and misclassification error as a function of the class proportion"></svg>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Decision Trees: Information Gain</h2>
+  <div class="stack" style="gap:16px;max-width:1080px">
+    <p>When splitting on an attribute $A$, entropy usually decreases. The <b>information gain</b> (IG) is the reduction in entropy:</p>
+    <div class="eq big">$$IG(S,A)=H(S)-\sum_{v\in\text{Values}(A)}\frac{|S_v|}{|S|}H(S_v)$$</div>
+    <ul>
+      <li>$S_v$ = subset of $S$ where attribute $A=v$.</li>
+      <li>Weighted sum = expected entropy after splitting on $A$.</li>
+      <li>$IG(S,A)$ = how much information we gain about the class by splitting on $A$.</li>
+    </ul>
+    <p>The decision tree picks the attribute with the <b>highest information gain</b>.</p>
+    <p class="step why">Each child's entropy is weighted by its size: a tiny pure child is not worth much.</p>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Decision Trees: Entropy and Information</h2>
+  <svg class="fig" data-fig="ig-split" aria-label="The same dataset split in two different ways, with the information gain of each"></svg>
+  <p>Split 2 separates the colours better, so it has the larger information gain. Probabilities (or regression values) are taken from the samples in each side of the split.</p>
+</section>
+
+<section class="slide">
+  <h2>Decision Trees: Impurity measures</h2>
+  <div class="cols c64">
+    <table class="t">
+      <tr><th>Measure</th><th>Formula</th><th>Binary case</th><th>Max</th></tr>
+      <tr><td>Gini</td><td>$1-\sum_kp_k^2$</td><td>$2p(1-p)$</td><td>0.5</td></tr>
+      <tr><td>Entropy</td><td>$-\sum_kp_k\log_2p_k$</td><td>–</td><td>1 bit</td></tr>
+      <tr><td>Misclassification</td><td>$1-\max_kp_k$</td><td>$1-\max(p,1-p)$</td><td>0.5</td></tr>
+      <tr><td>Variance (regression)</td><td>$\frac1{N_t}\sum_{i\in S_t}(y^{(i)}-\bar y_t)^2$</td><td>–</td><td>–</td></tr>
+    </table>
+    <div class="stack" style="gap:12px">
+      <p class="small">All are 0 for a pure node and maximal for a uniform mix.</p>
+      <p class="small"><b>Gini</b> = the probability that two examples drawn at random from the node have <b>different</b> labels ($P(\text{same})=\sum_kp_k^2$). It is the CART default: a bit cheaper, no logarithm.</p>
+      <p class="small"><b>Entropy</b> = expected number of bits to encode the label.</p>
+      <p class="small">In practice Gini and entropy give almost the same trees.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Decision Trees: Choosing a split</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:12px">
+      <div class="eq">$$\Delta I(j,s)=I(S_t)-\Big(\frac{N_L}{N_t}I(S_L)+\frac{N_R}{N_t}I(S_R)\Big)$$</div>
+      <p class="small">Parent impurity minus the <b>size-weighted</b> impurity of the children. With entropy, $\Delta I$ is the information gain.</p>
+      <p class="small">Eight points, one feature. Root: 4 A, 4 B.</p>
+      <p class="small">Only <b>midpoints between sorted values</b> change the partition, so those are the thresholds we try. With the feature sorted once, all of them are scored in one pass.</p>
+    </div>
+    <div class="widget" data-fig="split" data-auto="s=1 :: Threshold 1.5: one A on the left, tiny gain|s=3 :: Threshold 3.5: three A on the left, the gain grows|s=4 :: Threshold 4.5: the best split, both children are purer|s=6 :: Threshold 6.5: worse again|c=ent;s=4 :: Entropy instead of Gini: different numbers, same best split">
+      <svg class="fig" aria-label="Eight labelled points with a split and the impurity decrease for every threshold"></svg>
+      <div class="ctl"><label for="sp-s">Threshold</label><input type="range" id="sp-s" data-k="s" min="1" max="7" step="1" value="3"><span class="v" data-v="s">3.5</span>
+        <span class="seg" role="group" aria-label="Impurity"><button type="button" data-c="gini" aria-pressed="true">Gini</button><button type="button" data-c="ent" aria-pressed="false">Entropy</button></span></div>
+      <div class="ro"><div class="m"><span>root</span><b data-r="root">–</b></div><div class="m"><span>left</span><b data-r="gl">–</b></div><div class="m"><span>right</span><b data-r="gr">–</b></div><div class="m"><span>weighted</span><b data-r="w">–</b></div><div class="m"><span>gain ΔI</span><b data-r="d">–</b></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Decision Trees: Why not misclassification error?</h2>
+  <div class="cols">
+    <div class="stack" style="gap:12px">
+      <p>A node with 400 A and 400 B. Two candidate splits:</p>
+      <table class="t"><tr><th>Split 1</th><th>Split 2</th></tr><tr><td style="font-weight:400">(300 A, 100 B) | (100 A, 300 B)</td><td>(200 A, 400 B) | (200 A, <b>0 B</b>)</td></tr></table>
+      <p class="step"><b>Misclassification:</b> split 1: $\frac12\cdot\frac14+\frac12\cdot\frac14=0.25$. Split 2: $\frac{600}{800}\cdot\frac13+\frac{200}{800}\cdot0=0.25$. <b>A tie.</b></p>
+      <p class="step"><b>Gini:</b> split 1: $2\cdot\frac34\cdot\frac14=0.375$ each → 0.375. Split 2: $\frac{600}{800}\cdot2\cdot\frac13\cdot\frac23+0=0.333$. <b>Split 2 wins</b>: it created a pure node.</p>
+    </div>
+    <div class="stack" style="gap:12px">
+      <div class="note step"><p class="small">Misclassification is piecewise <b>linear</b> in $p$, so many useful splits don't change it. Gini and entropy are <b>strictly concave</b>: by Jensen's inequality, any split that changes the class proportions strictly lowers the weighted impurity.</p></div>
+      <p class="step small"><b>Regression trees.</b> With variance as impurity, $\ N_t\,\Delta I_V=\mathrm{SSE}(S_t)-\big[\mathrm{SSE}(S_L)+\mathrm{SSE}(S_R)\big]$: maximizing the variance decrease is exactly reducing the tree's squared error. Each extra level can double the number of steps of the prediction.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Decision Trees: Algorithm.</h2>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p class="small">Begin the tree with the root node $S$, which contains the complete dataset, and then:</p>
+      <ul class="small">
+        <li><b>Step 1:</b> find the best attribute (in terms of information gain) in the dataset.</li>
+        <li><b>Step 2:</b> divide $S$ into subsets that contain the possible values for the best attribute.
+          <ul><li>Note: there are other criteria, like the Gini index.</li></ul></li>
+        <li><b>Step 3:</b> generate the tree node that contains the best attribute.</li>
+        <li><b>Step 4:</b> recursively make new decision trees using the subsets created in step 2. Continue until:
+          <ul><li>all matching records have the same output value,</li><li>data points are identical on the remaining attributes.</li></ul></li>
+      </ul>
+    </div>
+    <div class="stack" style="gap:12px">
+      <pre style="font-family:var(--mono);font-size:15px;line-height:1.5;background:#f2f2f2;padding:12px 16px;margin:0;white-space:pre">grow(S, depth):
+  if stop(S, depth):       # pure, too small, max_depth
+    return Leaf(value(S))
+  for each feature j, threshold s:
+    score ΔI(j, s)
+  (j*, s*) = argmax ΔI
+  return Node(j*, s*,
+      grow(S_left,  depth + 1),
+      grow(S_right, depth + 1))</pre>
+      <div class="eq">$$\text{Gini}=1-\sum_{k=1}^Kp_k^2$$</div>
+      <p class="why"><b>Greedy</b>: each split is the best one-step choice, never revisited. The optimal tree is NP-hard. <a href="https://www2.cs.uregina.ca/~dbd/cs831/notes/ml/dtrees/dt_prob1.html" target="_blank" rel="noopener">A worked example</a>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Decision Trees: Depth and overfitting</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="tree-depth" data-auto="d=1 :: Depth 1: a single split, underfits the wave|d=3 :: Depth 3: follows the wave, best test accuracy|d=6 :: Depth 6: small boxes around noisy points appear|d=10 :: Depth 10: memorises the noise, train accuracy ≈ 1, test accuracy drops">
+      <svg class="fig" aria-label="Decision regions of a CART tree and its train and test accuracy against depth"></svg>
+      <div class="ctl"><label for="td-d">max_depth</label><input type="range" id="td-d" data-k="d" min="1" max="10" step="1" value="2"><span class="v" data-v="d">2</span></div>
+    </div>
+    <div class="stack" style="gap:12px">
+      <p>CART from scratch (Gini) on 160 points; the true boundary is the dashed wave, and 12 % of labels are flipped.</p>
+      <div class="ro"><div class="m"><span>leaves</span><b data-r="l">–</b></div><div class="m"><span>train acc.</span><b data-r="tr">–</b></div><div class="m"><span>test acc.</span><b data-r="te">–</b></div></div>
+      <ul class="small">
+        <li>Grown until every leaf is pure, a tree reaches <b>zero training error</b> and memorizes the noise.</li>
+        <li>Low bias, <b>very high variance</b>.</li>
+        <li>Boundaries are staircases of axis-aligned segments.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Decision Trees: Regularization.</h2>
+  <div class="cols">
+    <ul class="small">
+      <li>Define a maximum depth (lower than $m-1$).
+        <ul><li>Many use 10 as an absolute maximum.</li></ul></li>
+      <li>Do not split if the information gain is less than a threshold (<code>min_impurity_decrease</code>), or a node is too small (<code>min_samples_leaf</code>).</li>
+      <li><b>Pruning.</b> This makes the model more understandable and, perhaps, more accurate on fresh data. For example:
+        <ul><li>While the number of leaves exceeds the desired number: find the twig with the least information gain and collapse it.</li><li>Prune the tree to maximize classification performance on a validation set.</li></ul></li>
+    </ul>
+    <div class="stack" style="gap:12px">
+      <svg class="fig" data-fig="prune" aria-label="A subtree collapsed into a single leaf"></svg>
+      <p class="small step"><b>Cost-complexity pruning</b> (CART's own method): grow a big tree $T_0$, then pick the subtree minimizing</p>
+      <div class="bluebox step">$$R_\alpha(T)=R(T)+\alpha\,|T|$$</div>
+      <p class="small step">$R(T)$ = training error, $|T|$ = number of leaves. Regularization again: fit + $\alpha$ × complexity. Choose $\alpha$ (<code>ccp_alpha</code>) by cross-validation.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Decision Trees: Pros and Cons.</h2>
+  <div class="cols">
+    <div class="stack"><p><b>Advantages:</b></p>
+      <ul class="small"><li>No assumptions about the spatial distribution and the classifier structure.</li><li>Less effort for data preparation during pre-processing.</li><li>A decision tree does <b>not require normalization</b> of data (only the order of values matters).</li><li>It can capture non-linear relationships and interactions.</li><li>Very intuitive and easy to explain to technical teams as well as stakeholders.</li></ul></div>
+    <div class="stack"><p><b>Disadvantages:</b></p>
+      <ul class="small"><li>A small change in the data can cause a large change in the structure of the tree: <b>instability</b>.</li><li>Training can take longer than simpler models.</li><li>Very prone to <b>overfitting</b>:
+        <ul><li>with "m−1" splits you learn your data.</li></ul></li><li>Can't extrapolate beyond the training range.</li></ul>
+      <div class="note"><p class="small">Fix for the variance: average many trees (next chapter).</p></div></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Decision Trees – Lab</h2>
+  <div class="cols" style="padding-top:40px">
+    <div class="stack center" style="gap:16px">
+      <div class="note" style="text-align:left"><p class="small"><b>Decision Trees from scratch.</b> Impurity measures, a <code>Node</code> class, best-split search, recursive growth, prediction, and a scikit-learn-style wrapper.</p></div>
+      <p style="font-size:26px"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%20-%20Decision%20Trees%20from%20scratch.ipynb" target="_blank" rel="noopener">Trees from scratch</a></p>
+    </div>
+    <div class="stack center" style="gap:16px">
+      <div class="note" style="text-align:left"><p class="small"><b>Decision Trees and Random Forests.</b> How a tree decides, depth and overfitting, bagging, random forests, OOB score, feature importance.</p></div>
+      <p style="font-size:26px"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%20-%20Decision%20Trees%20and%20Random%20Forests.ipynb" target="_blank" rel="noopener">Lab Trees</a></p>
+    </div>
+  </div>
+</section>
+<section class="slide cover">
+  <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Next: Bagging, Random Forest and Boosting</p><p class="go">Press → to continue with the next topic</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+</div></div>
+<script src="../assets/figures.js"></script>
+<script src="assets/fig-trees.js"></script>
+<script src="../assets/deck.js"></script>
+</body>
+</html>

@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="author" content="Imanol Granada (imanolgranada@gmail.com)">
+<title>Support Vector Machines</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="../assets/deck.css">
+<script src="../assets/mathjax-config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
+</head>
+<body data-deck="8 · Support vector machines" data-prev="07_ensembles.html" data-next="../neural_networks/index.html" data-next-title="Neural networks">
+<div id="viewport"><div id="stage">
+<section class="slide cover">
+  <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Support Vector Machines</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+<section class="slide divider">
+  <div class="card blue"><h1><b>Support Vector</b><br><b>Machines</b></h1><div class="eq big" style="text-align:center">$$\max\ \frac{2}{\norm{\mathbf w}}$$</div></div>
+</section>
+
+<section class="slide">
+  <h2>Support Vector Machine (SVM): Examples</h2>
+  <div class="cols c3" style="padding-top:20px">
+    <div class="note"><h3>Facial expression classification</h3><p class="small">Happy, sad, surprised, angry: features from face images, one SVM per expression.</p></div>
+    <div class="note"><h3>Breast cancer classification</h3><p class="small">Predicting whether a cancer diagnosis is benign or malignant from several observations and features.</p></div>
+    <div class="note"><h3>Clothing images</h3><p class="small">Fashion-MNIST: ankle boot, T-shirt, dress, pullover, sneaker, sandal…</p></div>
+  </div>
+  <p class="why">A strong classifier for small and medium datasets, before deep learning took over images and text.</p>
+</section>
+
+<section class="slide">
+  <h2>Support Vector Machine (SVM): Motivation</h2>
+  <svg class="fig" data-fig="manylines" aria-label="Several separating lines, and the optimal hyperplane with maximum margin"></svg>
+  <p>Which line should we pick? The SVM chooses the one that stays <b>as far as possible from the closest points</b>: the maximum margin.</p>
+</section>
+
+<section class="slide">
+  <h2>Support Vector Machine (SVM): Motivation</h2>
+  <svg class="fig" data-fig="hyper23" aria-label="A hyperplane is a line in two dimensions and a plane in three dimensions"></svg>
+  <p>In $\R^n$ a hyperplane is an $(n-1)$-dimensional "flat" that cuts the space in two halves.</p>
+</section>
+
+<section class="slide">
+  <h2>Support Vector Machine (SVM): Fundamentals</h2>
+  <div class="cols c46">
+    <svg class="fig" data-fig="hyper" aria-label="The line x1 + x2 − 3 = 0 with the normal vector w and two classified points"></svg>
+    <div class="stack" style="gap:10px">
+      <p>Suppose $\bx\in\R^n$ and $\mathbf w\in\R^n$ are the system's parameters. We define a hyperplane as:</p>
+      <div class="eq">$$\mathbf w\cdot\bx+b=0,\qquad\text{in 2-D: }w_1x_1+w_2x_2+b=0$$</div>
+      <p class="small">Note: 1 equation, 2 independent variables! One coordinate is free, so the solutions form a line.</p>
+      <div class="eq">$$\text{Decision boundary}=\begin{cases}+1&amp;\text{if }\mathbf w\cdot\bx+b\gt0\\-1&amp;\text{if }\mathbf w\cdot\bx+b\lt0\end{cases}$$</div>
+      <p class="small step">Given $\mathbf w=(1,1)$, $b=-3$, the line $x_1+x_2-3=0$:</p>
+      <table class="t num step" style="font-size:18px"><tr><th>point</th><th>f(x) = x₁ + x₂ − 3</th><th>prediction</th></tr><tr><td>x⁽¹⁾ = (3, 3)</td><td>+3</td><td>+1</td></tr><tr><td>x⁽²⁾ = (0, 0)</td><td>−3</td><td>−1</td></tr><tr><td>(1.5, 1.5)</td><td>0</td><td>on the boundary</td></tr></table>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Support Vector Machine (SVM): Dot Product</h2>
+  <div class="cols">
+    <svg class="fig" data-fig="dotprod" style="max-height:315px" aria-label="The shadow of x on the direction of w"></svg>
+    <div class="stack" style="gap:10px">
+      <p>It has two equivalent forms:</p>
+      <div class="eq s">$$\mathbf w^\top\bx=w_1x_1+\dots+w_nx_n=\norm{\mathbf w}\,\norm{\bx}\cos\alpha$$ $$\text{with }\norm{\mathbf w}=\sqrt{\textstyle\sum_jw_j^2}$$</div>
+      <p class="small">$\norm{\bx}\cos\alpha$ is the length of the <b>projection</b> (the "shadow") of $\bx$ on $\mathbf w$. $\norm{\mathbf w}$ only gets in the way, so we use the unit vector:</p>
+      <div class="eq">$$\hat{\mathbf w}=\frac{\mathbf w}{\norm{\mathbf w}}\ \Rightarrow\ \hat{\mathbf w}^\top\bx=\frac{\mathbf w^\top\bx}{\norm{\mathbf w}}=\norm{\bx}\cos\alpha$$</div>
+      <p class="step">Distances along $\mathbf w$ are differences of shadows, so the <b>signed distance</b> from $\bx$ to the hyperplane is</p>
+      <div class="bluebox step">$$r(\bx)=\frac{\mathbf w\cdot\bx+b}{\norm{\mathbf w}}$$</div>
+      <p class="step small">Check: $\mathbf w=(1,1)$, $b=-3$, $\bx=(4,2)$: $r=3/\sqrt2\approx2.12$. The closest point on the line is $(2.5,0.5)$ and $\norm{(1.5,1.5)}=2.12$ ✓. The sign of the projection says on which side the point is.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Support Vector Machine (SVM): Margin</h2>
+  <div class="cols c46">
+    <svg class="fig" data-fig="margin" aria-label="Separating line with dashed margin lines at plus and minus one through the support vectors"></svg>
+    <div class="stack" style="gap:10px">
+      <div class="eq">$$\text{Decision boundary}=\begin{cases}+1&amp;\text{if }\mathbf w\cdot\bx+b\ge\hl{+1}\\-1&amp;\text{if }\mathbf w\cdot\bx+b\le\hl{-1}\end{cases}$$</div>
+      <p>The goal is to find $\mathbf w$ and $b$ (the hyperplane) such that:</p>
+      <div class="eq s">$$\begin{cases}\mathbf w\cdot\bx^{(i)}+b\ge1,&amp;\forall i\text{ with }y^{(i)}=+1\\\mathbf w\cdot\bx^{(i)}+b\le-1,&amp;\forall i\text{ with }y^{(i)}=-1\end{cases}$$ $$\iff\ y^{(i)}\big(\mathbf w\cdot\bx^{(i)}+b\big)\ge1$$</div>
+      <p>Or equivalently (and only for the <b>support vectors</b>):</p>
+      <div class="eq">$$y^{(i)}\big(\mathbf w\cdot\bx^{(i)}+b\big)-1=0$$</div>
+      <p class="step small"><b>Why ±1?</b> $\mathbf w$ of any scale gives the same line: $(c\mathbf w,cb)$ with $c\gt0$ changes nothing. We spend that freedom by putting the closest points at $f=\pm1$.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Support Vector Machine (SVM): Margin</h2>
+  <div class="cols c46">
+    <svg class="fig" data-fig="margin" aria-label="Margin between the two dashed lines"></svg>
+    <div class="stack" style="gap:10px">
+      <p>How do we measure the margin? <b>Projecting!</b> Take a support vector on each side, $\bx_+$ and $\bx_-$:</p>
+      <div class="eq s">$$d_+=\frac{\mathbf w\cdot\bx_+}{\norm{\mathbf w}},\qquad d_-=\frac{\mathbf w\cdot\bx_-}{\norm{\mathbf w}}$$ $$d=d_+-d_-=\frac{1}{\norm{\mathbf w}}\big(\mathbf w\cdot\bx_+-\mathbf w\cdot\bx_-\big)$$</div>
+      <p class="step">For the support vectors, $y^{(i)}(\mathbf w\cdot\bx^{(i)}+b)-1=0$ gives $\mathbf w\cdot\bx_+=1-b$ and $\mathbf w\cdot\bx_-=-1-b$:</p>
+      <div class="eq step">$$d=\frac{1}{\norm{\mathbf w}}\big((1-b)-(-1-b)\big)=\frac{1}{\norm{\mathbf w}}(1-b+1+b)$$</div>
+      <div class="bluebox step">$$d=\frac{2}{\norm{\mathbf w}}$$</div>
+      <p class="step"><b>$b$ cancels.</b> Once the scale is fixed, a <b>short $\mathbf w$ means a wide margin</b>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Support Vector Machine (SVM): Optimization</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="angle" data-auto="p=90 :: Direction 90°: the projections almost touch, a tiny gap|p=140 :: Direction 140°: the classes overlap in this direction, no margin at all|p=36 :: Direction 36°: the widest gap between the classes. This is the direction of w|p=250 :: Keep turning: no margin again">
+      <svg class="fig" aria-label="Points projected on a direction; the widest band in that direction; the gap for every direction"></svg>
+      <div class="ctl"><label for="an-p">Direction of w</label><input type="range" id="an-p" data-k="p" min="0" max="359" step="1" value="20"><span class="v" data-v="p">20°</span></div>
+      <div class="ro"><div class="m"><span>margin in this direction</span><b data-r="w">–</b></div></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <div class="eq">$$\max_{\mathbf w,b}\ \frac{2}{\norm{\mathbf w}}\quad\text{s.t. }y^{(i)}(\mathbf w\cdot\bx^{(i)}+b)-1\ge0,\ \forall i$$</div>
+      <p class="small step">Maximizing $2/a$ is minimizing $a$, and minimizing $\frac12a^2$ (no square root, cleaner derivative):</p>
+      <div class="bluebox step" style="font-size:20px">$$\min_{\mathbf w,b}\ \frac12\norm{\mathbf w}^2=\frac12\mathbf w^\top\mathbf w$$ $$\text{s.t. }y^{(i)}(\mathbf w\cdot\bx^{(i)}+b)-1\ge0,\ \forall i$$</div>
+      <p class="small step">Only some constraints will affect: the support vectors (circled). This problem is <b>convex</b> and can be solved with quadratic programming (QP) software, or with <b>Lagrange multipliers</b>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Support Vector Machine (SVM): Optimization</h2>
+  <div class="cols">
+    <div class="stack" style="gap:12px">
+      <p><b>Optimization with inequality constraints.</b> Minimize $f(\mathbf w)$ subject to $g_i(\mathbf w)\le0$ (the <b>primal</b> problem). Build the generalized Lagrangian:</p>
+      <div class="eq big">$$\mathcal L(\mathbf w,\boldsymbol\alpha)=f(\mathbf w)+\sum_i\alpha_i\,g_i(\mathbf w),\qquad\alpha_i\ge0$$</div>
+    </div>
+    <div class="stack" style="gap:12px">
+      <p class="step">At the optimum each constraint is either</p>
+      <ul class="step"><li><b>inactive</b> ($g_i\lt0$): you could move a little without violating it, so it plays no role: $\alpha_i=0$;</li><li><b>active</b> ($g_i=0$): the optimum is pressed against it: $\alpha_i\ge0$.</li></ul>
+      <p class="step">Both cases in one line (<b>complementary slackness</b>, part of the KKT conditions):</p>
+      <div class="eq step">$$\alpha_i\,g_i(\mathbf w)=0$$</div>
+      <p class="step why">For the SVM, the active constraints are exactly the support vectors.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Support Vector Machine (SVM): Optimization</h2>
+  <div class="stack" style="gap:14px;max-width:1080px">
+    <p>To maximize the margin we minimize the norm of $\mathbf w$:</p>
+    <div class="eq">$$\min_{\mathbf w,b}\frac12\norm{\mathbf w}^2\quad\text{subject to}\quad y_i(\mathbf w^\top\bx_i+b)\ge1\ \ \forall i$$</div>
+    <p class="step">The Lagrangian for the primal problem is:</p>
+    <div class="bluebox step">$$\mathcal L(\mathbf w,b,\boldsymbol\alpha)=\frac12\norm{\mathbf w}^2-\sum_{i=1}^n\alpha_i\big[y_i(\mathbf w^\top\bx_i+b)-1\big]$$</div>
+    <p class="step">where $\alpha_i\ge0$ are the <b>Lagrange multipliers</b>.</p>
+    <p class="step">The goal is to <b>minimize</b> the Lagrangian with respect to $\mathbf w$ and $b$, and to <b>maximize</b> it with respect to the non-negative multipliers $\alpha_i$.</p>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Support Vector Machine (SVM): Optimization</h2>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p><b>Minimizing with respect to $\mathbf w$.</b> The terms involving $\mathbf w$ in the Lagrangian are:</p>
+      <div class="eq">$$\frac12\norm{\mathbf w}^2-\sum_{i=1}^n\alpha_iy_i\,\mathbf w^\top\bx_i$$</div>
+      <p class="step">Taking the derivative with respect to $\mathbf w$ and setting it to zero:</p>
+      <div class="eq step">$$\frac{\partial\mathcal L}{\partial\mathbf w}=\mathbf w-\sum_{i=1}^n\alpha_iy_i\bx_i=\bzero$$</div>
+      <div class="bluebox step">$$\mathbf w=\sum_{i=1}^n\alpha_iy_i\bx_i$$</div>
+      <p class="step small">A key result: the optimal weight vector is a <b>linear combination of the training points</b>, weighted by $\alpha_iy_i$.</p>
+    </div>
+    <div class="stack" style="gap:10px">
+      <p class="step"><b>Minimizing with respect to $b$.</b> Taking the derivative and setting it to zero:</p>
+      <div class="eq step">$$\frac{\partial\mathcal L}{\partial b}=-\sum_{i=1}^n\alpha_iy_i=0$$</div>
+      <p class="step">This gives the condition:</p>
+      <div class="bluebox step">$$\sum_{i=1}^n\alpha_iy_i=0$$</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Support Vector Machine (SVM): Optimization</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:6px">
+      <p class="small">Now substitute $\mathbf w=\sum_i\alpha_iy_i\bx_i$ and $\sum_i\alpha_iy_i=0$ into the Lagrangian (the $b$ term vanishes):</p>
+      <div class="eq s step">$$\mathcal L(\boldsymbol\alpha)=\frac12\Big(\sum_i\alpha_iy_i\bx_i\Big)^\top\Big(\sum_j\alpha_jy_j\bx_j\Big)$$ $$\qquad-\sum_i\alpha_iy_i\Big(\sum_j\alpha_jy_j\bx_j\Big)^\top\bx_i+\sum_i\alpha_i$$</div>
+      <p class="small step">Both double sums equal $\sum_{i,j}\alpha_i\alpha_jy_iy_j\bx_i^\top\bx_j$: half of it minus all of it leaves minus half.</p>
+      <p class="small step">Thus, the <b>dual</b> optimization problem is:</p>
+      <div class="bluebox step">$$\max_{\boldsymbol\alpha}\ \sum_i\alpha_i-\frac12\sum_{i}\sum_{j}\alpha_i\alpha_jy_iy_j\,\hl{\bx_i^\top\bx_j}\quad\text{s.t. }\sum_i\alpha_iy_i=0,\ \ \alpha_i\ge0$$</div>
+    </div>
+    <div class="stack" style="gap:10px">
+      <p class="small step">A quadratic program that only depends on the <b>dot products</b> $\bx_i^\top\bx_j$ of the inputs, not directly on $\mathbf w$.</p>
+      <p class="small step"><b>KKT:</b> $\alpha_i\big[y_i(\mathbf w^\top\bx_i+b)-1\big]=0$, so $\alpha_i\gt0$ only for points on the margin: the support vectors. $b=y_s-\mathbf w^\top\bx_s$ for any support vector $s$.</p>
+      <p class="small step"><b>Prediction:</b></p>
+      <div class="eq step">$$f(\bx)=\sum_{i\in\text{SV}}\alpha_iy_i\,\hl{\bx_i^\top\bx}+b$$</div>
+      <p class="why step">Keep an eye on the blue dot products: they are the door to kernels.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Support Vector Machine (SVM): Kernels</h2>
+  <div class="cols c46">
+    <svg class="fig" data-fig="lift1d" aria-label="One-dimensional points lifted onto a parabola where a horizontal line separates them"></svg>
+    <div class="stack" style="gap:12px">
+      <p>Some data can't be separated by any hyperplane. <b>Fix:</b> map every point to a richer feature space, $\bx\mapsto\phi(\bx)$, where a hyperplane <b>does</b> separate them.</p>
+      <p>Simplest example, in 1-D: the blue class sits in the middle, red on both sides. No single threshold works.</p>
+      <p class="step">Add the feature $x^2$. In the plane $(x,x^2)$ the points lie on a parabola, and a <b>horizontal line</b> separates them.</p>
+      <p class="step">Back on the original axis, that line is <b>two</b> thresholds: a hyperplane in $\phi$-space is a curved boundary in $\bx$-space.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Support Vector Machine (SVM): Kernels</h2>
+  <svg class="fig" data-fig="circles" style="max-height:290px" aria-label="Concentric classes that no line separates, and the same data lifted with a third feature"></svg>
+  <div class="cols">
+    <div class="eq">$$\phi(\bx)=\big(x_1,\ x_2,\ e^{-(x_1^2+x_2^2)}\big)\in\R^3$$</div>
+    <div class="eq">$$\langle\phi(\bx),\phi(\mathbf z)\rangle=x_1z_1+x_2z_2+e^{-(x_1^2+x_2^2)}e^{-(z_1^2+z_2^2)}$$</div>
+  </div>
+  <ul class="small">
+    <li>The inner product in $\R^3$ depends only on a function of the values in $\R^2$.</li>
+    <li>Instead of first creating the vectors in $\R^3$, define functions that <b>directly compute the inner products</b>. We never need the vectors in $\R^3$ for anything else!</li>
+  </ul>
+</section>
+
+<section class="slide">
+  <h2>Support Vector Machine (SVM): Kernel trick</h2>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p>The dual only involves dot products $\bx_i^\top\bx_j$. Replace them by a <b>kernel function</b>:</p>
+      <div class="bluebox">$$K(\bx_i,\bx_j)=\phi(\bx_i)^\top\phi(\bx_j)$$</div>
+      <p class="small">We don't compute $\phi(\bx)$ explicitly: we only compute $K$, which gives the dot product in the higher-dimensional space.</p>
+      <p><b>Common kernels:</b></p>
+      <ul class="small"><li>Linear: $K(\bx_i,\bx_j)=\bx_i^\top\bx_j$</li><li>Polynomial: $K(\bx_i,\bx_j)=(\bx_i^\top\bx_j+c)^d$</li><li>RBF (Gaussian): $K(\bx_i,\bx_j)=\exp\Big(-\dfrac{\norm{\bx_i-\bx_j}^2}{2\sigma^2}\Big)=\exp\big(-\gamma\norm{\bx_i-\bx_j}^2\big)$</li></ul>
+    </div>
+    <div class="stack" style="gap:10px">
+      <p class="step"><b>Why the polynomial kernel works</b> (2-D, $c=1$, $d=2$):</p>
+      <div class="eq s step">$$(\bx^\top\mathbf z+1)^2=x_1^2z_1^2+x_2^2z_2^2+2x_1x_2z_1z_2$$ $$\qquad+2x_1z_1+2x_2z_2+1$$</div>
+      <div class="eq s step">$$=\phi(\bx)^\top\phi(\mathbf z),\quad\phi(\bx)=\big(1,\sqrt2x_1,\sqrt2x_2,x_1^2,x_2^2,\sqrt2x_1x_2\big)$$</div>
+      <p class="step small">One 2-D dot product instead of building 6 coordinates. For $n=100$ features and degree 3, $\phi$ would have 176,851 coordinates.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Support Vector Machine (SVM): Kernel trick</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:10px">
+      <p class="small">The final dual problem, with kernels:</p>
+      <div class="eq">$$\max_{\boldsymbol\alpha}\sum_i\alpha_i-\frac12\sum_i\sum_j\alpha_i\alpha_jy_iy_j\,\hl{K(\bx_i,\bx_j)}$$</div>
+      <p class="small">subject to the same constraints $\sum_i\alpha_iy_i=0,\ \alpha_i\ge0$. The decision function for a new point:</p>
+      <div class="eq">$$f(\bx)=\sum_{i\in\text{SV}}\alpha_iy_i\,\hl{K(\bx_i,\bx)}+b$$</div>
+      <p class="small"><b>RBF:</b> $f(\bx)$ is a <b>sum of Gaussian bumps</b>, one per support vector, up for $+1$, down for $-1$. $\gamma$ sets their width.</p>
+    </div>
+    <div class="widget" data-fig="rbf" data-auto="g=-1.5 :: Small γ: wide bumps, a smooth boundary (may underfit)|g=0 :: γ = 1|g=1.3 :: Large γ: narrow bumps around each support vector, memorises the training set">
+      <svg class="fig" aria-label="Gaussian bumps centred on support vectors and their sum"></svg>
+      <div class="ctl"><label for="rbf-g">γ (log scale)</label><input type="range" id="rbf-g" data-k="g" min="-1.5" max="1.3" step="0.05" value="0"><span class="v" data-v="g">1.00</span></div>
+      <p class="why">Small γ: wide bumps, smooth boundary (may underfit). Large γ: narrow bumps that memorize the training set. Tune C and γ together by CV.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Support Vector Machine (SVM): Mercer's cond.</h2>
+  <div class="stack" style="gap:14px;max-width:1060px">
+    <p>A fundamental property of a good kernel: it must satisfy <b>Mercer's theorem</b>, which ensures that the kernel corresponds to a valid dot product in some feature space. The kernel must generate a <b>positive semi-definite</b> Gram matrix, the <b>kernel matrix</b>.</p>
+    <p>Given data points $\{\bx_1,\dots,\bx_n\}$, the kernel matrix is</p>
+    <div class="eq big">$$K_{ij}=K(\bx_i,\bx_j)$$</div>
+    <p>$K$ must be positive semi-definite: for any vector $\bv$, $\ \bv^\top K\bv\ge0$. This keeps the SVM optimization problem convex and the solution computationally feasible.</p>
+    <p class="step small">Check for a real feature map: $\bv^\top K\bv=\sum_{i,j}v_iv_j\phi(\bx_i)^\top\phi(\bx_j)=\norm{\sum_iv_i\phi(\bx_i)}^2\ge0$.</p>
+    <div class="note"><p><b>Key takeaway:</b> any valid kernel must generate a positive semi-definite kernel matrix.</p></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Support Vector Machine (SVM): Soft-Margin</h2>
+  <div class="cols">
+    <div class="widget" data-fig="softc" data-auto="c=-2 :: C = 0.01: wide margin, many violations tolerated|c=0 :: C = 1|c=2 :: C = 100: narrow margin, few violations, fits the training data tightly">
+      <svg class="fig" aria-label="Soft-margin SVM on overlapping data with support vectors circled"></svg>
+      <div class="ctl"><label for="sc-c">C (log scale)</label><input type="range" id="sc-c" data-k="c" min="-2" max="2" step="0.1" value="0"><span class="v" data-v="c">1.00</span></div>
+      <div class="ro"><div class="m"><span>margin 2/‖w‖</span><b data-r="w">–</b></div><div class="m"><span>support vectors</span><b data-r="s">–</b></div><div class="m"><span>inside margin</span><b data-r="i">–</b></div><div class="m"><span>misclassified</span><b data-r="e">–</b></div></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small"><b>Primal formulation for soft-margin SVM.</b> Real data overlap, so allow each point a slack:</p>
+      <div class="eq s">$$\min_{\mathbf w,b,\boldsymbol\xi}\ \frac12\norm{\mathbf w}^2+\hl{C\sum_{i=1}^n\xi_i}$$ $$\text{s.t. }y_i(\mathbf w^\top\bx_i+b)\ge1-\hl{\xi_i},\ \ \xi_i\ge0$$</div>
+      <ul class="small">
+        <li>$\xi_i$ are <b>slack variables</b> that allow some points to be on the wrong side of the margin or the decision boundary: $\xi=0$ outside, $0\lt\xi\le1$ inside the margin, $\xi\gt1$ misclassified.</li>
+        <li>$C$ is the <b>regularization parameter</b>: the trade-off between maximizing the margin and minimizing the violations.
+          <ul><li>Large $C$: narrow margin, fits the training data tightly.</li><li>Small $C$: wide margin, many violations tolerated.</li></ul></li>
+        <li>The dual is the same with a box: $0\le\alpha_i\le C$.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Support Vector Machine (SVM): Hinge loss</h2>
+  <div class="cols c46">
+    <div class="stack">
+      <svg class="fig" data-fig="hinge" aria-label="Zero-one loss, hinge loss and logistic loss as functions of the margin"></svg>
+    </div>
+    <div class="stack" style="gap:9px">
+      <p><b>Eliminate the slacks.</b> Each $\xi_i$ wants to be as small as its constraints allow:</p>
+      <div class="eq step">$$\xi_i=\max\big(0,\,1-y_if(\bx_i)\big)\qquad\text{the hinge loss}$$</div>
+      <p class="step">Substitute, divide by $Cn$, set $\lambda=\frac{1}{Cn}$:</p>
+      <div class="bluebox step">$$J=\frac1n\sum_i\max\big(0,1-y_i(\mathbf w^\top\bx_i+b)\big)+\frac\lambda2\norm{\mathbf w}^2$$</div>
+      <p class="step small">Average loss + L2, the same template as regularized logistic regression. Here the L2 term <b>is</b> the margin.</p>
+      <p class="step small">Points with $\mu\ge1$ sit on the flat part: <b>no influence at all</b>. The logistic loss is never exactly 0, so every point pulls. That is where SVM sparsity comes from.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Support Vector Machine (SVM): Review</h2>
+  <div class="cols">
+    <div class="stack">
+      <p><b>Pros</b></p>
+      <ul><li>Can make use of kernels!</li><li>Very fast classification!</li><li>Good performance, even with "smaller" datasets (it only relies on the support vectors).</li></ul>
+      <p style="margin-top:10px"><b>Cons</b></p>
+      <ul><li>The training can be slow: roughly $O(m^2)$–$O(m^3)$ with kernels.</li><li>Only for 2 classes (one-vs-all or one-vs-one for more).</li><li>No probabilities out of the box (Platt scaling).</li><li>Scale the features: the margin is a Euclidean distance.</li></ul>
+    </div>
+    <div class="stack" style="gap:12px">
+      <p><b>Interesting reads:</b></p>
+      <ul class="small">
+        <li>Hinge loss and SVM with gradient descent: <a href="https://towardsdatascience.com/support-vector-machine-introduction-to-machine-learning-algorithms-934a444fca47" target="_blank" rel="noopener">towardsdatascience.com</a></li>
+        <li>Support Vector Regressor: <a href="https://towardsdatascience.com/unlocking-the-true-power-of-support-vector-regression-847fd123a4a0" target="_blank" rel="noopener">towardsdatascience.com</a></li>
+      </ul>
+      <table class="t" style="font-size:17px"><tr><th></th><th>Logistic</th><th>Linear SVM</th></tr><tr><td>loss of μ</td><td>$\log(1+e^{-\mu})$</td><td>$\max(0,1-\mu)$</td></tr><tr><td>points that matter</td><td>all</td><td>support vectors</td></tr><tr><td>output</td><td>probability</td><td>score / class</td></tr></table>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>One-vs-All multiclass classification.</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="ovr" aria-label="Three binary classifiers, one per class"></svg>
+    <div class="stack" style="gap:12px;padding-top:40px">
+      <p>From the full dataset, construct $K$ binary classifiers, one for each class: $\mathbf w_k^\top\bx\gt0$ for inputs of class $k$.</p>
+      <p><b>Winner takes all</b>: predict the class with the highest score $\mathbf w_k^\top\bx$. Only the correct label should have a positive score.</p>
+      <p class="small muted">scikit-learn: <code>LinearSVC</code> is one-vs-rest; <code>SVC</code> uses one-vs-one.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Support Vector Machine (SVM): Lab</h2>
+  <div class="stack center grow" style="gap:20px">
+    <div class="note" style="max-width:840px;text-align:left"><p class="small"><b>Support Vector Machines.</b> Maximizing the margin, fitting an SVM with scikit-learn, support vectors, the kernel trick, soft margins and tuning C and γ with cross-validation.</p></div>
+    <p style="font-size:30px"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%20-%20Support%20Vector%20Machines.ipynb" target="_blank" rel="noopener">Lab SVM</a></p>
+  </div>
+</section>
+<section class="slide cover">
+  <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Thank you!</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+</div></div>
+<script src="../assets/figures.js"></script>
+<script src="assets/fig-svm.js"></script>
+<script src="../assets/deck.js"></script>
+</body>
+</html>

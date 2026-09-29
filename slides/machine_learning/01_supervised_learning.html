@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="author" content="Imanol Granada (imanolgranada@gmail.com)">
+<title>Supervised Learning and Data Splits</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="../assets/deck.css">
+<script src="../assets/mathjax-config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
+</head>
+<body data-deck="1 · Supervised learning: train, validation, test" data-next="02_linear_regression.html">
+<div id="viewport"><div id="stage">
+<section class="slide cover">
+  <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Supervised learning · Train, validation and test</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+
+<section class="slide">
+  <h2>Supervised Learning</h2>
+  <div class="cols c46">
+    <div class="stack">
+      <p>Notation:</p>
+      <ul>
+        <li>$x_j^{(i)}$ feature $j$ of sample $i$</li>
+        <li>$\bx^{(i)}$ feature vector $i$ (size $n\times1$)</li>
+        <li>$y^{(i)}$ target $i$</li>
+        <li>$(\bx^{(i)},y^{(i)})$ training pair $i$</li>
+        <li>$\{(\bx^{(i)},y^{(i)})\}_{i=1}^{m}$ training set</li>
+        <li>$\mathcal{X}$ input space</li>
+        <li>$\mathcal{Y}$ output space</li>
+        <li>$h:\mathcal{X}\to\mathcal{Y}$ hypothesis</li>
+      </ul>
+    </div>
+    <div class="stack">
+      <p>Objective:</p>
+      <ul>
+        <li>given a training set</li>
+        <li>learn a function $h$ so that $h(\bx)$ is a "good" predictor of $y$.</li>
+      </ul>
+      <svg class="fig" data-fig="sl-diagram" style="max-height:240px" aria-label="Training set feeds a learning algorithm, which outputs a hypothesis h that maps x to a predicted y"></svg>
+      <ul>
+        <li>$y$ continuous → <b>regression</b></li>
+        <li>$y$ discrete → <b>classification</b></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Dataset: Train – Validation – Test</h2>
+  <div class="cols c64">
+    <ul>
+      <li><b>Training Dataset.</b>
+        <ul><li>Fit the model – $m$ samples</li></ul></li>
+      <li><b>Validation Dataset:</b>
+        <ul><li>Provide an unbiased evaluation</li><li>Used for tuning model hyperparameters or model selection.</li><li>Becomes more biased (the model occasionally sees this data, but never does it "learn" from this).</li></ul></li>
+      <li><b>Test Dataset.</b>
+        <ul><li>Unbiased evaluation (data never seen).</li><li>Present results</li></ul></li>
+    </ul>
+    <div class="stack" style="gap:26px;padding-top:30px">
+      <div class="bar3">
+        <div class="seg3" style="flex:70">Train<div class="blk" style="width:100%;background:linear-gradient(90deg,#f8c08f,#fff)"></div></div>
+        <div class="seg3" style="flex:15">Validation<div class="blk" style="width:100%;background:linear-gradient(90deg,#fff,#a8e063)"></div></div>
+        <div class="seg3" style="flex:15;margin-left:14px">Test<div class="blk" style="width:100%;background:#9ff3f7"></div></div>
+      </div>
+      <div class="stack">
+        <p><b>Important:</b></p>
+        <ul class="small">
+          <li>Same distribution.</li>
+          <li>No data leakage.</li>
+          <li>Distribution?
+            <ul><li>Depends on the number of hyperparameters and number of data samples.</li><li>(70-15-15) or (70-20-10) or (80-10-10) or (90-7-3)</li></ul></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Dataset: Train – Validation – Test</h2>
+  <p>What if we only have a small dataset?</p>
+  <div class="cols c46">
+    <div class="stack">
+      <p><a href="https://scikit-learn.org/stable/modules/cross_validation.html">K-fold cross validation</a>:</p>
+      <ol>
+        <li class="step">Separate test data.</li>
+        <li class="step">Split data into K folds.</li>
+        <li class="step">Calculate K metrics:
+          <ul><li>Train on K-1 folds.</li><li>Validate in the remaining one.</li></ul></li>
+        <li class="step">Average the K metrics.</li>
+      </ol>
+      <p class="step" style="margin-top:18px">A frequent choice of K is 5 or 10.</p>
+      <div class="eq step">$$\mathrm{CV}=\frac{1}{K}\sum_{k=1}^{K}E_k$$</div>
+    </div>
+    <div class="folds">
+      <div></div><div class="c all" style="grid-column:span 5">All Data</div>
+      <div></div><div class="c tr" style="grid-column:span 4">Training data</div><div class="c va">Test data</div>
+      <div style="height:10px"></div><div style="grid-column:span 5"></div>
+      <div></div><div class="c hd">Fold 1</div><div class="c hd">Fold 2</div><div class="c hd">Fold 3</div><div class="c hd">Fold 4</div><div class="c hd">Fold 5</div>
+      <div class="l">Split 1</div><div class="c va">Fold 1</div><div class="c tr">Fold 2</div><div class="c tr">Fold 3</div><div class="c tr">Fold 4</div><div class="c tr">Fold 5</div>
+      <div class="l">Split 2</div><div class="c tr">Fold 1</div><div class="c va">Fold 2</div><div class="c tr">Fold 3</div><div class="c tr">Fold 4</div><div class="c tr">Fold 5</div>
+      <div class="l">Split 3</div><div class="c tr">Fold 1</div><div class="c tr">Fold 2</div><div class="c va">Fold 3</div><div class="c tr">Fold 4</div><div class="c tr">Fold 5</div>
+      <div class="l">Split 4</div><div class="c tr">Fold 1</div><div class="c tr">Fold 2</div><div class="c tr">Fold 3</div><div class="c va">Fold 4</div><div class="c tr">Fold 5</div>
+      <div class="l">Split 5</div><div class="c tr">Fold 1</div><div class="c tr">Fold 2</div><div class="c tr">Fold 3</div><div class="c tr">Fold 4</div><div class="c va">Fold 5</div>
+      <div style="height:10px"></div><div style="grid-column:span 5"></div>
+      <div></div><div class="l" style="grid-column:span 3">Finding parameters ↑ · Final evaluation →</div><div class="c te" style="grid-column:span 2">Test data</div>
+    </div>
+  </div>
+</section>
+<section class="slide cover">
+  <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Next: Linear Regression</p><p class="go">Press → to continue with the next topic</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+</div></div>
+<script src="../assets/figures.js"></script>
+<script src="../assets/deck.js"></script>
+</body>
+</html>

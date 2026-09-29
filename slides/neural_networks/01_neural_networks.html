@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="author" content="Imanol Granada (imanolgranada@gmail.com)">
+<title>Neural Networks and the MLP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="../assets/deck.css?v=20260929">
+<link rel="stylesheet" href="assets/nn.css?v=20260929">
+<script src="../assets/mathjax-config.js?v=20260929"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
+</head>
+<body data-deck="1 · From logistic regression to neural networks" data-next="02_backpropagation.html">
+<div id="viewport"><div id="stage">
+<section class="slide cover">
+  <div class="inner"><h1>Neural Networks</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">From logistic regression to neural networks</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+
+<section class="slide">
+  <h2>Why Neural Networks and Deep Learning?</h2>
+  <div class="cols c3" style="grid-template-columns:repeat(4,1fr);gap:14px">
+    <div class="note"><h3>Virtual assistants</h3><p class="small">Speech recognition and synthesis.</p></div>
+    <div class="note"><h3>Chatbots</h3><p class="small">ChatGPT and friends: transformers (chapter 6).</p></div>
+    <div class="note"><h3>Fake news detection</h3><p class="small">News aggregation and text classification.</p></div>
+    <div class="note"><h3>Composing music</h3><p class="small">Sequence generation (chapter 5).</p></div>
+    <div class="note"><h3>Image coloring</h3><p class="small">Image-to-image networks.</p></div>
+    <div class="note"><h3>Robotics</h3><p class="small">Perception and control.</p></div>
+    <div class="note"><h3>Image captioning</h3><p class="small">A CNN encoder + a language decoder.</p></div>
+    <div class="note"><h3>YOLO</h3><p class="small">You Only Look Once: real-time object detection (chapter 4).</p></div>
+    <div class="note"><h3>Stable Diffusion</h3><p class="small">Generating new images from text.</p></div>
+    <div class="note"><h3>RAG</h3><p class="small">Chatbots that answer from your own documents (chapter 6).</p></div>
+    <div class="note" style="grid-column:span 2"><h3>Vehicle damage from photos</h3><p class="small">Classify parts, segment damage, locate it with boxes: every block of this course, together.</p></div>
+  </div>
+  <p class="small">All of them are built from the <b>same few blocks</b> you will learn in these six chapters. <a href="https://www.youtube.com/watch?v=cHDLvp_NPOk" target="_blank" rel="noopener">YOLO demo video</a></p>
+</section>
+
+<section class="slide">
+  <h2>The plan for the six chapters</h2>
+  <div class="cards c3">
+    <div class="card"><h3>1 · Neurons and layers</h3><p>A neuron is a logistic regression. Stack them: a multi-layer perceptron. Why the non-linearity matters.</p></div>
+    <div class="card o"><h3>2 · Forward and backward</h3><p>How the prediction is computed, and how every weight gets its gradient (backpropagation), with real numbers.</p></div>
+    <div class="card g"><h3>3 · Training</h3><p>Mini-batches, optimizers (momentum, Adam), learning-rate schedules, dropout, BatchNorm, the layer zoo.</p></div>
+    <div class="card"><h3>4 · Images: CNNs</h3><p>Convolutions, pooling, famous architectures, transfer learning, then segmentation and object detection.</p></div>
+    <div class="card o"><h3>5 · Sequences: RNNs and LSTMs</h3><p>Embeddings, a network with memory, why it forgets, and the gates that fix it.</p></div>
+    <div class="card g"><h3>6 · Attention and transformers</h3><p>Every token looks at every other token. GPT, decoding text, and RAG.</p></div>
+  </div>
+  <p class="why">Every chapter follows the same pattern: a picture, the formula behind it, a small example with numbers, and a lab in PyTorch.</p>
+</section>
+
+<section class="slide">
+  <h2>Why are they called Neural Networks?</h2>
+  <div class="cols">
+    <div class="stack" style="gap:16px">
+      <p>The brain is composed of a lot of small (and "simple") <b>neurons</b>.</p>
+      <p>Neural networks are composed of a lot of small and simple <b>units</b>: each one computes a weighted sum of its inputs and applies a non-linear function.</p>
+      <p class="step">The power does not come from any single unit, but from <b>connecting many of them in layers</b>.</p>
+      <p class="step why">The analogy with biology stops there: what we train is a big differentiable function, with the same tools as in the ML part of the course.</p>
+    </div>
+    <svg class="fig" data-fig="mlp" aria-label="A small network with an input, a hidden and an output layer"></svg>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Problem Statement:</h2>
+  <div class="cols">
+    <div class="stack" style="gap:14px">
+      <p>Same as in supervised learning: given a training set $\{(\bx^{(i)},y^{(i)})\}_{i=1}^m$, learn $h$ so that $h(\bx)$ is a "good" predictor of $y$.</p>
+      <div class="note"><p><b>"good" = minimize a loss function!</b></p></div>
+      <ul><li>$y$ continuous → regression</li><li>$y$ discrete → classification</li><li>A combination of both (e.g. a box and its class in object detection)</li></ul>
+    </div>
+    <div class="stack" style="gap:12px">
+      <p>What changes is the model family:</p>
+      <ul class="small"><li>Linear / logistic regression: $h$ is linear in $\bx$ (or a sigmoid of it).</li><li>Neural network: $h$ is a <b>composition</b> of many simple functions:</li></ul>
+      <div class="eq">$$h(\bx)=g^{[L]}\Big(\cdots g^{[2]}\big(g^{[1]}(\bx\bW^{[1]}+\bb^{[1]})\,\bW^{[2]}+\bb^{[2]}\big)\cdots\Big)$$</div>
+      <p class="small">The features are no longer designed by hand: the hidden layers <b>learn them</b>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Logistic Regression is a Neural Net:</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:10px">
+      <p>Approximate $y$ as a non-linear function of $\bx$:</p>
+      <div class="eq big">$$h_{\bth}(\bx)=g(\bth^\top\bx)=\frac{1}{1+e^{-\bth^\top\bx}}$$</div>
+      <p>where $g(z)=\frac{1}{1+e^{-z}}$ is the sigmoid function.</p>
+      <ol class="small">
+        <li>A <b>linear step</b>: $z=\bth^\top\bx=\theta_0+\theta_1x_1+\dots+\theta_nx_n$.</li>
+        <li>An <b>activation</b>: $a=g(z)$.</li>
+      </ol>
+      <p class="step"><b>Single layer perceptron!</b> One neuron = logistic regression. Every unit of a neural network does exactly these two steps.</p>
+    </div>
+    <svg class="fig" data-fig="neuron" aria-label="A single neuron: inputs, weights, sum, activation and output"></svg>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>One neuron, with numbers</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="neuron-num" data-auto="s=1 :: multiply: 2·0.4 = 0.8, (−1)·(−0.3) = 0.3, 0.5·1.0 = 0.5 | s=2 :: add: 0.8 + 0.3 + 0.5 + 0.1 (bias) = 1.7 | s=3 :: activate: σ(1.7) = 1 / (1 + e^−1.7) = 0.846">
+      <svg class="fig" aria-label="A neuron with three inputs computing its output step by step"></svg>
+      <div class="ctl"><label for="nn-s">step</label><input type="range" id="nn-s" data-k="s" min="0" max="3" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:10px">
+      <p>Inputs $\bx=(2,\,-1,\,0.5)$, weights $\bth=(0.4,\,-0.3,\,1.0)$, bias $b=0.1$.</p>
+      <div class="eq">$$z=\sum_i\theta_ix_i+b=0.8+0.3+0.5+0.1=1.7$$</div>
+      <div class="eq">$$\hat y=\sigma(1.7)=\frac1{1+e^{-1.7}}=0.846$$</div>
+      <p class="small">Two operations, always the same: a <b>weighted sum</b> (the weights are what we learn) and a <b>squashing</b> function. Positive weights vote "yes", negative ones vote "no", and the bias sets the threshold.</p>
+      <p class="why">The whole of deep learning is this, repeated millions of times and arranged cleverly.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The limit of linear models: XOR</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="xor" aria-label="XOR points that no line separates, and two lines that do"></svg>
+    <div class="stack" style="gap:10px">
+      <p><b>Proof that no line works.</b> Suppose $\theta_0+\theta_1x_1+\theta_2x_2$ is positive exactly on the blue points:</p>
+      <ul class="small">
+        <li class="step">$(0,0)$ orange: $\theta_0\lt0$.</li>
+        <li class="step">$(1,0)$ and $(0,1)$ blue: $\theta_0+\theta_1\gt0$ and $\theta_0+\theta_2\gt0$.</li>
+        <li class="step">Add them: $\theta_0+\theta_1+\theta_2\gt-\theta_0\gt0$.</li>
+        <li class="step">But $(1,1)$ is orange: $\theta_0+\theta_1+\theta_2\lt0$. Contradiction. $\blacksquare$</li>
+      </ul>
+      <p class="step small"><b>Fix:</b> two hidden units each draw a line; the output combines them. The hidden layer <b>learned new features</b> in which the problem is linear.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Multi-layer perceptron:</h2>
+  <div class="cols">
+    <svg class="fig" data-fig="mlp" aria-label="A 3-4-1 multi-layer perceptron"></svg>
+    <div class="stack" style="gap:6px">
+      <ul class="small" style="gap:6px">
+        <li>$a_1=\sigma\big(\bW^{[1]\top}_{:,1}\bx+b^{[1]}_1\big)$</li>
+        <li>$a_2=\sigma\big(\bW^{[1]\top}_{:,2}\bx+b^{[1]}_2\big)$</li>
+        <li>$a_3=\sigma\big(\bW^{[1]\top}_{:,3}\bx+b^{[1]}_3\big)$</li>
+        <li>$a_4=\sigma\big(\bW^{[1]\top}_{:,4}\bx+b^{[1]}_4\big)$</li>
+        <li>$h(\bx)=\sigma\big(\bW^{[2]\top}\ba+b^{[2]}\big)$, with $\ba=[a_1,\dots,a_4]$</li>
+      </ul>
+      <p class="step small">Each hidden unit is a logistic regression on the inputs. The output is a logistic regression on the <b>hidden units</b>.</p>
+      <p class="step small">Parameters: $3\cdot4+4=16$ in layer 1, $4\cdot1+1=5$ in layer 2. <b>21</b> in total. "Fully connected" or "dense": every unit sees every unit of the previous layer.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The forward pass, with numbers</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="fwd-num" data-auto="s=1 :: hidden layer, linear step: z = x·W⁽¹⁾ + b⁽¹⁾ | s=2 :: hidden layer, activation: a = tanh(z) | s=3 :: output layer, linear step: z = a·W⁽²⁾ + b⁽²⁾ | s=4 :: output activation: ŷ = σ(z) | s=5 :: compare with the label y = 1: loss = −log ŷ">
+      <svg class="fig" aria-label="A 2-2-1 network with the numbers of every intermediate value"></svg>
+      <div class="ctl"><label for="fw-s">step</label><input type="range" id="fw-s" data-k="s" min="0" max="5" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:6px">
+      <p class="small">One example $\bx=(1,2)$, label $y=1$. Weights chosen by hand (they would normally be random).</p>
+      <div class="panels" style="min-height:250px">
+        <div data-i="0"><p class="small">Read the weights off the edges: $\bW^{[1]}=\begin{pmatrix}0.5&-0.3\\0.2&0.4\end{pmatrix}$, $\bb^{[1]}=(0.1,-0.1)$, $\bW^{[2]}=\binom{0.7}{-0.5}$, $b^{[2]}=0.2$.</p></div>
+        <div data-i="1"><p class="small">$z_1=1\cdot0.5+2\cdot0.2+0.1=\mathbf{1.000}$</p><p class="small">$z_2=1\cdot(-0.3)+2\cdot0.4-0.1=\mathbf{0.400}$</p></div>
+        <div data-i="2"><p class="small">$a_1=\tanh(1.0)=\mathbf{0.762}$, $\ a_2=\tanh(0.4)=\mathbf{0.380}$</p><p class="small">These two numbers are the <b>learned features</b> of the example.</p></div>
+        <div data-i="3"><p class="small">$z=0.762\cdot0.7+0.380\cdot(-0.5)+0.2=\mathbf{0.543}$</p></div>
+        <div data-i="4"><p class="small">$\hat y=\sigma(0.543)=\mathbf{0.633}$: the network says "63 % chance of class 1".</p></div>
+        <div data-i="5"><p class="small">$L=-\log0.633=\mathbf{0.458}$. Not terrible, not great. Chapter 2 computes how to change each of the 9 parameters to lower it.</p></div>
+      </div>
+      <p class="why">Forward pass = feed the input through the layers, left to right, storing every intermediate value.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Multi-layer perceptron: Matrix notation</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:12px">
+      <p>Stack the $m$ examples as rows of $\bX$ (so $\bA^{[0]}=\bX$). For each layer $l=1,\dots,L$:</p>
+      <div class="bluebox">$$\bZ^{[l]}=\bA^{[l-1]}\bW^{[l]}+\bb^{[l]},\qquad\bA^{[l]}=g^{[l]}\big(\bZ^{[l]}\big)$$</div>
+      <table class="t" style="font-size:18px"><tr><th>object</th><th>shape</th></tr><tr><td>$\bA^{[l-1]}$</td><td>$m\times n_{l-1}$</td></tr><tr><td>$\bW^{[l]}$</td><td>$n_{l-1}\times n_l$</td></tr><tr><td>$\bb^{[l]}$</td><td>$1\times n_l$ (added to every row)</td></tr><tr><td>$\bZ^{[l]},\bA^{[l]}$</td><td>$m\times n_l$</td></tr></table>
+      <p class="step small">The whole forward pass is $L$ matrix products and $L$ element-wise functions: exactly what GPUs are fast at.</p>
+    </div>
+    <div class="stack" style="gap:10px">
+      <svg class="fig" data-fig="shapes" aria-label="Block diagram of X times W plus b equals Z with the matrix shapes"></svg>
+      <p class="step why">The PDF writes one example as a column, $\mathbf z=\bW\bx+\bb$. Same thing, transposed. With batches, the row convention matches PyTorch's <code>nn.Linear</code>: <code>Linear(in_features=n, out_features=h)</code> stores $\bW$ as $h\times n$ and computes $\bx\bW^\top+\bb$.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Activation Layers:</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:10px">
+      <ul class="small">
+        <li>Apply <b>non-linearities</b>, element by element.</li>
+        <li>Fast to compute, with fast-to-calculate derivatives (needed for gradient descent).</li>
+      </ul>
+      <table class="t xs">
+        <tr><th>activation</th><th>range</th><th>use it for</th></tr>
+        <tr><td>Sigmoid</td><td>(0, 1)</td><td>output of binary classification; gates (ch. 5)</td></tr>
+        <tr><td>Tanh</td><td>(−1, 1)</td><td>small nets, RNN hidden state</td></tr>
+        <tr><td>ReLU</td><td>[0, ∞)</td><td><b>default</b> for hidden layers (MLP, CNN)</td></tr>
+        <tr><td>LeakyReLU</td><td>ℝ</td><td>when many ReLUs "die" (always 0)</td></tr>
+        <tr><td>GELU</td><td>ℝ</td><td>transformers (smooth ReLU)</td></tr>
+        <tr><td>Linear</td><td>ℝ</td><td>output of regression only</td></tr>
+      </table>
+      <p class="why">ReLU is not differentiable at 0; we use a sub-derivative (0 or 1). It never matters in practice. Sigmoid and tanh <b>saturate</b>: their derivative is almost 0 for large $|z|$ (chapter 2 shows why that hurts).</p>
+    </div>
+    <div class="widget" data-fig="act">
+      <svg class="fig" aria-label="An activation function and its derivative"></svg>
+      <div class="ctl"><span class="seg" role="group" aria-label="Activation"><button type="button" data-a="sigmoid" aria-pressed="true">Sigmoid</button><button type="button" data-a="tanh" aria-pressed="false">Tanh</button><button type="button" data-a="relu" aria-pressed="false">ReLU</button><button type="button" data-a="leaky" aria-pressed="false">LeakyReLU</button><button type="button" data-a="gelu" aria-pressed="false">GELU</button><button type="button" data-a="linear" aria-pressed="false">Linear</button></span></div>
+      <div class="legend"><span><i style="background:var(--blue)"></i>g(z)</span><span><i style="background:var(--red)"></i>derivative g′(z)</span></div>
+      <div class="ro"><div class="m" style="flex:1"><span>derivative</span><b data-r="d" style="font-size:18px">–</b></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Linear activation layer:</h2>
+  <div class="cols">
+    <div class="stack" style="gap:12px">
+      <ul><li>It is only used for the <b>last layer</b> and a <b>regression</b> problem.</li><li>Why is it not used in hidden layers?</li></ul>
+      <p class="step"><b>Proof.</b> With $g(z)=z$ in the hidden layer:</p>
+      <div class="eq step">$$\begin{aligned}h(\bx)&amp;=\big(\bx\bW^{[1]}+\bb^{[1]}\big)\bW^{[2]}+\bb^{[2]}\\&amp;=\bx\,\underbrace{\bW^{[1]}\bW^{[2]}}_{\tilde\bW}+\underbrace{\bb^{[1]}\bW^{[2]}+\bb^{[2]}}_{\tilde\bb}\end{aligned}$$</div>
+      <p class="step">A composition of linear maps is linear: <b>any number of linear layers collapses into one</b>. Depth buys nothing without a non-linearity.</p>
+    </div>
+    <div class="stack" style="gap:10px">
+      <div class="note step"><p>This is why every hidden layer has an activation. The non-linearity is what lets a stack of layers build new features instead of one big linear map.</p></div>
+      <p class="step small"><b>With the numbers of the tiny network:</b> $\tilde\bW=\bW^{[1]}\bW^{[2]}=\binom{0.50}{-0.06}$ $\big(0.5\cdot0.7-0.3\cdot(-0.5)=0.50,\ 0.2\cdot0.7+0.4\cdot(-0.5)=-0.06\big)$. A two-layer "linear" network is just the line $0.5x_1-0.06x_2+\tilde b$.</p>
+      <p class="step small">Try it on the next slide: set the activation to <b>Linear</b> and add as many layers as you like. The boundary stays a straight line.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Depth and non-linearity:</h2>
+  <div class="cols c46">
+    <div class="widget" data-fig="playground" data-auto="u=0 :: 0 hidden units: logistic regression, one straight line | u=2 :: 2 units: two lines, still not enough for a circle | u=4 :: 4 units: four soft walls close a region | a=linear :: linear activation: however many units, still a line | a=tanh; u=6; l=2 :: back to tanh, 2 layers of 6: a smoother circle">
+      <svg class="fig" aria-label="Decision regions of a small neural network trained in the browser on a circle dataset"></svg>
+      <div class="ctl"><label for="pg-u">hidden units per layer</label><input type="range" id="pg-u" data-k="u" min="0" max="8" step="1" value="0"><span class="v" data-v="u">0</span></div>
+      <div class="ctl"><label for="pg-l">hidden layers</label><input type="range" id="pg-l" data-k="l" min="1" max="3" step="1" value="1"><span class="v" data-v="l">1</span></div>
+      <div class="ctl"><span class="seg" role="group" aria-label="Activation"><button type="button" data-a="tanh" aria-pressed="true">Tanh</button><button type="button" data-a="relu" aria-pressed="false">ReLU</button><button type="button" data-a="linear" aria-pressed="false">Linear</button></span></div>
+    </div>
+    <div class="stack" style="gap:12px">
+      <p>Like the <a href="https://playground.tensorflow.org/" target="_blank" rel="noopener">TensorFlow playground</a>: a network trained from scratch here, on only $x_1,x_2$ (no hand-made features).</p>
+      <div class="ro"><div class="m"><span>model</span><b data-r="what" style="font-size:18px">–</b></div><div class="m"><span>parameters</span><b data-r="np">–</b></div><div class="m"><span>train accuracy</span><b data-r="acc">–</b></div><div class="m"><span>loss</span><b data-r="loss">–</b></div></div>
+      <ul class="small">
+        <li><b>0 hidden units</b>: logistic regression, a straight line.</li>
+        <li><b>3–4 units</b>: a closed curve. The hidden layer learned the features.</li>
+        <li><b>Linear</b> activation: still a line, however deep.</li>
+      </ul>
+      <p class="why">We can learn non-linear functions without performing feature engineering! Press → to run the scripted tour.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>What did the hidden units learn?</h2>
+  <svg class="fig" data-fig="hidden-feats" style="max-height:330px" aria-label="The response of each of four hidden units over the plane, and the output that combines them"></svg>
+  <div class="cols">
+    <p class="small">The same network as before (4 tanh units, one layer). Each hidden unit on its own is a <b>logistic regression</b>: a soft line through the plane. None of them can see a circle.</p>
+    <p class="small">The output unit is <b>another logistic regression on the four hidden activations</b>. Added with the right signs, four half-planes fence in a region. With ReLU the walls are sharp; with more units the fence is rounder.</p>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Different approach:</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="pipeline" aria-label="Traditional machine learning with hand-made features versus deep learning that learns them"></svg>
+    <div class="stack" style="gap:12px;padding-top:20px">
+      <ul class="small">
+        <li><b>Machine learning:</b> we design features ($x_1^2$, $x_1x_2$, $\sin x$…), then fit a simple model on them.</li>
+        <li><b>Neural networks:</b> one hidden layer learns a few features from the raw inputs.</li>
+        <li><b>Deep learning:</b> many layers learn features of features: edges → shapes → objects (chapter 4).</li>
+      </ul>
+      <p class="small"><a href="https://playground.tensorflow.org/" target="_blank" rel="noopener">playground.tensorflow.org</a></p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Deep Learning is not magic:</h2>
+  <div class="cols">
+    <div class="stack" style="gap:14px">
+      <p>The applications that you saw at the beginning are not magic. They are simply a combination of:</p>
+      <ul><li>Linear combinations.</li><li>Simple non-linear functions.</li><li>A stack of the previous two.</li></ul>
+      <div class="note"><p><b>Keep calm and linear algebra.</b> &nbsp; <b>Keep calm and optimize.</b></p></div>
+    </div>
+    <div class="stack" style="gap:14px">
+      <p>The most complex computer-vision networks are just a combination of many "small and easy blocks" that you can understand and even program!</p>
+      <p>The main ideas behind finding the best weights are the same tools that you already have from machine learning: a loss, its gradient, and gradient descent.</p>
+      <p class="why">We will explain and understand small blocks, then build complex nets by abstracting each block (like LEGO).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Output layer and loss = maximum likelihood</h2>
+  <div class="stack" style="gap:12px">
+    <p>The last layer and the loss go together, exactly as in the GLMs of the ML part:</p>
+    <table class="t" style="font-size:18px">
+      <tr><th>Problem type</th><th>Example</th><th>Last-layer activation</th><th>Loss function</th><th>PyTorch</th></tr>
+      <tr><td>Binary classification</td><td>spam / not spam</td><td>sigmoid</td><td>binary cross-entropy</td><td><code>nn.BCEWithLogitsLoss</code></td></tr>
+      <tr><td>Multiclass, single-label</td><td>digit 0–9</td><td>softmax</td><td>categorical cross-entropy</td><td><code>nn.CrossEntropyLoss</code></td></tr>
+      <tr><td>Multiclass, multi-label</td><td>tags of a photo</td><td>sigmoid (per class)</td><td>binary cross-entropy</td><td><code>nn.BCEWithLogitsLoss</code></td></tr>
+      <tr><td>Regression, any value</td><td>house price</td><td>none (linear)</td><td>MSE (or L1 / Huber)</td><td><code>nn.MSELoss</code></td></tr>
+      <tr><td>Regression, values in 0–1</td><td>box coordinates</td><td>sigmoid</td><td>MSE or binary cross-entropy</td><td></td></tr>
+    </table>
+    <p class="small step">Each pair is "minus the log-likelihood" of a distribution: Gaussian → MSE, Bernoulli → BCE, categorical → CE. And each pair has the same gradient at the logits: $\ \frac{\partial J}{\partial\bZ^{[L]}}=\frac1m\big(\bA^{[L]}-\bY\big)$.</p>
+    <p class="small step why"><code>nn.CrossEntropyLoss</code> and <code>BCEWithLogitsLoss</code> take the raw logits and apply softmax / sigmoid inside, which is numerically safer. <code>nn.NLLLoss</code> expects log-probabilities.</p>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>What a loss looks like</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="loss-shapes" aria-label="Binary cross-entropy against the predicted probability, and squared versus absolute error"></svg>
+    <div class="stack" style="gap:10px">
+      <p class="small"><b>Cross-entropy</b> punishes confident mistakes very hard: predicting 0.1 for a positive costs 2.3, predicting 0.01 costs 4.6. Being right and confident costs almost nothing.</p>
+      <p class="small">The loss of the dataset is the <b>average</b> over examples. Gradient descent lowers that average; it cannot make every example perfect.</p>
+      <p class="small"><b>MSE</b> squares the error: big errors dominate, outliers pull hard. <b>L1</b> and <b>Huber</b> (quadratic near 0, linear far away) are more robust: used for box regression in detection.</p>
+      <p class="why">Rule: pick the loss from the type of $y$, not from taste.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Softmax activation layer:</h2>
+  <div class="cols">
+    <div class="stack" style="gap:12px">
+      <ul>
+        <li>Used for multi-class classification problems (exclusive categories).</li>
+        <li>It is applied to a <b>vector</b> input.</li>
+        <li>Probabilistic interpretation of the output:
+          <ul><li>Looks like a one-hot encoding.</li><li>Used with the cross-entropy loss.</li></ul></li>
+      </ul>
+      <div class="eq">$$\hat y_k=\frac{e^{z_k}}{\sum_je^{z_j}}$$</div><div class="eq">$$L=-\sum_ky_k\log\hat y_k=-\log\hat y_{\text{true class}}$$</div>
+    </div>
+    <div class="stack">
+      <svg class="fig" data-fig="softmax-demo" aria-label="Five scores turned into five probabilities by the softmax"></svg>
+      <p class="small why">The exponential makes the biggest score dominate (5.1 → 0.90) but never sends the others to exactly 0. Subtract $\max_kz_k$ before exponentiating to avoid overflow (PyTorch does).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Softmax - gradient calculation:</h2>
+  <div class="cols">
+    <div class="stack" style="gap:8px">
+      <p><b>Step 1.</b> Substitute the softmax into the cross-entropy:</p>
+      <div class="eq">$$L=-\sum_jy_j\log\frac{e^{z_j}}{\sum_ke^{z_k}}=-\sum_jy_j\Big(z_j-\log\sum_ke^{z_k}\Big)$$</div>
+      <p class="step">Since $\by$ is one-hot ($\sum_jy_j=1$, and $y_i=1$ for the correct class $i$), this simplifies to:</p>
+      <div class="eq step">$$L=-\Big(z_i-\log\sum_ke^{z_k}\Big)$$</div>
+      <p class="step"><b>Step 2.</b> Differentiate with respect to $z_j$. Two cases:</p>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="step"><b>Case 1: $j=i$ (correct class).</b></p>
+      <div class="eq step">$$\frac{\partial L}{\partial z_i}=-\Big(1-\frac{e^{z_i}}{\sum_ke^{z_k}}\Big)=\hat y_i-1$$</div>
+      <p class="step"><b>Case 2: $j\ne i$ (incorrect classes).</b></p>
+      <div class="eq step">$$\frac{\partial L}{\partial z_j}=-\Big(0-\frac{e^{z_j}}{\sum_ke^{z_k}}\Big)=\hat y_j$$</div>
+      <p class="step"><b>Vectorized form</b>, for all classes:</p>
+      <div class="bluebox step">$$\frac{\partial L}{\partial z_j}=\hat y_j-y_j$$</div>
+      <p class="step small">With the example above and true class "dog": gradient $=(0.02,\,0.90-1,\,0.05,\,0.01,\,0.02)$: push the dog score up, all the others slightly down.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Universal approximation</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:12px">
+      <p>A network with <b>one hidden layer</b> and enough units can approximate any continuous function on a bounded interval.</p>
+      <p class="step"><b>A constructive picture.</b> Two steep sigmoids make a step up and a step down:</p>
+      <div class="eq step">$$\text{bump}_{[a,b]}(x)=\sigma\big(k(x-a)\big)-\sigma\big(k(x-b)\big)$$</div>
+      <p class="step">Put a bump of height $f(\text{centre})$ on each small interval and add them: the output layer does the adding. More units, finer bumps.</p>
+      <p class="step why">It says such weights <b>exist</b>, not that gradient descent finds them, nor how many units are needed. In practice, depth is far more efficient than width.</p>
+    </div>
+    <div class="widget" data-fig="ua" data-auto="n=1 :: one bump: a flat step | n=4 :: four bumps: the shape appears | n=12 :: twelve bumps (24 hidden units) | n=30 :: thirty bumps: almost exact">
+      <svg class="fig" aria-label="A curve approximated by a sum of sigmoid bumps"></svg>
+      <div class="ctl"><label for="ua-n">bumps</label><input type="range" id="ua-n" data-k="n" min="1" max="30" step="1" value="4"><span class="v" data-v="n">4</span></div>
+      <div class="ro"><div class="m"><span>hidden units used</span><b data-r="h">–</b></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The loss is no longer convex</h2>
+  <div class="cols">
+    <div class="stack" style="gap:12px">
+      <p><b>Symmetry argument.</b> Swap two hidden units (their incoming and outgoing weights). The network computes <b>exactly the same function</b>, so the loss is the same.</p>
+      <p class="step">So if $\bth^*$ is a minimum, the swapped $\bth^{**}$ is another one. Their average $\frac12(\bth^*+\bth^{**})$ gives both units the same weights: generally a <b>worse</b> network.</p>
+      <p class="step">A convex function would satisfy $J\big(\frac{\bth^*+\bth^{**}}2\big)\le\frac12J(\bth^*)+\frac12J(\bth^{**})$. It fails: <b>not convex</b>. $\blacksquare$</p>
+      <ul class="small step"><li>Many equivalent minima, plus saddle points and plateaus.</li><li>The start (random initialization) matters. Large networks usually find good minima anyway.</li><li>We will need better optimizers than vanilla gradient descent (chapter 3).</li></ul>
+    </div>
+    <svg class="fig" data-fig="nonconvex" aria-label="A loss curve with a local and a global minimum"></svg>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Learning workflow:</h2>
+  <div class="cols">
+    <div class="stack" style="gap:14px">
+      <ul><li>Start with a labelled dataset.</li><li>Design an <b>architecture</b> (layers, units, activations).</li><li>Decide a <b>loss function</b> (from the type of $y$).</li><li>Decide an <b>optimizer</b> (chapter 3).</li><li>Apply an iterative algorithm (gradient descent): forward, loss, backward, update, repeat.</li></ul>
+      <ul class="small"><li>The engine of neural networks: <b>gradient-based optimization</b>!
+        <ul><li>Note: we do not mention the word "convex" anymore.</li></ul></li></ul>
+      <div class="note"><p>The first step to perform gradient-based optimization is to find the <b>gradients</b>: next chapter.</p></div>
+    </div>
+    <svg class="fig" data-fig="workflow" aria-label="Input, layers with weights, predictions, loss function, optimizer and weight update"></svg>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Vocabulary of chapter 1</h2>
+  <div class="cols">
+    <dl class="gloss">
+      <dt>neuron / unit</dt><dd>weighted sum of its inputs + bias, then an activation. One neuron = logistic regression.</dd>
+      <dt>layer</dt><dd>a group of units that share the same inputs. Dense / fully connected: $\bZ=\bA\bW+\bb$.</dd>
+      <dt>activation</dt><dd>the element-wise non-linearity: ReLU (hidden), sigmoid / softmax / none (output).</dd>
+      <dt>hidden layer</dt><dd>any layer between input and output. Its activations are <b>learned features</b>.</dd>
+      <dt>parameters</dt><dd>all the weights and biases, $\bth$. What training changes.</dd>
+    </dl>
+    <dl class="gloss">
+      <dt>forward pass</dt><dd>computing $\hat y$ from $\bx$, layer by layer, storing every $\bZ$ and $\bA$.</dd>
+      <dt>logits</dt><dd>the output layer's $\bZ$ before softmax / sigmoid. What the PyTorch losses expect.</dd>
+      <dt>loss</dt><dd>how wrong $\hat y$ is; minus a log-likelihood. Averaged over the batch.</dd>
+      <dt>MLP</dt><dd>multi-layer perceptron: a stack of dense layers with activations.</dd>
+      <dt>deep learning</dt><dd>many layers: features of features, learned end to end.</dd>
+    </dl>
+  </div>
+</section>
+
+<section class="slide cover">
+  <div class="inner"><h1>Neural Networks</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Next: Forward and backward propagation</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+</div></div>
+<script src="../assets/figures.js?v=20260929"></script>
+<script src="assets/nn-core.js?v=20260929"></script>
+<script src="assets/fig-nn-intro.js?v=20260929"></script>
+<script src="../assets/deck.js?v=20260929"></script>
+</body>
+</html>
