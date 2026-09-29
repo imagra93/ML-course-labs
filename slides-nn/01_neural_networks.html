@@ -8,9 +8,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
-<link rel="stylesheet" href="../slides/assets/deck.css">
-<link rel="stylesheet" href="assets/nn.css">
-<script src="../slides/assets/mathjax-config.js"></script>
+<link rel="stylesheet" href="../slides/assets/deck.css?v=20260929">
+<link rel="stylesheet" href="assets/nn.css?v=20260929">
+<script src="../slides/assets/mathjax-config.js?v=20260929"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
 </head>
 <body data-deck="1 · From logistic regression to neural networks" data-next="02_backpropagation.html">
@@ -75,7 +75,7 @@
     <div class="stack" style="gap:12px">
       <p>What changes is the model family:</p>
       <ul class="small"><li>Linear / logistic regression: $h$ is linear in $\bx$ (or a sigmoid of it).</li><li>Neural network: $h$ is a <b>composition</b> of many simple functions:</li></ul>
-      <div class="eq big">$$h(\bx)=g^{[L]}\Big(\cdots g^{[2]}\big(g^{[1]}(\bx\bW^{[1]}+\bb^{[1]})\,\bW^{[2]}+\bb^{[2]}\big)\cdots\Big)$$</div>
+      <div class="eq">$$h(\bx)=g^{[L]}\Big(\cdots g^{[2]}\big(g^{[1]}(\bx\bW^{[1]}+\bb^{[1]})\,\bW^{[2]}+\bb^{[2]}\big)\cdots\Big)$$</div>
       <p class="small">The features are no longer designed by hand: the hidden layers <b>learn them</b>.</p>
     </div>
   </div>
@@ -101,14 +101,14 @@
 <section class="slide">
   <h2>One neuron, with numbers</h2>
   <div class="cols c64">
-    <div class="widget" data-fig="neuron-num" data-auto="s=1 :: multiply: 2·0.4 = 0.8, (−1)·(−0.3) = 0.3, 0.5·1.0 = 0.5 | s=2 :: add: 0.8 + 0.3 + 0.5 + 0.1 (bias) = 1.7 | s=3 :: activate: σ(1.7) = 1 / (1 + e^−1.7) = 0.845">
+    <div class="widget" data-fig="neuron-num" data-auto="s=1 :: multiply: 2·0.4 = 0.8, (−1)·(−0.3) = 0.3, 0.5·1.0 = 0.5 | s=2 :: add: 0.8 + 0.3 + 0.5 + 0.1 (bias) = 1.7 | s=3 :: activate: σ(1.7) = 1 / (1 + e^−1.7) = 0.846">
       <svg class="fig" aria-label="A neuron with three inputs computing its output step by step"></svg>
       <div class="ctl"><label for="nn-s">step</label><input type="range" id="nn-s" data-k="s" min="0" max="3" step="1" value="0"><span class="v" data-v="s"></span></div>
     </div>
     <div class="stack" style="gap:10px">
       <p>Inputs $\bx=(2,\,-1,\,0.5)$, weights $\bth=(0.4,\,-0.3,\,1.0)$, bias $b=0.1$.</p>
       <div class="eq">$$z=\sum_i\theta_ix_i+b=0.8+0.3+0.5+0.1=1.7$$</div>
-      <div class="eq">$$\hat y=\sigma(1.7)=\frac1{1+e^{-1.7}}=0.845$$</div>
+      <div class="eq">$$\hat y=\sigma(1.7)=\frac1{1+e^{-1.7}}=0.846$$</div>
       <p class="small">Two operations, always the same: a <b>weighted sum</b> (the weights are what we learn) and a <b>squashing</b> function. Positive weights vote "yes", negative ones vote "no", and the bias sets the threshold.</p>
       <p class="why">The whole of deep learning is this, repeated millions of times and arranged cleverly.</p>
     </div>
@@ -164,8 +164,8 @@
         <div data-i="1"><p class="small">$z_1=1\cdot0.5+2\cdot0.2+0.1=\mathbf{1.000}$</p><p class="small">$z_2=1\cdot(-0.3)+2\cdot0.4-0.1=\mathbf{0.400}$</p></div>
         <div data-i="2"><p class="small">$a_1=\tanh(1.0)=\mathbf{0.762}$, $\ a_2=\tanh(0.4)=\mathbf{0.380}$</p><p class="small">These two numbers are the <b>learned features</b> of the example.</p></div>
         <div data-i="3"><p class="small">$z=0.762\cdot0.7+0.380\cdot(-0.5)+0.2=\mathbf{0.543}$</p></div>
-        <div data-i="4"><p class="small">$\hat y=\sigma(0.543)=\mathbf{0.632}$: the network says "63 % chance of class 1".</p></div>
-        <div data-i="5"><p class="small">$L=-\log0.632=\mathbf{0.458}$. Not terrible, not great. Chapter 2 computes how to change each of the 9 parameters to lower it.</p></div>
+        <div data-i="4"><p class="small">$\hat y=\sigma(0.543)=\mathbf{0.633}$: the network says "63 % chance of class 1".</p></div>
+        <div data-i="5"><p class="small">$L=-\log0.633=\mathbf{0.458}$. Not terrible, not great. Chapter 2 computes how to change each of the 9 parameters to lower it.</p></div>
       </div>
       <p class="why">Forward pass = feed the input through the layers, left to right, storing every intermediate value.</p>
     </div>
@@ -222,12 +222,12 @@
     <div class="stack" style="gap:12px">
       <ul><li>It is only used for the <b>last layer</b> and a <b>regression</b> problem.</li><li>Why is it not used in hidden layers?</li></ul>
       <p class="step"><b>Proof.</b> With $g(z)=z$ in the hidden layer:</p>
-      <div class="eq step">$$h(\bx)=\big(\bx\bW^{[1]}+\bb^{[1]}\big)\bW^{[2]}+\bb^{[2]}=\bx\,\underbrace{\bW^{[1]}\bW^{[2]}}_{\tilde\bW}+\underbrace{\bb^{[1]}\bW^{[2]}+\bb^{[2]}}_{\tilde\bb}$$</div>
+      <div class="eq step">$$\begin{aligned}h(\bx)&amp;=\big(\bx\bW^{[1]}+\bb^{[1]}\big)\bW^{[2]}+\bb^{[2]}\\&amp;=\bx\,\underbrace{\bW^{[1]}\bW^{[2]}}_{\tilde\bW}+\underbrace{\bb^{[1]}\bW^{[2]}+\bb^{[2]}}_{\tilde\bb}\end{aligned}$$</div>
       <p class="step">A composition of linear maps is linear: <b>any number of linear layers collapses into one</b>. Depth buys nothing without a non-linearity.</p>
     </div>
     <div class="stack" style="gap:10px">
       <div class="note step"><p>This is why every hidden layer has an activation. The non-linearity is what lets a stack of layers build new features instead of one big linear map.</p></div>
-      <p class="step small"><b>With the numbers of the tiny network:</b> $\tilde\bW=\bW^{[1]}\bW^{[2]}=\binom{0.5\cdot0.7-0.3\cdot(-0.5)}{0.2\cdot0.7+0.4\cdot(-0.5)}=\binom{0.50}{-0.06}$. A two-layer "linear" network is just the line $0.5x_1-0.06x_2+\tilde b$.</p>
+      <p class="step small"><b>With the numbers of the tiny network:</b> $\tilde\bW=\bW^{[1]}\bW^{[2]}=\binom{0.50}{-0.06}$ $\big(0.5\cdot0.7-0.3\cdot(-0.5)=0.50,\ 0.2\cdot0.7+0.4\cdot(-0.5)=-0.06\big)$. A two-layer "linear" network is just the line $0.5x_1-0.06x_2+\tilde b$.</p>
       <p class="step small">Try it on the next slide: set the activation to <b>Linear</b> and add as many layers as you like. The boundary stays a straight line.</p>
     </div>
   </div>
@@ -335,7 +335,7 @@
         <li>Probabilistic interpretation of the output:
           <ul><li>Looks like a one-hot encoding.</li><li>Used with the cross-entropy loss.</li></ul></li>
       </ul>
-      <div class="eq big">$$\hat y_k=\frac{e^{z_k}}{\sum_je^{z_j}},\qquad L=-\sum_ky_k\log\hat y_k=-\log\hat y_{\text{true class}}$$</div>
+      <div class="eq">$$\hat y_k=\frac{e^{z_k}}{\sum_je^{z_j}}$$</div><div class="eq">$$L=-\sum_ky_k\log\hat y_k=-\log\hat y_{\text{true class}}$$</div>
     </div>
     <div class="stack">
       <svg class="fig" data-fig="softmax-demo" aria-label="Five scores turned into five probabilities by the softmax"></svg>
@@ -435,9 +435,9 @@
   <p class="mail">imanolgranada@gmail.com</p>
 </section>
 </div></div>
-<script src="../slides/assets/figures.js"></script>
-<script src="assets/nn-core.js"></script>
-<script src="assets/fig-nn-intro.js"></script>
-<script src="../slides/assets/deck.js"></script>
+<script src="../slides/assets/figures.js?v=20260929"></script>
+<script src="assets/nn-core.js?v=20260929"></script>
+<script src="assets/fig-nn-intro.js?v=20260929"></script>
+<script src="../slides/assets/deck.js?v=20260929"></script>
 </body>
 </html>

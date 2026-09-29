@@ -8,9 +8,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
-<link rel="stylesheet" href="../slides/assets/deck.css">
-<link rel="stylesheet" href="assets/nn.css">
-<script src="../slides/assets/mathjax-config.js"></script>
+<link rel="stylesheet" href="../slides/assets/deck.css?v=20260929">
+<link rel="stylesheet" href="assets/nn.css?v=20260929">
+<script src="../slides/assets/mathjax-config.js?v=20260929"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
 </head>
 <body data-deck="6 · Attention and transformers" data-prev="05_rnn_lstm.html">
@@ -215,7 +215,7 @@ d["cat"]          <span class="c"># hard lookup → v1</span>
 <section class="slide">
   <h2>Self-Attention mask:</h2>
   <p>The mask is optional, but it is used where it does not make sense for a word to look at <b>future</b> words, because they are not available in reality: not for classifying a known sentence, but for <b>next-word prediction</b>.</p>
-  <svg class="fig" data-fig="mask" aria-label="Scores, the causal mask with minus infinity above the diagonal, and the resulting attention weights"></svg>
+  <svg class="fig" data-fig="mask" style="max-height:270px" aria-label="Scores, the causal mask with minus infinity above the diagonal, and the resulting attention weights"></svg>
   <div class="eq">$$\mathrm{softmax}\Big(\frac{\bQ\bK^\top}{\sqrt{d_k}}+\mathbf M\Big)\bV,\qquad M_{ij}=\begin{cases}0&amp;j\le i\\-\infty&amp;j\gt i\end{cases}$$</div>
   <p class="small">$e^{-\infty}=0$: future tokens get exactly zero weight. And one forward pass trains all $n$ next-token predictions of a sequence at once.</p>
 </section>
@@ -388,10 +388,10 @@ d["cat"]          <span class="c"># hard lookup → v1</span>
   <p class="mail">imanolgranada@gmail.com</p>
 </section>
 </div></div>
-<script src="../slides/assets/figures.js"></script>
-<script src="assets/nn-core.js"></script>
-<script src="assets/fig-nn-rnn.js"></script>
-<script src="assets/fig-nn-transformer.js"></script>
-<script src="../slides/assets/deck.js"></script>
+<script src="../slides/assets/figures.js?v=20260929"></script>
+<script src="assets/nn-core.js?v=20260929"></script>
+<script src="assets/fig-nn-rnn.js?v=20260929"></script>
+<script src="assets/fig-nn-transformer.js?v=20260929"></script>
+<script src="../slides/assets/deck.js?v=20260929"></script>
 </body>
 </html>

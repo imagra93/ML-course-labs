@@ -8,9 +8,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
-<link rel="stylesheet" href="../slides/assets/deck.css">
-<link rel="stylesheet" href="assets/nn.css">
-<script src="../slides/assets/mathjax-config.js"></script>
+<link rel="stylesheet" href="../slides/assets/deck.css?v=20260929">
+<link rel="stylesheet" href="assets/nn.css?v=20260929">
+<script src="../slides/assets/mathjax-config.js?v=20260929"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
 </head>
 <body data-deck="3 · Training: optimizers, regularization and layers" data-prev="02_backpropagation.html" data-next="04_cnn.html">
@@ -142,8 +142,8 @@
     </div>
     <div class="stack" style="gap:10px">
       <p class="step"><b>Adam</b> = momentum + RMSProp + bias correction:</p>
-      <div class="eq step">$$\bm_t=\beta_1\bm_{t-1}+(1-\beta_1)\bg_t,\quad\bs_t=\beta_2\bs_{t-1}+(1-\beta_2)\bg_t^2$$</div>
-      <div class="bluebox step">$$\hat\bm_t=\frac{\bm_t}{1-\beta_1^t},\ \ \hat\bs_t=\frac{\bs_t}{1-\beta_2^t},\ \ \bth_t=\bth_{t-1}-\alpha\frac{\hat\bm_t}{\sqrt{\hat\bs_t}+\varepsilon}$$</div>
+      <div class="eq s step">$$\bm_t=\beta_1\bm_{t-1}+(1-\beta_1)\bg_t,\quad\bs_t=\beta_2\bs_{t-1}+(1-\beta_2)\bg_t^2$$</div>
+      <div class="bluebox step" style="font-size:20px">$$\hat\bm_t=\frac{\bm_t}{1-\beta_1^t},\quad\hat\bs_t=\frac{\bs_t}{1-\beta_2^t}$$$$\bth_t=\bth_{t-1}-\alpha\frac{\hat\bm_t}{\sqrt{\hat\bs_t}+\varepsilon}$$</div>
       <p class="step small">Defaults: $\beta_1=0.9$, $\beta_2=0.999$, $\varepsilon=10^{-8}$, $\alpha=10^{-3}$. The most popular method.</p>
       <p class="step small"><b>Why the bias correction?</b> Both averages start at 0, so early on they are too small: $\E[\bm_t]=(1-\beta_1^t)\,\E[\bg]$ (a geometric series). Dividing by $1-\beta_1^t$ fixes the first steps; after ~100 steps the factor is 1.</p>
       <table class="t step" style="font-size:16px"><tr><th>Method</th><th>Idea</th><th>to tune</th></tr><tr><td>Momentum</td><td>dampens oscillations</td><td>α, β</td></tr><tr><td>RMSProp</td><td>per-parameter step size</td><td>α, β₂</td></tr><tr><td>Adam</td><td>both, bias-corrected</td><td>α (rest: defaults)</td></tr></table>
@@ -196,7 +196,8 @@
     <pre class="code">model = MLP()
 opt = torch.optim.AdamW(model.parameters(),
                         lr=1e-3, weight_decay=1e-2)
-sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs)
+sched = torch.optim.lr_scheduler.CosineAnnealingLR(
+            opt, T_max=epochs)
 for epoch in range(epochs):
     model.train()                    <span class="c"># dropout / BN on</span>
     for xb, yb in train_loader:      <span class="c"># mini-batches</span>
@@ -205,7 +206,7 @@ for epoch in range(epochs):
         loss.backward()              <span class="c"># backprop</span>
         opt.step()                   <span class="c"># update</span>
     sched.step()
-    model.eval()                     <span class="c"># dropout off, BN running stats</span>
+    model.eval()                     <span class="c"># dropout off, BN stats</span>
     with torch.no_grad():
         val_loss = evaluate(model, val_loader)</pre>
   </div>
@@ -270,7 +271,7 @@ loss_fn = nn.CrossEntropyLoss()  <span class="c"># softmax inside</span></pre>
     <div class="stack" style="gap:10px">
       <p>Inactivate some neurons in <b>training</b> (helps with regularization), controlled by a "rate" $p$. All neurons are used in validation / prediction!</p>
       <p class="step"><b>Inverted dropout:</b> survivors are scaled up so the expectation is preserved:</p>
-      <div class="eq step">$$\tilde a_j=\frac{r_j}{1-p}\,a_j,\quad r_j\sim\text{Bernoulli}(1-p)\ \Rightarrow\ \E[\tilde a_j]=\frac{1-p}{1-p}a_j=a_j$$</div>
+      <div class="eq step">$$\tilde a_j=\frac{r_j}{1-p}\,a_j,\qquad r_j\sim\text{Bernoulli}(1-p)$$$$\E[\tilde a_j]=\frac{1-p}{1-p}\,a_j=a_j$$</div>
       <ul class="small step"><li>A unit cannot rely on any other unit being present: more robust, redundant features.</li><li>Like training a huge <b>ensemble</b> of thinned networks that share weights (compare bagging).</li><li>Typical $p$: 0.1–0.5, on dense layers; rarely on conv layers. Validation loss below training loss? Normal with dropout: training runs a handicapped network.</li></ul>
     </div>
   </div>
@@ -282,7 +283,7 @@ loss_fn = nn.CrossEntropyLoss()  <span class="c"># softmax inside</span></pre>
     <div class="stack" style="gap:8px">
       <p class="small">Helps correct training that is slow or unstable. In gradient-based algorithms it's a good idea to put all your data on a common scale; maybe also normalizing <b>inside</b> the network would be better!</p>
       <p class="small">A batch-normalization layer looks at each batch as it comes in, first normalizing it with its own mean and standard deviation, then putting it on a new scale with <b>two trainable parameters</b> per feature:</p>
-      <div class="eq s">$$\mu_{\mathcal B}=\frac1m\sum_iz_i,\quad\sigma^2_{\mathcal B}=\frac1m\sum_i(z_i-\mu_{\mathcal B})^2,\quad\hat z_i=\frac{z_i-\mu_{\mathcal B}}{\sqrt{\sigma^2_{\mathcal B}+\varepsilon}},\quad y_i=\gamma\hat z_i+\beta$$</div>
+      <div class="eq s">$$\mu_{\mathcal B}=\frac1m\sum_iz_i,\qquad\sigma^2_{\mathcal B}=\frac1m\sum_i(z_i-\mu_{\mathcal B})^2$$$$\hat z_i=\frac{z_i-\mu_{\mathcal B}}{\sqrt{\sigma^2_{\mathcal B}+\varepsilon}},\qquad y_i=\gamma\hat z_i+\beta$$</div>
       <ul class="small">
         <li>Higher learning rates, faster training, mild regularization (batch noise).</li>
         <li><b>Train vs eval:</b> batch statistics in training; running averages at test time (<code>model.eval()</code>). Forgetting <code>eval()</code> is a classic bug.</li>
@@ -380,10 +381,10 @@ loss_fn = nn.CrossEntropyLoss()  <span class="c"># softmax inside</span></pre>
   <p class="mail">imanolgranada@gmail.com</p>
 </section>
 </div></div>
-<script src="../slides/assets/figures.js"></script>
-<script src="assets/nn-core.js"></script>
-<script src="assets/fig-nn-intro.js"></script>
-<script src="assets/fig-nn-training.js"></script>
-<script src="../slides/assets/deck.js"></script>
+<script src="../slides/assets/figures.js?v=20260929"></script>
+<script src="assets/nn-core.js?v=20260929"></script>
+<script src="assets/fig-nn-intro.js?v=20260929"></script>
+<script src="assets/fig-nn-training.js?v=20260929"></script>
+<script src="../slides/assets/deck.js?v=20260929"></script>
 </body>
 </html>
