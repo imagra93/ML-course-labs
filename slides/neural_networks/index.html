@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="author" content="Imanol Granada (imanolgranada@gmail.com)">
+<title>Neural Networks Slides</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="../assets/deck.css?v=20260929">
+<style>
+body.index{overflow:auto;background:#05070c url(../assets/img/cover-sky.jpg) center/cover fixed no-repeat;color:#fff;min-height:100%;padding-inline:16px}
+.index main{max-width:980px;margin:0 auto;padding-block:72px 48px;display:flex;flex-direction:column;gap:28px}
+.index h1{font-size:72px;line-height:1;font-weight:400;color:#fff}
+.index .rule{width:56px;height:2px;background:#fff}
+.index .sub{font-size:24px}
+.index ol{list-style:none;padding:0;display:flex;flex-direction:column;gap:10px}
+.index li a{display:flex;gap:18px;align-items:baseline;background:rgba(255,255,255,.94);color:#1f1f1f;text-decoration:none;padding:16px 22px;font-size:24px}
+.index li a:hover,.index li a:focus-visible{background:#fff;outline:3px solid var(--gold)}
+.index li .n{color:var(--blue);font-weight:700;width:36px;flex:none}
+.index li .d{margin-left:auto;font-size:17px;color:#6b6b6b}
+.index li.soon span{display:flex;gap:18px;background:rgba(255,255,255,.18);padding:14px 22px;font-size:22px;color:#e6e6e6}
+.index footer{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;font-size:18px}
+.index footer img{height:52px}
+@media (max-width:600px){.index h1{font-size:44px}.index li a{flex-wrap:wrap}.index li .d{margin-left:0}}
+</style>
+</head>
+<body class="index">
+<main>
+  <h1>Neural Networks</h1>
+  <div class="rule"></div>
+  <p class="sub">Máster en Innovación Tecnológica (MINT) · class slides</p>
+  <ol>
+    <li><a href="01_neural_networks.html"><span class="n">01</span><span>From logistic regression to neural networks</span><span class="d">neuron and forward pass with numbers, MLP, activations, learned features, losses, softmax</span></a></li>
+    <li><a href="02_backpropagation.html"><span class="n">02</span><span>Forward and backward propagation</span><span class="d">computational graphs, backprop with real numbers, the algorithm, initialization, vanishing gradients</span></a></li>
+    <li><a href="03_training.html"><span class="n">03</span><span>Training: optimizers, regularization, layers</span><span class="d">epochs and mini-batches, learning rate, momentum, Adam, schedules, dropout, BatchNorm, debugging</span></a></li>
+    <li><a href="04_cnn.html"><span class="n">04</span><span>Convolutional neural networks</span><span class="d">convolution with numbers, filters, receptive field, ResNet, transfer learning, U-Net, IoU, YOLO, NMS, mAP</span></a></li>
+    <li><a href="05_rnn_lstm.html"><span class="n">05</span><span>RNNs and LSTMs</span><span class="d">embeddings, an RNN with numbers, BPTT, vanishing gradients, LSTM gates step by step, GRU</span></a></li>
+    <li><a href="06_transformers.html"><span class="n">06</span><span>Attention and transformers</span><span class="d">alignment, attention with numbers, Q/K/V, multi-head, masks, BERT vs GPT, generation, RAG</span></a></li>
+  </ol>
+  <p style="font-size:18px"><a href="../machine_learning/index.html" style="color:#fff">← Machine Learning slides</a></p>
+  <p style="font-size:18px">Present: open a topic, then → / Space to advance, ← to go back, F for full screen.</p>
+  <footer><img src="../assets/img/unav-logo-white.png" alt="Universidad de Navarra"><em>imanolgranada@gmail.com</em></footer>
+</main>
+</body>
+</html>

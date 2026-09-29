@@ -16,5 +16,5 @@ gdown>=5.1                 # downloads the face dataset from Google Drive
 
 transformers>=4.40         # Text_Generation_with_Transformers, rag_embeddings_demo
 
-ultralytics>=8.3           # deep_learning/object_detection_yolo (YOLO11)
-gradio>=4.0                # deep_learning/yolo_app.py
+ultralytics>=8.3           # notebooks/neural_networks/object_detection_yolo (YOLO11)
+gradio>=4.0                # notebooks/neural_networks/yolo_app.py
