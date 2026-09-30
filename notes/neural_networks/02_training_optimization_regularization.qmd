@@ -9,14 +9,14 @@ format:
           <script src="../../slides/neural_networks/assets/fig-nn-intro.js"></script>
 ---
 
-Backpropagation ([NN note 01](01_backpropagation.qmd)) gives the gradient of the loss with respect to every weight. This note covers everything else needed to train a network well: how much data to use per step (mini-batches), how to turn a gradient into a step (momentum, RMSProp, Adam, learning-rate schedules), the standard PyTorch training loop, how to stop the network from memorising the training set (weight decay, dropout, augmentation, early stopping), the layers that make training stable (BatchNorm, LayerNorm), a debugging guide for when training goes wrong, and the assumptions that the whole procedure silently makes about the data.
+Backpropagation ([NN note 01](01_backpropagation.html)) gives the gradient of the loss with respect to every weight. This note covers everything else needed to train a network well: how much data to use per step (mini-batches), how to turn a gradient into a step (momentum, RMSProp, Adam, learning-rate schedules), the standard PyTorch training loop, how to stop the network from memorising the training set (weight decay, dropout, augmentation, early stopping), the layers that make training stable (BatchNorm, LayerNorm), a debugging guide for when training goes wrong, and the assumptions that the whole procedure silently makes about the data.
 
 **What you need.**
 
-- [NN note 00](00_neural_networks_mlp.qmd): the MLP forward pass in the row convention, $\mathbf{Z}^{[l]} = \mathbf{A}^{[l-1]}\mathbf{W}^{[l]} + \mathbf{b}^{[l]}$, $\mathbf{A}^{[l]} = g^{[l]}(\mathbf{Z}^{[l]})$, and the fact that the loss is a negative log-likelihood (cross-entropy for classification).
-- [NN note 01](01_backpropagation.qmd): backprop computes $\nabla_{\boldsymbol{\theta}}J$ in one backward pass; initialisation; vanishing and exploding gradients.
-- [ML note 01](../machine_learning/01_linear_regression.qmd): gradient descent $\boldsymbol{\theta}\leftarrow\boldsymbol{\theta}-\alpha\nabla J$. On a quadratic whose Hessian has largest eigenvalue $\lambda_{\max}$ it converges if and only if $0<\alpha<2/\lambda_{\max}$, and the condition number $\kappa=\lambda_{\max}/\lambda_{\min}$ controls the zig-zag. Both facts are restated where they are used.
-- [ML note 03](../machine_learning/03_regularization_inputs_assumptions.qmd): L2 (ridge) and L1 regularisation, and regularisation as a prior.
+- [NN note 00](00_neural_networks_mlp.html): the MLP forward pass in the row convention, $\mathbf{Z}^{[l]} = \mathbf{A}^{[l-1]}\mathbf{W}^{[l]} + \mathbf{b}^{[l]}$, $\mathbf{A}^{[l]} = g^{[l]}(\mathbf{Z}^{[l]})$, and the fact that the loss is a negative log-likelihood (cross-entropy for classification).
+- [NN note 01](01_backpropagation.html): backprop computes $\nabla_{\boldsymbol{\theta}}J$ in one backward pass; initialisation; vanishing and exploding gradients.
+- [ML note 01](../machine_learning/01_linear_regression.html): gradient descent $\boldsymbol{\theta}\leftarrow\boldsymbol{\theta}-\alpha\nabla J$. On a quadratic whose Hessian has largest eigenvalue $\lambda_{\max}$ it converges if and only if $0<\alpha<2/\lambda_{\max}$, and the condition number $\kappa=\lambda_{\max}/\lambda_{\min}$ controls the zig-zag. Both facts are restated where they are used.
+- [ML note 03](../machine_learning/03_regularization_inputs_assumptions.html): L2 (ridge) and L1 regularisation, and regularisation as a prior.
 - Probability: expectation and variance of sums of independent random variables.
 
 **After this note you will be able to** choose an optimiser, a learning rate, a batch size and a schedule and justify them; derive the update rules of momentum, RMSProp, Adam and AdamW, including the bias correction; write and read a PyTorch training loop; regularise a network and explain what each regulariser does mathematically; implement and differentiate BatchNorm by hand; diagnose a failing training run from its loss curve; and check the assumptions (shuffled batches, stationary data, clean labels, balanced classes, reproducibility) that training relies on.
@@ -36,7 +36,7 @@ T_START = time.time()
 
 ## 1. The training problem: a non-convex loss
 
-For linear and logistic regression the loss is convex ([ML note 01](../machine_learning/01_linear_regression.qmd), [ML note 02](../machine_learning/02_logistic_regression.qmd)): every local minimum is global, and gradient descent with a small enough $\alpha$ finds it from any starting point. With one hidden layer this is lost ([NN note 00](00_neural_networks_mlp.qmd)). Three consequences shape everything in this note:
+For linear and logistic regression the loss is convex ([ML note 01](../machine_learning/01_linear_regression.html), [ML note 02](../machine_learning/02_logistic_regression.html)): every local minimum is global, and gradient descent with a small enough $\alpha$ finds it from any starting point. With one hidden layer this is lost ([NN note 00](00_neural_networks_mlp.html)). Three consequences shape everything in this note:
 
 1. **Many equivalent minima.** Swapping two hidden units (their incoming weights, their bias and their outgoing weights) gives exactly the same function, so every minimum has at least $n_1!$ copies for a layer of $n_1$ units.
 2. **Saddle points.** A critical point ($\nabla J=\mathbf{0}$) is a local minimum only if all $p$ eigenvalues of the Hessian are positive. With millions of parameters that is rare, and most flat points are **saddles**: some directions go up, others go down. The noise of mini-batch gradients and momentum (section 4) help to leave them.
@@ -279,7 +279,7 @@ The four scaled runs follow nearly the same curve per epoch, although the $B=128
 
 ## 3. The learning rate is the most important knob
 
-**Recap from [ML note 01](../machine_learning/01_linear_regression.qmd).** On a one-parameter quadratic $J(\theta)=\frac12h(\theta-\theta^*)^2$, a gradient step multiplies the error by a constant: $\theta_{t+1}-\theta^*=\theta_t-\alpha h(\theta_t-\theta^*)-\theta^*=(1-\alpha h)(\theta_t-\theta^*)$. It converges iff $|1-\alpha h|<1$, i.e. $0<\alpha<2/h$; the fastest choice is $\alpha=1/h$ (one step); for $1/h<\alpha<2/h$ it overshoots and oscillates; above $2/h$ it diverges. With many parameters, $h$ is replaced by the largest eigenvalue of the Hessian. For a network that curvature is unknown and changes during training, so $\alpha$ is found by trial.
+**Recap from [ML note 01](../machine_learning/01_linear_regression.html).** On a one-parameter quadratic $J(\theta)=\frac12h(\theta-\theta^*)^2$, a gradient step multiplies the error by a constant: $\theta_{t+1}-\theta^*=\theta_t-\alpha h(\theta_t-\theta^*)-\theta^*=(1-\alpha h)(\theta_t-\theta^*)$. It converges iff $|1-\alpha h|<1$, i.e. $0<\alpha<2/h$; the fastest choice is $\alpha=1/h$ (one step); for $1/h<\alpha<2/h$ it overshoots and oscillates; above $2/h$ it diverges. With many parameters, $h$ is replaced by the largest eigenvalue of the Hessian. For a network that curvature is unknown and changes during training, so $\alpha$ is found by trial.
 
 ```{=html}
 <div class="widget"><svg class="fig" data-fig="alpha3" style="max-height:250px" aria-label="Gradient descent steps on a bowl with a too low, a good and a too high learning rate"></svg>
@@ -324,7 +324,7 @@ plt.xscale("log"); plt.xlabel("learning rate α (increased every mini-batch)"); 
 plt.legend(); plt.title("Learning-rate range test (dots: steepest descent)"); plt.tight_layout(); plt.show()
 ```
 
-Both suggestions land where the usual defaults are: about $10^{-1}$ for SGD with momentum and a few $10^{-3}$ for Adam. The range test costs a fraction of an epoch and replaces guessing. Rules of thumb that usually work: **Adam $10^{-3}$, SGD with momentum $10^{-1}$ with a schedule**, and a rate 10–100× smaller when fine-tuning a pre-trained network ([NN note 03](03_cnn_transfer_multitask.qmd), transfer learning).
+Both suggestions land where the usual defaults are: about $10^{-1}$ for SGD with momentum and a few $10^{-3}$ for Adam. The range test costs a fraction of an epoch and replaces guessing. Rules of thumb that usually work: **Adam $10^{-3}$, SGD with momentum $10^{-1}$ with a schedule**, and a rate 10–100× smaller when fine-tuning a pre-trained network ([NN note 03](03_cnn_transfer_multitask.html), transfer learning).
 
 ## 4. Optimisers
 
@@ -509,12 +509,12 @@ print("first Adam step in PyTorch:", (w_.detach() - torch.tensor([1.0, -2.0, 3.0
 
 **Try it.** A narrow valley $J=\frac12(0.08w_1^2+2w_2^2)$, 25× more curved along $w_2$; 60 steps of each method from the same start, where $J=2.44$. The gradient-descent error along $w_2$ is multiplied by $1-2\alpha$ per step and along $w_1$ by $1-0.08\alpha$. In the widget, momentum uses $\beta=0.9$ with rate $0.1\alpha$, and RMSProp and Adam use the rate $0.3\alpha$.
 
-- $\alpha=0.1$: all four are still far from the minimum after 60 steps (final losses between 0.37 and 0.44). Gradient descent shrinks the $w_1$ error by only $0.992$ per step, and the adaptive methods move about $0.3\alpha=0.03$ per step, less than 2 units of the 5 to go. (The slide's caption says that Adam "already arrives"; the read-out shows its loss, 0.435, is the largest of the four.)
-- $\alpha=0.316$: RMSProp (0.002) and Adam (0.016) are ahead of gradient descent (0.046) and momentum (0.038). Gradient descent does **not** zig-zag here, since $1-2\alpha=0.37>0$; it just crawls along $w_1$. (The slide's caption says it zig-zags: that only happens for $\alpha>0.5$, when the factor becomes negative.)
+- $\alpha=0.1$: all four are still far from the minimum after 60 steps (final losses between 0.37 and 0.44). Gradient descent shrinks the $w_1$ error by only $0.992$ per step, and the adaptive methods move about $0.3\alpha=0.03$ per step, less than 2 units of the 5 to go.
+- $\alpha=0.316$: RMSProp (0.002) and Adam (0.016) are ahead of gradient descent (0.046) and momentum (0.038). Gradient descent does **not** zig-zag here, since $1-2\alpha=0.37>0$; it just crawls along $w_1$. (It would zig-zag only for $\alpha>0.5$, when the factor becomes negative; here it is momentum that swings across the valley.)
 - $\alpha=1.26$: $|1-2\alpha|=1.52>1$, so gradient descent diverges (loss above 1,000), while momentum, RMSProp and Adam converge.
 
 ```{=html}
-<div class="widget" data-fig="optim" data-auto="lr=-1 :: small learning rate: gradient descent barely moves along w₁; Adam already arrives | lr=-0.5 :: medium: GD zig-zags across the valley, momentum smooths it, Adam and RMSProp walk straight | lr=0.1 :: large (α = 1.26): GD diverges out of the valley, the adaptive methods still converge">
+<div class="widget" data-fig="optim" data-auto="lr=-1 :: small (α = 0.1): after 60 steps all four are still far along the valley (losses 0.37 to 0.44) | lr=-0.5 :: medium (α = 0.32): GD goes straight down, then crawls along the floor; momentum swings across; RMSProp and Adam get closest | lr=0.1 :: large (α = 1.26): GD diverges out of the valley; momentum and the adaptive methods still converge">
   <svg class="fig" aria-label="Paths of gradient descent, momentum, RMSProp and Adam on a narrow valley"></svg>
   <div class="ctl"><label for="op-lr">learning rate α (log)</label><input type="range" id="op-lr" data-k="lr" min="-2" max="0.3" step="0.05" value="-0.5"><span class="v" data-v="lr">0.316</span></div>
   <div class="ro">
@@ -726,7 +726,7 @@ for epoch in range(epochs):
         val_loss = evaluate(model, val_loader)
 ```
 
-Frameworks like **PyTorch Lightning** ([NN note 03](03_cnn_transfer_multitask.qmd), face lab) write this loop, the device handling, checkpointing and early stopping for you, but it is the same loop.
+Frameworks like **PyTorch Lightning** ([NN note 03](03_cnn_transfer_multitask.html), face lab) write this loop, the device handling, checkpointing and early stopping for you, but it is the same loop.
 
 **Averaging metrics over an epoch.** Weight each batch by its size (the last batch is usually smaller). For non-linear metrics, don't average per-batch values: with $N$ batches of equal size, $\frac1N\sum_b\sqrt{\mathrm{MSE}_b}\le\sqrt{\frac1N\sum_b\mathrm{MSE}_b}$ by Jensen's inequality ($\sqrt{\cdot}$ is concave), so the average of per-batch RMSEs underestimates the true RMSE. Accumulate sums and take the root at the end.
 
@@ -766,7 +766,7 @@ print(f"validation loss: minimum {min(hist_plain['val_loss']):.3f} at epoch {bes
 
 ### 8.1 Weight decay (L2)
 
-Add a penalty on the size of the weights to the loss ([ML note 03](../machine_learning/03_regularization_inputs_assumptions.qmd); biases are usually left out):
+Add a penalty on the size of the weights to the loss ([ML note 03](../machine_learning/03_regularization_inputs_assumptions.html); biases are usually left out):
 $$
 J_{\text{reg}}(\mathbf{w})=J(\mathbf{w})+\frac{\lambda}{2}\lVert\mathbf{w}\rVert^2\qquad\Rightarrow\qquad\nabla J_{\text{reg}}=\nabla J+\lambda\,\mathbf{w}
 $$
@@ -847,7 +847,7 @@ With Adam + L2 the heavily-updated weights keep most of their size while the lig
 
 ### 8.3 Data augmentation
 
-Apply random, **label-preserving** transformations to the training inputs, a new random version each epoch: flips, crops, small rotations, colour jitter for images; noise and time shifts for audio (text is harder). The model rarely sees the exact same input twice, which is like having more data, and it builds the desired **invariances** into the model. Only use transformations that don't change the label: a horizontal flip is fine for clothes, not for digits (a mirrored 7 is not a 7). Pictures, and a demo, are in [NN note 03](03_cnn_transfer_multitask.qmd).
+Apply random, **label-preserving** transformations to the training inputs, a new random version each epoch: flips, crops, small rotations, colour jitter for images; noise and time shifts for audio (text is harder). The model rarely sees the exact same input twice, which is like having more data, and it builds the desired **invariances** into the model. Only use transformations that don't change the label: a horizontal flip is fine for clothes, not for digits (a mirrored 7 is not a 7). Pictures, and a demo, are in [NN note 03](03_cnn_transfer_multitask.html).
 
 **Noise injection is ridge regression in disguise.** For a linear model, train on inputs corrupted by independent noise $\boldsymbol{\epsilon}\sim\mathcal{N}(\mathbf{0},\sigma^2\mathbf{I})$ and average the squared error over the noise:
 $$
@@ -959,7 +959,7 @@ $$
 $$
 (bias–variance decomposition of $\mathbb{E}[(y-z)^2]$). Averaged over the data, dropout adds a ridge penalty on $w_j$ weighted by the average $a_j^2$ of its input (Wager et al., 2013): weights fed by large activations are penalised more.
 
-**Why it helps.** A unit cannot rely on any particular other unit being present, so the network learns redundant, more robust features. It can also be seen as training an exponentially large **ensemble** of thinned sub-networks that share weights, and averaging them at test time (compare bagging, [ML note 07](../machine_learning/07_bagging_random_forest_boosting.qmd)). Typical $p$: 0.1–0.5, on dense layers.
+**Why it helps.** A unit cannot rely on any particular other unit being present, so the network learns redundant, more robust features. It can also be seen as training an exponentially large **ensemble** of thinned sub-networks that share weights, and averaging them at test time (compare bagging, [ML note 07](../machine_learning/07_bagging_random_forest_boosting.html)). Typical $p$: 0.1–0.5, on dense layers.
 
 **At test time: off, and an approximation.** The deterministic test network gives the ensemble's *mean pre-activation* exactly only for a linear layer; after a non-linearity $f$, $\mathbb{E}[f(z)]\ne f(\mathbb{E}[z])$ (Jensen), so "switch off" is an approximation to averaging the thinned networks, and a good one in practice. **Monte Carlo dropout** (Gal & Ghahramani, 2016) keeps dropout *on* at prediction time, runs $T$ stochastic forward passes, and averages the predicted probabilities; the spread of the $T$ predictions is a cheap (and rough) measure of the model's uncertainty.
 
@@ -999,7 +999,7 @@ for name, mdl in [("no regularisation", model), ("weight decay", m_wd), ("dropou
 print(f"early stopping stopped after {len(results['early stopping (patience 10)']['val_loss'])} epochs")
 ```
 
-With only 500 training images, the unregularised validation loss reaches its minimum after about 20 epochs and then climbs (section 7). Weight decay 0.05 with AdamW only slows the climb; dropout lowers the whole validation curve; early stopping keeps the checkpoint at the minimum and stops. On the test set, dropout and early stopping lower the loss, weight decay barely changes it, and the test **accuracies** all stay within about one point of each other. The unregularised model mostly becomes *over-confident* rather than *wrong*: its argmax is still right, but its probabilities are too extreme, which the loss punishes and accuracy does not see. That is the same lesson as boosting in [ML note 07](../machine_learning/07_bagging_random_forest_boosting.qmd). Early stopping on the validation *loss* gives the lowest accuracy here: the checkpoint with the best loss is not the one with the best accuracy, so monitor the metric you care about. On harder problems, or with less data, regularisation changes the accuracy as well.
+With only 500 training images, the unregularised validation loss reaches its minimum after about 20 epochs and then climbs (section 7). Weight decay 0.05 with AdamW only slows the climb; dropout lowers the whole validation curve; early stopping keeps the checkpoint at the minimum and stops. On the test set, dropout and early stopping lower the loss, weight decay barely changes it, and the test **accuracies** all stay within about one point of each other. The unregularised model mostly becomes *over-confident* rather than *wrong*: its argmax is still right, but its probabilities are too extreme, which the loss punishes and accuracy does not see. That is the same lesson as boosting in [ML note 07](../machine_learning/07_bagging_random_forest_boosting.html). Early stopping on the validation *loss* gives the lowest accuracy here: the checkpoint with the best loss is not the one with the best accuracy, so monitor the metric you care about. On harder problems, or with less data, regularisation changes the accuracy as well.
 
 **MC dropout on the dropout model.** Averaging 50 stochastic passes gives about the same accuracy as the deterministic network, and the spread of the passes separates confident from ambiguous test images:
 
@@ -1230,7 +1230,7 @@ $$
 \mu_i=\frac1n\sum_{j=1}^nz_{ij},\qquad\sigma_i^2=\frac1n\sum_{j=1}^n(z_{ij}-\mu_i)^2,\qquad
 y_{ij}=\gamma_j\,\frac{z_{ij}-\mu_i}{\sqrt{\sigma_i^2+\varepsilon}}+\beta_j .
 $$
-It is independent of the batch size and of the other examples, and identical in training and evaluation (no running statistics). That is why it is the standard in transformers ([NN note 05](05_attention_transformers.qmd)) and RNNs, where sequences have different lengths and batches can be small. BatchNorm remains the standard in CNNs. Both end with the same learnable $\gamma\hat z+\beta$.
+It is independent of the batch size and of the other examples, and identical in training and evaluation (no running statistics). That is why it is the standard in transformers ([NN note 05](05_attention_transformers.html)) and RNNs, where sequences have different lengths and batches can be small. BatchNorm remains the standard in CNNs. Both end with the same learnable $\gamma\hat z+\beta$.
 
 ```{=html}
 <div class="widget"><svg class="fig" data-fig="norm-axes" aria-label="Two matrices of examples by features, highlighting a column for BatchNorm and a row for LayerNorm"></svg>
@@ -1253,11 +1253,11 @@ ln.train(); a1 = ln(zz); ln.eval(); print("identical in train and eval mode:", t
 | Activation | `nn.ReLU`, `nn.GELU`, `nn.Sigmoid` | element-wise non-linearity | no |
 | Dropout | `nn.Dropout(p)` | switches units off in training | no |
 | Batch / layer norm | `nn.BatchNorm1d/2d`, `nn.LayerNorm` | normalise, then scale by $\gamma$ and shift by $\beta$ | 2 per feature |
-| Convolution, pooling | `nn.Conv2d`, `nn.MaxPool2d` | local, shared filters for images ([NN note 03](03_cnn_transfer_multitask.qmd)) | conv yes, pool no |
+| Convolution, pooling | `nn.Conv2d`, `nn.MaxPool2d` | local, shared filters for images ([NN note 03](03_cnn_transfer_multitask.html)) | conv yes, pool no |
 | Flatten | `nn.Flatten` | tensor → vector, before the dense head | no |
-| Embedding | `nn.Embedding` | token id → learned vector ([NN notes 04](04_rnn_lstm.qmd)–[05](05_attention_transformers.qmd)) | yes |
-| Recurrent | `nn.LSTM`, `nn.GRU` | sequences with a hidden state ([NN note 04](04_rnn_lstm.qmd)) | yes |
-| Attention | `nn.MultiheadAttention` | mixes information between positions ([NN note 05](05_attention_transformers.qmd)) | yes |
+| Embedding | `nn.Embedding` | token id → learned vector ([NN notes 04](04_rnn_lstm.html)–[05](05_attention_transformers.html)) | yes |
+| Recurrent | `nn.LSTM`, `nn.GRU` | sequences with a hidden state ([NN note 04](04_rnn_lstm.html)) | yes |
+| Attention | `nn.MultiheadAttention` | mixes information between positions ([NN note 05](05_attention_transformers.html)) | yes |
 | Residual connection | `x + f(x)` in `forward` | a direct path for the gradient | no |
 
 Any layer is fine as long as it is differentiable (almost everywhere): autograd does the rest.
@@ -1725,7 +1725,7 @@ for name, r in rows.items():
 
 **What to do**, with the reasoning behind each fix:
 
-- **Logit adjustment (post hoc, no retraining).** If only the class prior differs between training and use, Bayes' rule gives $p_{\text{use}}(k\mid\mathbf{x})\propto p_{\text{train}}(k\mid\mathbf{x})\,\frac{\pi^{\text{use}}_k}{\pi^{\text{train}}_k}$, since $p(\mathbf{x}\mid k)$ is unchanged. In logits: add $\log\pi^{\text{use}}_k-\log\pi^{\text{train}}_k$ to class $k$'s logit. Cheap, and it keeps the probabilities calibrated for the new prior. It is the same correction as moving the decision threshold in binary classification ([ML note 02](../machine_learning/02_logistic_regression.qmd)).
+- **Logit adjustment (post hoc, no retraining).** If only the class prior differs between training and use, Bayes' rule gives $p_{\text{use}}(k\mid\mathbf{x})\propto p_{\text{train}}(k\mid\mathbf{x})\,\frac{\pi^{\text{use}}_k}{\pi^{\text{train}}_k}$, since $p(\mathbf{x}\mid k)$ is unchanged. In logits: add $\log\pi^{\text{use}}_k-\log\pi^{\text{train}}_k$ to class $k$'s logit. Cheap, and it keeps the probabilities calibrated for the new prior. It is the same correction as moving the decision threshold in binary classification ([ML note 02](../machine_learning/02_logistic_regression.html)).
 - **Weighted cross-entropy** `CrossEntropyLoss(weight=w)` with $w_k\propto1/\pi_k$. Its population minimiser: for a fixed $\mathbf{x}$, minimise $-\sum_kw_k\,p(k\mid\mathbf{x})\log q_k$ over probability vectors $q$; with a Lagrange multiplier for $\sum_kq_k=1$, $-w_kp(k\mid\mathbf{x})/q_k+\nu=0$, so $q_k=\frac{w_k\,p(k\mid\mathbf{x})}{\sum_jw_j\,p(j\mid\mathbf{x})}$. The network learns probabilities tilted by the weights: with $w_k\propto1/\pi_k$ it is the balanced-prior posterior. Divide the predicted probabilities by $w_k$ and renormalise to recover the training-prior ones.
 - **Resampling** (`WeightedRandomSampler`): draw examples with probability $\propto1/\pi_{y}$, so batches are balanced. In expectation it gives the same gradient as the weighted loss, with less variance per batch, but the few rare examples are repeated many times (overfitting risk; combine with augmentation).
 - **More data for the rare class**, when possible, beats all of these; **focal loss** (NN note 03, detection) is another option when the imbalance is extreme.
@@ -1797,7 +1797,7 @@ These get you most of the way on most problems. Tune the learning rate first, th
 ## 15. Labs
 
 - **Lab 8 · The MLP again, now with PyTorch** ([open in Colab](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/MLP_pytorch.ipynb)): see section 6.
-- **Lab 9 · Multiclass images with an MLP (Fashion-MNIST)** ([open in Colab](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/Demo_Multiclass.ipynb)). 70,000 greyscale images of clothes, 10 classes: train / validation / test splits and preprocessing (scale, standardise, flatten); from sigmoid to softmax and the categorical cross-entropy; softmax regression against an MLP, with a training loop and early stopping; accuracy, confusion matrix, per-class metrics and the errors; experiments with width, depth and dropout; and the limit of MLPs: shift the pictures a few pixels and watch the accuracy fall, which motivates CNNs ([NN note 03](03_cnn_transfer_multitask.qmd)). Expected result: MLP ≈ 88 % test accuracy, softmax regression ≈ 84 %. A CPU is fine.
+- **Lab 9 · Multiclass images with an MLP (Fashion-MNIST)** ([open in Colab](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/Demo_Multiclass.ipynb)). 70,000 greyscale images of clothes, 10 classes: train / validation / test splits and preprocessing (scale, standardise, flatten); from sigmoid to softmax and the categorical cross-entropy; softmax regression against an MLP, with a training loop and early stopping; accuracy, confusion matrix, per-class metrics and the errors; experiments with width, depth and dropout; and the limit of MLPs: shift the pictures a few pixels and watch the accuracy fall, which motivates CNNs ([NN note 03](03_cnn_transfer_multitask.html)). Expected result: MLP ≈ 88 % test accuracy, softmax regression ≈ 84 %. A CPU is fine.
 
 ## Summary
 

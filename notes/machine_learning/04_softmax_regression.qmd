@@ -12,7 +12,7 @@ The extension of logistic regression to $K > 2$ classes. Everything follows the 
 
 **What this note covers.** How to represent $K$ classes, the softmax model and its properties (shift invariance and what it means for identifiability, numerical stability with the log-sum-exp trick, linear boundaries between classes), the categorical cross-entropy, its gradient and convexity, an implementation from scratch, and the multiclass metrics of the slides with the damage-severity worked example. Then the **assumptions** of the model, how to check them and what to do when they fail, including the *independence of irrelevant alternatives* (section 14), and three practical deep dives: class imbalance with $K$ classes, calibrating multiclass probabilities with temperature scaling, and one-vs-rest versus softmax (sections 15 to 17).
 
-**What you need.** [Note 02](02_logistic_regression.qmd) (logistic regression: sigmoid, cross-entropy, gradient, convexity, metrics, calibration, class imbalance, the assumptions) and, for the view of softmax as a generalised linear model, [note 02b](02b_generalized_linear_models.qmd). Linear algebra: the Hessian test for convexity from [note 01](01_linear_regression.qmd).
+**What you need.** [Note 02](02_logistic_regression.html) (logistic regression: sigmoid, cross-entropy, gradient, convexity, metrics, calibration, class imbalance, the assumptions) and, for the view of softmax as a generalised linear model, [note 02b](02b_generalized_linear_models.html). Linear algebra: the Hessian test for convexity from [note 01](01_linear_regression.html).
 
 **After this note you can** fit a softmax regression from scratch in a numerically safe way, explain why its parameters are not unique and what fixes that, evaluate a multiclass classifier with per-class, macro, micro and weighted metrics and read its confusion matrix, decide between softmax, one-vs-rest and independent sigmoids, and deal with imbalanced classes, miscalibrated probabilities and non-linear class boundaries.
 
@@ -31,7 +31,7 @@ rng = np.random.default_rng(0)
 
 Labels $y^{(i)} \in \{1, \dots, K\}$: hand-written digits, iris species, vehicle types, damage severity (minor / moderate / severe). We want $P(y = k\mid\mathbf{x})$ for every class.
 
-**One-vs-rest** ([note 02](02_logistic_regression.qmd), section 13) trains $K$ independent binary classifiers, "class $k$ against the rest":
+**One-vs-rest** ([note 02](02_logistic_regression.html), section 13) trains $K$ independent binary classifiers, "class $k$ against the rest":
 
 - $K$ separate models and $K$ separate losses;
 - the $K$ outputs **do not sum to 1**: together they are not a probability distribution.
@@ -54,7 +54,7 @@ $$
 y = 2\ \longrightarrow\ \mathbf{y} = (0,\,1,\,0),\qquad\text{in general } y_k = \mathbb{1}[y = k].
 $$
 
-No order, and all classes at the same distance ($\lVert\mathbf{e}_k - \mathbf{e}_l\rVert = \sqrt2$ for any $k\ne l$). It is a **probability distribution** that puts all its mass on the true class. (Same trick as one-hot encoding of categorical *inputs*, [note 03](03_regularization_inputs_assumptions.qmd), now used for the *output*.)
+No order, and all classes at the same distance ($\lVert\mathbf{e}_k - \mathbf{e}_l\rVert = \sqrt2$ for any $k\ne l$). It is a **probability distribution** that puts all its mass on the true class. (Same trick as one-hot encoding of categorical *inputs*, [note 03](03_regularization_inputs_assumptions.html), now used for the *output*.)
 
 | label | $y$ | one-hot $\mathbf{y}$ |
 |---|---|---|
@@ -252,7 +252,7 @@ where $\mathbf{P}, \mathbf{Y}\in\mathbb{R}^{m\times K}$ hold the predicted proba
 | logistic | $\frac1m\mathbf{X}^\top(\sigma(\mathbf{X}\boldsymbol{\theta})-\mathbf{y})$ |
 | softmax | $\frac1m\mathbf{X}^\top(\mathbf{P}-\mathbf{Y})$ |
 
-Always **(prediction − target) × input** ([note 02b](02b_generalized_linear_models.qmd) explains why: all three are generalised linear models with their canonical link). Batch gradient descent: $\boldsymbol{\Theta}\leftarrow\boldsymbol{\Theta} - \alpha\nabla_{\boldsymbol{\Theta}}J$. L2 regularisation adds $\frac{\lambda}{m}\boldsymbol{\Theta}$ to the gradient (except the intercept row).
+Always **(prediction − target) × input** ([note 02b](02b_generalized_linear_models.html) explains why: all three are generalised linear models with their canonical link). Batch gradient descent: $\boldsymbol{\Theta}\leftarrow\boldsymbol{\Theta} - \alpha\nabla_{\boldsymbol{\Theta}}J$. L2 regularisation adds $\frac{\lambda}{m}\boldsymbol{\Theta}$ to the gradient (except the intercept row).
 
 ## 10. Convexity
 
@@ -355,7 +355,7 @@ P_ours = softmax(Xte @ Theta)
 |---|---|---|
 | Training | $K$ independent binary logistic regressions ("class $k$" vs "the rest") | one joint model, one loss |
 | Probabilities | the $K$ outputs don't sum to 1 (need re-normalising) | a proper distribution by construction |
-| When | any binary classifier (e.g. SVMs, [note 05](05_support_vector_classifier.qmd)); classes not mutually exclusive (multi-label, section 14.1) | mutually exclusive classes |
+| When | any binary classifier (e.g. SVMs, [note 05](05_support_vector_classifier.html)); classes not mutually exclusive (multi-label, section 14.1) | mutually exclusive classes |
 
 (Section 17 compares the two in detail.)
 
@@ -441,7 +441,7 @@ Of the 17 errors, 15 are between neighbouring levels and only 2 skip a level. Wi
 
 ## 14. Assumptions: what they mean, how to check them, what to do
 
-Softmax regression inherits the assumptions of logistic regression ([note 02](02_logistic_regression.qmd), section 14) and adds two that only exist with more than two classes: that the classes are mutually exclusive, and the independence of irrelevant alternatives. Like logistic regression it does **not** assume normal errors, constant variance or normally distributed features.
+Softmax regression inherits the assumptions of logistic regression ([note 02](02_logistic_regression.html), section 14) and adds two that only exist with more than two classes: that the classes are mutually exclusive, and the independence of irrelevant alternatives. Like logistic regression it does **not** assume normal errors, constant variance or normally distributed features.
 
 | Assumption | What goes wrong if it fails | How to check | What to do |
 |---|---|---|---|
@@ -451,7 +451,7 @@ Softmax regression inherits the assumptions of logistic regression ([note 02](02
 | 14.4 **Independence of irrelevant alternatives** | wrong predictions when the set of classes changes | think about near-duplicate classes; Hausman–McFadden subset test | nested / mixed logit, or retrain with the new class set |
 | 14.5 **Enough data per class, no separation** | coefficients diverge, over-confident probabilities, unstable rare classes | events per parameter for the smallest class; LP separability check; diverging $\lVert\boldsymbol\Theta\rVert$ | L2 (scikit-learn's default), merge rare classes, more data |
 
-Correlated features affect softmax coefficients exactly as in logistic regression: large VIFs (computed on $\mathbf{X}$, so identical to [note 01](01_linear_regression.qmd)) mean unstable, hard-to-interpret coefficients while the predictions stay fine; see note 02, section 14.3. Calibration, which every use of the probabilities needs, is the subject of section 16.
+Correlated features affect softmax coefficients exactly as in logistic regression: large VIFs (computed on $\mathbf{X}$, so identical to [note 01](01_linear_regression.html)) mean unstable, hard-to-interpret coefficients while the predictions stay fine; see note 02, section 14.3. Calibration, which every use of the probabilities needs, is the subject of section 16.
 
 ### 14.1 Mutually exclusive and exhaustive classes
 
@@ -570,7 +570,7 @@ plt.tight_layout(); plt.show()
 
 Left: the empirical log-ratios follow the fitted lines. Middle: the class-2 log-ratio is U-shaped and the straight line misses both ends; adding $x^2$ lowers the log-loss clearly, while on the left data it changes nothing. Right: the ring class (orange) surrounds class 0; linear regions must be convex, so the ring class only gets a half-plane on the left and loses the rest of the ring (training accuracy 0.676), and quadratic features (black boundaries) recover it (0.992).
 
-**What to do.** Transform features (log, powers), add splines or polynomial features and interactions (then regularise, [note 03](03_regularization_inputs_assumptions.qmd)), or switch to a non-linear model (trees and ensembles, kernel SVMs, neural networks, whose last layer is exactly a softmax on learned features).
+**What to do.** Transform features (log, powers), add splines or polynomial features and interactions (then regularise, [note 03](03_regularization_inputs_assumptions.html)), or switch to a non-linear model (trees and ensembles, kernel SVMs, neural networks, whose last layer is exactly a softmax on learned features).
 
 ### 14.4 Independence of irrelevant alternatives (IIA)
 

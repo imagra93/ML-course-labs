@@ -8,11 +8,11 @@ format:
           <script src="../../slides/machine_learning/assets/fig-trees.js"></script>
 ---
 
-A decision tree predicts by asking a sequence of yes/no questions about single features ("is $x_3 \le 2.5$?") until it reaches a leaf that holds a prediction. **CART** (Classification And Regression Trees, Breiman et al. 1984) is the standard algorithm to grow them, and it is what scikit-learn implements. Trees are the building block of random forests and gradient boosting ([note 07](07_bagging_random_forest_boosting.qmd)), the models that win most competitions on tabular data, so everything in this note is also about them.
+A decision tree predicts by asking a sequence of yes/no questions about single features ("is $x_3 \le 2.5$?") until it reaches a leaf that holds a prediction. **CART** (Classification And Regression Trees, Breiman et al. 1984) is the standard algorithm to grow them, and it is what scikit-learn implements. Trees are the building block of random forests and gradient boosting ([note 07](07_bagging_random_forest_boosting.html)), the models that win most competitions on tabular data, so everything in this note is also about them.
 
 **What this note covers.** The model (a partition of the feature space into boxes), what a leaf predicts and why, the impurity measures (entropy, Gini, and why not the misclassification error), the threshold search, the CART algorithm implemented from scratch, regression trees, overfitting and cost-complexity pruning, and the instability of a single tree. Then the assumptions trees make (and the many they don't), and the practical situations: categorical features, missing values, imbalanced classes, feature importance and interpretation.
 
-**What you need.** The supervised-learning vocabulary of [note 00](00_supervised_learning.qmd): training and test error, overfitting, the bias–variance trade-off (expected squared error = bias² + variance + noise), cross-validation. For the probabilistic leaves, the log-loss of [note 02](02_logistic_regression.qmd): $-\sum_i \log \hat p(y^{(i)})$, minus the log-likelihood of the observed labels. Derivatives of one variable and the definition of a concave function are enough for the proofs.
+**What you need.** The supervised-learning vocabulary of [note 00](00_supervised_learning.html): training and test error, overfitting, the bias–variance trade-off (expected squared error = bias² + variance + noise), cross-validation. For the probabilistic leaves, the log-loss of [note 02](02_logistic_regression.html): $-\sum_i \log \hat p(y^{(i)})$, minus the log-likelihood of the observed labels. Derivatives of one variable and the definition of a concave function are enough for the proofs.
 
 **After this note you will be able to** grow a tree by hand and in code, explain every number in a split, choose between stopping rules and pruning, recognise the situations where a single tree fails (diagonal boundaries, extrapolation, interactions invisible to a greedy search, high variance) and fix them, and read feature importances without being fooled.
 
@@ -586,7 +586,7 @@ With squared error, a single extreme $y$ pulls the mean of its leaf; `criterion=
 </div>
 ```
 
-- **Zero training error is always reachable.** Each split turns one leaf into two, so a tree with $s$ splits has $s+1$ leaves. If all training inputs are distinct, any leaf with two or more examples can be split (two distinct points differ in at least one feature, and a threshold between them separates them), so growing until no leaf can be split puts each of the $m$ points in its own leaf: **at most $m-1$ splits** isolate every training point. A fully grown tree therefore has low bias and **very high variance** ([note 00](00_supervised_learning.qmd): the error on new data is bias² + variance + noise, and here the variance term dominates).
+- **Zero training error is always reachable.** Each split turns one leaf into two, so a tree with $s$ splits has $s+1$ leaves. If all training inputs are distinct, any leaf with two or more examples can be split (two distinct points differ in at least one feature, and a threshold between them separates them), so growing until no leaf can be split puts each of the $m$ points in its own leaf: **at most $m-1$ splits** isolate every training point. A fully grown tree therefore has low bias and **very high variance** ([note 00](00_supervised_learning.html): the error on new data is bias² + variance + noise, and here the variance term dominates).
 - Boundaries are staircases of axis-aligned segments.
 - Depth 2 predicts the same as depth 1 in the widget: its splits change no majority, but they make depth 3 possible. A greedy tree can need splits that look useless on their own, which is why stopping as soon as the gain is small is risky (section 13).
 
@@ -633,7 +633,7 @@ $$
 \boxed{R_\alpha(T) = R(T) + \alpha\,|T|}
 $$
 
-where $R(T)$ is the training error and $|T|$ the number of leaves. In the original CART $R(T)$ is the misclassification rate; scikit-learn uses the total size-weighted impurity of the leaves, $R(T) = \sum_{\text{leaves } \ell}\frac{N_\ell}{m}I(\ell)$. Fit + $\alpha$ × complexity: regularisation again, as in [note 03](03_regularization_inputs_assumptions.qmd).
+where $R(T)$ is the training error and $|T|$ the number of leaves. In the original CART $R(T)$ is the misclassification rate; scikit-learn uses the total size-weighted impurity of the leaves, $R(T) = \sum_{\text{leaves } \ell}\frac{N_\ell}{m}I(\ell)$. Fit + $\alpha$ × complexity: regularisation again, as in [note 03](03_regularization_inputs_assumptions.html).
 
 **Is a branch worth it?** Let $T_t$ be the branch below an internal node $t$ (the node and all its descendants), with $|T_t|$ leaves and training error $R(T_t)$; collapsing it turns $t$ into a leaf with error $R(t)$.
 
@@ -669,7 +669,7 @@ print(f"{len(g_t)} internal nodes; weakest link: node {weakest}, g(t) = {g_t[wea
 print(f"scikit-learn's first non-zero alpha on the path: {path.ccp_alphas[1]:.6f}")
 ```
 
-**Choosing $\alpha$ by cross-validation on the path.** Each $\alpha$ of the path defines a subtree; score each by CV on the training data and keep the best. A common, more conservative variant is the **one-standard-error rule**: take the largest $\alpha$ (smallest tree) whose CV score is within one standard error of the best, because CV scores are noisy ([note 00](00_supervised_learning.qmd), section 10) and a smaller tree is easier to read and more stable.
+**Choosing $\alpha$ by cross-validation on the path.** Each $\alpha$ of the path defines a subtree; score each by CV on the training data and keep the best. A common, more conservative variant is the **one-standard-error rule**: take the largest $\alpha$ (smallest tree) whose CV score is within one standard error of the best, because CV scores are noisy ([note 00](00_supervised_learning.html), section 10) and a smaller tree is easier to read and more stable.
 
 ```{python}
 alphas = path.ccp_alphas[:-1]
@@ -733,11 +733,11 @@ for name, P in [("fully grown      ", pred_full), ("min_samples_leaf=10", pred_l
 
 (If a fraction $q$ of the trees predicts class 1 at a point, two trees drawn at random disagree there with probability $2q(1-q)$: the Gini formula again.) The root threshold wanders over a wide interval; two fully grown trees disagree on almost a fifth of the plane; regularising the leaves reduces the disagreement and improves a single tree; and **averaging the 100 trees** beats any single one by a wide margin, fully grown or not.
 
-That last line is the idea of **bagging** and **random forests** ([note 07](07_bagging_random_forest_boosting.qmd)): the variance of an average of $B$ predictions, each with variance $\sigma^2$ and pairwise correlation $\rho$, is $\rho\sigma^2 + \frac{1-\rho}{B}\sigma^2$, so averaging many decorrelated trees removes most of the variance while keeping their low bias. The remedies for instability, in order: prune or regularise (`min_samples_leaf`, `ccp_alpha`), and if accuracy matters more than a single readable tree, use an ensemble.
+That last line is the idea of **bagging** and **random forests** ([note 07](07_bagging_random_forest_boosting.html)): the variance of an average of $B$ predictions, each with variance $\sigma^2$ and pairwise correlation $\rho$, is $\rho\sigma^2 + \frac{1-\rho}{B}\sigma^2$, so averaging many decorrelated trees removes most of the variance while keeping their low bias. The remedies for instability, in order: prune or regularise (`min_samples_leaf`, `ccp_alpha`), and if accuracy matters more than a single readable tree, use an ensemble.
 
 ## 15. Assumptions: what they mean, how to check them, what to do
 
-Trees make very few assumptions, which is why they are so popular. The assumptions of the evaluation (independent examples from the same distribution as deployment data, no leakage) are those of [note 00](00_supervised_learning.qmd), section 13; the ones below are specific to trees. Each concerns **prediction**; for **interpretation** (reading rules and importances), instability (15.5) and correlated features (16.4) matter most.
+Trees make very few assumptions, which is why they are so popular. The assumptions of the evaluation (independent examples from the same distribution as deployment data, no leakage) are those of [note 00](00_supervised_learning.html), section 13; the ones below are specific to trees. Each concerns **prediction**; for **interpretation** (reading rules and importances), instability (15.5) and correlated features (16.4) matter most.
 
 | Assumption | What goes wrong if it fails | How to check | What to do |
 |---|---|---|---|
@@ -749,7 +749,7 @@ Trees make very few assumptions, which is why they are so popular. The assumptio
 
 ### 15.1 What trees do *not* assume
 
-- **No scaling, and invariance to monotone transformations.** Standardising, taking logs, or any strictly increasing transformation of a feature gives the same tree (proved and checked below). No need for the scaling of [note 03](03_regularization_inputs_assumptions.qmd).
+- **No scaling, and invariance to monotone transformations.** Standardising, taking logs, or any strictly increasing transformation of a feature gives the same tree (proved and checked below). No need for the scaling of [note 03](03_regularization_inputs_assumptions.html).
 - **No functional form**: no linearity, no additivity; interactions are captured automatically (when greedy search can see them, T4). Trees are *non-parametric*: the number of leaves grows with the data.
 - **No distribution of the noise** (no normality, no constant variance): the impurity is just a loss.
 - **Outliers in $\mathbf{x}$ are harmless** (only the order of values matters); outliers in $y$ affect the squared-error criterion (use `absolute_error`).
@@ -789,7 +789,7 @@ print(f"new points predicted differently: {np.mean(ta.predict(Xm_new) != tb.pred
 
 **Why it matters.** A boundary like $x_2 = x_1$ (a claim is suspicious when the repair estimate exceeds the car's value) is one line for a linear model but a staircase for a tree. Every step costs leaves, every leaf costs data, so the tree needs many more examples to reach the same accuracy, and its extra leaves add variance. It is a **prediction** problem (worse accuracy for a given $m$), and an interpretation one (the rules describe the staircase, not the simple truth).
 
-**How to check.** Compare the tree with a linear model (logistic or linear regression, [notes 01–02](02_logistic_regression.qmd)) on the same CV folds; plot accuracy against the number of leaves; try the tree on combinations of features suggested by the domain (differences, ratios) or on principal-component rotations, and see whether a much smaller tree does as well. Holds vs violated, side by side: a boundary along an axis ($x_2 > 0.5$) versus the diagonal ($x_2 > x_1$), with 400 training points.
+**How to check.** Compare the tree with a linear model (logistic or linear regression, [notes 01–02](02_logistic_regression.html)) on the same CV folds; plot accuracy against the number of leaves; try the tree on combinations of features suggested by the domain (differences, ratios) or on principal-component rotations, and see whether a much smaller tree does as well. Holds vs violated, side by side: a boundary along an axis ($x_2 > 0.5$) versus the diagonal ($x_2 > x_1$), with 400 training points.
 
 ```{python}
 rd = np.random.default_rng(1)
@@ -815,7 +815,7 @@ axes[0].set_ylabel("$x_2$"); plt.tight_layout(); plt.show()
 
 **What it says.** New inputs fall in the region covered by the training data. A tree's prediction is the constant of a leaf, and the leaves at the edges extend to infinity, so outside the training range the prediction is the constant of the last leaf.
 
-**Why it matters.** Trees **cannot extrapolate** a trend. With inflation, a claim cost that grows with time, or a premium that grows with the insured value, a tree trained on past values predicts the level of the most recent leaf forever ([note 00](00_supervised_learning.qmd), section 14.3, showed the resulting flat forecast). Inside the range the tree is fine; the damage is to predictions for new regions.
+**Why it matters.** Trees **cannot extrapolate** a trend. With inflation, a claim cost that grows with time, or a premium that grows with the insured value, a tree trained on past values predicts the level of the most recent leaf forever ([note 00](00_supervised_learning.html), section 14.3, showed the resulting flat forecast). Inside the range the tree is fine; the damage is to predictions for new regions.
 
 **How to check.** For each feature, the fraction of new inputs below the training minimum or above the maximum; more generally, adversarial validation of training vs new inputs (note 00, section 13.2). Holds vs violated: a linear trend $y = 2x + \varepsilon$ learned on $x\in[0,5]$, evaluated inside the range and on $x \in [5, 10]$.
 
@@ -930,7 +930,7 @@ print(f"best one-vs-rest split (what one split on one-hot columns can do): SSE {
 print(f"error removed by the one-hot split = {(sse_(ycat) - one_hot[0]) / (sse_(ycat) - brute[0]):.0%} of what the best partition removes")
 ```
 
-**One-hot vs native categorical splits.** On one-hot columns a single split can only isolate *one* category from the rest; grouping several categories takes several splits, each on a smaller subset of the data, so the tree gets deeper and noisier (the last two lines: the best partition groups three categories against three, and one-hot's best single split removes less than half as much error). **Native** categorical splits use the ordering trick at every node: the original CART, LightGBM, XGBoost's categorical mode and scikit-learn's `HistGradientBoostingClassifier/Regressor(categorical_features=...)` support them. scikit-learn's `DecisionTreeClassifier` (version 1.8) does not: it needs numbers. A practical substitute is to encode each category by its mean target (**target encoding**) and let the tree split that number, which is the ordering trick done once at the root; but the encoding uses $y$, so it must be computed inside each CV training fold (or cross-fitted), or it leaks ([note 00](00_supervised_learning.qmd), section 14.1). With few categories, one-hot is fine.
+**One-hot vs native categorical splits.** On one-hot columns a single split can only isolate *one* category from the rest; grouping several categories takes several splits, each on a smaller subset of the data, so the tree gets deeper and noisier (the last two lines: the best partition groups three categories against three, and one-hot's best single split removes less than half as much error). **Native** categorical splits use the ordering trick at every node: the original CART, LightGBM, XGBoost's categorical mode and scikit-learn's `HistGradientBoostingClassifier/Regressor(categorical_features=...)` support them. scikit-learn's `DecisionTreeClassifier` (version 1.8) does not: it needs numbers. A practical substitute is to encode each category by its mean target (**target encoding**) and let the tree split that number, which is the ordering trick done once at the root; but the encoding uses $y$, so it must be computed inside each CV training fold (or cross-fitted), or it leaks ([note 00](00_supervised_learning.html), section 14.1). With few categories, one-hot is fine.
 
 **High-cardinality features overfit.** With many categories and few examples per category, the ordering trick sorts categories by *noisy* means, and the best prefix separates noise very well on the training data. A made-up example: 1,000 claims, a real binary feature ("third party involved": fraud rate 0.35 vs 0.20) and a repair-shop ID with 200 levels and **no** effect. Training on 700 claims, testing the chosen split on 300:
 
@@ -1024,7 +1024,7 @@ for cw in [None, "balanced"]:
           f"claims flagged {pi_.mean():.1%}")
 ```
 
-Weighting trades precision for recall: more frauds are caught, and more honest claims are flagged. Which point is right depends on the costs of the two errors ([note 02](02_logistic_regression.qmd), the threshold trade-off). Alternatives: keep the unweighted tree and choose the probability threshold on validation data; stratified splits and a metric that reflects the costs (note 00, section 8). Weighted trees' probabilities are no longer calibrated to the true prevalence (note 00, section 13.3, prior correction).
+Weighting trades precision for recall: more frauds are caught, and more honest claims are flagged. Which point is right depends on the costs of the two errors ([note 02](02_logistic_regression.html), the threshold trade-off). Alternatives: keep the unweighted tree and choose the probability threshold on validation data; stratified splits and a metric that reflects the costs (note 00, section 8). Weighted trees' probabilities are no longer calibrated to the true prevalence (note 00, section 13.3, prior correction).
 
 ### 16.4 …you need feature importances
 
@@ -1132,7 +1132,7 @@ for f_, c_ in zip(*np.unique(root_feats, return_counts=True)):
 - Greedy: not the best possible tree, and blind to pure interactions (section 15.4).
 - Impurity-based importances are biased (section 16.4).
 
-The fix for the variance is to **average many trees** ([note 07](07_bagging_random_forest_boosting.qmd)).
+The fix for the variance is to **average many trees** ([note 07](07_bagging_random_forest_boosting.html)).
 
 **Labs:** [Decision Trees from scratch](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%20-%20Decision%20Trees%20from%20scratch.ipynb) (impurity measures, a `Node` class, best-split search, recursive growth, prediction and a scikit-learn-style wrapper; then Iris, regression trees, `max_depth` and feature importance) and [Decision Trees and Random Forests](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%20-%20Decision%20Trees%20and%20Random%20Forests.ipynb) (how a tree decides, depth and overfitting, why one tree is unstable, bagging, random forests, OOB score, forest regression and feature importance).
 

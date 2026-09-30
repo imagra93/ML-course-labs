@@ -172,7 +172,7 @@ d["cat"]          <span class="c"># hard lookup → v1</span>
       <p class="step">Raw dot products have standard deviation $\sqrt{d_k}$ (8 for $d_k=64$). Large scores push the softmax into <b>saturation</b>: nearly one-hot, where its gradient is nearly 0.</p>
       <p class="step">Dividing by $\sqrt{d_k}$ brings the variance back to 1, whatever the dimension. $\blacksquare$</p>
     </div>
-    <div class="widget" data-fig="sqrtd" data-auto="d=2 :: dₖ = 4: raw and scaled look alike | d=6 :: dₖ = 64: the raw softmax is almost one-hot | d=9 :: dₖ = 512: raw puts everything on one key; scaled stays soft">
+    <div class="widget" data-fig="sqrtd" data-auto="d=2 :: dₖ = 4: both softmaxes are soft (largest weight 0.61 raw, 0.41 scaled) | d=6 :: dₖ = 64: the raw softmax is almost one-hot (0.94); the scaled one stays soft (0.33) | d=9 :: dₖ = 512: raw still puts most weight on one key (0.88); scaled stays soft (0.26)">
       <svg class="fig" aria-label="Softmax of raw and scaled attention scores"></svg>
       <div class="ctl"><label for="sq-d">dₖ (log scale)</label><input type="range" id="sq-d" data-k="d" min="0" max="9" step="1" value="6"><span class="v" data-v="d">64</span></div>
       <div class="ro"><div class="m"><span>max weight, raw</span><b data-r="mx">–</b></div><div class="m"><span>max weight, scaled</span><b data-r="ms">–</b></div></div>

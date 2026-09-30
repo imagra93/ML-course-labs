@@ -387,7 +387,7 @@
   <h2>Linear Regression – Regularization</h2>
   <p>Add a penalization in the cost function to the weights!</p>
   <ul class="small" style="gap:4px">
-    <li><b>L2 (Ridge regression)</b>: $\ J(\bth)=\dfrac{1}{2m}\displaystyle\sum_{i=1}^m\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)^2+\lambda\sum_{j=1}^n\theta_j^2\ $ (not $j=0$)
+    <li><b>L2 (Ridge regression)</b>: $\ J(\bth)=\dfrac{1}{2m}\displaystyle\sum_{i=1}^m\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)^2+\dfrac{\lambda}{2m}\sum_{j=1}^n\theta_j^2\ $ (not $j=0$)
       <ul><li>Shrinks the coefficients.</li></ul></li>
     <li><b>L1 (Lasso regression)</b>: $\ J(\bth)=\dfrac{1}{2m}\displaystyle\sum_{i=1}^m\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)^2+\lambda\sum_{j=1}^n|\theta_j|$
       <ul><li>Forces some of the coefficients to be zero and results in a simpler model (feature selection).</li><li>Not differentiable at 0.</li></ul></li>

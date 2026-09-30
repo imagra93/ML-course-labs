@@ -12,10 +12,10 @@ Images, audio and other signals on a grid have structure that a multilayer perce
 
 **What you need.**
 
-- [NN note 00](00_neural_networks_mlp.qmd): the MLP, the row convention $\mathbf{Z}^{[l]}=\mathbf{A}^{[l-1]}\mathbf{W}^{[l]}+\mathbf{b}^{[l]}$, softmax and cross-entropy.
-- [NN note 01](01_backpropagation.qmd): backpropagation as the chain rule on a graph; the error signal $\boldsymbol{\delta}=\partial L/\partial\mathbf{Z}$; vanishing gradients.
-- [NN note 02](02_training_optimization_regularization.qmd): the PyTorch training loop, Adam, weight decay, dropout, data augmentation, BatchNorm and its train/eval modes.
-- [ML note 02](../machine_learning/02_logistic_regression.qmd): precision, recall and the precision–recall curve (restated in section 16.5 where they are used).
+- [NN note 00](00_neural_networks_mlp.html): the MLP, the row convention $\mathbf{Z}^{[l]}=\mathbf{A}^{[l-1]}\mathbf{W}^{[l]}+\mathbf{b}^{[l]}$, softmax and cross-entropy.
+- [NN note 01](01_backpropagation.html): backpropagation as the chain rule on a graph; the error signal $\boldsymbol{\delta}=\partial L/\partial\mathbf{Z}$; vanishing gradients.
+- [NN note 02](02_training_optimization_regularization.html): the PyTorch training loop, Adam, weight decay, dropout, data augmentation, BatchNorm and its train/eval modes.
+- [ML note 02](../machine_learning/02_logistic_regression.html): precision, recall and the precision–recall curve (restated in section 16.5 where they are used).
 
 **After this note you will be able to** compute the output shape, parameters, multiply–adds and receptive field of any stack of convolution and pooling layers; derive the gradients of a convolution and of a transposed convolution; build and train a CNN in PyTorch; say when the built-in assumptions of a CNN help and when they hurt; choose a transfer-learning strategy and avoid its pitfalls (preprocessing, BatchNorm, domain shift); set up and balance a multi-task loss; and compute the metrics and post-processing of segmentation (IoU, Dice) and detection (box IoU, NMS, average precision) from scratch.
 
@@ -557,7 +557,7 @@ All four models were trained on centred digits, without shift augmentation. A on
 **When the biases are wrong.**
 
 - **Position matters.** In aligned faces, ID photos, documents, or a fixed medical scanner, *where* something is carries information (an eye is expected at a certain place). Pure equivariance throws that away; zero padding leaks some absolute position at the borders, but unreliably. Remedy: add the coordinates as two extra input channels (**CoordConv**), positional embeddings, or a dense head that keeps the spatial layout.
-- **No spatial structure.** Tabular data (columns of a claims table: age, premium, number of claims) have no neighbourhood: the column order is arbitrary, so locality and weight sharing are meaningless. Use gradient boosting or an MLP ([ML note 07](../machine_learning/07_bagging_random_forest_boosting.qmd), [NN note 00](00_neural_networks_mlp.qmd)).
+- **No spatial structure.** Tabular data (columns of a claims table: age, premium, number of claims) have no neighbourhood: the column order is arbitrary, so locality and weight sharing are meaningless. Use gradient boosting or an MLP ([ML note 07](../machine_learning/07_bagging_random_forest_boosting.html), [NN note 00](00_neural_networks_mlp.html)).
 - **Long-range dependencies**, where far-apart parts of the image must be compared early: a CNN needs many layers to connect them; attention (vision transformers, NN note 05) connects them in one layer.
 
 **A test of the locality assumption.** Scramble the pixels of every image with the same fixed permutation. The information is unchanged, and an MLP, which ignores the order of its inputs, is unaffected; a CNN has lost its assumption:

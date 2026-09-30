@@ -63,7 +63,7 @@
 <section class="slide">
   <h2>Underfitting and overfitting</h2>
   <div class="cols c64">
-    <div class="widget" data-fig="complexity" data-auto="d=1 :: Degree 1: too simple. High error on the training data and on new data: underfitting|d=3 :: Degree 3: follows the pattern, not the noise. The lowest error on new data|d=9 :: Degree 9: the training error keeps falling, the error on new data starts to rise|d=15 :: Degree 15: wiggles through the noise. Lowest training error, the error on new data explodes: overfitting">
+    <div class="widget" data-fig="complexity" data-auto="d=1 :: Degree 1: too simple. High error on the training data and on new data: underfitting|d=3 :: Degree 3: follows the pattern, not the noise. The lowest error on new data|d=9 :: Degree 9: the training error keeps falling, the error on new data has crept up (0.346 → 0.389)|d=15 :: Degree 15: wiggles through the noise. Lowest training error, the error on new data explodes: overfitting">
       <svg class="fig" aria-label="Polynomial fits of growing degree to noisy points, and the train and test error against the degree"></svg>
       <div class="ctl"><label for="cx-d">Polynomial degree</label><input type="range" id="cx-d" data-k="d" min="0" max="15" step="1" value="0"><span class="v" data-v="d">0</span></div>
       <div class="ro"><div class="m"><span>train RMSE</span><b data-r="tr">–</b></div><div class="m"><span>test RMSE</span><b data-r="te">–</b></div><div class="m" style="flex:1"><span>verdict</span><b data-r="vd">–</b></div></div>

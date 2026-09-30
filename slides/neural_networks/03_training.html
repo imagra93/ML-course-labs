@@ -195,7 +195,7 @@
 <section class="slide">
   <h2>Optimizers - Examples:</h2>
   <div class="cols c64">
-    <div class="widget" data-fig="optim" data-auto="lr=-1 :: small learning rate: gradient descent barely moves along w₁; Adam already arrives | lr=-0.5 :: medium: GD zig-zags across the valley, momentum smooths it, Adam and RMSProp walk straight | lr=0.1 :: large (α = 1.26): GD diverges out of the valley, the adaptive methods still converge">
+    <div class="widget" data-fig="optim" data-auto="lr=-1 :: small (α = 0.1): after 60 steps all four are still far along the valley (losses 0.37 to 0.44) | lr=-0.5 :: medium (α = 0.32): GD goes straight down, then crawls along the floor; momentum swings across; RMSProp and Adam get closest | lr=0.1 :: large (α = 1.26): GD diverges out of the valley; momentum and the adaptive methods still converge">
       <svg class="fig" aria-label="Paths of gradient descent, momentum, RMSProp and Adam on a narrow valley"></svg>
       <div class="ctl"><label for="op-lr">learning rate α (log)</label><input type="range" id="op-lr" data-k="lr" min="-2" max="0.3" step="0.05" value="-0.5"><span class="v" data-v="lr">0.316</span></div>
     </div>

@@ -152,10 +152,10 @@
     <div class="stack" style="gap:10px">
       <p><b>Proof that no line works.</b> Suppose $w_1x_1+w_2x_2+b$ is positive exactly on the blue points:</p>
       <ul class="small">
-        <li class="step">$(0,0)$ orange: $b\lt0$.</li>
+        <li class="step">$(0,0)$ orange: $b\le0$.</li>
         <li class="step">$(1,0)$ and $(0,1)$ blue: $w_1+b\gt0$ and $w_2+b\gt0$.</li>
-        <li class="step">Add them: $w_1+w_2+b\gt-b\gt0$.</li>
-        <li class="step">But $(1,1)$ is orange: $w_1+w_2+b\lt0$. Contradiction. $\blacksquare$</li>
+        <li class="step">Add them: $w_1+w_2+b\gt-b\ge0$.</li>
+        <li class="step">But $(1,1)$ is orange: $w_1+w_2+b\le0$. Contradiction. $\blacksquare$</li>
       </ul>
       <p class="step small">XOR ("one or the other, not both") is the simplest problem where a single neuron fails. Two ways out: <b>invent new features</b> by hand, or <b>let the network learn them</b>.</p>
     </div>
@@ -510,7 +510,7 @@
       <p class="step">Put a bump of height $f(\text{centre})$ on each small interval and add them: the output layer does the adding. More units, finer bumps.</p>
       <p class="step why">It says such weights <b>exist</b>, not that gradient descent finds them, nor how many units are needed. In practice, depth is far more efficient than width.</p>
     </div>
-    <div class="widget" data-fig="ua" data-auto="n=1 :: one bump: a flat step | n=4 :: four bumps: the shape appears | n=12 :: twelve bumps (24 hidden units) | n=30 :: thirty bumps: almost exact">
+    <div class="widget" data-fig="ua" data-auto="n=1 :: one bump: a flat step | n=4 :: four bumps: the shape appears | n=12 :: twelve bumps (24 hidden units) | n=30 :: thirty bumps (60 hidden units): close to the curve, except at the two ends">
       <svg class="fig" aria-label="A curve approximated by a sum of sigmoid bumps"></svg>
       <div class="ctl"><label for="ua-n">bumps</label><input type="range" id="ua-n" data-k="n" min="1" max="30" step="1" value="4"><span class="v" data-v="n">4</span></div>
       <div class="ro"><div class="m"><span>hidden units used</span><b data-r="h">–</b></div></div>

@@ -330,7 +330,7 @@ m.fc = nn.Linear(m.fc.in_features, n_classes)</pre>
       <p class="small">so the backbone receives gradient from every task. Benefits: one forward pass for three outputs, and each task acts as a regularizer for the others.</p>
     </div>
     <div class="stack" style="gap:6px">
-      <p class="small"><b>The catch: loss scales.</b> At the start the eye MSE (coordinates in $[0,1]$) is about $10^{-4}$, the gender BCE about $0.69$, the age MSE (in years²) about $73$. With all $\lambda_k=1$ the age term dominates and the eyes are not trained at all.</p>
+      <p class="small"><b>The catch: loss scales.</b> At the start the eye MSE (coordinates in $[0,1]$) is about $6\cdot10^{-5}$, the gender BCE about $0.69$, the age MSE (in years²) about $73$. With all $\lambda_k=1$ the age term dominates and the eyes are not trained at all.</p>
       <p class="small"><b>The fix</b>: standardize each regression target, $z=(y-\mu)/\sigma$ with training-set statistics, so every loss starts near 1. For an MSE this is the same as choosing $\lambda=1/\sigma^2$.</p>
       <p class="small why">It is the same recipe as a detector (next part): one backbone, a box head and a class head, a weighted sum of losses.</p>
     </div>

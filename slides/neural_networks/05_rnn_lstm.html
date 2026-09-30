@@ -118,7 +118,7 @@ out, h_T = rnn(x)        <span class="c"># x: [B, T, 100] → out: [B, T, 128]</
 <section class="slide">
   <h2>An RNN with numbers</h2>
   <div class="cols c64">
-    <div class="widget" data-fig="rnn-num" data-auto="s=1 :: x = 1 arrives: h jumps to tanh(1) = 0.76 | s=2 :: no input: h = tanh(0.5 · 0.76) = 0.36, the memory fades | s=3 :: fading further | s=4 :: x = −1: the state flips sign | s=6 :: after two quiet steps it is almost gone | w=0.95 :: with wₕ = 0.95 the memory lasts much longer">
+    <div class="widget" data-fig="rnn-num" data-auto="s=1 :: x = 1 arrives: h jumps to tanh(1) = 0.76 | s=2 :: no input: h = tanh(0.5 · 0.76) = 0.36, the memory fades | s=3 :: fading further | s=4 :: x = −1: the state flips sign | s=6 :: after two quiet steps about a quarter is left (−0.72 → −0.17) | w=0.95 :: with wₕ = 0.95 the memory lasts much longer">
       <svg class="fig" aria-label="A scalar RNN reading the sequence 1, 0, 0, -1, 0, 0 and its hidden state over time"></svg>
       <div class="ctl"><label for="rn-s">step</label><input type="range" id="rn-s" data-k="s" min="0" max="6" step="1" value="0"><span class="v" data-v="s"></span></div>
       <div class="ctl"><label for="rn-w">recurrent weight wₕ</label><input type="range" id="rn-w" data-k="w" min="0" max="1.5" step="0.05" value="0.5"><span class="v" data-v="w">0.50</span></div>
@@ -126,7 +126,7 @@ out, h_T = rnn(x)        <span class="c"># x: [B, T, 100] → out: [B, T, 128]</
     <div class="stack" style="gap:10px">
       <p class="small">A one-number RNN: $h_t=\tanh(1\cdot x_t+w_h\,h_{t-1})$, $h_0=0$, input sequence $1,0,0,-1,0,0$.</p>
       <p class="small">With $w_h=0.5$, each step without input <b>multiplies the memory by about 0.5</b>: after 5 quiet steps, $0.5^5\approx3\%$ of it is left.</p>
-      <p class="small">Try $w_h\gt1$: the state saturates near ±1 and does not forget, but a new input can no longer change it. Only a narrow range in between works: the core problem of plain RNNs.</p>
+      <p class="small">Try $w_h\gt1$: the state does not forget, but it is pulled back to a fixed point (0.86 for $w_h=1.5$): the input $-1$ lowers it (0.84 → 0.25) but cannot flip its sign. Only a narrow range in between works: the core problem of plain RNNs.</p>
       <p class="why">The same multiplication by $w_h$ happens to the <b>gradient</b> going backward in time.</p>
     </div>
   </div>

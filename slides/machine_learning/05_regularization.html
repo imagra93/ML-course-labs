@@ -162,7 +162,7 @@
     <p class="small">Minimizing $J+\lambda R$ is the same as minimizing $J$ subject to $R(\bth)\le t$. The solution (green) is where the contours of $J$ <b>first touch</b> the region. The L1 diamond has <b>corners on the axes</b>, so it usually touches at a corner, where $\theta_2=0$.</p>
     <div class="stack">
       <p class="small"><b>Elastic Net:</b> $\ \lambda\Big[\rho\norm{\bth}_1+\frac{1-\rho}{2}\norm{\bth}_2^2\Big],\ \rho\in[0,1]$.</p>
-      <p class="small">Lasso keeps one of a group of correlated features at random and drops the others. The L2 part makes them share the weight; the L1 part still gives sparsity.</p>
+      <p class="small">Lasso is unstable on correlated features: it keeps one of near-duplicates arbitrarily, or splits the weight erratically. The L2 part makes them share the weight; the L1 part still gives sparsity.</p>
     </div>
   </div>
 </section>
@@ -255,7 +255,7 @@
     <tr><td>coefficients jump between runs, odd signs</td><td>collinearity</td><td>check the VIF (next slide); drop or combine features; Ridge</td></tr>
     <tr><td>residuals show a curve</td><td>non-linearity</td><td>add transforms ($x^2$, $\log x$, splines)</td></tr>
     <tr><td>residuals fan out</td><td>heteroscedasticity</td><td>model $\log y$; weighted least squares</td></tr>
-    <tr><td>a skewed target (prices, claim costs)</td><td>large errors on the expensive cases</td><td>fit $\log y$, then convert the predictions back with $e^{\hat y}$</td></tr>
+    <tr><td>a skewed target (prices, claim costs)</td><td>large errors on the expensive cases</td><td>fit $\log y$; $e^{\hat y}$ is the median, so multiply by $e^{\hat\sigma^2/2}$ for the mean</td></tr>
   </table>
   <p class="why">First compare train and validation errors: that single check tells you whether to add complexity or to remove it.</p>
 </section>

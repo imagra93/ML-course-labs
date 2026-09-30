@@ -8,9 +8,9 @@ format:
           <script src="../../slides/neural_networks/assets/fig-nn-intro.js"></script>
 ---
 
-A neural network is a stack of logistic-regression-like units whose **features are learned** instead of hand-designed. This note builds the model from a single neuron up to the multilayer perceptron (MLP), computes its forward pass by hand, chooses its output layer and loss by maximum likelihood, and ends with two long practical sections: what an MLP assumes about your data (and how to check it), and what to do in the situations people hit when they first train one. How to compute the gradients (backpropagation) is [NN note 01](01_backpropagation.qmd); how to train well (mini-batches, optimisers, regularisation) is [NN note 02](02_training_optimization_regularization.qmd).
+A neural network is a stack of logistic-regression-like units whose **features are learned** instead of hand-designed. This note builds the model from a single neuron up to the multilayer perceptron (MLP), computes its forward pass by hand, chooses its output layer and loss by maximum likelihood, and ends with two long practical sections: what an MLP assumes about your data (and how to check it), and what to do in the situations people hit when they first train one. How to compute the gradients (backpropagation) is [NN note 01](01_backpropagation.html); how to train well (mini-batches, optimisers, regularisation) is [NN note 02](02_training_optimization_regularization.html).
 
-**What you need.** Linear regression and gradient descent ([ML note 01](../machine_learning/01_linear_regression.qmd)), logistic regression and the cross-entropy loss ([ML note 02](../machine_learning/02_logistic_regression.qmd)), generalised linear models ([ML note 02b](../machine_learning/02b_generalized_linear_models.qmd)), feature scaling and hand-made features ([ML note 03](../machine_learning/03_regularization_inputs_assumptions.qmd)) and softmax regression ([ML note 04](../machine_learning/04_softmax_regression.qmd)). Every result used from those notes is restated where it is needed.
+**What you need.** Linear regression and gradient descent ([ML note 01](../machine_learning/01_linear_regression.html)), logistic regression and the cross-entropy loss ([ML note 02](../machine_learning/02_logistic_regression.html)), generalised linear models ([ML note 02b](../machine_learning/02b_generalized_linear_models.html)), feature scaling and hand-made features ([ML note 03](../machine_learning/03_regularization_inputs_assumptions.html)) and softmax regression ([ML note 04](../machine_learning/04_softmax_regression.html)). Every result used from those notes is restated where it is needed.
 
 **After this note you can**
 
@@ -54,11 +54,11 @@ All of these are built from the **same few blocks**. The slides are organised in
 | Chapter | Content | Note | Labs |
 |---|---|---|---|
 | 1 · Neurons and layers | a neuron is a logistic regression; stack them into an MLP; why the non-linearity matters | this note | |
-| 2 · Forward and backward | how the prediction is computed and how every weight gets its gradient (backpropagation), with numbers | [NN note 01](01_backpropagation.qmd) | Lab 7: an MLP from scratch in NumPy |
-| 3 · Training | mini-batches, optimisers (momentum, Adam), learning-rate schedules, dropout, BatchNorm, the layer zoo | [NN note 02](02_training_optimization_regularization.qmd) | Labs 8, 9 |
-| 4 · Images: CNNs | convolutions, pooling, architectures, transfer learning, segmentation, detection | [NN note 03](03_cnn_transfer_multitask.qmd) | Labs 10, 12, 13, 10b |
-| 5 · Sequences | embeddings, RNNs, LSTMs | [NN note 04](04_rnn_lstm.qmd) | Lab 11 |
-| 6 · Attention and transformers | every token looks at every other token; GPT, decoding, RAG | [NN notes 05](05_attention_transformers.qmd), [06](06_embeddings_rag.qmd) | Labs 14, 15 |
+| 2 · Forward and backward | how the prediction is computed and how every weight gets its gradient (backpropagation), with numbers | [NN note 01](01_backpropagation.html) | Lab 7: an MLP from scratch in NumPy |
+| 3 · Training | mini-batches, optimisers (momentum, Adam), learning-rate schedules, dropout, BatchNorm, the layer zoo | [NN note 02](02_training_optimization_regularization.html) | Labs 8, 9 |
+| 4 · Images: CNNs | convolutions, pooling, architectures, transfer learning, segmentation, detection | [NN note 03](03_cnn_transfer_multitask.html) | Labs 10, 12, 13, 10b |
+| 5 · Sequences | embeddings, RNNs, LSTMs | [NN note 04](04_rnn_lstm.html) | Lab 11 |
+| 6 · Attention and transformers | every token looks at every other token; GPT, decoding, RAG | [NN notes 05](05_attention_transformers.html), [06](06_embeddings_rag.html) | Labs 14, 15 |
 
 ## 2. Why "neural"? The biological analogy
 
@@ -72,7 +72,7 @@ The power does not come from any single unit but from **connecting many of them 
 
 ## 3. Problem statement
 
-The problem is the supervised learning problem of [ML note 00](../machine_learning/00_supervised_learning.qmd): given a training set $\{(\mathbf{x}^{(i)}, y^{(i)})\}_{i=1}^m$, learn a function $h$ so that $h(\mathbf{x})$ is a "good" predictor of $y$, where **"good" means a small loss** $J$ averaged over the examples.
+The problem is the supervised learning problem of [ML note 00](../machine_learning/00_supervised_learning.html): given a training set $\{(\mathbf{x}^{(i)}, y^{(i)})\}_{i=1}^m$, learn a function $h$ so that $h(\mathbf{x})$ is a "good" predictor of $y$, where **"good" means a small loss** $J$ averaged over the examples.
 
 - $y$ continuous → regression (a claim cost);
 - $y$ discrete → classification (fraud / not fraud, which car part);
@@ -96,7 +96,7 @@ $$
 \hat y = w_1x_1+\dots+w_nx_n+b = \mathbf{w}^\top\mathbf{x}+b .
 $$
 
-New names for old things: the **weights** $\mathbf{w}$ are the $\theta_1,\dots,\theta_n$ of the ML notes and the **bias** $b$ is $\theta_0$. Trained by minimising the mean squared error with gradient descent, it is exactly the linear regression of [ML note 01](../machine_learning/01_linear_regression.qmd). Every neural network is built from this unit plus **one extra ingredient**: a non-linear **activation** applied to $z = \mathbf{w}^\top\mathbf{x}+b$.
+New names for old things: the **weights** $\mathbf{w}$ are the $\theta_1,\dots,\theta_n$ of the ML notes and the **bias** $b$ is $\theta_0$. Trained by minimising the mean squared error with gradient descent, it is exactly the linear regression of [ML note 01](../machine_learning/01_linear_regression.html). Every neural network is built from this unit plus **one extra ingredient**: a non-linear **activation** applied to $z = \mathbf{w}^\top\mathbf{x}+b$.
 
 ```{=html}
 <div class="widget"><svg class="fig" data-fig="lin-neuron" aria-label="A single neuron: inputs times weights, a sum plus bias, and no activation"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#6">slide 6</a> of the Neural Networks deck.</p></div>
@@ -110,7 +110,7 @@ $$
 a = g(z), \qquad z = \mathbf{x}^\top\mathbf{w} + b = \sum_{j=1}^n w_jx_j + b .
 $$
 
-With $g = \sigma$ (sigmoid) and the cross-entropy loss, a single neuron **is** logistic regression ([ML note 02](../machine_learning/02_logistic_regression.qmd)): $\mathbf{w}$ plays the role of $(\theta_1,\dots,\theta_n)$ and $b$ of $\theta_0$,
+With $g = \sigma$ (sigmoid) and the cross-entropy loss, a single neuron **is** logistic regression ([ML note 02](../machine_learning/02_logistic_regression.html)): $\mathbf{w}$ plays the role of $(\theta_1,\dots,\theta_n)$ and $b$ of $\theta_0$,
 
 $$
 \hat y = \sigma(\mathbf{w}^\top\mathbf{x}+b) = \frac{1}{1+e^{-(\mathbf{w}^\top\mathbf{x}+b)}} .
@@ -179,7 +179,7 @@ $$
 z_k = \mathbf{w}_k^\top\mathbf{x} + b_k, \qquad k = 1,\dots,K,
 $$
 
-and the **softmax** turns the scores into probabilities, $\hat y_k = e^{z_k}/\sum_{j=1}^K e^{z_j}$ (section 20). All the weights together form a matrix whose column $k$ is $\mathbf{w}_k$: $\mathbf{z} = \mathbf{x}\mathbf{W} + \mathbf{b}$ with $\mathbf{W}\in\mathbb{R}^{n\times K}$. This is the **softmax regression** of [ML note 04](../machine_learning/04_softmax_regression.qmd).
+and the **softmax** turns the scores into probabilities, $\hat y_k = e^{z_k}/\sum_{j=1}^K e^{z_j}$ (section 20). All the weights together form a matrix whose column $k$ is $\mathbf{w}_k$: $\mathbf{z} = \mathbf{x}\mathbf{W} + \mathbf{b}$ with $\mathbf{W}\in\mathbb{R}^{n\times K}$. This is the **softmax regression** of [ML note 04](../machine_learning/04_softmax_regression.html).
 
 **Still linear.** The network predicts class $k$ over class $j$ when $\hat y_k > \hat y_j$:
 
@@ -253,7 +253,7 @@ ax.set_xlabel("$x_1$"); ax.set_ylabel("$x_2$"); plt.tight_layout(); plt.show()
 
 ## 7. Fix 1: engineer new features by hand
 
-In [ML note 03](../machine_learning/03_regularization_inputs_assumptions.qmd) non-linear data was fixed by **adding features by hand**. Two examples:
+In [ML note 03](../machine_learning/03_regularization_inputs_assumptions.html) non-linear data was fixed by **adding features by hand**. Two examples:
 
 - **Circle data.** Class 1 lies inside the circle $x_1^2 + x_2^2 < r^2$, and no line separates the classes in the $(x_1, x_2)$ plane. With the new features $u_1 = x_1^2$, $u_2 = x_2^2$ the border becomes $u_1 + u_2 = r^2$, a **straight line** in the $(u_1, u_2)$ plane, so logistic regression on $(u_1, u_2)$ solves it.
 - **XOR.** The product feature $x_1x_2$ does the job. On the four corners the formula $\hat y = x_1 + x_2 - 2x_1x_2$, linear in the features $(x_1, x_2, x_1x_2)$, is exactly XOR:
@@ -364,7 +364,7 @@ $$
 \hat y = \sigma(\mathbf{a}^{[2]}\mathbf{W}^{[3]}+b^{[3]}).
 $$
 
-The figure shows such a network trained on the circle data; each heat map is one unit's value over the whole plane. Layer 1 draws **lines** (soft walls), layer 2 combines lines into **curved regions**, and the output combines regions into a closed decision region. More layers give more complex shapes with fewer units. On images the same happens with pixels → edges → textures → parts → objects ([NN note 03](03_cnn_transfer_multitask.qmd)). That is the **deep** in deep learning.
+The figure shows such a network trained on the circle data; each heat map is one unit's value over the whole plane. Layer 1 draws **lines** (soft walls), layer 2 combines lines into **curved regions**, and the output combines regions into a closed decision region. More layers give more complex shapes with fewer units. On images the same happens with pixels → edges → textures → parts → objects ([NN note 03](03_cnn_transfer_multitask.html)). That is the **deep** in deep learning.
 
 ```{=html}
 <div class="widget"><svg class="fig" data-fig="deep-feats" style="max-height:300px" aria-label="The four units of layer 1 draw soft lines, the four units of layer 2 combine them into curved regions, and the output is a closed region"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#14">slide 14</a> of the Neural Networks deck.</p></div>
@@ -377,9 +377,9 @@ All the networks of the course are layers of **weighted sums + non-linearities**
 | Network | Input | Assumed structure | Note |
 |---|---|---|---|
 | MLP | a vector of numbers | none: every unit sees every input | this note, NN notes 01–02 |
-| CNN | an image (a grid) | nearby pixels go together; a pattern can appear anywhere | [NN note 03](03_cnn_transfer_multitask.qmd) |
-| RNN / LSTM | a sequence | order matters; keep a running memory | [NN note 04](04_rnn_lstm.qmd) |
-| Transformer | a sequence of tokens | any token can relate to any other, all in parallel | [NN note 05](05_attention_transformers.qmd) |
+| CNN | an image (a grid) | nearby pixels go together; a pattern can appear anywhere | [NN note 03](03_cnn_transfer_multitask.html) |
+| RNN / LSTM | a sequence | order matters; keep a running memory | [NN note 04](04_rnn_lstm.html) |
+| Transformer | a sequence of tokens | any token can relate to any other, all in parallel | [NN note 05](05_attention_transformers.html) |
 
 ```{=html}
 <div class="widget"><svg class="fig" data-fig="nn-zoo" style="max-height:290px" aria-label="Four architectures side by side: a fully connected MLP, a CNN sliding a filter over an image, an RNN passing a state along a sequence, and a transformer connecting every pair of tokens"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#15">slide 15</a> of the Neural Networks deck.</p></div>
@@ -387,7 +387,7 @@ All the networks of the course are layers of **weighted sums + non-linearities**
 
 ## 12. The forward pass, with numbers
 
-The **forward pass** feeds the input through the layers, left to right, storing every intermediate value. The tiny 2-2-1 network used here and in [NN note 01](01_backpropagation.qmd) has a tanh hidden layer and a sigmoid output, one example $\mathbf{x} = (1, 2)$ with label $y = 1$, and weights chosen by hand (they would normally be random):
+The **forward pass** feeds the input through the layers, left to right, storing every intermediate value. The tiny 2-2-1 network used here and in [NN note 01](01_backpropagation.html) has a tanh hidden layer and a sigmoid output, one example $\mathbf{x} = (1, 2)$ with label $y = 1$, and weights chosen by hand (they would normally be random):
 
 $$
 \mathbf{W}^{[1]} = \begin{pmatrix}0.5 & -0.3\\ 0.2 & 0.4\end{pmatrix}, \quad
@@ -409,7 +409,7 @@ J &= -\log\hat y = -\log 0.633 = 0.458 && \text{cross-entropy with } y = 1
 \end{aligned}
 $$
 
-The two numbers $(0.762, 0.380)$ are the **learned features** of this example. The network says "63 % chance of class 1": not terrible, not great. [NN note 01](01_backpropagation.qmd) computes how to change each of the 9 parameters to lower the loss.
+The two numbers $(0.762, 0.380)$ are the **learned features** of this example. The network says "63 % chance of class 1": not terrible, not great. [NN note 01](01_backpropagation.html) computes how to change each of the 9 parameters to lower the loss.
 
 **Try it.** Step through the forward pass: the linear step gives $\mathbf{z}^{[1]} = (1.000, 0.400)$, the tanh gives $(0.762, 0.380)$, the output logit is $0.543$, the prediction $0.633$ and the loss $0.458$.
 
@@ -500,7 +500,7 @@ print("lin(x) equals x @ weight.T + bias:", torch.allclose(lin(xb), xb @ lin.wei
 
 ## 14. Activation functions and their derivatives
 
-Activation layers apply a **non-linearity**, element by element. They must be fast to compute and have fast-to-compute derivatives, because gradient descent needs $g'$ at every unit ([NN note 01](01_backpropagation.qmd)).
+Activation layers apply a **non-linearity**, element by element. They must be fast to compute and have fast-to-compute derivatives, because gradient descent needs $g'$ at every unit ([NN note 01](01_backpropagation.html)).
 
 | Name | $g(z)$ | $g'(z)$ | Range | Use it for |
 |---|---|---|---|---|
@@ -556,7 +556,7 @@ with maximum $1$ at $z = 0$. *Proof that $\tanh(z) = 2\sigma(2z) - 1$:* $2\sigma
 <div class="widget"><svg class="fig" data-fig="act-deriv" style="max-height:215px" aria-label="Sigmoid, tanh and ReLU with their derivatives"></svg><div class="legend" style="justify-content:center"><span><i style="background:var(--blue)"></i>function g(z)</span><span><i style="background:var(--red)"></i>derivative g′(z)</span></div><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#19">slide 19</a> of the Neural Networks deck.</p></div>
 ```
 
-**Saturation.** Where the curve is flat ($|z|$ large for sigmoid/tanh), $g'(z)\approx0$. In backpropagation every layer multiplies the gradient by $g'$ ([NN note 01](01_backpropagation.qmd)), so flat regions stop learning. ReLU's derivative is exactly 1 for $z>0$.
+**Saturation.** Where the curve is flat ($|z|$ large for sigmoid/tanh), $g'(z)\approx0$. In backpropagation every layer multiplies the gradient by $g'$ ([NN note 01](01_backpropagation.html)), so flat regions stop learning. ReLU's derivative is exactly 1 for $z>0$.
 
 ```{python}
 from scipy.stats import norm
@@ -641,7 +641,7 @@ We can learn non-linear functions **without feature engineering**.
 <div class="widget"><svg class="fig" data-fig="hidden-feats" style="max-height:330px" aria-label="The response of each of four hidden units over the plane, and the output that combines them"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#22">slide 22</a> of the Neural Networks deck.</p></div>
 ```
 
-**A trained MLP on the XOR data.** Trained with backpropagation ([NN note 01](01_backpropagation.qmd), here via scikit-learn's `MLPClassifier`). Each hidden unit learns a line, and the output combines them into a non-linear boundary.
+**A trained MLP on the XOR data.** Trained with backpropagation ([NN note 01](01_backpropagation.html), here via scikit-learn's `MLPClassifier`). Each hidden unit learns a line, and the output combines them into a non-linear boundary.
 
 ```{python}
 from sklearn.neural_network import MLPClassifier
@@ -665,7 +665,7 @@ Two hidden units are enough for the four XOR corner points (section 8), but not 
 
 - **Machine learning** (the ML notes): we design features ($x_1^2$, $x_1x_2$, $\sin x$, …), then fit a simple model on them.
 - **Neural networks**: one hidden layer learns a few features from the raw inputs.
-- **Deep learning**: many layers learn features of features (edges → shapes → objects, [NN note 03](03_cnn_transfer_multitask.qmd)), and feature extraction and classification are learned **together, end to end**.
+- **Deep learning**: many layers learn features of features (edges → shapes → objects, [NN note 03](03_cnn_transfer_multitask.html)), and feature extraction and classification are learned **together, end to end**.
 
 ```{=html}
 <div class="widget"><svg class="fig" data-fig="pipeline" aria-label="Traditional machine learning with hand-made features versus deep learning that learns them"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#23">slide 23</a> of the Neural Networks deck.</p></div>
@@ -686,7 +686,7 @@ The hidden layers are generic. The **output layer and loss are chosen by the tas
 | Regression, values in 0–1 | box coordinates | sigmoid | (bounded) | MSE or BCE | `MSELoss` |
 | Counts | number of claims per policy | exponential, $\hat y = e^{z}$ | Poisson | Poisson NLL $\frac1m\sum(\hat y - y\log\hat y)$ | `PoissonNLLLoss` |
 
-Each pair is "minus the log-likelihood" of a distribution. Restating the derivations of ML notes [01](../machine_learning/01_linear_regression.qmd), [02](../machine_learning/02_logistic_regression.qmd), [02b](../machine_learning/02b_generalized_linear_models.qmd) and [04](../machine_learning/04_softmax_regression.qmd) for one example (they add up over independent examples):
+Each pair is "minus the log-likelihood" of a distribution. Restating the derivations of ML notes [01](../machine_learning/01_linear_regression.html), [02](../machine_learning/02_logistic_regression.html), [02b](../machine_learning/02b_generalized_linear_models.html) and [04](../machine_learning/04_softmax_regression.html) for one example (they add up over independent examples):
 
 $$
 \begin{aligned}
@@ -731,7 +731,7 @@ $$
 \end{aligned}
 $$
 
-"**Prediction minus target**": large when the network is confidently wrong, about 0 when it is right. For a positive example ($y = 1$) the slope is $\sigma(z) - 1$: at $z = -3$ (wrong and confident) it is $\sigma(-3) - 1 = -0.953$, close to $-1$; at $z = 3$ it is $-0.047$, close to 0. With $m$ examples and the averaged loss $J = \frac1m\sum_i L^{(i)}$, each example contributes $\frac1m(\hat y^{(i)} - y^{(i)})$. The same happens for softmax + cross-entropy (section 20) and for a linear output + $\frac12$MSE; [NN note 01](01_backpropagation.qmd) starts from here.
+"**Prediction minus target**": large when the network is confidently wrong, about 0 when it is right. For a positive example ($y = 1$) the slope is $\sigma(z) - 1$: at $z = -3$ (wrong and confident) it is $\sigma(-3) - 1 = -0.953$, close to $-1$; at $z = 3$ it is $-0.047$, close to 0. With $m$ examples and the averaged loss $J = \frac1m\sum_i L^{(i)}$, each example contributes $\frac1m(\hat y^{(i)} - y^{(i)})$. The same happens for softmax + cross-entropy (section 20) and for a linear output + $\frac12$MSE; [NN note 01](01_backpropagation.html) starts from here.
 
 ```{=html}
 <div class="widget"><svg class="fig" data-fig="bce-grad" aria-label="The cross-entropy loss as a function of the logit for a positive example, and its slope sigma of z minus one"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#27">slide 27</a> of the Neural Networks deck.</p></div>
@@ -751,7 +751,7 @@ $$
 -\big[y\log\sigma(z) + (1-y)\log(1-\sigma(z))\big] = \log(1+e^{z}) - yz = \max(z, 0) - yz + \log\big(1 + e^{-|z|}\big),
 $$
 
-and the last form never overflows. *Proof of the first equality:* $\log\sigma(z) = -\log(1+e^{-z})$ and $\log(1-\sigma(z)) = \log\sigma(-z) = -z - \log(1+e^{-z})$, so the bracket is $-\log(1+e^{-z}) - (1-y)z$, and $\log(1+e^{-z}) + z = \log\big(e^{z}(1+e^{-z})\big) = \log(1+e^{z})$. *Proof of the second:* if $z\ge0$, $\log(1+e^z) = \log\big(e^z(e^{-z}+1)\big) = z + \log(1+e^{-z})$; if $z<0$ it is $\log(1+e^{-|z|})$ directly; both cases are $\max(z,0) + \log(1+e^{-|z|})$. The same applies to softmax: `CrossEntropyLoss` takes raw logits; `NLLLoss` needs `log_softmax` first. [NN note 01](01_backpropagation.qmd) shows what goes wrong numerically when you apply the sigmoid first.
+and the last form never overflows. *Proof of the first equality:* $\log\sigma(z) = -\log(1+e^{-z})$ and $\log(1-\sigma(z)) = \log\sigma(-z) = -z - \log(1+e^{-z})$, so the bracket is $-\log(1+e^{-z}) - (1-y)z$, and $\log(1+e^{-z}) + z = \log\big(e^{z}(1+e^{-z})\big) = \log(1+e^{z})$. *Proof of the second:* if $z\ge0$, $\log(1+e^z) = \log\big(e^z(e^{-z}+1)\big) = z + \log(1+e^{-z})$; if $z<0$ it is $\log(1+e^{-|z|})$ directly; both cases are $\max(z,0) + \log(1+e^{-|z|})$. The same applies to softmax: `CrossEntropyLoss` takes raw logits; `NLLLoss` needs `log_softmax` first. [NN note 01](01_backpropagation.html) shows what goes wrong numerically when you apply the sigmoid first.
 
 ## 20. Softmax and its gradient
 
@@ -822,7 +822,7 @@ a one-hidden-layer network with $2N$ sigmoid units (two per bump) whose output w
 **Try it.** The target is $f(x) = \sin(2\pi x) + 0.5x$ and the bumps use $k = 40N$. One bump is a flat step; with 4 bumps the shape appears; 12 bumps use 24 hidden units; 30 bumps follow the curve closely away from the two ends (at $x = 0$ and $x = 1$ the outermost sigmoids are only half switched on, $\sigma(0) = \frac12$). The cell below measures it: on $[0.05, 0.95]$ the maximum error falls from 0.878 (1 bump) to 0.481, 0.204 and 0.082 (30 bumps, 60 units), while at the ends it stays large.
 
 ```{=html}
-<div class="widget" data-fig="ua" data-auto="n=1 :: one bump: a flat step | n=4 :: four bumps: the shape appears | n=12 :: twelve bumps (24 hidden units) | n=30 :: thirty bumps: almost exact">
+<div class="widget" data-fig="ua" data-auto="n=1 :: one bump: a flat step | n=4 :: four bumps: the shape appears | n=12 :: twelve bumps (24 hidden units) | n=30 :: thirty bumps (60 hidden units): close to the curve, except at the two ends">
       <svg class="fig" aria-label="A curve approximated by a sum of sigmoid bumps"></svg>
       <div class="ctl"><label for="ua-n">bumps</label><input type="range" id="ua-n" data-k="n" min="1" max="30" step="1" value="4"><span class="v" data-v="n">4</span></div>
       <div class="ro"><div class="m"><span>hidden units used</span><b data-r="h">–</b></div></div>
@@ -875,7 +875,7 @@ so the midpoint would also be a minimiser. But at the midpoint units $j$ and $k$
 Consequences:
 
 - There are many (equivalent) minima, plus saddle points and flat regions (section 25.2 counts them: $n!$ per layer of $n$ units).
-- The result depends on the **initialisation** and on the optimiser ([NN notes 01](01_backpropagation.qmd)–[02](02_training_optimization_regularization.qmd)); we will need better optimisers than plain gradient descent.
+- The result depends on the **initialisation** and on the optimiser ([NN notes 01](01_backpropagation.html)–[02](02_training_optimization_regularization.html)); we will need better optimisers than plain gradient descent.
 - In practice, for large networks most local minima found by stochastic gradient descent are about as good as each other; the harder problems are saddle points, plateaus and bad conditioning.
 
 ```{=html}
@@ -909,10 +909,10 @@ plt.title("The chord between two minima lies below the loss: not convex"); plt.t
 1. Start with a labelled dataset.
 2. Design an **architecture**: layers, units, activations.
 3. Decide a **loss function**, from the type of $y$ (section 18).
-4. Decide an **optimiser** ([NN note 02](02_training_optimization_regularization.qmd)).
+4. Decide an **optimiser** ([NN note 02](02_training_optimization_regularization.html)).
 5. Apply an iterative algorithm (gradient descent): **forward, loss, backward, update, repeat**.
 
-The engine of neural networks is **gradient-based optimisation**, and we no longer mention the word "convex". The first step of gradient-based optimisation is to find the **gradients**: [NN note 01](01_backpropagation.qmd).
+The engine of neural networks is **gradient-based optimisation**, and we no longer mention the word "convex". The first step of gradient-based optimisation is to find the **gradients**: [NN note 01](01_backpropagation.html).
 
 ```{=html}
 <div class="widget"><svg class="fig" data-fig="workflow" aria-label="Input, layers with weights, predictions, loss function, optimizer and weight update"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#32">slide 32</a> of the Neural Networks deck.</p></div>
@@ -930,7 +930,7 @@ An MLP assumes much less than linear regression: no linearity, no Gaussian noise
 | 4. Inputs on comparable, moderate scales | saturated units, tiny gradients, ill-conditioned optimisation: slow or stuck training | per-feature mean and std; fraction of saturated units at initialisation; condition number | standardise with training statistics; log-transform heavy tails |
 | 5. The output layer and loss match the target type | slow learning when saturated (extra $g'$ factor); invalid or miscalibrated predictions | type and range of $y$; range of the predictions; mean prediction ≈ mean target | use the canonical pair: linear + MSE, sigmoid + BCE, softmax + CE, exp + Poisson |
 
-The demonstrations below train small PyTorch networks with the helpers of the next cell. `fit` minimises the loss with full-batch Adam (a variant of gradient descent with an adaptive step per parameter, [NN note 02](02_training_optimization_regularization.qmd)) or plain gradient descent; for now read it as "minimise $J$ for a number of steps". The network's last layer is linear: it returns **logits**, and the loss function applies the sigmoid or softmax itself (section 19).
+The demonstrations below train small PyTorch networks with the helpers of the next cell. `fit` minimises the loss with full-batch Adam (a variant of gradient descent with an adaptive step per parameter, [NN note 02](02_training_optimization_regularization.html)) or plain gradient descent; for now read it as "minimise $J$ for a number of steps". The network's last layer is linear: it returns **logits**, and the loss function applies the sigmoid or softmax itself (section 19).
 
 ```{python}
 torch.set_num_threads(1)                    # tiny networks: one thread is fastest and gives reproducible timings
@@ -1074,7 +1074,7 @@ plt.tight_layout(); plt.show()
 
 **Why it matters.** Between training points an MLP with smooth activations interpolates smoothly: that is its inductive bias, and it is what makes it generalise. The universal approximation construction of section 21 needs about one pair of units per "wiggle" of $f$, so the units and the data needed grow with how much $f$ oscillates. And gradient descent fits the **low frequencies first** (the "spectral bias" of neural networks), so with a fixed training budget the wiggly part of $f$ is simply not learned. Jumps, such as the thresholds common in tabular data ("drivers under 25"), get rounded off. The damage is bias (underfitting) of the non-smooth part and slow training.
 
-**How to check.** Plot the residuals $y - \hat y$ against each input: structure left in the residuals is signal the network missed. Watch the training loss: a long plateau followed by slow progress is typical of a high-frequency target. Compare with a model that handles jumps and interactions natively (gradient boosting, [ML note 07](../machine_learning/07_bagging_random_forest_boosting.qmd)): a large gap in its favour suggests a non-smooth target (section 25.5).
+**How to check.** Plot the residuals $y - \hat y$ against each input: structure left in the residuals is signal the network missed. Watch the training loss: a long plateau followed by slow progress is typical of a high-frequency target. Compare with a model that handles jumps and interactions natively (gradient boosting, [ML note 07](../machine_learning/07_bagging_random_forest_boosting.html)): a large gap in its favour suggests a non-smooth target (section 25.5).
 
 The same network, data size, noise and training budget, for a smooth target $\sin(\pi x)$ and a wiggly one $\sin(16\pi x)$ (16 periods) on $[-1, 1]$, 300 noisy points (noise standard deviation 0.1):
 
@@ -1125,7 +1125,7 @@ $$
 P = \sum_{l=1}^{L}(n_{l-1}+1)\,n_l .
 $$
 
-**Why it matters.** With $P$ much larger than $m$, a network can fit the training set exactly, noise included: training loss near 0, validation loss high. That is **variance** (overfitting), the same bias–variance trade-off as in [ML note 03](../machine_learning/03_regularization_inputs_assumptions.qmd), and it hurts predictions directly. Caveat: $P$ is only a rough guide. Large networks trained with early stopping or weight decay often generalise better than small ones ("double descent"), because gradient descent from a small initialisation prefers simple functions. The number that decides is the **validation loss**, not $P$.
+**Why it matters.** With $P$ much larger than $m$, a network can fit the training set exactly, noise included: training loss near 0, validation loss high. That is **variance** (overfitting), the same bias–variance trade-off as in [ML note 03](../machine_learning/03_regularization_inputs_assumptions.html), and it hurts predictions directly. Caveat: $P$ is only a rough guide. Large networks trained with early stopping or weight decay often generalise better than small ones ("double descent"), because gradient descent from a small initialisation prefers simple functions. The number that decides is the **validation loss**, not $P$.
 
 **Width vs depth.** For a fixed parameter budget, depth buys expressiveness (section 25.1), width buys easier optimisation. Some counts for 20 inputs and 1 output:
 
@@ -1169,7 +1169,7 @@ axes[0].set_ylabel("MSE (standardised $y$)")   # m = 100 training MSE keeps fall
 
 With 100 examples the training MSE goes to 0.000 while the validation MSE stays at 0.243: the network has memorised the noise, and that gap is the overfitting. Weight decay closes part of it (validation 0.147). With 1000 examples the validation MSE reaches 0.059 at step 450 and then creeps up to 0.087 as the network starts fitting noise too: early stopping at the best step would keep 0.059, about four times better than with 100 examples.
 
-**What to do**, in order of preference: (1) **more data**, the only remedy that reduces variance without adding bias; (2) **early stopping**: keep the weights of the step with the lowest validation loss (the "best val" column); (3) **weight decay** (the L2 penalty of [ML note 03](../machine_learning/03_regularization_inputs_assumptions.qmd), here `weight_decay=0.01`), dropout and data augmentation ([NN note 02](02_training_optimization_regularization.qmd)); (4) a smaller network. Each of (2)–(4) trades variance for some bias; the validation curve tells you how much.
+**What to do**, in order of preference: (1) **more data**, the only remedy that reduces variance without adding bias; (2) **early stopping**: keep the weights of the step with the lowest validation loss (the "best val" column); (3) **weight decay** (the L2 penalty of [ML note 03](../machine_learning/03_regularization_inputs_assumptions.html), here `weight_decay=0.01`), dropout and data augmentation ([NN note 02](02_training_optimization_regularization.html)); (4) a smaller network. Each of (2)–(4) trades variance for some bias; the validation curve tells you how much.
 
 ### 24.4 Inputs on comparable, moderate scales
 
@@ -1177,7 +1177,7 @@ With 100 examples the training MSE goes to 0.000 while the validation MSE stays 
 
 **Why it matters.** Two mechanisms.
 
-*Saturation.* The pre-activation of hidden unit $j$ for one example is $z_j = \sum_k x_kW_{kj} + b_j$. With independent random weights of mean 0 and variance $s^2$ (the initialisation, [NN note 01](01_backpropagation.qmd)) and $b_j = 0$,
+*Saturation.* The pre-activation of hidden unit $j$ for one example is $z_j = \sum_k x_kW_{kj} + b_j$. With independent random weights of mean 0 and variance $s^2$ (the initialisation, [NN note 01](01_backpropagation.html)) and $b_j = 0$,
 
 $$
 \begin{aligned}
@@ -1188,7 +1188,7 @@ $$
 
 Initialisations choose $s^2\approx 1/n$ so that $z_j$ has variance about 1 **when each $x_k$ has variance about 1**. If a feature is an amount in euros ($x_k\sim 1000$), then $|z_j|$ is in the hundreds, $\tanh(z_j) = \pm1$ and $\tanh'(z_j)\approx0$ (section 14): the unit is saturated from the first step, and every gradient that passes through it is multiplied by almost 0.
 
-*Conditioning.* The first layer is a linear model on $\mathbf{X}$, and the curvature of the loss along its weights is governed by $\frac1m\mathbf{X}^\top\mathbf{X}$ (restated from [ML note 01](../machine_learning/01_linear_regression.qmd): gradient descent needs $\alpha < 2/\lambda_{\max}$ and then crawls along the directions of the smallest eigenvalues, so the number of steps grows with the condition number $\kappa = \lambda_{\max}/\lambda_{\min}$). Features on wildly different scales give an astronomical $\kappa$.
+*Conditioning.* The first layer is a linear model on $\mathbf{X}$, and the curvature of the loss along its weights is governed by $\frac1m\mathbf{X}^\top\mathbf{X}$ (restated from [ML note 01](../machine_learning/01_linear_regression.html): gradient descent needs $\alpha < 2/\lambda_{\max}$ and then crawls along the directions of the smallest eigenvalues, so the number of steps grows with the condition number $\kappa = \lambda_{\max}/\lambda_{\min}$). Features on wildly different scales give an astronomical $\kappa$.
 
 **How to check.** Print each feature's mean and standard deviation. At initialisation, compute the fraction of hidden pre-activations with $|z| > 3$ (tanh, sigmoid: $\tanh'(3) = 0.0099$) and $\kappa$ of $\frac1m\mathbf{X}^\top\mathbf{X}$. The breast-cancer data (30 features measured in very different units) raw and standardised:
 
@@ -1205,7 +1205,7 @@ for name, Xx in [("raw", Xb), ("standardised", Xb_std)]:
           f"condition number of X'X/m: {ev.max() / ev.min():.1e}")
 ```
 
-With raw inputs 97 % of the hidden pre-activations are saturated before training starts; after standardising, none. Standardising also lowers the condition number from $2.2\times10^{12}$ to $1.0\times10^{5}$; what remains is due to strongly correlated features (radius, perimeter and area of the same cell nucleus), the collinearity of [ML note 03](../machine_learning/03_regularization_inputs_assumptions.qmd).
+With raw inputs 97 % of the hidden pre-activations are saturated before training starts; after standardising, none. Standardising also lowers the condition number from $2.2\times10^{12}$ to $1.0\times10^{5}$; what remains is due to strongly correlated features (radius, perimeter and area of the same cell nucleus), the collinearity of [ML note 03](../machine_learning/03_regularization_inputs_assumptions.html).
 
 Now train the same tanh network with plain gradient descent on both versions, each with the best of three learning rates (so that the comparison is fair):
 
@@ -1225,7 +1225,7 @@ plt.xlabel("gradient-descent step"); plt.ylabel("training BCE"); plt.legend(); p
 
 Gradient descent on the raw inputs only reaches a BCE of 0.482 after 500 steps (with its best learning rate, 0.001), while on the standardised inputs it reaches 0.053 (with $\alpha = 0.1$).
 
-**What to do.** (1) **Standardise** every input, $x_k\leftarrow(x_k - \mu_k)/s_k$, with the mean and standard deviation of the **training set only** (computing them on all the data leaks information from the validation set), and apply the same $\mu_k, s_k$ to new data. (2) Log-transform heavy-tailed positive features (amounts, counts) before standardising, so that a few huge values do not dominate $s_k$. (3) For regression, standardise the **target** too (section 25.3 shows what an unscaled target does). (4) Inside deep networks, normalisation layers (BatchNorm, LayerNorm, [NN note 02](02_training_optimization_regularization.qmd)) do the same for the hidden layers.
+**What to do.** (1) **Standardise** every input, $x_k\leftarrow(x_k - \mu_k)/s_k$, with the mean and standard deviation of the **training set only** (computing them on all the data leaks information from the validation set), and apply the same $\mu_k, s_k$ to new data. (2) Log-transform heavy-tailed positive features (amounts, counts) before standardising, so that a few huge values do not dominate $s_k$. (3) For regression, standardise the **target** too (section 25.3 shows what an unscaled target does). (4) Inside deep networks, normalisation layers (BatchNorm, LayerNorm, [NN note 02](02_training_optimization_regularization.html)) do the same for the hidden layers.
 
 ### 24.5 The output layer and loss match the target type
 
@@ -1310,7 +1310,7 @@ print(f"Poisson, z = {zp}, y = {yp}: finite difference {(pois(zp + eps_fd) - poi
 
 BCE recovers within 50 steps (accuracy 0.78, the level it keeps); MSE, starting from the saturated region, is still at accuracy 0.20 after 300 steps, exactly the slowdown predicted by the extra $\sigma'$ factor. The BCE neuron satisfies the balance property (mean prediction 0.475 = mean target 0.475); the MSE one, far from its optimum, does not (0.515).
 
-**What to do.** Use the canonical pair of the target type: linear + MSE (`MSELoss`), sigmoid + BCE (`BCEWithLogitsLoss`), softmax + CE (`CrossEntropyLoss`), exponential + Poisson NLL (`PoissonNLLLoss(log_input=True)`, which takes the logit $z = \log\hat y$). If the target is a cost with a long right tail, model $\log y$ with MSE or use a Gamma/Tweedie loss (the GLMs of [ML note 02b](../machine_learning/02b_generalized_linear_models.qmd)). Pass logits to the fused losses (section 19).
+**What to do.** Use the canonical pair of the target type: linear + MSE (`MSELoss`), sigmoid + BCE (`BCEWithLogitsLoss`), softmax + CE (`CrossEntropyLoss`), exponential + Poisson NLL (`PoissonNLLLoss(log_input=True)`, which takes the logit $z = \log\hat y$). If the target is a cost with a long right tail, model $\log y$ with MSE or use a Gamma/Tweedie loss (the GLMs of [ML note 02b](../machine_learning/02b_generalized_linear_models.html)). Pass logits to the fused losses (section 19).
 
 ## 25. What to do when…
 
@@ -1360,7 +1360,7 @@ plt.xlabel("$x$"); plt.legend(fontsize=8, loc="upper right"); plt.tight_layout()
 
 The hand-set deep narrow network is exact, yet the same architecture trained from a random start predicts roughly a constant (its MSE equals the target's variance). The one-hidden-layer network with 16 units (enough in principle: 16 pieces need 15 kinks) also fails in this budget, and even 64 units only capture part of the teeth.
 
-**Remedies.** Do not rely on the theorem to size a network. Use a moderate depth (2–4 hidden layers is the usual range for tabular data, much more with the architectures of [NN notes 03–05](03_cnn_transfer_multitask.qmd)), width well above the minimum (over-parameterised networks are easier to optimise), a good initialisation and an adaptive optimiser ([NN notes 01](01_backpropagation.qmd)–[02](02_training_optimization_regularization.qmd)), and several random restarts. Prefer architectures whose structure matches the data (section 25.5).
+**Remedies.** Do not rely on the theorem to size a network. Use a moderate depth (2–4 hidden layers is the usual range for tabular data, much more with the architectures of [NN notes 03–05](03_cnn_transfer_multitask.html)), width well above the minimum (over-parameterised networks are easier to optimise), a good initialisation and an adaptive optimiser ([NN notes 01](01_backpropagation.html)–[02](02_training_optimization_regularization.html)), and several random restarts. Prefer architectures whose structure matches the data (section 25.5).
 
 ### 25.2 …two training runs give different networks
 
@@ -1420,7 +1420,7 @@ The five runs reach similar training losses (0.039–0.042) and almost the same 
 
 **How to detect it.** For each ReLU unit, compute its maximum pre-activation over the training set: if $\max_i Z^{[l]}_{ij}\le 0$, unit $j$ is **dead** (it never fires on this data). Report the fraction of dead units per layer.
 
-**Why it happens (the math).** The gradient of the loss with respect to the incoming weight $W^{[l]}_{kj}$ of unit $j$ is a sum over examples ([NN note 01](01_backpropagation.qmd) derives it):
+**Why it happens (the math).** The gradient of the loss with respect to the incoming weight $W^{[l]}_{kj}$ of unit $j$ is a sum over examples ([NN note 01](01_backpropagation.html) derives it):
 
 $$
 \frac{\partial J}{\partial W^{[l]}_{kj}} = \sum_{i=1}^m A^{[l-1]}_{ik}\,\delta^{[l]}_{ij},
@@ -1463,7 +1463,7 @@ for name, target, act, lr_ in [("target in euros, ReLU, α = 0.01", cost, nn.ReL
 
 Read the table row by row. With the target in euros, 36 of the 64 units of the second layer never fire; the gradient into them is exactly 0, 500 more steps revive none of them, and the network ends with $R^2 = 0.79$. A learning rate that is too large kills 58 of 64 even with a standardised target: the 6 survivors still fit this easy target ($R^2 = 0.93$), but you pay for 64 units and use 6; on a harder problem or a narrower layer that is where training stalls. Leaky ReLU units in the negative region still receive a (small, non-zero) gradient, and some come back (53 → 49). With a standardised target and $\alpha = 0.01$, 13 units are inactive and $R^2 = 0.95$: a few dead units are normal, a majority is a problem.
 
-**Remedies**, in order: (1) **scale the target and the inputs** (section 24.4); (2) **lower the learning rate**, or warm it up from a small value ([NN note 02](02_training_optimization_regularization.qmd)); (3) **Leaky ReLU** (or GELU), whose derivative is never exactly 0, so a unit in the negative region still receives a gradient $\beta\,\delta$; (4) He initialisation with zero biases ([NN note 01](01_backpropagation.qmd)), sometimes a small positive bias (0.01) so that units start in the active region; (5) normalisation layers.
+**Remedies**, in order: (1) **scale the target and the inputs** (section 24.4); (2) **lower the learning rate**, or warm it up from a small value ([NN note 02](02_training_optimization_regularization.html)); (3) **Leaky ReLU** (or GELU), whose derivative is never exactly 0, so a unit in the negative region still receives a gradient $\beta\,\delta$; (4) He initialisation with zero biases ([NN note 01](01_backpropagation.html)), sometimes a small positive bias (0.01) so that units start in the active region; (5) normalisation layers.
 
 ### 25.4 …you are about to train: sanity checks
 
@@ -1528,11 +1528,11 @@ An MLP assumes **no structure** in its input vector: every unit sees every input
 
 | Your data | Structure an MLP ignores | First choice | Where an MLP fits |
 |---|---|---|---|
-| Tabular, small to medium (up to ~$10^5$ rows), mixed types, thresholds ("age < 25") | axis-aligned effects, jumps, missing values | gradient boosting ([ML note 07](../machine_learning/07_bagging_random_forest_boosting.qmd)): handles scales, jumps, missing values, little tuning | in an ensemble with boosting; or with embeddings for high-cardinality categories on large data |
-| Images, photos of damage | neighbouring pixels, translation | CNN ([NN note 03](03_cnn_transfer_multitask.qmd)), usually pre-trained | as the classification head on top of CNN features |
-| Sequences: text, time series, claim histories | order, variable length | RNN / LSTM ([NN note 04](04_rnn_lstm.qmd)), transformer ([NN note 05](05_attention_transformers.qmd)) | as the head on top of a sequence encoder |
+| Tabular, small to medium (up to ~$10^5$ rows), mixed types, thresholds ("age < 25") | axis-aligned effects, jumps, missing values | gradient boosting ([ML note 07](../machine_learning/07_bagging_random_forest_boosting.html)): handles scales, jumps, missing values, little tuning | in an ensemble with boosting; or with embeddings for high-cardinality categories on large data |
+| Images, photos of damage | neighbouring pixels, translation | CNN ([NN note 03](03_cnn_transfer_multitask.html)), usually pre-trained | as the classification head on top of CNN features |
+| Sequences: text, time series, claim histories | order, variable length | RNN / LSTM ([NN note 04](04_rnn_lstm.html)), transformer ([NN note 05](05_attention_transformers.html)) | as the head on top of a sequence encoder |
 | Good feature vectors (embeddings from a pre-trained model) | none left | MLP or even logistic regression | yes: the natural case |
-| Very small data (hundreds of rows), or coefficients must be interpreted | | regularised GLM ([ML notes 02b](../machine_learning/02b_generalized_linear_models.qmd), [03](../machine_learning/03_regularization_inputs_assumptions.qmd)) | rarely |
+| Very small data (hundreds of rows), or coefficients must be interpreted | | regularised GLM ([ML notes 02b](../machine_learning/02b_generalized_linear_models.html), [03](../machine_learning/03_regularization_inputs_assumptions.html)) | rarely |
 
 Two demonstrations. First, **an MLP cannot see the grid of an image**: shuffle the 64 pixels of the $8\times8$ digits with one fixed permutation and train the same MLP, with its first-layer weights permuted in the same way at initialisation. By the argument of section 25.2 applied to the inputs ($\mathbf{X}\mathbf{P}\,\mathbf{P}^\top\mathbf{W}^{[1]} = \mathbf{X}\mathbf{W}^{[1]}$), the two trainings are the same computation. A CNN, which relies on neighbouring pixels, would be destroyed by the shuffle. Second, **small tabular data with thresholds**: 600 rows, 12 features (one of them a count), and a label that is an XOR of two thresholds, with 5 % label noise.
 
@@ -1582,7 +1582,7 @@ The MLP gives the same accuracy on shuffled pixels: it never used the image stru
 | saturation | the flat parts of sigmoid/tanh, where $g'\approx0$ and learning stops |
 | dead ReLU | a ReLU unit that is negative on every example: its gradients are exactly 0 |
 
-Lab 7 (an MLP from scratch in NumPy: XOR, forward pass, backpropagation) comes at the end of [NN note 01](01_backpropagation.qmd), once we know how to compute the gradients.
+Lab 7 (an MLP from scratch in NumPy: XOR, forward pass, backpropagation) comes at the end of [NN note 01](01_backpropagation.html), once we know how to compute the gradients.
 
 ## Summary
 

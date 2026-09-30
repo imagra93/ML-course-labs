@@ -218,7 +218,7 @@
     <div class="stack" style="gap:10px">
       <p><b>Complementary slackness</b> (KKT), for every training point:</p>
       <div class="eq">$$\alpha_i\big[y_i(\mathbf w\cdot\bx_i+b)-1\big]=0$$</div>
-      <ul class="small"><li>A point outside the margin has a bracket $\gt0$, so $\alpha_i=0$.</li><li>If $\alpha_i\gt0$ the bracket must be $0$: the point is <b>on</b> the margin. These are the <b>support vectors</b>.</li></ul>
+      <ul class="small"><li>A point outside the margin has a bracket $\gt0$, so $\alpha_i=0$.</li><li>If $\alpha_i\gt0$ the bracket must be $0$: the point is <b>on</b> the margin. These are the <b>support vectors</b> (a point on the margin can still have $\alpha_i=0$).</li></ul>
       <p class="step">So $\mathbf w=\sum_i\alpha_iy_i\bx_i$ is built from the support vectors alone. Delete any other point and nothing changes.</p>
       <p class="small step"><b>The bias</b>, from any support vector $s$: $y_s(\mathbf w\cdot\bx_s+b)=1\Rightarrow b=y_s-\mathbf w\cdot\bx_s$ (because $1/y_s=y_s$ when $y_s=\pm1$).</p>
     </div>

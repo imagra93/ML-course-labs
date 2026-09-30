@@ -13,7 +13,7 @@ Linear and logistic regression are only as good as two choices we make before fi
 
 **What this note covers.** Sections 1–8 are regularisation: why large coefficients are a symptom, the penalised loss, Ridge (closed form, the SVD view, its bias and variance), Lasso (why exact zeros, coordinate descent from scratch, its instability with correlated features), Elastic Net, the Bayesian (MAP) reading, how to choose $\lambda$ (cross-validation and the one-standard-error rule) and regularised logistic regression. Section 9 is a full treatment of **input variables**: which models need scaling, one-hot encoding and the dummy trap, ordinal and high-cardinality categoricals (target encoding and its leakage), missing values, skewed features, outliers in inputs, interactions and polynomials, collinearity seen from the regularisation side, and preprocessing leakage with scikit-learn pipelines. Section 10 is a practical guide ("what to do when…") and section 11 compares the assumptions of linear and logistic regression and says what regularisation changes about them.
 
-**What you need.** Linear regression, its normal equation and the statistics of the OLS estimator ([note 01](01_linear_regression.qmd), in particular $\mathrm{Cov}(\hat{\boldsymbol{\theta}}) = \sigma^2(\mathbf{X}^\top\mathbf{X})^{-1}$ and the collinearity section); logistic regression and its cross-entropy loss ([note 02](02_logistic_regression.qmd)); train/validation/test splits, $k$-fold cross-validation and the bias–variance trade-off ([note 00](00_supervised_learning.qmd)). Notation: $m$ examples, $n$ features, $\mathbf{X}$ the $m\times(n+1)$ design matrix with a first column of ones, $\boldsymbol{\theta} = (\theta_0, \dots, \theta_n)$ with $\theta_0$ the intercept, $\lambda \ge 0$ the regularisation strength.
+**What you need.** Linear regression, its normal equation and the statistics of the OLS estimator ([note 01](01_linear_regression.html), in particular $\mathrm{Cov}(\hat{\boldsymbol{\theta}}) = \sigma^2(\mathbf{X}^\top\mathbf{X})^{-1}$ and the collinearity section); logistic regression and its cross-entropy loss ([note 02](02_logistic_regression.html)); train/validation/test splits, $k$-fold cross-validation and the bias–variance trade-off ([note 00](00_supervised_learning.html)). Notation: $m$ examples, $n$ features, $\mathbf{X}$ the $m\times(n+1)$ design matrix with a first column of ones, $\boldsymbol{\theta} = (\theta_0, \dots, \theta_n)$ with $\theta_0$ the intercept, $\lambda \ge 0$ the regularisation strength.
 
 **After this note you can** derive and implement Ridge and Lasso from scratch, explain what each does to every direction of the data, choose $\lambda$ properly, encode any kind of input without leaking the target, and build a scikit-learn pipeline that does all the preprocessing inside cross-validation. The lab is [Polynomial Regression and Regularisation](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%20-%20Polynomial%20Regression%20and%20Regularisation.ipynb).
 
@@ -31,8 +31,8 @@ rng = np.random.default_rng(1)
 Three problems that all show up as **large, unstable parameters**:
 
 1. **Overfitting**: many features (or a high polynomial degree) relative to $m$. The model fits the noise, and the fitted $\theta_j$ become huge with alternating signs.
-2. **Collinearity**: when features are strongly correlated, $\mathbf{X}^\top\mathbf{X}$ is nearly singular, so many very different $\boldsymbol{\theta}$ fit almost equally well. Small changes in the data change $\boldsymbol{\theta}$ a lot (section 9.9; [note 01, section 15.5](01_linear_regression.qmd#collinearity)).
-3. **Separable classes** in logistic regression: the MLE does not exist and $\lVert\boldsymbol{\theta}\rVert\to\infty$ ([note 02](02_logistic_regression.qmd); section 8 below).
+2. **Collinearity**: when features are strongly correlated, $\mathbf{X}^\top\mathbf{X}$ is nearly singular, so many very different $\boldsymbol{\theta}$ fit almost equally well. Small changes in the data change $\boldsymbol{\theta}$ a lot (section 9.9; [note 01, section 15.5](01_linear_regression.html#collinearity)).
+3. **Separable classes** in logistic regression: the MLE does not exist and $\lVert\boldsymbol{\theta}\rVert\to\infty$ ([note 02](02_logistic_regression.html); section 8 below).
 
 Regularisation adds a penalty on the size of $\boldsymbol{\theta}$: we accept a little more training error (**bias**) in exchange for a more stable model (less **variance**).
 
@@ -160,7 +160,7 @@ $$
 \end{aligned}
 $$
 
-In matrix form, $\nabla J = \frac{1}{m}\big[\mathbf{X}^\top(\mathbf{X}\boldsymbol{\theta}-\mathbf{y}) + \lambda\mathbf{L}\boldsymbol{\theta}\big]$ (Fact 2 of [note 01](01_linear_regression.qmd): the gradient of $\boldsymbol{\theta}^\top\mathbf{A}\boldsymbol{\theta}$ is $2\mathbf{A}\boldsymbol{\theta}$ for symmetric $\mathbf{A}$). Each step first multiplies $\theta_j$ by a number slightly below 1 (with $\alpha = 0.1$, $\lambda = 1$, $m = 100$: by $1 - 0.1\cdot1/100 = 0.999$), then takes the usual gradient step. Coefficients that the data do not keep pushing up slowly **decay** towards 0. This is exactly what `weight_decay` does in neural-network optimisers ([NN note 02](../neural_networks/02_training_optimization_regularization.qmd)).
+In matrix form, $\nabla J = \frac{1}{m}\big[\mathbf{X}^\top(\mathbf{X}\boldsymbol{\theta}-\mathbf{y}) + \lambda\mathbf{L}\boldsymbol{\theta}\big]$ (Fact 2 of [note 01](01_linear_regression.html): the gradient of $\boldsymbol{\theta}^\top\mathbf{A}\boldsymbol{\theta}$ is $2\mathbf{A}\boldsymbol{\theta}$ for symmetric $\mathbf{A}$). Each step first multiplies $\theta_j$ by a number slightly below 1 (with $\alpha = 0.1$, $\lambda = 1$, $m = 100$: by $1 - 0.1\cdot1/100 = 0.999$), then takes the usual gradient step. Coefficients that the data do not keep pushing up slowly **decay** towards 0. This is exactly what `weight_decay` does in neural-network optimisers ([NN note 02](../neural_networks/02_training_optimization_regularization.html)).
 
 ### 3.2 The closed form
 
@@ -192,7 +192,7 @@ Ridge divides the coefficient by a constant factor. It gets smaller but **never 
 
 ### 3.4 Ridge through the SVD: shrinkage per principal direction {#ridge-svd}
 
-**Removing the intercept.** Because $\theta_0$ is not penalised, its equation is the same as for OLS: $\partial J/\partial\theta_0 = 0$ gives $\theta_0 = \bar y - \sum_{j\ge1}\theta_j\bar x_j$. Substituting it back, the slopes minimise $\frac{1}{2m}\big[\lVert\mathbf{y}_c - \mathbf{X}_c\boldsymbol{\theta}\rVert^2 + \lambda\lVert\boldsymbol{\theta}\rVert^2\big]$, where $\mathbf{X}_c$ ($m\times n$) holds the centred features and $\mathbf{y}_c = \mathbf{y} - \bar y\mathbf{1}$ (the same argument as in [note 01, section 15.5](01_linear_regression.qmd#collinearity)). From here on $\boldsymbol{\theta}$ means the $n$ slopes and $\boldsymbol{\theta}_{\text{ridge}} = (\mathbf{X}_c^\top\mathbf{X}_c + \lambda\mathbf{I})^{-1}\mathbf{X}_c^\top\mathbf{y}_c$.
+**Removing the intercept.** Because $\theta_0$ is not penalised, its equation is the same as for OLS: $\partial J/\partial\theta_0 = 0$ gives $\theta_0 = \bar y - \sum_{j\ge1}\theta_j\bar x_j$. Substituting it back, the slopes minimise $\frac{1}{2m}\big[\lVert\mathbf{y}_c - \mathbf{X}_c\boldsymbol{\theta}\rVert^2 + \lambda\lVert\boldsymbol{\theta}\rVert^2\big]$, where $\mathbf{X}_c$ ($m\times n$) holds the centred features and $\mathbf{y}_c = \mathbf{y} - \bar y\mathbf{1}$ (the same argument as in [note 01, section 15.5](01_linear_regression.html#collinearity)). From here on $\boldsymbol{\theta}$ means the $n$ slopes and $\boldsymbol{\theta}_{\text{ridge}} = (\mathbf{X}_c^\top\mathbf{X}_c + \lambda\mathbf{I})^{-1}\mathbf{X}_c^\top\mathbf{y}_c$.
 
 **The singular value decomposition.** Any $m\times n$ matrix with $m \ge n$ can be written $\mathbf{X}_c = \mathbf{U}\mathbf{D}\mathbf{V}^\top$, with $\mathbf{U}$ ($m\times n$) having orthonormal columns $\mathbf{u}_j$ ($\mathbf{U}^\top\mathbf{U} = \mathbf{I}$), $\mathbf{V}$ ($n\times n$) orthogonal ($\mathbf{V}^\top\mathbf{V} = \mathbf{V}\mathbf{V}^\top = \mathbf{I}$), and $\mathbf{D} = \mathrm{diag}(d_1 \ge \dots \ge d_n \ge 0)$ the singular values. The columns $\mathbf{v}_j$ of $\mathbf{V}$ are the **principal directions** of the features, and $d_j^2$ measures how much the data vary along $\mathbf{v}_j$ ($d_j^2$ are the eigenvalues $\lambda_j$ of $\mathbf{X}_c^\top\mathbf{X}_c$ used in note 01).
 
@@ -212,7 +212,7 @@ $$
 \hat{\mathbf{y}}_c = \mathbf{X}_c\boldsymbol{\theta}_{\text{ridge}} = \sum_{j=1}^n \mathbf{u}_j\,\underbrace{\frac{d_j^2}{d_j^2+\lambda}}_{s_j(\lambda)}\,\mathbf{u}_j^\top\mathbf{y}_c}
 $$
 
-(the second formula multiplies the first by $\mathbf{X}_c = \mathbf{U}\mathbf{D}\mathbf{V}^\top$). **Reading it.** Write $\mathbf{y}_c$ in the orthonormal basis $\mathbf{u}_1, \dots, \mathbf{u}_n$ of the column space. OLS ($\lambda = 0$, $s_j = 1$) keeps every coordinate $\mathbf{u}_j^\top\mathbf{y}_c$. Ridge multiplies coordinate $j$ by the **shrinkage factor** $s_j = d_j^2/(d_j^2+\lambda) \in (0,1)$: directions in which the features vary a lot ($d_j^2 \gg \lambda$) are barely touched; directions with little variation ($d_j^2 \ll \lambda$), exactly the nearly collinear directions where the OLS variance $\sigma^2/d_j^2$ explodes, are shrunk almost to zero. Principal-component regression ([note 01](01_linear_regression.qmd#collinearity)) uses $s_j = 1$ for the first $k$ directions and $0$ for the others; Ridge is its smooth version.
+(the second formula multiplies the first by $\mathbf{X}_c = \mathbf{U}\mathbf{D}\mathbf{V}^\top$). **Reading it.** Write $\mathbf{y}_c$ in the orthonormal basis $\mathbf{u}_1, \dots, \mathbf{u}_n$ of the column space. OLS ($\lambda = 0$, $s_j = 1$) keeps every coordinate $\mathbf{u}_j^\top\mathbf{y}_c$. Ridge multiplies coordinate $j$ by the **shrinkage factor** $s_j = d_j^2/(d_j^2+\lambda) \in (0,1)$: directions in which the features vary a lot ($d_j^2 \gg \lambda$) are barely touched; directions with little variation ($d_j^2 \ll \lambda$), exactly the nearly collinear directions where the OLS variance $\sigma^2/d_j^2$ explodes, are shrunk almost to zero. Principal-component regression ([note 01](01_linear_regression.html#collinearity)) uses $s_j = 1$ for the first $k$ directions and $0$ for the others; Ridge is its smooth version.
 
 **Effective degrees of freedom.** For OLS, $\mathrm{tr}(\mathbf{H})$ counts the parameters (note 01, section 14.4). The Ridge "hat matrix" is $\mathbf{H}_\lambda = \mathbf{X}_c(\mathbf{X}_c^\top\mathbf{X}_c + \lambda\mathbf{I})^{-1}\mathbf{X}_c^\top = \mathbf{U}\,\mathrm{diag}(s_j)\,\mathbf{U}^\top$, so by the cyclic property of the trace and $\mathbf{U}^\top\mathbf{U} = \mathbf{I}$,
 
@@ -276,7 +276,7 @@ f_j'(\lambda) &= \frac{2\lambda\gamma_j^2(d_j^2+\lambda)^2 - 2(d_j^2+\lambda)(\l
 \end{aligned}
 $$
 
-At $\lambda = 0$ every term has $f_j'(0) = -2\sigma^2/d_j^4 < 0$, so the MSE **decreases** as soon as we add a little penalty: **there is always a $\lambda > 0$ for which Ridge has a smaller mean squared error than OLS** (Hoerl and Kennard, 1970). This does not contradict the Gauss–Markov theorem ([note 01, section 14.8](01_linear_regression.qmd#ols-statistics)): OLS is best among *unbiased* estimators, and Ridge is biased. Each term is minimised at $\lambda = \sigma^2/\gamma_j^2$: a small true effect relative to the noise calls for strong shrinkage. If all $\gamma_j^2$ were equal to some $\tau^2$, the best $\lambda$ would be $\sigma^2/\tau^2$, which is exactly the Bayesian value of section 6.
+At $\lambda = 0$ every term has $f_j'(0) = -2\sigma^2/d_j^4 < 0$, so the MSE **decreases** as soon as we add a little penalty: **there is always a $\lambda > 0$ for which Ridge has a smaller mean squared error than OLS** (Hoerl and Kennard, 1970). This does not contradict the Gauss–Markov theorem ([note 01, section 14.8](01_linear_regression.html#ols-statistics)): OLS is best among *unbiased* estimators, and Ridge is biased. Each term is minimised at $\lambda = \sigma^2/\gamma_j^2$: a small true effect relative to the noise calls for strong shrinkage. If all $\gamma_j^2$ were equal to some $\tau^2$, the best $\lambda$ would be $\sigma^2/\tau^2$, which is exactly the Bayesian value of section 6.
 
 ```{python}
 gam = Vt @ theta_s
@@ -476,7 +476,7 @@ $$
 J(\boldsymbol{\theta}) = \frac{1}{2m}\lVert\mathbf{X}\boldsymbol{\theta} - \mathbf{y}\rVert^2 + \lambda\Big[\rho\,\lVert\boldsymbol{\theta}\rVert_1 + \tfrac{1-\rho}{2}\lVert\boldsymbol{\theta}\rVert_2^2\Big], \qquad \rho\in[0,1],
 $$
 
-($\rho = 1$ is Lasso, $\rho = 0$ Ridge; scikit-learn's `ElasticNet(alpha=λ, l1_ratio=ρ)` minimises exactly this.) Lasso's weaknesses (it keeps one of a group of correlated features at random, and it can select at most $m$ features) come from the flatness of the L1 penalty along directions that keep $|\theta_i| + |\theta_k|$ fixed. The L2 part removes that flatness.
+($\rho = 1$ is Lasso, $\rho = 0$ Ridge; scikit-learn's `ElasticNet(alpha=λ, l1_ratio=ρ)` minimises exactly this.) Lasso's weaknesses (on correlated features it keeps one of near-duplicates arbitrarily or splits the weight erratically, section 4.4, and it can select at most $m$ features) come from the flatness of the L1 penalty along directions that keep $|\theta_i| + |\theta_k|$ fixed. The L2 part removes that flatness.
 
 **The grouping effect (proof for identical features).** Suppose $\mathbf{x}_i = \mathbf{x}_k$. The data term depends on $\theta_i$ and $\theta_k$ only through their sum $s = \theta_i + \theta_k$, because $\mathbf{x}_i\theta_i + \mathbf{x}_k\theta_k = \mathbf{x}_i s$. For a fixed $s$:
 
@@ -504,7 +504,7 @@ $$
 <div class="widget"><svg class="fig" data-fig="priors" style="max-height:260px" aria-label="Gaussian and Laplace prior densities"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/05_regularization.html#11">slide 11</a> of the Regularization deck: the Gaussian prior (L2) is smooth at 0; the Laplace prior (L1) has a sharp peak there.</p></div>
 ```
 
-**Linear regression with a Gaussian prior is Ridge with $\lambda = \sigma^2/\tau^2$.** The negative log-likelihood of Gaussian noise with variance $\sigma^2$ is $\frac{1}{2\sigma^2}\lVert\mathbf{X}\boldsymbol{\theta} - \mathbf{y}\rVert^2 + \text{const}$ ([note 01, section 10](01_linear_regression.qmd)), so
+**Linear regression with a Gaussian prior is Ridge with $\lambda = \sigma^2/\tau^2$.** The negative log-likelihood of Gaussian noise with variance $\sigma^2$ is $\frac{1}{2\sigma^2}\lVert\mathbf{X}\boldsymbol{\theta} - \mathbf{y}\rVert^2 + \text{const}$ ([note 01, section 10](01_linear_regression.html)), so
 
 $$
 \begin{aligned}
@@ -566,7 +566,7 @@ Training error always prefers $\lambda = 0$: it cannot choose $\lambda$. Validat
 <div class="widget"><svg class="fig" data-fig="cv-lambda" style="max-height:300px" aria-label="Training and validation error as lambda varies"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/05_regularization.html#12">slide 12</a> of the Regularization deck: training (blue) and validation (orange) RMSE of the degree-15 polynomial as λ varies; the dashed line marks the best λ on validation.</p></div>
 ```
 
-**Recipe** ([note 00](00_supervised_learning.qmd) explains $k$-fold CV): choose a **log grid** of $\lambda$ values (the interesting range spans several orders of magnitude; start from $\lambda_{\max}$ for Lasso, section 4.3); for each $\lambda$, fit on $k-1$ folds and measure the error on the held-out fold; average over the $k$ folds to get $\text{CV}(\lambda)$, and also compute its **standard error** $\text{SE}(\lambda) = \text{sd}_{\text{folds}}/\sqrt{k}$.
+**Recipe** ([note 00](00_supervised_learning.html) explains $k$-fold CV): choose a **log grid** of $\lambda$ values (the interesting range spans several orders of magnitude; start from $\lambda_{\max}$ for Lasso, section 4.3); for each $\lambda$, fit on $k-1$ folds and measure the error on the held-out fold; average over the $k$ folds to get $\text{CV}(\lambda)$, and also compute its **standard error** $\text{SE}(\lambda) = \text{sd}_{\text{folds}}/\sqrt{k}$.
 
 **The one-standard-error rule.** $\text{CV}(\lambda)$ is itself an estimate with noise of size about $\text{SE}(\lambda)$, so values of $\lambda$ whose CV error is within one SE of the minimum are statistically indistinguishable from the best. Among them, pick the **simplest** model: the largest $\lambda$ with $\text{CV}(\lambda) \le \text{CV}(\lambda_{\min}) + \text{SE}(\lambda_{\min})$. For Lasso this usually gives a noticeably sparser model at a small cost in accuracy. Below, $\lambda_{1se}$ keeps 5 coefficients instead of 7, and its test MSE is 3.06 instead of 2.88 (the noise variance alone is $1.5^2 = 2.25$).
 
@@ -592,11 +592,11 @@ plt.xscale("log"); plt.xlabel(r"$\lambda$"); plt.ylabel("CV MSE ± 1 SE"); plt.l
 plt.tight_layout(); plt.show()
 ```
 
-**Put the preprocessing inside the CV loop.** The scaling (and any imputation or encoding) must be fitted on the training folds only; otherwise the validation fold leaks into $\mu$ and $\sigma$ (section 9.10). In scikit-learn, put the scaler and the model in a `Pipeline` and cross-validate the pipeline. `RidgeCV`, `LassoCV`, `ElasticNetCV` and `LogisticRegressionCV` do the search for you. `RidgeCV` by default uses leave-one-out CV computed without refitting, with the same shortcut as for least squares ([note 01, section 15.7](01_linear_regression.qmd#outliers): the leave-one-out residual is $e_i/(1 - h_{ii})$, here with the diagonal of $\mathbf{H}_\lambda$).
+**Put the preprocessing inside the CV loop.** The scaling (and any imputation or encoding) must be fitted on the training folds only; otherwise the validation fold leaks into $\mu$ and $\sigma$ (section 9.10). In scikit-learn, put the scaler and the model in a `Pipeline` and cross-validate the pipeline. `RidgeCV`, `LassoCV`, `ElasticNetCV` and `LogisticRegressionCV` do the search for you. `RidgeCV` by default uses leave-one-out CV computed without refitting, with the same shortcut as for least squares ([note 01, section 15.7](01_linear_regression.html#outliers): the leave-one-out residual is $e_i/(1 - h_{ii})$, here with the diagonal of $\mathbf{H}_\lambda$).
 
 ## 8. Regularised logistic regression {#logistic}
 
-Same idea, added to the cross-entropy of [note 02](02_logistic_regression.qmd) ($h_{\boldsymbol{\theta}}(\mathbf{x}) = \sigma(\boldsymbol{\theta}^\top\mathbf{x})$ with the sigmoid $\sigma(t) = 1/(1+e^{-t})$):
+Same idea, added to the cross-entropy of [note 02](02_logistic_regression.html) ($h_{\boldsymbol{\theta}}(\mathbf{x}) = \sigma(\boldsymbol{\theta}^\top\mathbf{x})$ with the sigmoid $\sigma(t) = 1/(1+e^{-t})$):
 
 $$
 J(\boldsymbol{\theta}) = -\frac{1}{m}\sum_{i=1}^m\Big[y^{(i)}\log h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)}) + (1-y^{(i)})\log(1-h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)}))\Big] + \frac{\lambda}{2m}\sum_{j=1}^n\theta_j^2,
@@ -669,7 +669,7 @@ The model is linear in $\boldsymbol{\theta}$, but we decide what goes into $\mat
 |---|---|---|
 | OLS or logistic regression **without** penalty, fitted exactly | no (for the predictions) | rescaling a column rescales its coefficient, the fit is the same (proof below) |
 | any model **with** a penalty (Ridge, Lasso, regularised logistic, SVM) | **yes** | the penalty compares coefficients across features (section 2) |
-| anything trained by **gradient descent** (incl. neural networks) | **yes** | conditioning: speed and stability ([note 01, section 6](01_linear_regression.qmd)) |
+| anything trained by **gradient descent** (incl. neural networks) | **yes** | conditioning: speed and stability ([note 01, section 6](01_linear_regression.html)) |
 | **distance**-based: $k$-NN, SVM with RBF kernel, $k$-means, PCA | **yes** | distances and variances are dominated by the features with the largest units |
 | trees, random forests, gradient boosting | no | a split "$x_j \le c$" is unchanged by any increasing transformation of $x_j$ |
 
@@ -729,7 +729,7 @@ Practical points: `OneHotEncoder(drop="first")` for unpenalised models with an i
 
 ### 9.3 Ordinal features {#ordinal-features}
 
-When the levels have an order (size S < M < L < XL, damage low < medium < high), **ordinal encoding** replaces them by $0, 1, \dots, K-1$ in that order. What it tells a linear model: with price $= \theta_0 + \theta_1\cdot\text{code}$, every step up adds the **same** $\theta_1$. That is one parameter instead of $K-1$, so if the steps really are roughly equal it uses the data better; if they are very unequal, use one-hot or meaningful numbers ([note 01, section 11](01_linear_regression.qmd) has the "which encoder when?" table). Two pitfalls: scikit-learn's `OrdinalEncoder` sorts the levels **alphabetically** unless you pass `categories`, and an unordered feature must never be ordinal-encoded for a linear model ("city = 3" is not three times "city = 1"; trees don't mind, [note 06](06_decision_trees_cart.qmd)).
+When the levels have an order (size S < M < L < XL, damage low < medium < high), **ordinal encoding** replaces them by $0, 1, \dots, K-1$ in that order. What it tells a linear model: with price $= \theta_0 + \theta_1\cdot\text{code}$, every step up adds the **same** $\theta_1$. That is one parameter instead of $K-1$, so if the steps really are roughly equal it uses the data better; if they are very unequal, use one-hot or meaningful numbers ([note 01, section 11](01_linear_regression.html) has the "which encoder when?" table). Two pitfalls: scikit-learn's `OrdinalEncoder` sorts the levels **alphabetically** unless you pass `categories`, and an unordered feature must never be ordinal-encoded for a linear model ("city = 3" is not three times "city = 1"; trees don't mind, [note 06](06_decision_trees_cart.html)).
 
 ```{python}
 from sklearn.preprocessing import OrdinalEncoder
@@ -854,7 +854,7 @@ The missing-indicator column cuts the error substantially, because "mileage not 
 
 ### 9.6 Skewed features {#skewed-features}
 
-**Symptom.** Amounts, incomes, vehicle values, counts: a long right tail, a few huge values. Linear models do **not** require normally distributed features, so skewness itself is not the problem. The problems are that (a) the relationship is often linear in $\log x$ rather than in $x$ (multiplicative effects, diminishing returns), and (b) the extreme values have enormous leverage ([note 01, section 15.7](01_linear_regression.qmd#outliers)) and dominate the fit.
+**Symptom.** Amounts, incomes, vehicle values, counts: a long right tail, a few huge values. Linear models do **not** require normally distributed features, so skewness itself is not the problem. The problems are that (a) the relationship is often linear in $\log x$ rather than in $x$ (multiplicative effects, diminishing returns), and (b) the extreme values have enormous leverage ([note 01, section 15.7](01_linear_regression.html#outliers)) and dominate the fit.
 
 **Transformations.** $\log(1+x)$ for non-negative $x$ (the $+1$ handles zeros); **Box–Cox** $(x^\lambda - 1)/\lambda$ for $x > 0$ ($\log x$ at $\lambda = 0$), with $\lambda$ chosen by maximum likelihood to make the result as normal as possible; **Yeo–Johnson**, a variant that also accepts zero and negative values. scikit-learn: `FunctionTransformer(np.log1p)`, `PowerTransformer(method="box-cox")` or `PowerTransformer()` (Yeo–Johnson, then standardised). Fit them on the training data (Box–Cox and Yeo–Johnson estimate $\lambda$).
 
@@ -882,7 +882,7 @@ On the raw scale one amount has a leverage of more than half (it alone decides m
 
 - **Winsorising** clips a feature at low and high percentiles computed on the training data (e.g. 1 % and 99 %). It limits leverage while keeping the row.
 - **`RobustScaler`** centres on the median and divides by the interquartile range, which one extreme value cannot distort. It does not remove the outlier (its leverage is unchanged); it keeps the scaling of the other values sensible. `StandardScaler` and min–max scaling let one outlier squeeze all the other values into a tiny range.
-- A **log** transformation (9.6) when the extremes are just the right tail of a skewed variable; a **robust loss** such as Huber when the outliers are in $y$ ([note 01, section 15.7](01_linear_regression.qmd#outliers)).
+- A **log** transformation (9.6) when the extremes are just the right tail of a skewed variable; a **robust loss** such as Huber when the outliers are in $y$ ([note 01, section 15.7](01_linear_regression.html#outliers)).
 
 ```{python}
 from sklearn.preprocessing import RobustScaler, MinMaxScaler
@@ -913,7 +913,7 @@ Because the model only needs to be linear in $\boldsymbol{\theta}$, we can add a
 
 `PolynomialFeatures(degree)` creates all powers and products up to a degree (`interaction_only=True` for products only); the number of columns grows fast ($\binom{n+d}{d}$), so pair it with regularisation and CV, and **standardise after** creating the terms, before the penalty. For logistic regression the same features make the decision boundary curved (section 8).
 
-**Interactions and centring.** In $y = \theta_0 + \theta_1x_1 + \theta_2x_2 + \theta_3x_1x_2$, the effect of a unit increase of $x_1$ is $\partial y/\partial x_1 = \theta_1 + \theta_3x_2$: it depends on $x_2$, and $\theta_1$ alone is the effect **at $x_2 = 0$**, which may be far outside the data (age 0, a car worth 0 €). Centre the features before multiplying: with $\tilde x_j = x_j - \bar x_j$, the coefficient of $\tilde x_1$ is the effect of $x_1$ **at the average $x_2$**, and the collinearity between the main effects and the product disappears (the same argument as for $x$ and $x^2$ in [note 01, section 15.5](01_linear_regression.qmd#collinearity)). The fitted values are identical, because $\tilde x_1\tilde x_2 = x_1x_2 - \bar x_2x_1 - \bar x_1x_2 + \bar x_1\bar x_2$ lies in the span of the uncentred columns. Keep the main effects whenever you keep their interaction (hierarchy principle).
+**Interactions and centring.** In $y = \theta_0 + \theta_1x_1 + \theta_2x_2 + \theta_3x_1x_2$, the effect of a unit increase of $x_1$ is $\partial y/\partial x_1 = \theta_1 + \theta_3x_2$: it depends on $x_2$, and $\theta_1$ alone is the effect **at $x_2 = 0$**, which may be far outside the data (age 0, a car worth 0 €). Centre the features before multiplying: with $\tilde x_j = x_j - \bar x_j$, the coefficient of $\tilde x_1$ is the effect of $x_1$ **at the average $x_2$**, and the collinearity between the main effects and the product disappears (the same argument as for $x$ and $x^2$ in [note 01, section 15.5](01_linear_regression.html#collinearity)). The fitted values are identical, because $\tilde x_1\tilde x_2 = x_1x_2 - \bar x_2x_1 - \bar x_1x_2 + \bar x_1\bar x_2$ lies in the span of the uncentred columns. Keep the main effects whenever you keep their interaction (hierarchy principle).
 
 ```{python}
 def vif(F):
@@ -939,7 +939,7 @@ print(f"true effect of x1 at the average x2: 0.5 + 0.02 * {a2.mean():.1f} = {0.5
 
 ### 9.9 Collinearity from the regularisation angle {#collinearity-regularisation}
 
-Collinearity does not hurt predictions much, but it makes **individual coefficients unreliable**. [Note 01, section 15.5](01_linear_regression.qmd#collinearity) derives the reason in detail; in brief: under the linear-model assumptions $\mathbb{E}[\hat{\boldsymbol{\theta}}] = \boldsymbol{\theta}$ and $\mathrm{Cov}(\hat{\boldsymbol{\theta}}) = \sigma^2(\mathbf{X}^\top\mathbf{X})^{-1}$ (because $\hat{\boldsymbol{\theta}} = \boldsymbol{\theta} + (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\boldsymbol{\varepsilon}$). When columns are nearly dependent, $\mathbf{X}^\top\mathbf{X}$ has a tiny eigenvalue $d^2$, the variance along that direction is $\sigma^2/d^2$, and the variance of each involved coefficient is multiplied by the **variance inflation factor** $\mathrm{VIF}_j = 1/(1-R_j^2)$, where $R_j^2$ is the $R^2$ of regressing $x_j$ on the other features (VIF $> 5$–$10$ signals a problem).
+Collinearity does not hurt predictions much, but it makes **individual coefficients unreliable**. [Note 01, section 15.5](01_linear_regression.html#collinearity) derives the reason in detail; in brief: under the linear-model assumptions $\mathbb{E}[\hat{\boldsymbol{\theta}}] = \boldsymbol{\theta}$ and $\mathrm{Cov}(\hat{\boldsymbol{\theta}}) = \sigma^2(\mathbf{X}^\top\mathbf{X})^{-1}$ (because $\hat{\boldsymbol{\theta}} = \boldsymbol{\theta} + (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\boldsymbol{\varepsilon}$). When columns are nearly dependent, $\mathbf{X}^\top\mathbf{X}$ has a tiny eigenvalue $d^2$, the variance along that direction is $\sigma^2/d^2$, and the variance of each involved coefficient is multiplied by the **variance inflation factor** $\mathrm{VIF}_j = 1/(1-R_j^2)$, where $R_j^2$ is the $R^2$ of regressing $x_j$ on the other features (VIF $> 5$–$10$ signals a problem).
 
 **What the penalties do.**
 
@@ -1035,7 +1035,7 @@ Every statistic (the scaler's $\mu$ and $\sigma$, the median, the one-hot catego
 | missing values | empty cells (NaN) | impute (median or most frequent) **+** a 0/1 column "was missing"; fit on train only | 9.5 |
 | a categorical with many levels | postcode, car model | group the rare levels; frequency or out-of-fold target encoding; hashing | 9.4 |
 | a level never seen in training | an error at prediction time | `OneHotEncoder(handle_unknown="ignore")`; target encoders fall back to the global mean | 9.2, 9.4 |
-| a rare positive class | great accuracy, poor recall | class weights, move the threshold, PR metrics ([note 02](02_logistic_regression.qmd)) | — |
+| a rare positive class | great accuracy, poor recall | class weights, move the threshold, PR metrics ([note 02](02_logistic_regression.html)) | — |
 
 Every "fit" in the last columns (scaler, imputer, encoder) is learned on the training data only and then applied to validation and test: put them in a `Pipeline` (9.10).
 
@@ -1049,14 +1049,14 @@ Every "fit" in the last columns (scaler, imputer, encoder) is learned on the tra
 | coefficients jump between runs, odd signs | collinearity | check the VIF; drop or combine features; Ridge or Elastic Net | 9.9 |
 | Lasso selects different features on different samples | correlated features | Elastic Net; report groups, not single features | 4.4, 5 |
 | residuals show a curve | non-linearity | add transforms ($x^2$, $\log x$, splines) | 9.8 |
-| residuals fan out | heteroscedasticity | model $\log y$; weighted least squares | [note 01, 15.3](01_linear_regression.qmd#homoscedasticity) |
-| a skewed target (prices, claim costs) | large errors on the expensive cases | fit $\log y$, then convert back with $e^{\hat y}$ **times a smearing factor** (plain $e^{\hat y}$ is the median and underestimates the mean) | [note 01, 16.1](01_linear_regression.qmd#skewed-target) |
+| residuals fan out | heteroscedasticity | model $\log y$; weighted least squares | [note 01, 15.3](01_linear_regression.html#homoscedasticity) |
+| a skewed target (prices, claim costs) | large errors on the expensive cases | fit $\log y$, then convert back with $e^{\hat y}$ **times a smearing factor** (plain $e^{\hat y}$ is the median and underestimates the mean) | [note 01, 16.1](01_linear_regression.html#skewed-target) |
 
 First compare train and validation errors: that single check tells you whether to add complexity or to remove it.
 
 ## 11. Assumptions: linear vs logistic regression, and what regularisation changes {#assumptions-regularisation}
 
-The assumptions themselves, with how to check each one and what to do when it fails, are treated in full in [note 01, section 15](01_linear_regression.qmd#assumptions) for linear regression and in [note 02](02_logistic_regression.qmd) for logistic regression. Side by side:
+The assumptions themselves, with how to check each one and what to do when it fails, are treated in full in [note 01, section 15](01_linear_regression.html#assumptions) for linear regression and in [note 02](02_logistic_regression.html) for logistic regression. Side by side:
 
 | Assumption | Linear regression | Logistic regression |
 |---|---|---|
@@ -1081,7 +1081,7 @@ The residual plots that diagnose linearity and constant variance look like this:
 
 - **Perfect multicollinearity stops being a problem for fitting.** For $\lambda > 0$ the solution is unique even with duplicated columns, all $K$ dummies or $n > m$ (section 3.2); near-collinearity is tamed (9.9). The coefficients of a correlated group are still not individually interpretable: Ridge splits the weight, Lasso keeps an arbitrary split or an arbitrary member.
 - **Separation stops being a problem** in logistic regression: the penalised problem always has a finite, unique solution (section 8).
-- **The coefficients become biased on purpose** (section 3.5). The classical standard errors, $t$ statistics, confidence intervals and p-values of [note 01, section 14](01_linear_regression.qmd#ols-statistics) do **not** apply to penalised coefficients, and naive bootstrap intervals are distorted by the shrinkage. Selecting features with Lasso and then testing them on the same data overstates their significance. If inference is the goal, fit an unpenalised model on features chosen in advance (or on a separate sample).
+- **The coefficients become biased on purpose** (section 3.5). The classical standard errors, $t$ statistics, confidence intervals and p-values of [note 01, section 14](01_linear_regression.html#ols-statistics) do **not** apply to penalised coefficients, and naive bootstrap intervals are distorted by the shrinkage. Selecting features with Lasso and then testing them on the same data overstates their significance. If inference is the goal, fit an unpenalised model on features chosen in advance (or on a separate sample).
 - **Scaling becomes an assumption of its own**: the result depends on the units unless the features are standardised (section 2).
 - **Nothing else is fixed.** A wrong functional form, dependent observations, non-constant variance, omitted confounders and influential points are just as harmful with a penalty. Lasso can even drop a confounder whose effect is small but whose omission biases the others. Check the residuals of a regularised model exactly as for OLS.
 
@@ -1093,4 +1093,4 @@ The residual plots that diagnose linearity and constant variance look like this:
 - In logistic regression, L2 makes the problem strictly convex with a finite solution even for separable data; scikit-learn uses `C = 1/λ` and `l1_ratio` to choose the penalty.
 - Inputs: scale for penalties, gradient descent and distances (not for trees); one-hot with $K-1$ dummies (the full set is rank-deficient); ordinal codes only for ordered, evenly spaced levels (and set the order explicitly); high-cardinality: group, frequency, **out-of-fold** target encoding or hashing; missing values: impute + indicator, never with the target; skewed features: log / Box–Cox / Yeo–Johnson; outliers: fix errors, winsorise, `RobustScaler`; centre before interactions and powers; Ridge stabilises collinear groups, Lasso does not (it keeps an unstable split or drops members arbitrarily).
 - Every learned preprocessing step goes inside a `Pipeline` / `ColumnTransformer` and inside cross-validation; watch for features known only after the outcome.
-- Regularisation fixes non-uniqueness and separation, invalidates classical inference on the coefficients, and fixes none of the other assumptions ([note 01, section 15](01_linear_regression.qmd#assumptions); [note 02](02_logistic_regression.qmd)).
+- Regularisation fixes non-uniqueness and separation, invalidates classical inference on the coefficients, and fixes none of the other assumptions ([note 01, section 15](01_linear_regression.html#assumptions); [note 02](02_logistic_regression.html)).

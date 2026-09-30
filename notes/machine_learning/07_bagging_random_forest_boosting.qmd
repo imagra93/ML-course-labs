@@ -8,14 +8,14 @@ format:
           <script src="../../slides/machine_learning/assets/fig-ensembles.js"></script>
 ---
 
-[Note 06](06_decision_trees_cart.qmd) ended with the main weakness of decision trees: **high variance**. A deep tree fits its training set almost perfectly, but a slightly different training set gives a very different tree. **Ensembles** fix this by combining many trees, in two opposite ways:
+[Note 06](06_decision_trees_cart.html) ended with the main weakness of decision trees: **high variance**. A deep tree fits its training set almost perfectly, but a slightly different training set gives a very different tree. **Ensembles** fix this by combining many trees, in two opposite ways:
 
 - **Bagging and random forests** train many deep (low-bias, high-variance) trees **independently** on perturbed copies of the data and **average** them: the variance goes down.
 - **Boosting** trains many shallow (high-bias, low-variance) trees **sequentially**, each one correcting what the ensemble so far gets wrong: the bias goes down.
 
 This note is the reference text for the [Bagging, Random Forest and Boosting deck](../../slides/machine_learning/07_ensembles.html). It covers every slide in more depth and adds: when bagging helps and when it does not, a measurement of the tree correlation that random forests reduce, feature importance and partial dependence, AdaBoost derived from the exponential loss, the general gradient boosting algorithm (from scratch for squared loss and log-loss), the second-order derivation behind XGBoost checked against the `xgboost` library, the practical knobs of boosting, and the assumptions of ensembles with how to check them.
 
-**What you need.** Regression and classification trees, impurity and leaf values ([note 06](06_decision_trees_cart.qmd)); bias, variance and cross-validation ([note 00](00_supervised_learning.qmd)); the squared loss and its gradient ([note 01](01_linear_regression.qmd)); logistic regression, the sigmoid $\sigma(z) = 1/(1 + e^{-z})$ and the log-loss gradient $p - y$ ([note 02](02_logistic_regression.qmd)); basic probability (variance, covariance, independence).
+**What you need.** Regression and classification trees, impurity and leaf values ([note 06](06_decision_trees_cart.html)); bias, variance and cross-validation ([note 00](00_supervised_learning.html)); the squared loss and its gradient ([note 01](01_linear_regression.html)); logistic regression, the sigmoid $\sigma(z) = 1/(1 + e^{-z})$ and the log-loss gradient $p - y$ ([note 02](02_logistic_regression.html)); basic probability (variance, covariance, independence).
 
 **After this note you can**
 
@@ -90,7 +90,7 @@ $$= \frac{\sigma^2}{B} + \rho\sigma^2 - \frac{\rho\sigma^2}{B} = \rho\sigma^2 + 
 
 **Numbers** (slide 4): $\sigma^2 = 1$, $\rho = 0.3$. One model: $1$. $B = 10$: $0.3 + 0.7/10 = 0.37$. $B = 100$: $0.3 + 0.7/100 = 0.307$. $B \to \infty$: $0.3$.
 
-**Averaging does not change the bias.** By linearity of expectation, $\mathbb{E}[\bar h] = \frac1B\sum_b\mathbb{E}[h_b] = \frac1B\cdot B\mu = \mu$: the ensemble has the same expected prediction as one model, hence the same bias. In the bias–variance decomposition of the squared error ([note 00](00_supervised_learning.qmd)), $\mathbb{E}\big[(y - \bar h)^2\big] = \text{noise} + \text{bias}^2 + \mathrm{Var}(\bar h)$, only the last term shrinks. Consequences:
+**Averaging does not change the bias.** By linearity of expectation, $\mathbb{E}[\bar h] = \frac1B\sum_b\mathbb{E}[h_b] = \frac1B\cdot B\mu = \mu$: the ensemble has the same expected prediction as one model, hence the same bias. In the bias–variance decomposition of the squared error ([note 00](00_supervised_learning.html)), $\mathbb{E}\big[(y - \bar h)^2\big] = \text{noise} + \text{bias}^2 + \mathrm{Var}(\bar h)$, only the last term shrinks. Consequences:
 
 - Average **low-bias** models: deep trees. Averaging high-bias models (stumps, linear models) leaves the bias where it is (section 5 shows it).
 - As $B\to\infty$ the second term vanishes, so **more trees never hurt** (they just cost compute): the error levels off, it does not go back up.
@@ -375,7 +375,7 @@ plt.tight_layout(); plt.show()
 
 A forest of hundreds of deep trees cannot be read like a single tree. Three ways to ask "how much does the model rely on feature $j$?", and one to ask "how does the prediction change with feature $j$?":
 
-- **Impurity importance (MDI, "mean decrease in impurity")**, `feature_importances_`: for every split on feature $j$, the decrease in impurity (Gini, entropy or MSE, [note 06](06_decision_trees_cart.qmd)) weighted by the fraction of training samples reaching that node; summed over the tree, averaged over the trees, normalised to sum to 1. Free (a by-product of training), but computed on the **training** data, so it rewards splits that only fit noise, and it is **biased towards features with many distinct values** (a continuous feature offers many more candidate thresholds, so by chance one of them always reduces impurity a little).
+- **Impurity importance (MDI, "mean decrease in impurity")**, `feature_importances_`: for every split on feature $j$, the decrease in impurity (Gini, entropy or MSE, [note 06](06_decision_trees_cart.html)) weighted by the fraction of training samples reaching that node; summed over the tree, averaged over the trees, normalised to sum to 1. Free (a by-product of training), but computed on the **training** data, so it rewards splits that only fit noise, and it is **biased towards features with many distinct values** (a continuous feature offers many more candidate thresholds, so by chance one of them always reduces impurity a little).
 - **Permutation importance**: on held-out data, shuffle the column of feature $j$ (which breaks its link with $y$ while keeping its distribution) and measure how much the score drops. Model-agnostic and computed on held-out data, so pure noise features get about 0. Cost: one prediction pass per feature and repeat.
 - **Drop-column importance**: retrain without feature $j$ and measure how much the held-out score drops. It answers the cleanest question ("how much worse is a model that never had this feature?"), at the cost of one retraining per feature.
 
@@ -687,7 +687,7 @@ $$
 - **Log-loss** (classification, $y\in\{0,1\}$), with $F$ = log-odds and $p = \sigma(F)$: $\ell = -[y\ln p + (1-y)\ln(1-p)]$.
 $$\frac{\partial\ell}{\partial p} = -\frac yp + \frac{1-y}{1-p} = \frac{p-y}{p(1-p)}, \qquad \frac{\partial p}{\partial F} = p(1-p),$$
 $$\frac{\partial\ell}{\partial F} = \frac{p-y}{p(1-p)}\cdot p(1-p) = p - y \quad\Longrightarrow\quad r = y - p,$$
-by the chain rule, with the same cancellation as in logistic regression ([note 02](02_logistic_regression.qmd)).
+by the chain rule, with the same cancellation as in logistic regression ([note 02](02_logistic_regression.html)).
 
 **The full algorithm** (Friedman, 2001). Input: a differentiable loss $\ell$, the number of trees $M$, the learning rate $\nu$, the tree size.
 
@@ -1028,7 +1028,7 @@ All three libraries implement the gradient boosting of sections 13–14 with the
 
 ## 16. Assumptions: what they mean, how to check them, what to do
 
-Ensembles make **no distributional assumptions** about the data (no linearity, no Gaussian errors, no constant variance: [note 03](03_regularization_inputs_assumptions.qmd) does not apply) and they are used for **prediction**. Their assumptions are about the **ingredients** of the ensemble (diverse base learners that beat chance, with the right amount of bias, enough data in every leaf) and about the **data** (independent rows, so that bootstrap, OOB and early stopping estimate what they claim; no need to extrapolate). For **interpretation** (importances, partial dependence), the caveats of section 7 apply.
+Ensembles make **no distributional assumptions** about the data (no linearity, no Gaussian errors, no constant variance: [note 03](03_regularization_inputs_assumptions.html) does not apply) and they are used for **prediction**. Their assumptions are about the **ingredients** of the ensemble (diverse base learners that beat chance, with the right amount of bias, enough data in every leaf) and about the **data** (independent rows, so that bootstrap, OOB and early stopping estimate what they claim; no need to extrapolate). For **interpretation** (importances, partial dependence), the caveats of section 7 apply.
 
 | assumption | what goes wrong if it fails | how to check | what to do |
 |---|---|---|---|
@@ -1185,7 +1185,7 @@ print("linear trend + forest on residuals:", (lin_e.predict(x_new) + rf_res.pred
 
 Inside $[0, 10]$ both follow the trend; beyond it the forest stays at its last value (about 19.7), while the detrended model continues the line.
 
-**What to do.** (1) Model the trend with a linear model (or a GLM, [note 02b](02b_generalized_linear_models.qmd)) and let the ensemble learn the residuals, as above. (2) Transform the target or features so that the future looks like the past (ratios, rates, deflated amounts instead of raw euros). (3) Use a model that extrapolates (linear, or LightGBM's linear trees) when extrapolation is unavoidable, and be explicit about its risk.
+**What to do.** (1) Model the trend with a linear model (or a GLM, [note 02b](02b_generalized_linear_models.html)) and let the ensemble learn the residuals, as above. (2) Transform the target or features so that the future looks like the past (ratios, rates, deflated amounts instead of raw euros). (3) Use a model that extrapolates (linear, or LightGBM's linear trees) when extrapolation is unavoidable, and be explicit about its risk.
 
 ## 17. Bagging vs. boosting
 
