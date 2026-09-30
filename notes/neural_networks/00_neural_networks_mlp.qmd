@@ -280,6 +280,8 @@ print(f"circle, features (x1^2, x2^2):     accuracy {acc_sq:.3f}")
 print(f"XOR cloud, features (x1, x2, x1x2): accuracy {acc_prod:.3f}")
 ```
 
+On the raw features the circle defeats logistic regression: its accuracy 0.645 is exactly the share of the majority class, i.e. it learned nothing. On the squared features it reaches 0.995, and the product feature takes the XOR cloud from about 50 % (section 6) to 0.991.
+
 But **you must guess the right features**. For a $224\times224$ colour photo, $224\cdot224\cdot3 = 150{,}528$ pixel values: which formula of them means "cat", or "dented bumper"? Nobody knows. **Fix 2** lets the model learn useful features from the data, and that is exactly what a **hidden layer** does.
 
 ## 8. Fix 2: a hidden layer learns the features (XOR by hand)
@@ -618,7 +620,7 @@ print("two linear layers == one layer:", np.allclose((Xr @ W1_t + b1_t) @ W2_t +
 
 ## 16. Depth and non-linearity in action
 
-**Try it.** Like the [TensorFlow playground](https://playground.tensorflow.org/): a network trained from scratch in your browser on only $x_1, x_2$ (no hand-made features), on the circle data with 4 % of the labels flipped on purpose (noise), so 100 % accuracy is not the goal. With **0 hidden units** the model is logistic regression and draws one straight line; with 2 units it draws two lines, still not enough for a circle; with **3–4 units** four soft walls close a region: the hidden layer learned the features. With the **Linear** activation the boundary stays a line however many units and layers you add (section 15). The read-outs give the number of parameters, the training accuracy and the final loss of each configuration.
+**Try it.** Like the [TensorFlow playground](https://playground.tensorflow.org/): a network trained from scratch in your browser on only $x_1, x_2$ (no hand-made features), on the circle data with 4 % of the labels flipped on purpose (noise), so 100 % accuracy is not the goal. With **0 hidden units** the model is logistic regression and draws one straight line; with 2 units it draws two lines, still not enough for a circle; with **3–4 units** four soft walls close a region: the hidden layer learned the features. With the **Linear** activation the boundary stays a line however many units and layers you add (section 15). The read-outs give the number of parameters, the training accuracy and the final loss of each configuration: logistic regression (3 parameters) reaches only 0.630 accuracy; 2 tanh units (9 parameters) 0.785; 4 units (17 parameters) 0.945; the same 4 units with the linear activation fall back to 0.630 and loss 0.658, exactly logistic regression; two layers of 6 tanh units (67 parameters) reach 0.985.
 
 ```{=html}
 <div class="widget" data-fig="playground" data-auto="u=0 :: 0 hidden units: logistic regression, one straight line | u=2 :: 2 units: two lines, still not enough for a circle | u=4 :: 4 units: four soft walls close a region | a=linear :: linear activation: however many units, still a line | a=tanh; u=6; l=2 :: back to tanh, 2 layers of 6: a rounder region">
@@ -737,9 +739,9 @@ $$
 
 ```{python}
 bce_z = lambda z, y: -(y * np.log(sigmoid(z)) + (1 - y) * np.log(1 - sigmoid(z)))
-h = 1e-6
+eps_fd = 1e-6                                    # finite-difference step
 for zz, yy in [(-3.0, 1), (3.0, 1), (0.5, 0)]:
-    numeric = (bce_z(zz + h, yy) - bce_z(zz - h, yy)) / (2 * h)
+    numeric = (bce_z(zz + eps_fd, yy) - bce_z(zz - eps_fd, yy)) / (2 * eps_fd)
     print(f"z = {zz:+.1f}, y = {yy}:  finite difference {numeric:+.4f}   y_hat - y = {sigmoid(zz) - yy:+.4f}")
 ```
 
@@ -792,7 +794,7 @@ With the example above and true class "dog", $L = -\log 0.903 = 0.103$ and the g
 zs = np.array([1.3, 5.1, 2.2, 0.7, 1.1]); true = 1                     # classes: cat, dog, car, tree, boat
 softmax = lambda v: np.exp(v - v.max()) / np.exp(v - v.max()).sum()   # shift by the max: same result, no overflow
 p = softmax(zs); ce_loss = lambda v: -np.log(softmax(v)[true])
-num = np.array([(ce_loss(zs + h * e) - ce_loss(zs - h * e)) / (2 * h) for e in np.eye(5)])
+num = np.array([(ce_loss(zs + eps_fd * e) - ce_loss(zs - eps_fd * e)) / (2 * eps_fd) for e in np.eye(5)])
 print("probabilities:", p.round(3), f"  loss = {ce_loss(zs):.3f}")
 print("gradient y_hat - y:  ", (p - np.eye(5)[true]).round(3))
 print("finite differences:  ", num.round(3))
@@ -817,7 +819,7 @@ $$
 
 a one-hidden-layer network with $2N$ sigmoid units (two per bump) whose output weights are $\pm f(\text{centre}_i)$. Inside each interval $h$ is a constant equal to $f$ at the centre, so the error there is at most how much $f$ varies over a width $\frac1N$: it shrinks as $N$ grows, for any continuous $f$. More units, finer bumps.
 
-**Try it.** The target is $f(x) = \sin(2\pi x) + 0.5x$ and the bumps use $k = 40N$. One bump is a flat step; with 4 bumps the shape appears; 12 bumps use 24 hidden units; 30 bumps are almost exact away from the two ends (at $x = 0$ and $x = 1$ the outermost sigmoids are only half switched on, $\sigma(0) = \frac12$).
+**Try it.** The target is $f(x) = \sin(2\pi x) + 0.5x$ and the bumps use $k = 40N$. One bump is a flat step; with 4 bumps the shape appears; 12 bumps use 24 hidden units; 30 bumps follow the curve closely away from the two ends (at $x = 0$ and $x = 1$ the outermost sigmoids are only half switched on, $\sigma(0) = \frac12$). The cell below measures it: on $[0.05, 0.95]$ the maximum error falls from 0.878 (1 bump) to 0.481, 0.204 and 0.082 (30 bumps, 60 units), while at the ends it stays large.
 
 ```{=html}
 <div class="widget" data-fig="ua" data-auto="n=1 :: one bump: a flat step | n=4 :: four bumps: the shape appears | n=12 :: twelve bumps (24 hidden units) | n=30 :: thirty bumps: almost exact">
@@ -1040,7 +1042,7 @@ print("KS statistic per feature, training vs shifted:",
       " scipy:", [f"{ks_2samp(X_tr[:, j], X_new[:, j]).statistic:.3f}" for j in range(4)])
 ```
 
-The adversarial classifier cannot tell training from like-training data (AUC near 0.5) but separates the shifted data easily, and the KS statistics point at feature $x_2$ (the second entry). The plot shows why the error grew: along $x_2$, the network follows $\sin(2x_2)$ where the training data are dense and drifts away from it where they thin out.
+The error on shifted data (0.448) is more than three times the error on new data like the training data (0.132). The adversarial classifier cannot tell training from like-training data (AUC 0.526) but separates the shifted data easily (AUC 0.826), and the KS statistics point at feature $x_2$ (0.502 against at most 0.040 for the others). The plot shows why the error grew: along $x_2$, the network follows $\sin(2x_2)$ where the training data are dense and drifts away from it where they thin out.
 
 **What to do**, in order of preference:
 
@@ -1074,32 +1076,35 @@ plt.tight_layout(); plt.show()
 
 **How to check.** Plot the residuals $y - \hat y$ against each input: structure left in the residuals is signal the network missed. Watch the training loss: a long plateau followed by slow progress is typical of a high-frequency target. Compare with a model that handles jumps and interactions natively (gradient boosting, [ML note 07](../machine_learning/07_bagging_random_forest_boosting.qmd)): a large gap in its favour suggests a non-smooth target (section 25.5).
 
-The same network, data size, noise and training budget, for a smooth target $\sin(\pi x)$ and a wiggly one $\sin(12\pi x)$ on $[-1, 1]$:
+The same network, data size, noise and training budget, for a smooth target $\sin(\pi x)$ and a wiggly one $\sin(16\pi x)$ (16 periods) on $[-1, 1]$, 300 noisy points (noise standard deviation 0.1):
 
 ```{python}
-x1d = np.sort(rng.uniform(-1, 1, 300)); xt1d = np.linspace(-1, 1, 500)
+rng_s = np.random.default_rng(0)                          # same inputs and noise for every target
+x1d = np.sort(rng_s.uniform(-1, 1, 300)); noise1d = 0.1 * rng_s.normal(size=300); xt1d = np.linspace(-1, 1, 500)
 def smooth_demo(k, features=lambda a: a[:, None], steps=1500):
-    yk = np.sin(k * np.pi * x1d) + 0.1 * rng.normal(size=x1d.size)
+    yk = np.sin(k * np.pi * x1d) + noise1d
     net_ = make_mlp(features(x1d).shape[1], (64, 64), seed=0); fit(net_, features(x1d), yk[:, None], mse, steps=steps)
     pred = predict(net_, features(xt1d)).ravel()
     return yk, pred, np.sqrt(np.mean((pred - np.sin(k * np.pi * xt1d)) ** 2))
 
 y_lo, p_lo, e_lo = smooth_demo(1)
-y_hi, p_hi, e_hi = smooth_demo(12)
+y_hi, p_hi, e_hi = smooth_demo(16)
 print(f"RMSE to the true function: smooth target {e_lo:.3f}, wiggly target {e_hi:.3f}")
 ```
 
+With the same budget the smooth target is recovered to an RMSE of 0.018, far below the noise level 0.1, while the wiggly one stays at 0.323: most of its 16 waves were not learned (left and middle panels below).
+
 **What to do**, in order of preference:
 
-1. If you know the structure, **give it to the network as features**: periodic effects as $\sin$/$\cos$ of the period, multiplicative effects on a log scale. A general version for low-dimensional inputs is *random Fourier features*, $\gamma(x) = \big(\sin(\pi b_jx), \cos(\pi b_jx)\big)_{j=1}^{16}$ with random frequencies $b_j\sim\mathcal{N}(0, s^2)$: each feature already oscillates, so the network only has to combine them. Cheap, but $s$ is one more hyperparameter.
-2. **More units and more training steps.** It works because the high frequencies are learned eventually; the cost is compute (here 4× the steps).
+1. If you know the structure, **give it to the network as features**: periodic effects as $\sin$/$\cos$ of the period, multiplicative effects on a log scale. A general version for low-dimensional inputs is *random Fourier features*, $\gamma(x) = \big(\sin(\pi b_jx), \cos(\pi b_jx)\big)_{j=1}^{16}$ with random frequencies $b_j\sim\mathcal{N}(0, s^2)$: each feature already oscillates, so the network only has to combine them. Cheap, but $s$ is one more hyperparameter (here $s = 6$, so that some $b_j$ come close to the target's frequency 16).
+2. **More units and more training steps.** The high frequencies are learned eventually, but slowly: here 4× the steps only takes the error from 0.323 to 0.213, while the Fourier features reach 0.095 in the original budget (right panel).
 3. For **jumps and thresholds in tabular data**, use trees (gradient boosting), whose pieces are exactly such steps (section 25.5).
 
 ```{python}
 B_rff = np.random.default_rng(1).normal(0, 6, 16)
 rff = lambda a: np.c_[np.sin(np.pi * np.outer(a, B_rff)), np.cos(np.pi * np.outer(a, B_rff))]
-_, p_long, e_long = smooth_demo(12, steps=6000)
-_, p_rff, e_rff = smooth_demo(12, features=rff)
+_, p_long, e_long = smooth_demo(16, steps=6000)
+_, p_rff, e_rff = smooth_demo(16, features=rff)
 print(f"wiggly target: 4x longer training RMSE {e_long:.3f}; random Fourier features (same 1500 steps) RMSE {e_rff:.3f}")
 fig, axes = plt.subplots(1, 3, figsize=(15, 3.4), sharey=True)
 for ax, (yy, pp, title) in zip(axes, [(y_lo, [p_lo], f"smooth target, RMSE {e_lo:.3f}"),
@@ -1158,11 +1163,11 @@ for ax, names in zip(axes, [["m = 100", "m = 100, weight decay 0.01"], ["m = 100
     for k, name in enumerate(names):
         tr, va = runs[name]; st = 25 * np.arange(len(tr))
         ax.plot(st, tr, color=f"C{k}", lw=1.5, ls="--", label=f"{name}: train"); ax.plot(st, va, color=f"C{k}", lw=2, label=f"{name}: validation")
-    ax.set_yscale("log"); ax.set_xlabel("training step"); ax.legend(fontsize=8)
-axes[0].set_ylabel("MSE (standardised $y$)"); plt.tight_layout(); plt.show()
+    ax.set_yscale("log"); ax.set_ylim(1e-3, 1.5); ax.set_xlabel("training step"); ax.legend(fontsize=8)
+axes[0].set_ylabel("MSE (standardised $y$)")   # m = 100 training MSE keeps falling below the plot; plt.tight_layout(); plt.show()
 ```
 
-With 100 examples the training error goes to almost 0 while the validation error bottoms out early and then rises: the network memorises the noise. With 1000 examples the two curves stay close and the validation error is several times lower. (The noise alone gives a validation MSE of about 0.04 in these standardised units, so even $m = 1000$ leaves room.)
+With 100 examples the training MSE goes to 0.000 while the validation MSE stays at 0.243: the network has memorised the noise, and that gap is the overfitting. Weight decay closes part of it (validation 0.147). With 1000 examples the validation MSE reaches 0.059 at step 450 and then creeps up to 0.087 as the network starts fitting noise too: early stopping at the best step would keep 0.059, about four times better than with 100 examples.
 
 **What to do**, in order of preference: (1) **more data**, the only remedy that reduces variance without adding bias; (2) **early stopping**: keep the weights of the step with the lowest validation loss (the "best val" column); (3) **weight decay** (the L2 penalty of [ML note 03](../machine_learning/03_regularization_inputs_assumptions.qmd), here `weight_decay=0.01`), dropout and data augmentation ([NN note 02](02_training_optimization_regularization.qmd)); (4) a smaller network. Each of (2)–(4) trades variance for some bias; the validation curve tells you how much.
 
@@ -1200,6 +1205,8 @@ for name, Xx in [("raw", Xb), ("standardised", Xb_std)]:
           f"condition number of X'X/m: {ev.max() / ev.min():.1e}")
 ```
 
+With raw inputs 97 % of the hidden pre-activations are saturated before training starts; after standardising, none. Standardising also lowers the condition number from $2.2\times10^{12}$ to $1.0\times10^{5}$; what remains is due to strongly correlated features (radius, perimeter and area of the same cell nucleus), the collinearity of [ML note 03](../machine_learning/03_regularization_inputs_assumptions.qmd).
+
 Now train the same tanh network with plain gradient descent on both versions, each with the best of three learning rates (so that the comparison is fair):
 
 ```{python}
@@ -1215,6 +1222,8 @@ plt.figure(figsize=(6.5, 3.6))
 for name, (lr_, h_) in results.items(): plt.plot(h_, lw=2, label=f"{name} inputs, α = {lr_}")
 plt.xlabel("gradient-descent step"); plt.ylabel("training BCE"); plt.legend(); plt.tight_layout(); plt.show()
 ```
+
+Gradient descent on the raw inputs only reaches a BCE of 0.482 after 500 steps (with its best learning rate, 0.001), while on the standardised inputs it reaches 0.053 (with $\alpha = 0.1$).
 
 **What to do.** (1) **Standardise** every input, $x_k\leftarrow(x_k - \mu_k)/s_k$, with the mean and standard deviation of the **training set only** (computing them on all the data leaks information from the validation set), and apply the same $\mu_k, s_k$ to new data. (2) Log-transform heavy-tailed positive features (amounts, counts) before standardising, so that a few huge values do not dominate $s_k$. (3) For regression, standardise the **target** too (section 25.3 shows what an unscaled target does). (4) Inside deep networks, normalisation layers (BatchNorm, LayerNorm, [NN note 02](02_training_optimization_regularization.qmd)) do the same for the hidden layers.
 
@@ -1274,7 +1283,8 @@ The error is multiplied by $\sigma'(z)\le\frac14$, which is almost 0 exactly whe
 The demo: one sigmoid neuron on 1-D data, started confidently wrong ($w = -6$, so it predicts the opposite class), trained by gradient descent with BCE and with MSE, both with $\alpha = 0.5$. We plot the BCE and accuracy of both along the way.
 
 ```{python}
-x_m = rng.normal(size=200); y_m = (rng.random(200) < sigmoid(3 * x_m)).astype(float)
+rng_m = np.random.default_rng(1)
+x_m = rng_m.normal(size=200); y_m = (rng_m.random(200) < sigmoid(3 * x_m)).astype(float)
 def train_neuron(loss, w=-6.0, b=0.0, alpha=0.5, steps=300):
     hist = []
     for _ in range(steps):
@@ -1295,10 +1305,10 @@ plt.tight_layout(); plt.show()
 z5 = -5.0
 print(f"at z = -5, y = 1: BCE gradient {sigmoid(z5) - 1:.4f}, MSE gradient {(sigmoid(z5) - 1) * sigmoid(z5) * (1 - sigmoid(z5)):.4f}")
 zp, yp = 0.7, 3.0; pois = lambda z_: np.exp(z_) - yp * z_
-print(f"Poisson, z = {zp}, y = {yp}: finite difference {(pois(zp + h) - pois(zp - h)) / (2 * h):.4f}   e^z - y = {np.exp(zp) - yp:.4f}")
+print(f"Poisson, z = {zp}, y = {yp}: finite difference {(pois(zp + eps_fd) - pois(zp - eps_fd)) / (2 * eps_fd):.4f}   e^z - y = {np.exp(zp) - yp:.4f}")
 ```
 
-BCE recovers within a few dozen steps; MSE, starting from the saturated region, stays almost where it started. Once converged, the BCE neuron satisfies the balance property.
+BCE recovers within 50 steps (accuracy 0.78, the level it keeps); MSE, starting from the saturated region, is still at accuracy 0.20 after 300 steps, exactly the slowdown predicted by the extra $\sigma'$ factor. The BCE neuron satisfies the balance property (mean prediction 0.475 = mean target 0.475); the MSE one, far from its optimum, does not (0.515).
 
 **What to do.** Use the canonical pair of the target type: linear + MSE (`MSELoss`), sigmoid + BCE (`BCEWithLogitsLoss`), softmax + CE (`CrossEntropyLoss`), exponential + Poisson NLL (`PoissonNLLLoss(log_input=True)`, which takes the logit $z = \log\hat y$). If the target is a cost with a long right tail, model $\log y$ with MSE or use a Gamma/Tweedie loss (the GLMs of [ML note 02b](../machine_learning/02b_generalized_linear_models.qmd)). Pass logits to the fused losses (section 19).
 
@@ -1400,13 +1410,13 @@ print(f"permuted + sign-flipped twin: max output difference {diff_out:.1e}, dist
       f"16! = {factorial(16):.2e}, times 2^16 = {factorial(16) * 2**16:.2e}")
 ```
 
-The five runs reach similar training losses and the same test accuracy, with completely different weights, and they disagree on a few per cent of the plane, mostly far from the data where nothing constrains them. The twin network is a different point in parameter space that computes the same function to float precision.
+The five runs reach similar training losses (0.039–0.042) and almost the same test accuracy (0.960–0.962), with completely different weights, and they disagree on a few per cent of the plane, mostly far from the data where nothing constrains them. The twin network is a different point in parameter space that computes the same function to float precision.
 
 **Remedies and consequences.** (1) Never interpret an individual weight or hidden unit as if it had a fixed identity. (2) Report the spread of the validation score over a few seeds before claiming that one configuration beats another. (3) Average the predictions of several seeds (an **ensemble**): it reduces the variance due to the start and is usually better than any single run. (4) Fix all seeds (NumPy, PyTorch) when you need reproducibility.
 
 ### 25.3 …many ReLU units are dead
 
-**Symptom.** The loss plateaus early, predictions are nearly constant, and many hidden units output exactly 0 for every training example.
+**Symptom.** The loss plateaus early or the network underfits although it is large, and many hidden units output exactly 0 for every training example.
 
 **How to detect it.** For each ReLU unit, compute its maximum pre-activation over the training set: if $\max_i Z^{[l]}_{ij}\le 0$, unit $j$ is **dead** (it never fires on this data). Report the fraction of dead units per layer.
 
@@ -1418,33 +1428,40 @@ $$
 \delta^{[l]}_{ij} = \frac{\partial J}{\partial A^{[l]}_{ij}}\cdot\mathrm{ReLU}'\big(Z^{[l]}_{ij}\big).
 $$
 
-If $Z^{[l]}_{ij} < 0$ for every example $i$, then $\mathrm{ReLU}' = 0$ in every term, the gradient of column $j$ of $\mathbf{W}^{[l]}$ and of $b^{[l]}_j$ is **exactly zero**, and gradient descent never changes them. A unit of the first layer, whose inputs never change, stays dead forever; deeper units can only be revived if the layers below change their inputs. Units die when one large update (a large learning rate times a large gradient) pushes their bias strongly negative. A classic cause is an **unscaled regression target**: predicting a claim cost in euros, the first errors are in the thousands, and so are the first gradients.
+If $Z^{[l]}_{ij} < 0$ for every example $i$, then $\mathrm{ReLU}' = 0$ in every term, the gradient of column $j$ of $\mathbf{W}^{[l]}$ and of $b^{[l]}_j$ is **exactly zero**, and gradient descent never changes them. A unit of the first layer, whose inputs never change, stays dead forever; deeper units can only be revived if the layers below change their inputs. Units die when the updates push their pre-activation below zero on every example: a learning rate that is too large, or a target whose scale forces the weights to move far and fast. A classic case is an **unscaled regression target**: predicting a claim cost in euros, the first errors are in the thousands. Below, a 5-64-64-1 ReLU network on made-up claim costs, trained with Adam for 500 steps; then we compute the gradient flowing into the never-positive units and train 500 more steps with a ten times smaller learning rate to see whether any of them comes back.
 
 ```{python}
-def dead_fraction(net_, X_):
-    """Fraction of ReLU units per layer whose pre-activation is <= 0 on every example."""
+def dead_masks(net_, X_):
+    """For each ReLU layer, a boolean mask of the units whose pre-activation is <= 0 on every example."""
     out, A_ = [], torch.as_tensor(X_, dtype=torch.float32)
     with torch.no_grad():
         for layer in net_:
-            if isinstance(layer, (nn.ReLU, nn.LeakyReLU)): out.append((A_.max(0).values <= 0).float().mean().item())
+            if isinstance(layer, (nn.ReLU, nn.LeakyReLU)): out.append(A_.max(0).values <= 0)   # A_ is the layer's input Z
             A_ = layer(A_)
-    return [round(v, 2) for v in out]
+    return out
+count = lambda masks: [int(mk.sum()) for mk in masks]
 
-X_cost = rng.normal(size=(1000, 5))
-cost = 2000 + 800 * np.tanh(X_cost[:, 0]) + 250 * X_cost[:, 1] ** 2 + 300 * rng.normal(size=1000)   # made-up claim costs in euros
+rng_c = np.random.default_rng(0)
+X_cost = rng_c.normal(size=(1000, 5))
+cost = 2000 + 800 * np.tanh(X_cost[:, 0]) + 250 * X_cost[:, 1] ** 2 + 300 * rng_c.normal(size=1000)   # made-up claim costs in euros
 cost_std = (cost - cost.mean()) / cost.std()
-for name, target, act, lr_ in [("target in euros, ReLU, α = 1e-4", cost, nn.ReLU, 1e-4),
-                               ("target in euros, ReLU, α = 1e-5", cost, nn.ReLU, 1e-5),
-                               ("target in euros, LeakyReLU, α = 1e-4", cost, nn.LeakyReLU, 1e-4),
-                               ("standardised target, ReLU, α = 1e-2", cost_std, nn.ReLU, 1e-2)]:
+Xc_t = torch.tensor(X_cost, dtype=torch.float32)
+for name, target, act, lr_ in [("target in euros, ReLU, α = 0.01", cost, nn.ReLU, 0.01),
+                               ("standardised, ReLU, α = 0.1", cost_std, nn.ReLU, 0.1),
+                               ("standardised, LeakyReLU, α = 0.1", cost_std, nn.LeakyReLU, 0.1),
+                               ("standardised, ReLU, α = 0.01", cost_std, nn.ReLU, 0.01)]:
     net_ = make_mlp(5, (64, 64), act=act, seed=0)
-    before = dead_fraction(net_, X_cost)
-    hist = fit(net_, X_cost, target[:, None], mse, steps=500, lr=lr_, sgd=True)
+    fit(net_, X_cost, target[:, None], mse, steps=500, lr=lr_)
+    masks = dead_masks(net_, X_cost)
+    net_.zero_grad(); mse(net_(Xc_t), torch.tensor(target[:, None], dtype=torch.float32)).backward()
+    g_dead = net_[2].weight.grad[masks[1]].abs().max().item() if masks[1].any() else 0.0   # rows of layer 2 = its units
+    fit(net_, X_cost, target[:, None], mse, steps=500, lr=lr_ / 10)                   # 500 more, gentler steps
     r2 = 1 - np.mean((predict(net_, X_cost).ravel() - target) ** 2) / target.var()
-    print(f"{name:38s} never-positive units per layer: before {before}, after {dead_fraction(net_, X_cost)};  R^2 = {r2:.3f}")
+    print(f"{name:34s} never-positive units (of 64, 64): {count(masks)} -> after 500 more steps {count(dead_masks(net_, X_cost))};"
+          f"  max |gradient| into those of layer 2: {g_dead:.1e};  R^2 = {r2:.2f}")
 ```
 
-With the target in euros and ReLU units, the first steps kill most of the second layer (for LeakyReLU the same "never positive" count is shown, but those units still pass a gradient of slope $\beta$), and the network ends up worse than predicting the mean ($R^2 < 0$). A ten times smaller learning rate avoids the massacre but learns slowly; standardising the target fixes the cause.
+Read the table row by row. With the target in euros, 36 of the 64 units of the second layer never fire; the gradient into them is exactly 0, 500 more steps revive none of them, and the network ends with $R^2 = 0.79$. A learning rate that is too large kills 58 of 64 even with a standardised target: the 6 survivors still fit this easy target ($R^2 = 0.93$), but you pay for 64 units and use 6; on a harder problem or a narrower layer that is where training stalls. Leaky ReLU units in the negative region still receive a (small, non-zero) gradient, and some come back (53 → 49). With a standardised target and $\alpha = 0.01$, 13 units are inactive and $R^2 = 0.95$: a few dead units are normal, a majority is a problem.
 
 **Remedies**, in order: (1) **scale the target and the inputs** (section 24.4); (2) **lower the learning rate**, or warm it up from a small value ([NN note 02](02_training_optimization_regularization.qmd)); (3) **Leaky ReLU** (or GELU), whose derivative is never exactly 0, so a unit in the negative region still receives a gradient $\beta\,\delta$; (4) He initialisation with zero biases ([NN note 01](01_backpropagation.qmd)), sometimes a small positive bias (0.01) so that units start in the active region; (5) normalisation layers.
 
@@ -1523,7 +1540,8 @@ Two demonstrations. First, **an MLP cannot see the grid of an image**: shuffle t
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.model_selection import KFold
 Xd_raw, yd_raw = load_digits(return_X_y=True)
-pix_perm = rng.permutation(64); idx = rng.permutation(len(yd_raw)); tr_i, te_i = idx[:1200], idx[1200:]
+rng_w = np.random.default_rng(2)
+pix_perm = rng_w.permutation(64); idx = rng_w.permutation(len(yd_raw)); tr_i, te_i = idx[:1200], idx[1200:]
 def digits_accuracy(Xpix, first_layer_perm=None):
     mu_, sd_ = Xpix[tr_i].mean(0), Xpix[tr_i].std(0) + 1e-8; Zp = (Xpix - mu_) / sd_
     net_ = make_mlp(64, (64,), n_out=10, act=nn.ReLU, seed=0)
@@ -1534,8 +1552,8 @@ def digits_accuracy(Xpix, first_layer_perm=None):
 print(f"digits, MLP test accuracy: original pixels {digits_accuracy(Xd_raw):.4f}, "
       f"shuffled pixels {digits_accuracy(Xd_raw[:, pix_perm], first_layer_perm=torch.tensor(pix_perm)):.4f}")
 
-Xtab = rng.normal(size=(600, 12)); Xtab[:, 2] = np.round(np.abs(Xtab[:, 2]) * 5)            # feature 3 is a count
-ytab = ((Xtab[:, 0] > 0.3) ^ (Xtab[:, 1] > -0.5)).astype(int); flip = rng.random(600) < 0.05; ytab[flip] = 1 - ytab[flip]
+Xtab = rng_w.normal(size=(600, 12)); Xtab[:, 2] = np.round(np.abs(Xtab[:, 2]) * 5)            # feature 3 is a count
+ytab = ((Xtab[:, 0] > 0.3) ^ (Xtab[:, 1] > -0.5)).astype(int); flip = rng_w.random(600) < 0.05; ytab[flip] = 1 - ytab[flip]
 acc = {"MLP 12-64-64-1 (standardised inputs)": [], "gradient boosting": []}
 for k, (a, b) in enumerate(KFold(5, shuffle=True, random_state=0).split(Xtab)):
     mu_, sd_ = Xtab[a].mean(0), Xtab[a].std(0)

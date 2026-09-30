@@ -375,6 +375,7 @@ for scale in [0.5, 1.0, 1.5, 3.0]:
     plt.plot(Ts, [jac_norm(T, scale) for T in Ts], "o-", label=f"scale of $W_h$ = {scale}")
 plt.yscale("log"); plt.xlabel("number of steps back $T$"); plt.ylabel(r"$\|\partial h_T/\partial h_0\|$")
 plt.title("Vanilla tanh RNN: the influence of old inputs vanishes or explodes"); plt.legend(); plt.tight_layout(); plt.show()
+print("norm at T = 40 and T = 60:", "  ".join(f"scale {s}: {jac_norm(40, s):.1e}, {jac_norm(60, s):.1e}" for s in [0.5, 1.0, 1.5, 3.0]))
 ```
 
 Both failure modes appear. With small recurrent weights the influence of $\mathbf{h}_0$ on $\mathbf{h}_T$ **vanishes** exponentially (for scale 0.5 it underflows to 0 before $T=60$). With large weights it **explodes** exponentially. Saturation of the tanh units ($1-h_t^2\approx0$) slows the explosion but doesn't stop it here. Only a narrow range in between keeps the signal roughly constant, and training cannot be expected to stay there. That is why gating (sections 7–9) and gradient clipping (section 6) are needed.
@@ -423,7 +424,12 @@ $$
 - it points in the same direction ($c>0$), so it is still a descent direction: $-\alpha\,c\,\mathbf{g}\cdot\mathbf{g} = -\alpha c\lVert\mathbf{g}\rVert^2<0$ (first-order decrease of $J$);
 - its length is $c\lVert\mathbf{g}\rVert = \tau$.
 
-So clipping only caps the **step length** at $\alpha\tau$ and never changes where we are going. Clipping **by value** (clamping each component to $[-\tau,\tau]$) does change the direction: $\mathbf{g} = (10, 0.1)$ clamped to $[-1,1]$ becomes $(1, 0.1)$, and its angle to the first axis goes from $\arctan(0.1/10) = 0.57°$ to $\arctan(0.1/1) = 5.7°$. The norm is computed over **all** parameters together (a global norm), which keeps the relative size of the parameter groups.
+So clipping only caps the **step length** at $\alpha\tau$ and never changes where we are going.
+
+```{=html}
+<div class="widget"><svg class="fig" data-fig="clip" style="max-height:170px" aria-label="A long gradient vector rescaled to a maximum length"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#13">slide 13</a> of the RNN and LSTM deck.</p></div>
+```
+ Clipping **by value** (clamping each component to $[-\tau,\tau]$) does change the direction: $\mathbf{g} = (10, 0.1)$ clamped to $[-1,1]$ becomes $(1, 0.1)$, and its angle to the first axis goes from $\arctan(0.1/10) = 0.57°$ to $\arctan(0.1/1) = 5.7°$. The norm is computed over **all** parameters together (a global norm), which keeps the relative size of the parameter groups.
 
 In PyTorch: `nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)` after `loss.backward()` and before `opt.step()`. It **returns the norm before clipping**: log it, it is the best early warning of exploding gradients. A good $\tau$ is somewhat above the typical norm observed early in training; 1.0 is the usual default for RNNs.
 
@@ -485,7 +491,7 @@ A gate is a sigmoid: a **soft switch** between 0 (block) and 1 (let through), ap
 | input gate $\Gamma_i = \mathbf{i}_t$ | write new content into memory? | LSTM |
 | output gate $\Gamma_o = \mathbf{o}_t$ | how much to reveal of a cell? | LSTM |
 
-Analogy: a **notebook** (the cell state) with three rules: what to erase (forget), what to write (input), what to read aloud (output).
+Analogy: a **paper notebook** (the cell state) with three rules: what to erase (forget), what to write (input), what to read aloud (output).
 
 ## 8. The LSTM
 
@@ -660,8 +666,15 @@ def chain_norm(T, fb=None, d=8, dh=16):
             h = o1 * torch.tanh(c)
             for t in range(1, T): h, c = cell(xs[t], (h, c))
             return c
-    J = torch.autograd.functional.jacobian(run, torch.randn(1, dh, generator=g))[0, :, 0, :]
-    return torch.linalg.matrix_norm(J, 2).item()
+    state1 = torch.randn(1, dh, generator=g)
+    J = torch.autograd.functional.jacobian(run, state1)[0, :, 0, :]
+    if fb is None: return torch.linalg.matrix_norm(J, 2).item(), float("nan")
+    with torch.no_grad():                                                   # the all-direct path: prod_t diag(f_t)
+        c, h, prod_f = state1, o1 * torch.tanh(state1), torch.ones(dh)
+        for t in range(1, T):
+            z = xs[t] @ cell.weight_ih.T + cell.bias_ih + h @ cell.weight_hh.T + cell.bias_hh
+            prod_f *= torch.sigmoid(z.chunk(4, 1)[1][0]); h, c = cell(xs[t], (h, c))
+    return torch.linalg.matrix_norm(J, 2).item(), prod_f.max().item()
 
 for fb in [0.0, 1.0, 5.0]:
     J, D, Ind = one_step_jacobian(fb)
@@ -669,7 +682,9 @@ for fb in [0.0, 1.0, 5.0]:
           f"  ||direct|| = {torch.linalg.matrix_norm(D, 2):.2f},  ||indirect|| = {torch.linalg.matrix_norm(Ind, 2):.2f}")
 print()
 for name, fb in [("vanilla RNN", None), ("LSTM, forget bias 0", 0.0), ("LSTM, forget bias 1", 1.0), ("LSTM, forget bias 5", 5.0)]:
-    print(f"{name:>20}: ||d state_T / d state_1|| for T = 10, 25, 50:", "  ".join(f"{chain_norm(T, fb):.1e}" for T in [10, 25, 50]))
+    full, direct = zip(*(chain_norm(T, fb) for T in [10, 25, 50]))
+    print(f"{name:>20}: ||d state_T / d state_1|| for T = 10, 25, 50:", "  ".join(f"{v:.1e}" for v in full),
+          "" if fb is None else f"|  all-direct path at T = 50: {direct[-1]:.1e}")
 ```
 
 - The boxed formula matches autograd to rounding error.
@@ -727,6 +742,8 @@ plt.axhline(0.5, color="k", ls=":", label="chance")
 plt.xscale("log"); plt.xlabel("sequence length $T$ (distance to the relevant token)"); plt.ylabel("test accuracy")
 plt.title("Remembering the first token (800 training steps)"); plt.legend(); plt.tight_layout(); plt.show()
 for name, accs in res.items(): print(f"{name:>24}:", "  ".join(f"T={T}: {a:.2f}" for T, a in zip(lengths, accs)))
+logit = lambda p: np.log(p / (1 - p))
+print("forget bias that keeps sigma(b)^T >= 0.1:", "  ".join(f"T={T}: b >= {logit(0.1 ** (1 / T)):.1f}" for T in [10, 25, 50, 100]))
 ```
 
 With the same 800 steps, the vanilla RNN and the default-initialised LSTM both drop to chance once the relevant token is 25 or more steps back. The LSTM whose forget gates start **wide open** (bias 5) solves every length up to 100. That is section 9 made concrete: the LSTM *can* carry gradient over long ranges, but only if $\prod_t f_t$ is not tiny. With the default init ($f_t\approx0.5$) it is as badly off as the RNN until it slowly learns to open the gate, which takes more than this budget. The classic bias of 1 is not enough here: it fails from 25 steps on, like the default, because $0.73^{24}\approx5\times10^{-4}$ is still a vanishing factor. A rule of thumb follows from section 9.3: choose $b_f$ so that the initial memory factor $\sigma(b_f)^T$ is not tiny, say at least 0.1, i.e. $b_f\ge\mathrm{logit}(0.1^{1/T})$ (printed below: about 2.3 for $T = 25$ and 3.8 for $T = 100$). Bias 1 is a sensible default for dependencies of a few steps; for 25–100 steps use a larger bias, or a model with direct access to the past ([NN note 05](05_attention_transformers.qmd)).
@@ -1053,7 +1070,7 @@ def train_gen(p_final, steps=400, warm=20, H=30, seed=0):
         opt.zero_grad(); loss.backward(); nn.utils.clip_grad_norm_(m.parameters(), 1.0); opt.step()
     return m
 
-H = 60; starts = torch.arange(3000, 4000 - 20 - H - 1, 5); target = torch.stack([ct[starts + 20 + k] for k in range(H)], 1)
+H = 60; starts = torch.arange(3000, 4000 - 20 - H - 1); target = torch.stack([ct[starts + 20 + k] for k in range(H)], 1)
 plt.figure(figsize=(6.5, 3.6))
 for name, p in [("teacher forcing", 0.0), ("trained on own rollouts", 1.0)]:
     m = train_gen(p)
@@ -1066,7 +1083,7 @@ plt.xlabel("forecast horizon (steps fed with own predictions)"); plt.ylabel("MSE
 plt.title("Dotted: one-step (teacher-forced) error"); plt.legend(); plt.tight_layout(); plt.show()
 ```
 
-The teacher-forced model has the better one-step error (0.113), but its free-running error grows with the horizon, to 0.306 at 60 steps, about three times its one-step error. (Horizon 1 already sits above the dotted line because the dotted line averages positions that have seen up to 80 true inputs, horizon 1 only 20.) The model trained on its own rollouts pays a little in one-step error (0.128) and keeps the long-horizon error much lower (0.182 at 60 steps). That is the check to run: if the free-running curve rises steeply above the dotted line, exposure bias is costing you.
+The teacher-forced model has the better one-step error (0.112), but its free-running error grows with the horizon, to 0.326 at 60 steps, about three times its one-step error. (Horizon 1 already sits above the dotted line because the dotted line averages positions that have seen up to 80 true inputs, horizon 1 only 20.) The model trained on its own rollouts pays a little in one-step error (0.127) and keeps the long-horizon error much lower (0.185 at 60 steps). That is the check to run: if the free-running curve rises steeply above the dotted line, exposure bias is costing you.
 
 **What to do.** (1) Train on the model's own predictions: scheduled sampling (feed own predictions with a probability that grows during training) or full multi-step rollouts with the loss on the whole horizon, as here. Cost: sequential, slower training. (2) Predict all horizons at once from the encoder state (a "direct" multi-horizon head), so nothing is fed back. (3) Add noise to the teacher-forced inputs so the model sees imperfect inputs. (4) For text, decoding strategies ([NN note 05](05_attention_transformers.qmd)) limit how far a generation drifts.
 

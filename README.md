@@ -19,8 +19,10 @@ notebooks/
   machine_learning/         Labs 1–6 and 16 (scikit-learn / NumPy)
   neural_networks/          Labs 7–15 (PyTorch)
 notes/
-  machine_learning/         Theory notebooks 00–07 + class notes PDF
-  neural_networks/          Theory notebooks 00–06 + class notes PDF
+  index.qmd                 Landing page of the notes
+  assets/                   Scripts and styles of the notes pages (navigation, slide figures)
+  machine_learning/         Notes 00–07: .qmd source + rendered .html, class notes PDF
+  neural_networks/          Notes 00–06: .qmd source + rendered .html, class notes PDF
 slides/
   index.html                Landing page for both slide sets
   assets/                   Shared slide engine (styles, navigation, figures, MathJax)
@@ -95,37 +97,38 @@ train/validation discipline students have been applying since Lab 1.
 
 # Theory notes
 
-Self-contained theory notebooks with full derivations and code cells that reproduce every
-plot. They are saved with outputs, so they read fine on GitHub without running anything.
-Each folder's README has the notation table and the full contents list.
+Self-contained theory notes, published as web pages: **<https://imagra93.github.io/ML-course-labs/notes/>**. Each note has the theory with every derivation, the
+assumptions of the method with how to check them and what to do when they fail, and code that reproduces every plot
+and number, with the slides' interactive figures inside the text. Each note is a [Quarto](https://quarto.org) file
+(`.qmd`: Markdown with Python cells) rendered to the `.html` page next to it; to edit one, see the folder READMEs.
 
 ## Machine learning — [notes/machine_learning](notes/machine_learning)
 
-| # | Notes | Contents | Colab |
+| # | Note | Contents | Source |
 |---|---|---|---|
-| 00 | [Supervised learning, splits and CV](notes/machine_learning/00_supervised_learning.ipynb) | notation, empirical risk, bias–variance, train/val/test, k-fold CV, leakage | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notes/machine_learning/00_supervised_learning.ipynb) |
-| 01 | [Linear regression](notes/machine_learning/01_linear_regression.ipynb) | MSE, gradient descent, normal equation, convexity, MLE, metrics | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notes/machine_learning/01_linear_regression.ipynb) |
-| 02 | [Logistic regression](notes/machine_learning/02_logistic_regression.ipynb) | sigmoid, cross-entropy = MLE, confusion matrix, thresholds, ROC/AUC, calibration | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notes/machine_learning/02_logistic_regression.ipynb) |
-| 02b | [Generalised linear models](notes/machine_learning/02b_generalized_linear_models.ipynb) | distribution + linear score + link, one GD for all GLMs, Poisson regression | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notes/machine_learning/02b_generalized_linear_models.ipynb) |
-| 03 | [Regularisation, inputs, assumptions](notes/machine_learning/03_regularization_inputs_assumptions.ipynb) | Ridge, Lasso, Elastic Net, MAP view, scaling, one-hot, VIF, diagnostics | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notes/machine_learning/03_regularization_inputs_assumptions.ipynb) |
-| 04 | [Softmax regression](notes/machine_learning/04_softmax_regression.ipynb) | softmax, categorical cross-entropy, from-scratch implementation | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notes/machine_learning/04_softmax_regression.ipynb) |
-| 05 | [Support vector classifier](notes/machine_learning/05_support_vector_classifier.ipynb) | margin, hard/soft margin, the dual, kernel trick, hinge loss | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notes/machine_learning/05_support_vector_classifier.ipynb) |
-| 06 | [Decision trees and CART](notes/machine_learning/06_decision_trees_cart.ipynb) | impurity, split search, CART from scratch, pruning | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notes/machine_learning/06_decision_trees_cart.ipynb) |
-| 07 | [Bagging, random forests, boosting](notes/machine_learning/07_bagging_random_forest_boosting.ipynb) | variance of an average, bootstrap/OOB, random forests, AdaBoost, gradient boosting | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notes/machine_learning/07_bagging_random_forest_boosting.ipynb) |
+| 00 | [Supervised learning, splits and CV](https://imagra93.github.io/ML-course-labs/notes/machine_learning/00_supervised_learning.html) | bias–variance, train/val/test, K-fold and nested CV, metric precision; assumptions: i.i.d., shift, groups, time, leakage | [.qmd](notes/machine_learning/00_supervised_learning.qmd) |
+| 01 | [Linear regression](https://imagra93.github.io/ML-course-labs/notes/machine_learning/01_linear_regression.html) | gradient descent, normal equation, convexity, MLE, OLS statistics; assumptions and diagnostics, collinearity and VIF, influence | [.qmd](notes/machine_learning/01_linear_regression.qmd) |
+| 02 | [Logistic regression](https://imagra93.github.io/ML-course-labs/notes/machine_learning/02_logistic_regression.html) | cross-entropy = MLE, Newton/IRLS, separation, odds ratios, metrics, ROC/AUC, calibration; assumptions, class imbalance | [.qmd](notes/machine_learning/02_logistic_regression.qmd) |
+| 02b | [Generalised linear models](https://imagra93.github.io/ML-course-labs/notes/machine_learning/02b_generalized_linear_models.html) | the GLM recipe, IRLS, deviance, Poisson claim counts, overdispersion, offsets, Gamma, Tweedie | [.qmd](notes/machine_learning/02b_generalized_linear_models.qmd) |
+| 03 | [Regularisation, inputs, assumptions](https://imagra93.github.io/ML-course-labs/notes/machine_learning/03_regularization_inputs_assumptions.html) | Ridge, Lasso, Elastic Net, MAP, choosing λ; scaling, encodings, missing values, pipelines and leakage | [.qmd](notes/machine_learning/03_regularization_inputs_assumptions.qmd) |
+| 04 | [Softmax regression](https://imagra93.github.io/ML-course-labs/notes/machine_learning/04_softmax_regression.html) | softmax, log-sum-exp, gradient, convexity, multiclass metrics; IIA, imbalance, temperature scaling | [.qmd](notes/machine_learning/04_softmax_regression.qmd) |
+| 05 | [Support vector classifier](https://imagra93.github.io/ML-course-labs/notes/machine_learning/05_support_vector_classifier.html) | margin, duality and KKT, kernels and Mercer, hinge loss; scaling, C and γ, Platt probabilities | [.qmd](notes/machine_learning/05_support_vector_classifier.qmd) |
+| 06 | [Decision trees and CART](https://imagra93.github.io/ML-course-labs/notes/machine_learning/06_decision_trees_cart.html) | entropy, Gini, CART from scratch, pruning; what trees assume, categorical and missing values | [.qmd](notes/machine_learning/06_decision_trees_cart.qmd) |
+| 07 | [Bagging, random forests and boosting](https://imagra93.github.io/ML-course-labs/notes/machine_learning/07_bagging_random_forest_boosting.html) | bootstrap and OOB, random forests, AdaBoost, gradient boosting, XGBoost derivation, boosting in practice | [.qmd](notes/machine_learning/07_bagging_random_forest_boosting.qmd) |
 
 Original class notes (PDF): [ML_classNotes.pptx.pdf](notes/machine_learning/ML_classNotes.pptx.pdf)
 
 ## Neural networks — [notes/neural_networks](notes/neural_networks)
 
-| # | Notes | Contents | Colab |
+| # | Note | Contents | Source |
 |---|---|---|---|
-| 00 | [Neural networks and the MLP](notes/neural_networks/00_neural_networks_mlp.ipynb) | neuron, XOR, forward propagation, activations, universal approximation | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notes/neural_networks/00_neural_networks_mlp.ipynb) |
-| 01 | [Backpropagation](notes/neural_networks/01_backpropagation.ipynb) | chain rule on graphs, backprop derivation, gradient checking, initialisation | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notes/neural_networks/01_backpropagation.ipynb) |
-| 02 | [Training: optimisation and regularisation](notes/neural_networks/02_training_optimization_regularization.ipynb) | SGD, momentum, Adam, schedules, weight decay, dropout, BatchNorm | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notes/neural_networks/02_training_optimization_regularization.ipynb) |
-| 03 | [CNNs, transfer and multi-task learning](notes/neural_networks/03_cnn_transfer_multitask.ipynb) | convolution, receptive field, ResNet, transfer learning, multi-task loss | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notes/neural_networks/03_cnn_transfer_multitask.ipynb) |
-| 04 | [Embeddings, RNNs and LSTMs](notes/neural_networks/04_rnn_lstm.ipynb) | embeddings, RNN, BPTT, vanishing gradients, LSTM/GRU | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notes/neural_networks/04_rnn_lstm.ipynb) |
-| 05 | [Attention and transformers](notes/neural_networks/05_attention_transformers.ipynb) | BPE, attention, causal mask, multi-head, a tiny GPT, decoding | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notes/neural_networks/05_attention_transformers.ipynb) |
-| 06 | [Embeddings, retrieval and RAG](notes/neural_networks/06_embeddings_rag.ipynb) | TF-IDF, LSA, contrastive encoders, nearest-neighbour search, RAG | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notes/neural_networks/06_embeddings_rag.ipynb) |
+| 00 | [Neural networks and the MLP](https://imagra93.github.io/ML-course-labs/notes/neural_networks/00_neural_networks_mlp.html) | neuron, XOR, forward pass, activations, losses as MLE, universal approximation; practical checks | [.qmd](notes/neural_networks/00_neural_networks_mlp.qmd) |
+| 01 | [Backpropagation](https://imagra93.github.io/ML-course-labs/notes/neural_networks/01_backpropagation.html) | chain rule on graphs, backprop derivation, gradient checking, autograd, initialisation, vanishing gradients | [.qmd](notes/neural_networks/01_backpropagation.qmd) |
+| 02 | [Training: optimisation and regularisation](https://imagra93.github.io/ML-course-labs/notes/neural_networks/02_training_optimization_regularization.html) | SGD, momentum, Adam, schedules, weight decay, dropout, BatchNorm; debugging guide | [.qmd](notes/neural_networks/02_training_optimization_regularization.qmd) |
+| 03 | [CNNs, transfer and multi-task learning](https://imagra93.github.io/ML-course-labs/notes/neural_networks/03_cnn_transfer_multitask.html) | convolution and its backward pass, ResNet, transfer and multi-task learning, segmentation, detection | [.qmd](notes/neural_networks/03_cnn_transfer_multitask.qmd) |
+| 04 | [Embeddings, RNNs and LSTMs](https://imagra93.github.io/ML-course-labs/notes/neural_networks/04_rnn_lstm.html) | embeddings, RNN, BPTT, clipping, LSTM/GRU, masking; sequence-model assumptions | [.qmd](notes/neural_networks/04_rnn_lstm.qmd) |
+| 05 | [Attention and transformers](https://imagra93.github.io/ML-course-labs/notes/neural_networks/05_attention_transformers.html) | attention, multi-head, positions, causal mask, KV cache, a tiny GPT, decoding, perplexity | [.qmd](notes/neural_networks/05_attention_transformers.qmd) |
+| 06 | [Embeddings, retrieval and RAG](https://imagra93.github.io/ML-course-labs/notes/neural_networks/06_embeddings_rag.html) | TF-IDF, BM25, LSA, neural embeddings, retrieval metrics, hybrid search, chunking, RAG | [.qmd](notes/neural_networks/06_embeddings_rag.qmd) |
 
 Original class notes (PDF): [ML_notes_NN.pptx.pdf](notes/neural_networks/ML_notes_NN.pptx.pdf)
 

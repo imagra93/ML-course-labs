@@ -756,7 +756,7 @@ $$
 Hence $R^2 = 1 - \text{SSE}/\text{TSS} = \text{ESS}/\text{TSS} \in [0,1]$ on the training data. Adding a feature can only lower SSE (the old solution is still available with the new coefficient at 0), so the training $R^2$ never decreases, even for a column of pure noise: it cannot choose the features. That is why adjusted $R^2$ exists (it only increases if the new feature helps enough) and why you should always look at validation metrics.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="r2" style="max-height:280px" aria-label="Total variation of a point split into explained and unexplained parts"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/02_linear_regression.html#26">slide 26</a> of the Linear Regression deck: for one point, the total variation $y_i - \bar y$ is the explained part $\hat y_i - \bar y$ plus the unexplained part $y_i - \hat y_i$.</p></div>
+<div class="widget"><svg class="fig" data-fig="r2" style="max-height:280px" aria-label="Total variation of a point split into explained and unexplained parts"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/02_linear_regression.html#26">slide 26</a> of the Linear Regression deck: for one point, the total variation \(y_i - \bar y\) is the explained part \(\hat y_i - \bar y\) plus the unexplained part \(y_i - \hat y_i\).</p></div>
 ```
 
 **Which metric when?**
@@ -1266,7 +1266,7 @@ The naive intervals are about three times too narrow and cover the truth only ab
 $$
 y_t - \rho y_{t-1} = (\mathbf{x}_t - \rho\mathbf{x}_{t-1})^\top\boldsymbol{\theta} + (\varepsilon_t - \rho\varepsilon_{t-1}) = (\mathbf{x}_t - \rho\mathbf{x}_{t-1})^\top\boldsymbol{\theta} + u_t .
 $$
-The transformed errors $u_t$ are independent, so OLS on the transformed data is valid (and BLUE by Gauss–Markov). $\rho$ is estimated from the OLS residuals. In the simulation above this brings the coverage back to about 91 % (the rest is the price of estimating $\rho$) and DW back to about 2.
+The transformed errors $u_t$ are independent, so OLS on the transformed data is valid (and BLUE by Gauss–Markov). $\rho$ is estimated from the OLS residuals. In the simulation above this brings the coverage back to about 90 % (the rest is the price of estimating $\rho$) and DW back to about 2.
 3. **Keep $\hat{\boldsymbol{\theta}}$, fix the standard errors** with the sandwich $(\mathbf{X}^\top\mathbf{X})^{-1}\,\widehat{\mathbf{X}^\top\boldsymbol{\Sigma}\mathbf{X}}\,(\mathbf{X}^\top\mathbf{X})^{-1}$ (the HC0 formula of 15.3, extended): **cluster-robust** SEs sum $\mathbf{X}_g^\top\mathbf{e}_g\mathbf{e}_g^\top\mathbf{X}_g$ within each group $g$, so any correlation inside a group is allowed; **HAC** (Newey–West) SEs do the same for the first few lags of a time series. Both need many groups or a long series.
 4. **Validate honestly.** Time series: train on the past, validate on the future (`TimeSeriesSplit`). Groups: keep every group entirely in one fold (`GroupKFold`). Never plain random $k$-fold.
 
@@ -1332,7 +1332,7 @@ J_w(\boldsymbol{\theta}) &= \mathbf{y}^\top\mathbf{W}\mathbf{y} - 2(\mathbf{X}^\
 \boldsymbol{\theta}_{\text{WLS}} &= (\mathbf{X}^\top\mathbf{W}\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{W}\mathbf{y} . && \text{solve}
 \end{aligned}
 $$
-*Why it is the right thing:* with $\tilde{\mathbf{y}} = \mathbf{W}^{1/2}\mathbf{y}$ and $\tilde{\mathbf{X}} = \mathbf{W}^{1/2}\mathbf{X}$ (each row multiplied by $\sqrt{w_i}$), $\tilde{\mathbf{y}} = \tilde{\mathbf{X}}\boldsymbol{\theta} + \mathbf{W}^{1/2}\boldsymbol{\varepsilon}$ and $\mathrm{Cov}(\mathbf{W}^{1/2}\boldsymbol{\varepsilon}) = \mathbf{W}^{1/2}(\sigma^2\mathbf{W}^{-1})\mathbf{W}^{1/2} = \sigma^2\mathbf{I}$: the transformed problem is homoscedastic, so OLS on it is BLUE (Gauss–Markov), and it is exactly WLS because $\tilde{\mathbf{X}}^\top\tilde{\mathbf{X}} = \mathbf{X}^\top\mathbf{W}\mathbf{X}$ and $\tilde{\mathbf{X}}^\top\tilde{\mathbf{y}} = \mathbf{X}^\top\mathbf{W}\mathbf{y}$. By 14.3 on the transformed problem, $\mathrm{Cov}(\boldsymbol{\theta}_{\text{WLS}}) = \sigma^2(\mathbf{X}^\top\mathbf{W}\mathbf{X})^{-1}$. When the weights are unknown, **feasible WLS** estimates the variance function first, e.g. by regressing $|e_i|$ on the features (for a fixed error shape $\mathbb{E}|\varepsilon| \propto \sigma$) and using $w_i = 1/\hat\sigma(\mathbf{x}^{(i)})^2$. scikit-learn: `LinearRegression().fit(X, y, sample_weight=w)`.
+*Why it is the right thing:* with $\tilde{\mathbf{y}} = \mathbf{W}^{1/2}\mathbf{y}$ and $\tilde{\mathbf{X}} = \mathbf{W}^{1/2}\mathbf{X}$ (each row multiplied by $\sqrt{w_i}$), $\tilde{\mathbf{y}} = \tilde{\mathbf{X}}\boldsymbol{\theta} + \mathbf{W}^{1/2}\boldsymbol{\varepsilon}$ and $\mathrm{Cov}(\mathbf{W}^{1/2}\boldsymbol{\varepsilon}) = \mathbf{W}^{1/2}(\sigma^2\mathbf{W}^{-1})\mathbf{W}^{1/2} = \sigma^2\mathbf{I}$: the transformed problem is homoscedastic, so OLS on it is BLUE (Gauss–Markov), and it is exactly WLS because $\tilde{\mathbf{X}}^\top\tilde{\mathbf{X}} = \mathbf{X}^\top\mathbf{W}\mathbf{X}$ and $\tilde{\mathbf{X}}^\top\tilde{\mathbf{y}} = \mathbf{X}^\top\mathbf{W}\mathbf{y}$. By 14.3 on the transformed problem, $\mathrm{Cov}(\boldsymbol{\theta}_{\text{WLS}}) = \sigma^2(\mathbf{X}^\top\mathbf{W}\mathbf{X})^{-1}$. When the weights are unknown, **feasible WLS** estimates the variance function from the OLS residuals first. A convenient model is a power law, $\sigma(x) \propto x^{\gamma}$: regress $\log e_i^2$ on $\log x_i$, and use $w_i = 1/\hat\sigma_i^2$ with $\log\hat\sigma_i^2$ the fitted values (the weights only need to be proportional to $1/\sigma_i^2$, so the constant offset between $\mathbb{E}[\log\varepsilon^2]$ and $\log\sigma^2$ does not matter). scikit-learn: `LinearRegression().fit(X, y, sample_weight=w)`.
 3. **Keep OLS, fix the standard errors** (heteroscedasticity-robust, "sandwich" or White SEs). The true covariance is $(\mathbf{X}^\top\mathbf{X})^{-1}\big(\sum_i\sigma_i^2\,\mathbf{x}^{(i)}\mathbf{x}^{(i)\top}\big)(\mathbf{X}^\top\mathbf{X})^{-1}$, since $\mathbf{X}^\top\boldsymbol{\Sigma}\mathbf{X} = \sum_i\sigma_i^2\mathbf{x}^{(i)}\mathbf{x}^{(i)\top}$ for diagonal $\boldsymbol{\Sigma}$. Each $\sigma_i^2$ is unknown, but $e_i^2$ is a nearly unbiased (if noisy) estimate of it, and the noise averages out in the sum over $m$ terms:
 $$
 \widehat{\mathrm{Cov}}_{\text{HC0}}(\hat{\boldsymbol{\theta}}) = (\mathbf{X}^\top\mathbf{X})^{-1}\Big(\sum_i e_i^2\,\mathbf{x}^{(i)}\mathbf{x}^{(i)\top}\Big)(\mathbf{X}^\top\mathbf{X})^{-1}.
@@ -1356,12 +1356,13 @@ def wls(X, yy, w):
     sw = np.sqrt(w); return ols_fit(X * sw[:, None], yy * sw)      # OLS on the rescaled rows
 fo = ols_fit(Xh, y_het)
 fw = wls(Xh, y_het, 1 / sd_h**2)                                   # known weights
-g = ols_fit(Xh, np.abs(fo["e"])); ffw = wls(Xh, y_het, 1 / np.clip(g["fit"], 1e-3, None)**2)   # feasible WLS
+g = ols_fit(np.c_[np.ones(mh), np.log(xv)], np.log(fo["e"]**2))         # variance model: log e^2 on log x
+ffw = wls(Xh, y_het, 1 / np.exp(g["fit"]))                               # feasible WLS, w = 1 / sigma_hat^2
 A_h = fo["XtX_inv"] @ Xh.T
 se_hc0 = np.sqrt((A_h**2) @ fo["e"]**2); se_hc3 = np.sqrt((A_h**2) @ (fo["e"] / (1 - fo["h"]))**2)
 print(f"\nslope: OLS {fo['theta'][1]:.3f} (naive SE {fo['se'][1]:.4f}, HC0 {se_hc0[1]:.4f}, HC3 {se_hc3[1]:.4f});"
       f"  WLS {fw['theta'][1]:.3f} (SE {fw['se'][1]:.4f});  feasible WLS {ffw['theta'][1]:.3f} (SE {ffw['se'][1]:.4f})")
-print(f"Breusch-Pagan p of the weighted residuals (feasible WLS): {breusch_pagan(Xh, ffw['e'])[1]:.2f}")
+print(f"Breusch-Pagan on the rescaled residuals: OLS p = {breusch_pagan(Xh, fo['e'])[1]:.1g}, known-weight WLS p = {breusch_pagan(Xh, fw['e'])[1]:.2f}, feasible WLS p = {breusch_pagan(Xh, ffw['e'])[1]:.2f}")
 
 # coverage of 95% intervals for the slope over 4000 heteroscedastic datasets (same x)
 rng_c = np.random.default_rng(4); Rc = 4000
@@ -1513,7 +1514,7 @@ def vif(F):
     return np.array(out)
 
 age, lic, mil, prem = make_policies(np.random.default_rng(10), 200)
-Fp = np.c_[age, lic, mil]; Xp = np.c_[np.ones(200), Fp]; fp = ollfit = ols_fit(Xp, prem)
+Fp = np.c_[age, lic, mil]; Xp = np.c_[np.ones(200), Fp]; fp = ols_fit(Xp, prem)
 C = np.corrcoef(Fp.T); lam_c, V_c = np.linalg.eigh(C)
 print(f"corr(age, licence) = {C[0, 1]:.4f}")
 print("VIF (auxiliary regressions):", vif(Fp).round(1), "  diag of inverse correlation matrix:", np.diag(np.linalg.inv(C)).round(1))
@@ -1541,7 +1542,7 @@ axes[1].set_title("...but the prediction is stable", fontsize=10)
 plt.tight_layout(); plt.show()
 ```
 
-The age and licence coefficients have standard errors several times larger than their true values, individually they are not significant, and the age coefficient has the wrong sign in a sizeable share of the bootstrap resamples; yet jointly they are overwhelmingly significant and the prediction for a typical policy moves by only a few euros. The bootstrap points lie along a line: the data determine the combination "age minus licence years" poorly (the small-eigenvalue direction $\approx(0.707, -0.707, 0)$) and everything else well.
+The correlation between age and licence years is 0.998, so both VIFs are about 218 (the two ways of computing them agree) and the condition number is 29.5, at the top of the "moderate" range: the VIFs are the clearer alarm here. The age and licence coefficients have standard errors of 3.3, larger than the true age effect itself; individually they are not significant (p = 0.42 and 0.085), and the age coefficient has the wrong sign in a sizeable share of the bootstrap resamples; yet jointly they are overwhelmingly significant and the prediction for a typical policy moves by only a few euros. The bootstrap points lie along a line: the data determine the combination "age minus licence years" poorly (the small-eigenvalue direction $\approx(0.707, -0.707, 0)$) and everything else well.
 
 **What to do** (in order of preference):
 
@@ -1583,7 +1584,7 @@ boot_o = np.array([LinearRegression().fit(Zp[i], prem[i]).coef_ for i in rng_bs.
 print("bootstrap sd of the standardised coefficients (age, licence, mileage): OLS", boot_o.std(0).round(1), " Ridge", boot_r.std(0).round(1))
 ```
 
-Dropping a redundant feature costs almost nothing in test RMSE; the re-parametrisation gives VIFs of about 1 and the same fitted values; centring the polynomial removes nearly all of its collinearity; the first two principal components predict as well as all three (the third is the nearly constant age-minus-licence direction); and Ridge shrinks the bootstrap spread of the collinear coefficients by an order of magnitude. Which one? If the goal is interpretation, domain knowledge (2) always comes first. If the goal is prediction, Ridge with $\lambda$ chosen by cross-validation is the default.
+Dropping a redundant feature costs almost nothing in test RMSE; the re-parametrisation gives VIFs of about 1 and the same fitted values; centring the polynomial removes nearly all of its collinearity; the first two principal components predict as well as all three (the third is the nearly constant age-minus-licence direction); and Ridge shrinks the bootstrap spread of the two collinear (standardised) coefficients from about 42 to below 2. Which one? If the goal is interpretation, domain knowledge (2) always comes first. If the goal is prediction, Ridge with $\lambda$ chosen by cross-validation is the default.
 
 ### 15.6 Exogeneity and omitted-variable bias
 
@@ -1770,6 +1771,8 @@ plt.fill_between(grid_e, Ge @ fe["theta"] - half_e, Ge @ fe["theta"] + half_e, c
 plt.axvspan(4, 12, color="gray", alpha=0.1); plt.xlabel("$x$"); plt.ylabel("$y$"); plt.legend(fontsize=8)
 plt.title("Outside the data (grey) the interval is honest only if the line still holds"); plt.tight_layout(); plt.show()
 ```
+
+The straight line fitted on $[0, 4]$ predicts $14.32 \pm 1.15$ at $x_0 = 12$ while the truth is $7.69$: the prediction interval is honest about the extra uncertainty of the line, not about the line being wrong. The leverage flags the problem: $h_0 = 1.16$, seventeen times the largest training leverage. The hypothetical policy (age 30, 28 years of licence) passes both range checks but has $h_0 = 2.10$ against a training maximum of $0.076$.
 
 **What to do.** Detect out-of-domain inputs in production (leverage or the Mahalanobis distance to the training data) and flag, clip or refuse them; collect data in the new region; use domain knowledge to constrain the shape (a log, a monotone or saturating form); know how your model extrapolates (a line keeps going, a tree predicts a constant beyond the data: neither is right by default).
 

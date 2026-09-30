@@ -77,3 +77,6 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(-
 .notes-pager{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:3rem 0 1rem;padding-top:1rem;border-top:1px solid var(--line);font-size:15px}
 .notes-pager a{text-decoration:none}
 .notes-pager a.next{margin-left:auto;text-align:right}
+
+/* ---- notes only: slide classes some widgets use for their action buttons (notes 02, 06, 07) ---- */
+.widget .bluebox{background:var(--blue);color:#fff}

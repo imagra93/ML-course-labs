@@ -11,7 +11,7 @@ const NOTES=[
   ['machine_learning/04_softmax_regression.html','04 · Softmax regression'],
   ['machine_learning/05_support_vector_classifier.html','05 · Support vector classifier'],
   ['machine_learning/06_decision_trees_cart.html','06 · Decision trees and CART'],
-  ['machine_learning/07_bagging_random_forest_boosting.html','07 · Bagging, random forests, boosting'],
+  ['machine_learning/07_bagging_random_forest_boosting.html','07 · Bagging, random forests and boosting'],
   ['neural_networks/00_neural_networks_mlp.html','NN 00 · Neural networks and the MLP'],
   ['neural_networks/01_backpropagation.html','NN 01 · Backpropagation'],
   ['neural_networks/02_training_optimization_regularization.html','NN 02 · Training: optimisation and regularisation'],

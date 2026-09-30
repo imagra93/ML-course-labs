@@ -86,47 +86,47 @@ ul.task-list li input[type="checkbox"] {
 <tr class="odd">
 <td>00</td>
 <td><a href="machine_learning/00_supervised_learning.qmd">Supervised learning, splits and CV</a></td>
-<td>problem setup, notation, empirical risk, bias–variance, train/val/test, k-fold CV, leakage</td>
+<td>problem setup and notation, empirical risk, bias–variance (proof), train/validation/test, K-fold and nested CV, how precise a test metric is, learning curves; assumptions: i.i.d. data, no distribution shift (adversarial validation), grouped and time-ordered data, leakage</td>
 </tr>
 <tr class="even">
 <td>01</td>
 <td><a href="machine_learning/01_linear_regression.qmd">Linear regression</a></td>
-<td>MSE loss, gradient, gradient descent, learning rate, normal equation, convexity, MLE, metrics</td>
+<td>loss, gradient, gradient descent and the learning rate, normal equation, convexity, Newton’s method, MLE, features and scaling, metrics; OLS statistics (standard errors, intervals, Gauss–Markov); assumptions: linearity, independence, homoscedasticity, normality, collinearity and VIF, exogeneity, leverage and influence</td>
 </tr>
 <tr class="odd">
 <td>02</td>
 <td><a href="machine_learning/02_logistic_regression.qmd">Logistic regression</a></td>
-<td>sigmoid, log-odds, cross-entropy = MLE, gradient, convexity, separability, classification metrics, calibration</td>
+<td>sigmoid and odds, cross-entropy = MLE, gradient, convexity, Newton/IRLS, separable data, standard errors and odds ratios, metrics, ROC/AUC, thresholds from costs, calibration; assumptions: linearity in the log-odds, events per variable, influential points; class imbalance</td>
 </tr>
 <tr class="even">
 <td>02b</td>
 <td><a href="machine_learning/02b_generalized_linear_models.qmd">Generalised linear models</a></td>
-<td>distribution + linear score + link, one gradient and one convexity proof for all GLMs, Poisson regression</td>
+<td>distribution + linear score + link, the exponential family, one gradient and one convexity proof for all GLMs, IRLS, deviance; Poisson regression for claim counts, overdispersion (quasi-Poisson, negative binomial), exposure and offsets, Gamma severity, Tweedie pure premium</td>
 </tr>
 <tr class="odd">
 <td>03</td>
 <td><a href="machine_learning/03_regularization_inputs_assumptions.qmd">Regularisation, inputs, assumptions</a></td>
-<td>Ridge, Lasso, Elastic Net, MAP view; scaling, encoding, collinearity; model assumptions</td>
+<td>Ridge (SVD view, bias–variance), Lasso (coordinate descent), Elastic Net, MAP view, choosing λ; input variables: scaling, encodings (dummy trap, target encoding), missing values, skewed features, outliers, interactions, pipelines and leakage</td>
 </tr>
 <tr class="even">
 <td>04</td>
 <td><a href="machine_learning/04_softmax_regression.qmd">Softmax regression</a></td>
-<td>softmax, categorical cross-entropy, gradient, convexity, multiclass metrics</td>
+<td>softmax, identifiability, log-sum-exp, cross-entropy, gradient, convexity, multiclass metrics and confusion matrices; assumptions (IIA, exclusive classes), class imbalance, temperature scaling, one-vs-rest vs softmax</td>
 </tr>
 <tr class="odd">
 <td>05</td>
 <td><a href="machine_learning/05_support_vector_classifier.qmd">Support vector classifier</a></td>
-<td>margin, the dual, soft margin, kernel trick, hinge loss, sub-gradient descent</td>
+<td>margin, Lagrangian, duality and KKT, the dual, SMO, soft margin, kernels and Mercer, hinge loss, sub-gradient descent, multiclass; assumptions and practice: scaling, choosing C and γ, imbalance, Platt probabilities, cost</td>
 </tr>
 <tr class="even">
 <td>06</td>
 <td><a href="machine_learning/06_decision_trees_cart.qmd">Decision trees and CART</a></td>
-<td>impurity, split search, CART from scratch, regression trees, pruning</td>
+<td>entropy and Gini, split search, CART from scratch, regression trees, pruning, instability; what trees assume (no extrapolation, axis-aligned splits, greedy search), categorical and missing values, biased feature importance</td>
 </tr>
 <tr class="odd">
 <td>07</td>
-<td><a href="machine_learning/07_bagging_random_forest_boosting.qmd">Bagging, random forests, boosting</a></td>
-<td>variance of an average, bootstrap and OOB, random forests, AdaBoost, gradient boosting</td>
+<td><a href="machine_learning/07_bagging_random_forest_boosting.qmd">Bagging, random forests and boosting</a></td>
+<td>variance of an average, bootstrap and OOB, random forests, feature importance, AdaBoost as exponential-loss minimisation, gradient boosting, XGBoost’s second-order derivation, boosting in practice, assumptions</td>
 </tr>
 </tbody>
 </table>
@@ -145,37 +145,37 @@ ul.task-list li input[type="checkbox"] {
 <tr class="odd">
 <td>00</td>
 <td><a href="neural_networks/00_neural_networks_mlp.qmd">Neural networks and the MLP</a></td>
-<td>neuron = logistic regression, XOR, forward pass, activations, losses as MLE, universal approximation</td>
+<td>neuron = logistic regression, XOR, the MLP, forward pass with numbers, activations and their derivatives, losses as MLE, softmax gradient, universal approximation, non-convexity; practical checks before training</td>
 </tr>
 <tr class="even">
 <td>01</td>
 <td><a href="neural_networks/01_backpropagation.qmd">Backpropagation</a></td>
-<td>chain rule on graphs, backprop derivation, gradient checking, initialisation, vanishing gradients</td>
+<td>chain rule on graphs, backpropagation derived and worked with numbers, NumPy code, gradient checking, automatic differentiation, initialisation, vanishing and exploding gradients</td>
 </tr>
 <tr class="odd">
 <td>02</td>
 <td><a href="neural_networks/02_training_optimization_regularization.qmd">Training: optimisation and regularisation</a></td>
-<td>SGD, momentum, Adam, schedules, learning curves, weight decay, dropout, normalisation</td>
+<td>mini-batches, the learning rate, momentum, RMSProp, Adam, schedules, learning curves, weight decay and AdamW, dropout, BatchNorm (backward pass derived); a debugging guide and the assumptions of training</td>
 </tr>
 <tr class="even">
 <td>03</td>
 <td><a href="neural_networks/03_cnn_transfer_multitask.qmd">CNNs, transfer and multi-task learning</a></td>
-<td>convolution, equivariance, pooling, receptive field, ResNet, transfer and multi-task learning</td>
+<td>convolution and its backward pass, receptive field, pooling, inductive biases, ResNet, transfer and multi-task learning, segmentation (U-Net, Dice), detection (IoU, NMS, AP)</td>
 </tr>
 <tr class="odd">
 <td>04</td>
 <td><a href="neural_networks/04_rnn_lstm.qmd">Embeddings, RNNs and LSTMs</a></td>
-<td>embeddings, RNN, BPTT, vanishing gradients, LSTM and GRU</td>
+<td>embeddings, RNN, backpropagation through time, vanishing and exploding gradients, clipping, LSTM and GRU, padding and masking; assumptions of sequence models and look-ahead leakage</td>
 </tr>
 <tr class="even">
 <td>05</td>
 <td><a href="neural_networks/05_attention_transformers.qmd">Attention and transformers</a></td>
-<td>BPE, attention, √d scaling, causal mask, multi-head, a tiny GPT, decoding</td>
+<td>attention, √d scaling, multi-head attention, positional encodings (sinusoidal, RoPE), causal mask, cost and KV cache, GPT parameter count, a tiny GPT, decoding, perplexity</td>
 </tr>
 <tr class="odd">
 <td>06</td>
 <td><a href="neural_networks/06_embeddings_rag.qmd">Embeddings, retrieval and RAG</a></td>
-<td>similarity, TF-IDF, LSA, neural embeddings, nearest-neighbour search, retrieval metrics, RAG</td>
+<td>similarity, TF-IDF, BM25, LSA, neural embeddings, approximate search, retrieval metrics (MRR, nDCG), hybrid retrieval, chunking, RAG and its failure modes</td>
 </tr>
 </tbody>
 </table>
