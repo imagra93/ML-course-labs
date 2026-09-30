@@ -71,7 +71,7 @@
       <div class="bluebox">$$P(y=k\mid\bx;\boldsymbol\Theta)=\mathrm{softmax}(\bz)_k=\frac{e^{z_k}}{\sum_{l=1}^Ke^{z_l}}$$</div>
       <p>Prediction: $\ \hat y=\arg\max_k\,\mathrm{softmax}(\bz)_k=\arg\max_k\,\bth_k^\top\bx$.</p>
     </div>
-    <div class="widget" data-fig="soft" data-auto="z1=2;z2=1;z3=-1;s=1 :: Scores 2, 1, −1 → probabilities 0.71, 0.26, 0.04: they sum to 1|z1=2;z2=2;z3=-1;s=1 :: A tie between z₁ and z₂ → equal probabilities|z1=2;z2=1;z3=-1;s=4 :: Multiply every score by 4: almost one-hot, the arg-max wins|z1=2;z2=1;z3=-1;s=0.2 :: Multiply by 0.2: almost uniform, the model is unsure">
+    <div class="widget" data-fig="soft" data-auto="z1=2;z2=1;z3=-1;s=1 :: Scores 2, 1, −1 → probabilities 0.71, 0.26, 0.04: they sum to 1|z1=2;z2=2;z3=-1;s=1 :: A tie between z₁ and z₂ → equal probabilities|z1=2;z2=1;z3=-1;s=4 :: Multiply every score by 4: almost one-hot, the arg-max wins|z1=2;z2=1;z3=-1;s=0.2 :: Multiply by 0.2: much flatter (0.42, 0.35, 0.23), closer to uniform: the model is unsure">
       <svg class="fig" aria-label="Three scores and their softmax probabilities"></svg>
       <div class="ctl"><label for="sm-1">z₁</label><input type="range" id="sm-1" data-k="z1" min="-4" max="4" step="0.1" value="2"><span class="v" data-v="z1">2.0</span></div>
       <div class="ctl"><label for="sm-2">z₂</label><input type="range" id="sm-2" data-k="z2" min="-4" max="4" step="0.1" value="1"><span class="v" data-v="z2">1.0</span></div>
@@ -188,14 +188,40 @@
         <tr><td>probabilities</td><td>don't sum to 1</td><td>a proper distribution</td></tr>
         <tr><td>use when</td><td>any binary classifier (SVMs); multi-label</td><td>mutually exclusive classes</td></tr>
       </table>
-      <p>The confusion matrix becomes $K\times K$. Precision, recall and F1 are computed <b>per class</b> (that class vs. the rest), then averaged:</p>
-      <ul class="small">
-        <li><b>macro</b>: plain mean over classes. Every class counts the same (good when rare classes matter).</li>
-        <li><b>weighted</b>: weighted by class frequency.</li>
-        <li><b>micro</b>: pool all TP/FP/FN first. For single-label problems it equals accuracy.</li>
-      </ul>
+      <p>The confusion matrix becomes $K\times K$: rows = actual class, columns = predicted class. The diagonal holds the hits.</p>
     </div>
-    <svg class="fig" data-fig="cm3" aria-label="A three by three confusion matrix for the iris classes"></svg>
+    <div class="stack" style="gap:12px">
+      <p>Precision, recall and $F_1$ are computed <b>per class</b> (that class vs the rest), then averaged:</p>
+      <ul class="small">
+        <li><b>macro</b>: the plain mean over the classes. Every class counts the same: a rare class that is badly predicted pulls it down.</li>
+        <li><b>weighted</b>: the mean weighted by the class frequencies. Dominated by the big classes.</li>
+        <li><b>micro</b>: pool all the TP, FP and FN first. For single-label problems it equals the accuracy.</li>
+      </ul>
+      <p class="small">Also useful: <b>balanced accuracy</b> = the macro average of the recalls.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Softmax Regression – Multiclass metrics, a worked example</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:6px">
+      <svg class="fig" data-fig="cm3" style="max-height:330px" aria-label="Confusion matrix of damage severity for 100 cars: 70 minor, 20 moderate and 10 severe"></svg>
+      <p class="small">100 damaged cars: 70 minor, 20 moderate, 10 severe. Rows: actual, columns: predicted.</p>
+    </div>
+    <div class="stack" style="gap:6px">
+      <p class="small step"><b>Per class.</b> Precision = diagonal ÷ column total; recall = diagonal ÷ row total:</p>
+      <table class="t step" style="font-size:17px;text-align:center">
+        <tr><th>class</th><th>precision</th><th>recall</th><th>$F_1$</th><th>share</th></tr>
+        <tr><td>minor</td><td>65/71 = 0.92</td><td>65/70 = 0.93</td><td>0.92</td><td>70 %</td></tr>
+        <tr><td>moderate</td><td>12/19 = 0.63</td><td>12/20 = 0.60</td><td>0.62</td><td>20 %</td></tr>
+        <tr><td>severe</td><td>6/10 = 0.60</td><td>6/10 = 0.60</td><td>0.60</td><td>10 %</td></tr>
+      </table>
+      <div class="step"><div class="eq s">$$\text{accuracy}=\text{micro-}F_1=\tfrac{65+12+6}{100}=0.83$$</div></div>
+      <div class="step"><div class="eq s">$$\text{macro-}F_1=\tfrac{0.92+0.62+0.60}{3}=0.71$$</div><p class="why">every class counts the same</p></div>
+      <div class="step"><div class="eq s">$$\text{weighted-}F_1=0.7\cdot0.92+0.2\cdot0.62+0.1\cdot0.60=0.83$$</div><p class="why">weights = the class shares</p></div>
+      <p class="small step">Accuracy looks fine, but the costly <b>severe</b> class is caught only 6 times out of 10. Macro-$F_1$ exposes it; always show the per-class table too.</p>
+    </div>
   </div>
 </section>
 

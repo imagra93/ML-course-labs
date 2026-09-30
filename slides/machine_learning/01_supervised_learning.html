@@ -25,27 +25,57 @@
     <div class="stack">
       <p>Notation:</p>
       <ul>
+        <li>$m$ training samples, $n$ features</li>
         <li>$x_j^{(i)}$ feature $j$ of sample $i$</li>
         <li>$\bx^{(i)}$ feature vector $i$ (size $n\times1$)</li>
         <li>$y^{(i)}$ target $i$</li>
         <li>$(\bx^{(i)},y^{(i)})$ training pair $i$</li>
         <li>$\{(\bx^{(i)},y^{(i)})\}_{i=1}^{m}$ training set</li>
-        <li>$\mathcal{X}$ input space</li>
-        <li>$\mathcal{Y}$ output space</li>
-        <li>$h:\mathcal{X}\to\mathcal{Y}$ hypothesis</li>
+        <li>$\mathcal{X}$ input space, $\mathcal{Y}$ output space</li>
+        <li>$h:\mathcal{X}\to\mathcal{Y}$ hypothesis (the model)</li>
       </ul>
     </div>
     <div class="stack">
       <p>Objective:</p>
       <ul>
         <li>given a training set</li>
-        <li>learn a function $h$ so that $h(\bx)$ is a "good" predictor of $y$.</li>
+        <li>learn a function $h$ so that $h(\bx)$ is a "good" predictor of $y$ <b>on new data</b>.</li>
       </ul>
       <svg class="fig" data-fig="sl-diagram" style="max-height:240px" aria-label="Training set feeds a learning algorithm, which outputs a hypothesis h that maps x to a predicted y"></svg>
       <ul>
-        <li>$y$ continuous → <b>regression</b></li>
-        <li>$y$ discrete → <b>classification</b></li>
+        <li>$y$ continuous → <b>regression</b> (a price, a cost, a temperature)</li>
+        <li>$y$ discrete → <b>classification</b> (fraud or not, a damage type)</li>
       </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The machine learning workflow</h2>
+  <svg class="fig" data-fig="workflow" style="max-height:300px" aria-label="Eight steps: define the problem and metric, get the data, split, baseline, train, tune, test once, deploy and monitor"></svg>
+  <div class="cols c3">
+    <div class="stack"><h3>Decide the metric first</h3><p class="small">What counts as "good"? Euros of error, frauds caught, false alarms… Choose it before training (metrics: chapters 02 and 03).</p></div>
+    <div class="stack"><h3>Always a baseline</h3><p class="small">The dumbest model: predict the mean (regression) or the most frequent class. Yours must beat it. With 5 % fraud, "never fraud" is already 95 % accurate.</p></div>
+    <div class="stack"><h3>Test once, at the end</h3><p class="small">Every decision is made with the training and validation data. The test set only gives the final number.</p></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Underfitting and overfitting</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="complexity" data-auto="d=1 :: Degree 1: too simple. High error on the training data and on new data: underfitting|d=3 :: Degree 3: follows the pattern, not the noise. The lowest error on new data|d=9 :: Degree 9: the training error keeps falling, the error on new data starts to rise|d=15 :: Degree 15: wiggles through the noise. Lowest training error, the error on new data explodes: overfitting">
+      <svg class="fig" aria-label="Polynomial fits of growing degree to noisy points, and the train and test error against the degree"></svg>
+      <div class="ctl"><label for="cx-d">Polynomial degree</label><input type="range" id="cx-d" data-k="d" min="0" max="15" step="1" value="0"><span class="v" data-v="d">0</span></div>
+      <div class="ro"><div class="m"><span>train RMSE</span><b data-r="tr">–</b></div><div class="m"><span>test RMSE</span><b data-r="te">–</b></div><div class="m" style="flex:1"><span>verdict</span><b data-r="vd">–</b></div></div>
+    </div>
+    <div class="stack" style="gap:12px">
+      <p>20 noisy points from the dashed curve. We fit polynomials of growing degree and measure the error on those 20 points (train) and on 300 new points (test).</p>
+      <ul class="small">
+        <li><b>Underfitting</b>: the model is too simple for the pattern. High error on the training data <b>and</b> on new data.</li>
+        <li><b>Overfitting</b>: the model is flexible enough to memorize the noise. Low training error, high error on new data.</li>
+        <li>The training error only goes <b>down</b> as the model gets more complex, so it cannot choose the complexity. We need data the model has not seen.</li>
+      </ul>
+      <p class="why">The degree is a <b>hyperparameter</b>: a choice made before training. Parameters $\bth$ are learned on the training set; hyperparameters are chosen on the validation set.</p>
     </div>
   </div>
 </section>
@@ -53,27 +83,28 @@
 <section class="slide">
   <h2>Dataset: Train – Validation – Test</h2>
   <div class="cols c64">
-    <ul>
-      <li><b>Training Dataset.</b>
-        <ul><li>Fit the model – $m$ samples</li></ul></li>
-      <li><b>Validation Dataset:</b>
-        <ul><li>Provide an unbiased evaluation</li><li>Used for tuning model hyperparameters or model selection.</li><li>Becomes more biased (the model occasionally sees this data, but never does it "learn" from this).</li></ul></li>
-      <li><b>Test Dataset.</b>
-        <ul><li>Unbiased evaluation (data never seen).</li><li>Present results</li></ul></li>
-    </ul>
+    <div class="stack" style="gap:12px">
+      <table class="t" style="font-size:18px">
+        <tr><th>Set</th><th>Used for</th><th>Typical size</th></tr>
+        <tr><td><b>Training</b></td><td>fitting the <b>parameters</b> $\bth$: $m$ samples</td><td>60–80 %</td></tr>
+        <tr><td><b>Validation</b></td><td>choosing the <b>hyperparameters</b> (degree, $\lambda$, tree depth…) and comparing models</td><td>10–20 %</td></tr>
+        <tr><td><b>Test</b></td><td>one final, unbiased estimate, on data never used before</td><td>10–20 %</td></tr>
+      </table>
+      <p class="small step"><b>Why a separate test set?</b> After choosing the best of many models on the validation set, its validation score is <b>optimistic</b>: we picked the winner of a contest on that very data. The test set is an independent referee.</p>
+      <p class="small step">If you change the model after looking at the test score, the test set has become a validation set.</p>
+    </div>
     <div class="stack" style="gap:26px;padding-top:30px">
       <div class="bar3">
-        <div class="seg3" style="flex:70">Train<div class="blk" style="width:100%;background:linear-gradient(90deg,#f8c08f,#fff)"></div></div>
-        <div class="seg3" style="flex:15">Validation<div class="blk" style="width:100%;background:linear-gradient(90deg,#fff,#a8e063)"></div></div>
-        <div class="seg3" style="flex:15;margin-left:14px">Test<div class="blk" style="width:100%;background:#9ff3f7"></div></div>
+        <div class="seg3" style="flex:70">Train<div class="blk" style="width:100%;background:#a9f5c9"></div></div>
+        <div class="seg3" style="flex:15">Validation<div class="blk" style="width:100%;background:#79b8f5"></div></div>
+        <div class="seg3" style="flex:15;margin-left:14px">Test<div class="blk" style="width:100%;background:#f8c08f"></div></div>
       </div>
       <div class="stack">
         <p><b>Important:</b></p>
         <ul class="small">
-          <li>Same distribution.</li>
-          <li>No data leakage.</li>
-          <li>Distribution?
-            <ul><li>Depends on the number of hyperparameters and number of data samples.</li><li>(70-15-15) or (70-20-10) or (80-10-10) or (90-7-3)</li></ul></li>
+          <li>Same distribution in the three parts.</li>
+          <li>No data leakage (two slides ahead).</li>
+          <li>Proportions? They depend on the number of hyperparameters and of samples: (70-15-15), (70-20-10), (80-10-10), (90-7-3). With millions of rows, 1 % is plenty for validation and test.</li>
         </ul>
       </div>
     </div>
@@ -88,17 +119,17 @@
       <p><a href="https://scikit-learn.org/stable/modules/cross_validation.html">K-fold cross validation</a>:</p>
       <ol>
         <li class="step">Separate test data.</li>
-        <li class="step">Split data into K folds.</li>
+        <li class="step">Split the rest into K folds.</li>
         <li class="step">Calculate K metrics:
-          <ul><li>Train on K-1 folds.</li><li>Validate in the remaining one.</li></ul></li>
-        <li class="step">Average the K metrics.</li>
+          <ul><li>Train on K−1 folds.</li><li>Validate on the remaining one.</li></ul></li>
+        <li class="step">Average the K metrics (and report their spread).</li>
       </ol>
-      <p class="step" style="margin-top:18px">A frequent choice of K is 5 or 10.</p>
       <div class="eq step">$$\mathrm{CV}=\frac{1}{K}\sum_{k=1}^{K}E_k$$</div>
+      <p class="step small">A frequent choice of K is 5 or 10. Every sample is used for validation exactly once. After choosing the hyperparameters, <b>refit on all the non-test data</b>, then evaluate once on the test set.</p>
     </div>
     <div class="folds">
       <div></div><div class="c all" style="grid-column:span 5">All Data</div>
-      <div></div><div class="c tr" style="grid-column:span 4">Training data</div><div class="c va">Test data</div>
+      <div></div><div class="c tr" style="grid-column:span 4">Training data</div><div class="c te">Test data</div>
       <div style="height:10px"></div><div style="grid-column:span 5"></div>
       <div></div><div class="c hd">Fold 1</div><div class="c hd">Fold 2</div><div class="c hd">Fold 3</div><div class="c hd">Fold 4</div><div class="c hd">Fold 5</div>
       <div class="l">Split 1</div><div class="c va">Fold 1</div><div class="c tr">Fold 2</div><div class="c tr">Fold 3</div><div class="c tr">Fold 4</div><div class="c tr">Fold 5</div>
@@ -107,7 +138,28 @@
       <div class="l">Split 4</div><div class="c tr">Fold 1</div><div class="c tr">Fold 2</div><div class="c tr">Fold 3</div><div class="c va">Fold 4</div><div class="c tr">Fold 5</div>
       <div class="l">Split 5</div><div class="c tr">Fold 1</div><div class="c tr">Fold 2</div><div class="c tr">Fold 3</div><div class="c tr">Fold 4</div><div class="c va">Fold 5</div>
       <div style="height:10px"></div><div style="grid-column:span 5"></div>
-      <div></div><div class="l" style="grid-column:span 3">Finding parameters ↑ · Final evaluation →</div><div class="c te" style="grid-column:span 2">Test data</div>
+      <div></div><div class="l" style="grid-column:span 3">Blue = validation fold · Finding parameters ↑ · Final evaluation →</div><div class="c te" style="grid-column:span 2">Test data</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Splitting correctly: leakage, classes, groups, time</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:10px">
+      <p><b>Data leakage</b>: information from the validation or test data (or from the future) sneaks into training. The scores look great, and the model fails in production.</p>
+      <ul class="small">
+        <li><b>Preprocessing fitted on all the data</b>, e.g. the mean and standard deviation used for scaling. Compute them on the training part only and apply them to the rest. A scikit-learn <code>Pipeline</code> does this automatically, fold by fold.</li>
+        <li><b>Features known only after the outcome</b>, e.g. "claim paid amount" to predict fraud when the claim is opened.</li>
+      </ul>
+      <p class="small"><b>Classification:</b> <b>stratify</b> the split so every part keeps the class proportions (<code>stratify=y</code>, <code>StratifiedKFold</code>). Essential when a class is rare.</p>
+    </div>
+    <div class="stack" style="gap:8px">
+      <svg class="fig" data-fig="splits" style="max-height:280px" aria-label="Three splits: random stratified rows, whole groups of rows per customer, and chronological by time"></svg>
+      <ul class="small">
+        <li><b>Groups</b>: several rows of the same customer, patient or car must all go to the same part (<code>GroupKFold</code>). Otherwise we validate on near-copies of the training data.</li>
+        <li><b>Time</b>: never shuffle. Train on the past, validate on the future (<code>TimeSeriesSplit</code>). Lab 16 is all about this.</li>
+      </ul>
     </div>
   </div>
 </section>
@@ -117,6 +169,7 @@
 </section>
 </div></div>
 <script src="../assets/figures.js"></script>
+<script src="assets/fig-supervised.js"></script>
 <script src="../assets/deck.js"></script>
 </body>
 </html>

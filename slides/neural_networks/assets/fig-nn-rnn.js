@@ -1,7 +1,7 @@
 /* Figures for 05_rnn_lstm.html */
 (function(){
 'use strict';
-const {FIG,lib}=window.MLFIG;const {E,T,initSvg,Plot,arrowPx,rng,randn,fmt,q,setV,setR,svgOf}=lib;const {grid,heat,box,stepper,sig,f2,f3}=window.MLNN;
+const {FIG,lib}=window.MLFIG;const {E,T,initSvg,Plot,arrowPx,rng,randn,fmt,q,setV,setR,svgOf}=lib;const {grid,heat,box,stepper,sig,f2,f3,TT}=window.MLNN;
 const node=(svg,x,y,t,c,w,h)=>{w=w||56;h=h||40;E('rect',{x:x-w/2,y:y-h/2,width:w,height:h,rx:8,fill:c,stroke:'#404040'},svg);T(svg,x,y+5,t,'lab')};
 /* ---------- text → tokens → ids → vectors ---------- */
 FIG['tokens']=root=>{const svg=initSvg(svgOf(root),960,270);const toks=['the','movie','was','not','good'],ids=[2,517,14,31,48];
@@ -41,11 +41,12 @@ FIG['rnn-cell']=root=>{const svg=initSvg(svgOf(root),560,260);E('rect',{x:120,y:
 FIG['rnn-num']=root=>{const svg=svgOf(root);const wx=+root.dataset.wx||1,wh=+root.dataset.wh||0.5;const X=[1,0,0,-1,0,0];const iw=q(root,'w');
   function hs(w){const H=[0];X.forEach(x=>H.push(Math.tanh(wx*x+w*H[H.length-1])));return H}
   const show=stepper(root,s=>{const w=iw?+iw.value:wh;setV(root,'w',fmt(w,2));const H=hs(w);initSvg(svg,620,300);
-    X.forEach((x,k)=>{const cx=70+k*95;const on=k<s;box(svg,cx-28,238,56,30,'x='+x,on?'#c5e0b4':'#f2f2f2',{cls:''});E('circle',{cx:cx,cy:170,r:28,fill:on?heat(H[k+1]):'#f2f2f2',stroke:'#404040'},svg);T(svg,cx,176,on?f2(H[k+1]):'?','lab');
+    X.forEach((x,k)=>{const cx=70+k*95;const on=k<s;box(svg,cx-28,238,56,30,'x = '+String(x).replace('-','−'),on?'#c5e0b4':'#f2f2f2',{cls:''});E('circle',{cx:cx,cy:170,r:28,fill:on?heat(H[k+1]):'#f2f2f2',stroke:'#404040'},svg);T(svg,cx,176,on?f2(H[k+1]):'?','lab');
       if(on)arrowPx(svg,cx,236,cx,200,'ln thin sk','fk');if(k>0&&on)arrowPx(svg,cx-65,170,cx-30,170,'ln sr','fr')});T(svg,20,176,'h','lab','start');
     const P=Plot(svg,{at:[20,0],w:600,h:120,x:[-0.5,6.5],y:[-1,1],m:{l:30,r:10,t:16,b:10}});P.line(-0.5,0,6.5,0,'ax',P.bg);P.text(-0.5,1,'h over time','', 'start',4,0);
     const pts=H.slice(0,s+1).map((h,k)=>[k,h]);P.path(pts,'ln sb');pts.forEach(p=>P.dot(p[0],p[1],3.5,'fb'));
-    T(svg,310,292,s===0?'hₜ = tanh(1·xₜ + wₕ·hₜ₋₁), h₀ = 0':'h'+s+' = tanh('+X[s-1]+' + '+fmt(w,2)+'·'+f2(H[s-1])+') = '+f2(H[s]),'','middle')});if(iw)iw.addEventListener('input',show)};
+    const pv=v=>v<0?'('+f2(v)+')':f2(v);
+    TT(svg,310,292,s===0?'h_t = tanh(1·x_t + w_h·h_{t−1}),  h_0 = 0':'h_'+s+' = tanh('+String(X[s-1]).replace('-','−')+' + '+fmt(w,2)+' · '+pv(H[s-1])+') = '+f2(H[s]),'lab','middle')});if(iw)iw.addEventListener('input',show)};
 FIG['rnn-types']=root=>{const svg=initSvg(svgOf(root),960,250);const cell=(x,y,c)=>E('rect',{x:x-14,y:y-14,width:28,height:28,rx:5,fill:c,stroke:'#404040'},svg);
   const draw=(x0,lab,ex,ins,outs,n)=>{T(svg,x0+100,20,lab,'lab');for(let i=0;i<n;i++){const x=x0+30+i*50;cell(x,120,'#bdd7ee');if(i<n-1)arrowPx(svg,x+14,120,x+36,120,'ln thin sk','fk');
     if(ins.includes(i)){cell(x,190,'#c5e0b4');arrowPx(svg,x,176,x,136,'ln thin sk','fk')}if(outs.includes(i)){cell(x,50,'#f8cbad');arrowPx(svg,x,106,x,66,'ln thin sk','fk')}}T(svg,x0+100,235,ex,'','middle')};
@@ -65,26 +66,46 @@ FIG['clip']=root=>{const svg=initSvg(svgOf(root),420,260);const P=Plot(svg,{w:42
   const c=[0,0];const t=Array.from({length:61},(_,i)=>2*Math.PI*i/60);P.path(t.map(a=>[1.5*Math.cos(a),1.5*Math.sin(a)]),'ln thin sm dash');P.text(-1,1.6,'‖g‖ = τ','', 'start');
   lib.arrow(P,0,0,5,4,'ln sr','fr');P.text(5,4,'raw gradient (exploding)','', 'end',-6,-8);const n=Math.hypot(5,4);lib.arrow(P,0,0,1.5*5/n,1.5*4/n,'ln sb','fb');P.text(1.2,0.6,'clipped: same direction, length τ','', 'start',6,8)};
 /* ---------- LSTM ---------- */
-FIG['lstm-cell']=root=>{const svg=initSvg(svgOf(root),620,330);E('rect',{x:60,y:40,width:500,height:230,rx:18,fill:'#e2f0d9',stroke:'#548235'},svg);
-  E('line',{x1:20,y1:80,x2:600,y2:80,stroke:'#404040','stroke-width':3},svg);T(svg,30,70,'c⟨t−1⟩','lab','start');T(svg,590,70,'c⟨t⟩','lab','end');T(svg,310,34,'cell state: the memory highway (additive)','','middle');
-  E('line',{x1:20,y1:230,x2:120,y2:230,stroke:'#404040','stroke-width':2},svg);T(svg,24,250,'h⟨t−1⟩','lab','start');E('line',{x1:120,y1:230,x2:120,y2:180,stroke:'#404040','stroke-width':2},svg);
-  const gate=(x,t,c,lab)=>{E('rect',{x:x-24,y:165,width:48,height:30,rx:4,fill:c,stroke:'#404040'},svg);T(svg,x,185,t,'lab');T(svg,x,215,lab,'','middle')};
-  const op=(x,y,t)=>{E('circle',{cx:x,cy:y,r:13,fill:'#fff',stroke:'#404040'},svg);T(svg,x,y+5,t,'lab')};
-  E('line',{x1:120,y1:180,x2:420,y2:180,stroke:'#404040','stroke-width':1.5},svg);gate(170,'σ','#ffc000','forget f');gate(260,'σ','#ffc000','input i');gate(330,'tanh','#f4b183','candidate c̃');gate(420,'σ','#ffc000','output o');
-  op(170,80,'×');op(300,80,'+');op(300,125,'×');op(480,195,'×');E('line',{x1:170,y1:165,x2:170,y2:93,stroke:'#404040'},svg);E('line',{x1:260,y1:165,x2:288,y2:132,stroke:'#404040'},svg);E('line',{x1:330,y1:165,x2:312,y2:132,stroke:'#404040'},svg);E('line',{x1:300,y1:112,x2:300,y2:93,stroke:'#404040'},svg);
-  E('line',{x1:420,y1:180,x2:467,y2:195,stroke:'#404040'},svg);E('rect',{x:455,y:105,width:50,height:26,rx:4,fill:'#f4b183',stroke:'#404040'},svg);T(svg,480,123,'tanh','lab');E('line',{x1:480,y1:80,x2:480,y2:105,stroke:'#404040'},svg);E('line',{x1:480,y1:131,x2:480,y2:182,stroke:'#404040'},svg);
-  E('line',{x1:493,y1:195,x2:600,y2:195,stroke:'#404040','stroke-width':2},svg);T(svg,590,215,'h⟨t⟩','lab','end');E('line',{x1:120,y1:300,x2:120,y2:230,stroke:'#404040','stroke-width':2},svg);T(svg,120,320,'x⟨t⟩','lab')};
+function lstmDraw(svg,hi){const on=t=>!hi||hi.includes(t);const G=t=>{const g=E('g',{},svg);if(!on(t))g.setAttribute('opacity','0.18');return g};
+  const col=t=>hi&&on(t)?'#c00000':'#404040',sw=t=>hi&&on(t)?2.6:1.2;
+  E('rect',{x:60,y:40,width:500,height:230,rx:18,fill:'#e2f0d9',stroke:'#548235'},svg);T(svg,310,32,'cell state c: the memory highway (additive)','','middle');
+  const op=(g,x,y,t)=>{E('circle',{cx:x,cy:y,r:13,fill:'#fff',stroke:'#404040'},g);T(g,x,y+5,t,'lab')};
+  const gate=(g,x,t,c,lab)=>{E('rect',{x:x-26,y:165,width:52,height:30,rx:4,fill:c,stroke:'#404040'},g);T(g,x,185,t,'lab');T(g,x,215,lab,'','middle')};
+  let g=G('bus');E('line',{x1:20,y1:230,x2:120,y2:230,stroke:'#404040','stroke-width':2},g);T(g,24,250,'h⟨t−1⟩','lab','start');E('line',{x1:120,y1:300,x2:120,y2:180,stroke:'#404040','stroke-width':2},g);T(g,120,322,'x⟨t⟩','lab');
+  E('line',{x1:120,y1:180,x2:394,y2:180,stroke:'#404040','stroke-width':1.5},g);T(g,86,172,'[h, x]','','middle');
+  g=G('c');[[20,157],[183,287],[313,600]].forEach(([a,b])=>E('line',{x1:a,y1:80,x2:b,y2:80,stroke:col('c'),'stroke-width':3},g));T(g,28,70,'c⟨t−1⟩','lab','start');T(g,592,70,'c⟨t⟩','lab','end');op(g,300,80,'+');
+  g=G('f');E('line',{x1:170,y1:165,x2:170,y2:93,stroke:col('f'),'stroke-width':sw('f')},g);gate(g,170,'σ','#ffc000','forget f');op(g,170,80,'×');
+  g=G('i');E('line',{x1:260,y1:165,x2:289,y2:134,stroke:col('i'),'stroke-width':sw('i')},g);E('line',{x1:330,y1:165,x2:311,y2:134,stroke:col('i'),'stroke-width':sw('i')},g);E('line',{x1:300,y1:112,x2:300,y2:93,stroke:col('i'),'stroke-width':sw('i')},g);
+  gate(g,260,'σ','#ffc000','input i');gate(g,330,'tanh','#f4b183','candidate c̃');op(g,300,125,'×');
+  g=G('o');E('line',{x1:420,y1:180,x2:468,y2:192,stroke:col('o'),'stroke-width':sw('o')},g);E('line',{x1:480,y1:80,x2:480,y2:105,stroke:col('o'),'stroke-width':sw('o')},g);E('line',{x1:480,y1:131,x2:480,y2:182,stroke:col('o'),'stroke-width':sw('o')},g);
+  E('line',{x1:493,y1:195,x2:600,y2:195,stroke:col('o'),'stroke-width':2},g);gate(g,420,'σ','#ffc000','output o');E('rect',{x:455,y:105,width:50,height:26,rx:4,fill:'#f4b183',stroke:'#404040'},g);T(g,480,123,'tanh','lab');op(g,480,195,'×');T(g,592,215,'h⟨t⟩','lab','end')}
+FIG['lstm-cell']=root=>{const svg=initSvg(svgOf(root),620,330);lstmDraw(svg,null)};
+FIG['lstm-walk']=root=>{const svg=svgOf(root);stepper(root,s=>{initSvg(svg,620,330);lstmDraw(svg,[null,['f'],['i'],['c','f','i'],['o']][s])})};
+/* a gate is a sigmoid vector that multiplies a signal element by element */
+FIG['gate-demo']=root=>{const svg=initSvg(svgOf(root),560,230);const sg=[2.0,-1.5,0.8,3.0],z=[4,-4,0,2];const g=z.map(v=>1/(1+Math.exp(-v)));const out=sg.map((v,k)=>v*g[k]);
+  const col=(x0,title,vals,fill,fmtf)=>{T(svg,x0+40,18,title,'lab');vals.forEach((v,k)=>{const y=30+k*44;E('rect',{x:x0,y:y,width:80,height:36,rx:4,fill:fill(v,k),stroke:'#7f7f7f'},svg);T(svg,x0+40,y+23,fmtf(v),'lab')})};
+  const mn=v=>(v<0?'−':'')+Math.abs(v).toFixed(2);
+  col(20,'signal',sg,()=>'#dae3f3',mn);T(svg,132,118,'⊙','lab big');col(160,'gate σ(z)',g,v=>'rgba(255,192,0,'+(0.15+0.85*v).toFixed(2)+')',v=>v.toFixed(2));T(svg,272,118,'=','lab big');col(300,'gate ⊙ signal',out,()=>'#e2f0d9',mn);
+  ['let through','blocked','halved','mostly through'].forEach((t,k)=>T(svg,396,30+k*44+23,t,'','start'))};
+/* an embedding is a lookup table: one-hot × E = one row of E */
+FIG['lookup']=root=>{const svg=initSvg(svgOf(root),620,250);const voc=['<PAD>','<UNK>','the','movie','good'];const Em=[[0,0,0],[0.1,-0.3,0.2],[0.4,0.1,-0.2],[0.8,-0.2,0.5],[-0.3,0.9,0.6]];const k=3;const cs=34;
+  T(svg,60,20,'one-hot of "movie"','lab');voc.forEach((w,i)=>{E('rect',{x:20+i*cs*0.5,y:112,width:cs*0.5-2,height:30,fill:i===k?'#ffc000':'#fff',stroke:'#7f7f7f'},svg);T(svg,20+i*cs*0.5+8,132,i===k?'1':'0','')});T(svg,62,168,'1 × |V|','','middle');
+  T(svg,120,132,'×','lab big');
+  T(svg,300,20,'embedding matrix E (|V| × d)','lab');voc.forEach((w,i)=>{T(svg,196,48+i*cs+22,i+' '+w,i===k?'lab':'','end');Em[i].forEach((v,j)=>{E('rect',{x:205+j*60,y:48+i*cs,width:58,height:cs-2,fill:i===k?'#ffe699':'#f7f7f7',stroke:i===k?'#bf9000':'#d0d0d0'},svg);T(svg,205+j*60+29,48+i*cs+21,(v<0?'−':'')+Math.abs(v).toFixed(1),i===k?'lab':'')})});
+  T(svg,410,132,'=','lab big');T(svg,515,90,'vector of "movie"','lab');Em[k].forEach((v,j)=>{E('rect',{x:432+j*56,y:112,width:54,height:32,fill:'#ffe699',stroke:'#bf9000'},svg);T(svg,432+j*56+27,133,(v<0?'−':'')+Math.abs(v).toFixed(1),'lab')});T(svg,515,168,'1 × d','','middle');
+  T(svg,310,240,'multiplying by a one-hot vector just picks a row: in code, E[3]. The rows are learned by backprop.','','middle')};
 /* the LSTM as a notebook: a story of the gates over a sentence */
 const STORY={t:['The','cat',',','which','ate','a','lot',',','was','sleepy'],
-  f:[0.1,0.9,0.95,0.97,0.96,0.97,0.97,0.96,0.2,0.5],i:[0.1,0.95,0.05,0.05,0.1,0.02,0.05,0.02,0.1,0.8],o:[0.1,0.2,0.1,0.1,0.1,0.1,0.1,0.2,0.95,0.3],cand:[0,1,0,0,0,0,0,0,0,-0.2]};
-FIG['lstm-story']=root=>{const svg=svgOf(root);const n=STORY.t.length;const C=[0];for(let k=0;k<n;k++)C.push(STORY.f[k]*C[k]+STORY.i[k]*STORY.cand[k]);
-  stepper(root,s=>{initSvg(svg,960,310);const x0=150,dx=78;T(svg,20,40,'word','lab','start');T(svg,20,80,'forget f','','start');T(svg,20,112,'input i','','start');T(svg,20,144,'output o','','start');T(svg,20,236,'memory c','lab','start');
+  f:[0.1,0.9,0.95,0.97,0.96,0.97,0.97,0.96,0.95,0.2],i:[0.1,0.95,0.05,0.05,0.1,0.02,0.05,0.02,0.05,0.8],o:[0.1,0.2,0.1,0.1,0.1,0.1,0.1,0.2,0.95,0.3],cand:[0,1,0,0,0,0,0,0,0,-0.5]};
+FIG['lstm-story']=root=>{const svg=svgOf(root);const n=STORY.t.length;const C=[0];for(let k=0;k<n;k++)C.push(STORY.f[k]*C[k]+STORY.i[k]*STORY.cand[k]);const H=C.slice(1).map((c,k)=>STORY.o[k]*Math.tanh(c));
+  stepper(root,s=>{initSvg(svg,960,345);const x0=150,dx=78;T(svg,20,40,'word','lab','start');T(svg,20,80,'forget f','','start');T(svg,20,112,'input i','','start');T(svg,20,144,'output o','','start');T(svg,20,266,'memory c','lab','start');T(svg,20,180,'h = o·tanh(c)','lab','start');
     STORY.t.forEach((w,k)=>{const x=x0+k*dx;const on=k<s,cur=k===s-1;const tt=T(svg,x,40,w,cur?'lab big':'lab');tt.style.fill=on?(cur?'#c00000':'#1f1f1f'):'#bfbfbf';
       if(on){[['f','#4472c4',66],['i','#70ad47',98],['o','#ed7d31',130]].forEach(([g,c,y])=>{E('rect',{x:x-30,y:y,width:60,height:18,fill:'#f2f2f2'},svg);E('rect',{x:x-30,y:y,width:60*STORY[g][k],height:18,fill:c},svg);T(svg,x,y+14,f2(STORY[g][k]),'').style.fill=STORY[g][k]>0.5?'#fff':'#404040'});
-        const v=C[k+1];E('rect',{x:x-30,y:v>=0?240-50*v:240,width:60,height:Math.abs(50*v)+1,fill:'#7030a0','fill-opacity':0.7},svg);T(svg,x,v>=0?234-50*v:256+50*Math.abs(v),f2(v),'')}});
-    E('line',{x1:x0-40,y1:240,x2:x0+n*dx-30,y2:240,stroke:'#404040'},svg);
-    const notes=['An LSTM reading a sentence: watch the gates and the memory cell','"The": little to store','"cat": input gate opens, writes "subject = singular" into memory','"," …: forget ≈ 1, input ≈ 0: the memory is kept untouched','"which": a sub-clause starts; still keep the subject','"ate": not relevant for the verb agreement','"a"','"lot"','",": the sub-clause ends; the subject is still in memory','"was": output gate opens: read "singular" to choose was / were; then forget it','"sleepy": new content, the old subject is no longer needed'];
-    T(svg,480,300,notes[s],'lab','middle')})};
+        const hv=H[k];const ht=T(svg,x,180,f2(hv),Math.abs(hv)>0.3?'lab':'');ht.style.fill=Math.abs(hv)>0.3?'#c00000':'#7f7f7f';
+        const v=C[k+1];E('rect',{x:x-30,y:v>=0?272-50*v:272,width:60,height:Math.abs(50*v)+1,fill:'#7030a0','fill-opacity':0.7},svg);T(svg,x,v>=0?266-50*v:288+50*Math.abs(v),f2(v),'')}});
+    E('line',{x1:x0-40,y1:272,x2:x0+n*dx-30,y2:272,stroke:'#404040'},svg);
+    const notes=['An LSTM reading a sentence: watch the gates and the memory cell','"The": little to store','"cat": the input gate opens and writes "subject = singular" into memory','",": forget ≈ 1, input ≈ 0: the memory is kept untouched','"which": a sub-clause starts; still keep the subject','"ate": not relevant for the verb agreement: keep','"a": keep','"lot": keep','",": the sub-clause ends; the subject is still in memory','"was": the output gate opens: h reads "singular" to choose was, not were','"sleepy": the forget gate closes (the subject is no longer needed) and new content is written'];
+    T(svg,480,336,notes[s],'lab','middle')})};
 /* LSTM gates on one step, with numbers */
 FIG['lstm-num']=root=>{const svg=svgOf(root);const cp=0.8,f=0.9,i=0.3,ct=-0.5,o=0.7;const c=f*cp+i*ct;const h=o*Math.tanh(c);
   stepper(root,s=>{initSvg(svg,600,260);box(svg,20,40,120,40,'c⟨t−1⟩ = '+cp,'#e4d7f5');
@@ -112,7 +133,7 @@ FIG['birnn']=root=>{const svg=initSvg(svgOf(root),880,260);const cell=(x,y,c)=>E
 /* ---------- padding and masking ---------- */
 FIG['padding']=root=>{const svg=initSvg(svgOf(root),600,200);const S=[['great','movie','!'],['not','my','cup','of','tea'],['boring']];
   S.forEach((s,k)=>{for(let j=0;j<5;j++){const pad=j>=s.length;box(svg,120+j*90,20+k*48,84,38,pad?'<PAD>':s[j],pad?'#e7e6e6':'#e2f0d9',{cls:pad?'':'lab',tcol:pad?'#8c8c8c':undefined})}T(svg,110,44+k*48,'length '+s.length,'','end')});
-  T(svg,345,185,'batch tensor [3, 5]: shorter sequences are padded; a mask tells the model (and the loss) to ignore <PAD>','','middle')};
+  T(svg,345,185,'batch tensor [3, 5] plus lengths [3, 5, 1]: the model must ignore <PAD>','','middle')};
 /* ---------- seq2seq: the bottleneck ---------- */
 FIG['seq2seq']=root=>{const svg=initSvg(svgOf(root),960,250);const src=['the','black','cat','sleeps'],tgt=['el','gato','negro','duerme'];
   src.forEach((w,k)=>{const x=60+k*100;node(svg,x,120,'',k===3?'#4472c4':'#bdd7ee',50,36);node(svg,x,200,w,'#c5e0b4',70,30);arrowPx(svg,x,184,x,140,'ln thin sk','fk');if(k<3)arrowPx(svg,x+26,120,x+74,120,'ln thin sk','fk')});

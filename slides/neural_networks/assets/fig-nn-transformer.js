@@ -48,9 +48,10 @@ FIG['paths']=root=>{const svg=initSvg(svgOf(root),960,240);const n=7;
   for(let a=0;a<n;a++)for(let b=a+1;b<n;b++){const x1=520+a*65,x2=520+b*65;const hi=a===0&&b===n-1;E('path',{d:'M'+x1+',108 Q'+((x1+x2)/2)+','+(108-(x2-x1)*0.35)+' '+x2+',108',fill:'none',stroke:hi?'#c00000':'#9dafd6','stroke-width':hi?2.5:0.8},svg)}
   T(svg,720,190,'1 step between any two words, all pairs computed in parallel','','middle');T(svg,720,212,'price: n² pairs (memory and compute grow with n²)','','middle')};
 /* ---------- BPE ---------- */
-FIG['bpe']=root=>{const svg=svgOf(root);const rows=[['l o w','l o w e r','n e w e s t','w i d e s t'],['l o w','l o w e r','n e w es t','w i d es t'],['l o w','l o w e r','n e w est','w i d est'],['lo w','lo w e r','n e w est','w i d est'],['low','low e r','n e w est','w i d est']];const merges=['start: characters','merge "e"+"s" → "es" (most frequent pair)','merge "es"+"t" → "est"','merge "l"+"o" → "lo"','merge "lo"+"w" → "low"'];
-  stepper(root,s=>{initSvg(svg,600,230);T(svg,300,24,merges[s],'lab');rows[s].forEach((w,k)=>{const parts=w.split(' ');let x=40;const y=60+k*38;parts.forEach(p=>{const wd=16+p.length*12;box(svg,x,y,wd,28,p,'#dae3f3',{cls:'lab'});x+=wd+4})});
-    T(svg,300,218,'vocabulary grows by one symbol per merge; GPT-2 stops at 50,257','','middle')})};
+FIG['bpe']=root=>{const svg=svgOf(root);const cnt=[5,2,6,3];const rows=[['l o w','l o w e r','n e w e s t','w i d e s t'],['l o w','l o w e r','n e w es t','w i d es t'],['l o w','l o w e r','n e w est','w i d est'],['lo w','lo w e r','n e w est','w i d est'],['low','low e r','n e w est','w i d est']];
+  const merges=['start: characters (a toy corpus, with word counts)','"e" + "s": 6 + 3 = 9 times, the most frequent pair → "es"','"es" + "t": 9 times → "est"','"l" + "o": 5 + 2 = 7 times → "lo"','"lo" + "w": 7 times → "low"'];
+  stepper(root,s=>{initSvg(svg,600,230);T(svg,300,24,merges[s],'lab');rows[s].forEach((w,k)=>{const parts=w.split(' ');let x=40;const y=48+k*38;T(svg,30,y+19,'×'+cnt[k],'','end');parts.forEach(p=>{const wd=16+p.length*12;box(svg,x,y,wd,28,p,'#dae3f3',{cls:'lab'});x+=wd+4})});
+    T(svg,300,218,'the vocabulary grows by one symbol per merge; GPT-2 stops at 50,257 tokens','','middle')})};
 /* ---------- language-model training: shifted targets ---------- */
 FIG['lm-train']=root=>{const svg=initSvg(svgOf(root),960,200);const toks=['The','cat','sat','on','the','mat'];
   T(svg,40,50,'input','lab','end');T(svg,40,150,'target','lab','end');toks.forEach((t,k)=>{const x=70+k*140;if(k<5){box(svg,x,30,110,34,t,'#e2f0d9');arrowPx(svg,x+55,66,x+55,128,'ln thin sk','fk');T(svg,x+60,100,'predict','','start')}if(k>0)box(svg,x-140,130,110,34,t,'#fbe5d6')});

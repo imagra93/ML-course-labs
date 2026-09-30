@@ -8,9 +8,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
-<link rel="stylesheet" href="../assets/deck.css?v=20260929">
-<link rel="stylesheet" href="assets/nn.css?v=20260929">
-<script src="../assets/mathjax-config.js?v=20260929"></script>
+<link rel="stylesheet" href="../assets/deck.css?v=20260930">
+<link rel="stylesheet" href="assets/nn.css?v=20260930">
+<script src="../assets/mathjax-config.js?v=20260930"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
 </head>
 <body data-deck="6 · Attention and transformers" data-prev="05_rnn_lstm.html">
@@ -36,6 +36,7 @@
     <div class="stack center" style="gap:14px">
       <div class="note" style="text-align:center;padding:24px 30px"><p style="font-size:30px"><b>Attention Is All You Need</b></p><p class="small">Vaswani, Shazeer, Parmar, Uszkoreit, Jones, Gomez, Kaiser, Polosukhin · 2017</p></div>
       <p class="why">The paper that introduced the transformer: no recurrence, no convolution, only attention. Behind GPT, BERT, translation, speech (Whisper) and vision (ViT).</p>
+      <p class="why">Two labs close this chapter: Lab 14 (text generation with GPT-2) and Lab 15 (RAG: search and grounded answers).</p>
     </div>
   </div>
 </section>
@@ -201,11 +202,11 @@ d["cat"]          <span class="c"># hard lookup → v1</span>
 <section class="slide">
   <h2>Positional encodings:</h2>
   <div class="cols c46">
-    <div class="stack" style="gap:10px">
+    <div class="stack" style="gap:8px">
       <p class="small"><b>Does the order of words matter?</b> Permute the input rows: $\bQ\bK^\top$ and the output are permuted the same way. Self-attention is <b>permutation-equivariant</b>: "dog bites man" = "man bites dog".</p>
       <p class="small">So we <b>add</b> an encoding of the position to each embedded input:</p>
       <div class="eq">$$\text{input}_t=\text{embedding}(\text{token}_t)+PE(t)$$</div>
-      <div class="eq s">$$PE_{(pos,2i)}=\sin\Big(\frac{pos}{10000^{2i/d}}\Big),\qquad PE_{(pos,2i+1)}=\cos\Big(\frac{pos}{10000^{2i/d}}\Big)$$</div>
+      <div class="eq s">$$PE_{(pos,\,2i)}=\sin\Big(\frac{pos}{10000^{2i/d}}\Big)$$$$PE_{(pos,\,2i+1)}=\cos\Big(\frac{pos}{10000^{2i/d}}\Big)$$</div>
       <p class="small">Each pair of dimensions is a clock at a different speed. Relative positions become easy to read: $PE(pos+k)$ is a fixed rotation of $PE(pos)$. GPT-2 instead <b>learns</b> a position embedding; modern LLMs rotate $\bq,\bk$ directly (RoPE).</p>
     </div>
     <svg class="fig" data-fig="posenc" aria-label="Heat map of sinusoidal positional encodings"></svg>
@@ -218,6 +219,32 @@ d["cat"]          <span class="c"># hard lookup → v1</span>
   <svg class="fig" data-fig="mask" style="max-height:270px" aria-label="Scores, the causal mask with minus infinity above the diagonal, and the resulting attention weights"></svg>
   <div class="eq">$$\mathrm{softmax}\Big(\frac{\bQ\bK^\top}{\sqrt{d_k}}+\mathbf M\Big)\bV,\qquad M_{ij}=\begin{cases}0&amp;j\le i\\-\infty&amp;j\gt i\end{cases}$$</div>
   <p class="small">$e^{-\infty}=0$: future tokens get exactly zero weight. And one forward pass trains all $n$ next-token predictions of a sequence at once.</p>
+</section>
+
+<section class="slide">
+  <h2>Self-attention in code</h2>
+  <div class="cols c64">
+    <pre class="code">import math, torch
+
+def self_attention(X, Wq, Wk, Wv, causal=False):
+    Q, K, V = X @ Wq, X @ Wk, X @ Wv       <span class="c"># [n, dk] each</span>
+    S = Q @ K.T / math.sqrt(K.shape[-1])   <span class="c"># [n, n] scores</span>
+    if causal:                             <span class="c"># hide the future</span>
+        future = torch.triu(torch.ones_like(S), diagonal=1).bool()
+        S = S.masked_fill(future, float("-inf"))
+    A = S.softmax(dim=-1)                  <span class="c"># each row sums to 1</span>
+    return A @ V                           <span class="c"># [n, dv]: new vectors</span>
+
+X = torch.randn(10, 512)                   <span class="c"># 10 tokens, d = 512</span>
+Wq, Wk, Wv = (torch.randn(512, 64) / 512**0.5 for _ in range(3))
+Z = self_attention(X, Wq, Wk, Wv, causal=True)   <span class="c"># [10, 64]</span></pre>
+    <div class="stack" style="gap:10px">
+      <p class="small">Everything of the last slides fits in a handful of lines: three projections, one scaled product, an optional mask, a softmax per row, and a weighted average of the values.</p>
+      <p class="small">With a batch, the same code works on tensors $[B,n,d]$ (write <code>K.transpose(-2, -1)</code> for $\bK^\top$). Multi-head: reshape to $[B,h,n,d_k]$ and run all heads at once.</p>
+      <p class="small">In practice: <code>nn.MultiheadAttention</code>, or <code>F.scaled_dot_product_attention(Q, K, V, is_causal=True)</code>, which uses fast fused kernels (FlashAttention).</p>
+      <p class="why">Lab 14 plots the real attention matrices of GPT-2.</p>
+    </div>
+  </div>
 </section>
 
 <section class="slide">
@@ -244,6 +271,7 @@ d["cat"]          <span class="c"># hard lookup → v1</span>
         <li><b>Residual connections</b> and <b>LayerNorm</b> make deep stacks trainable (chapters 3–4).</li>
         <li><b>Cross-attention</b>: queries from the decoder, keys and values from the encoder: the alignment of translation.</li>
       </ul>
+      <p class="small why">The figure is the original transformer, with "Add &amp; Norm" after each sub-layer (post-norm). GPT-2 and most modern models apply the LayerNorm before each sub-layer (pre-norm, the formulas above): it trains more stably.</p>
     </div>
   </div>
 </section>
@@ -290,7 +318,7 @@ d["cat"]          <span class="c"># hard lookup → v1</span>
     </ul>
     <p class="step">GPT-2 small: $N=12$, $d=768$, $|V|=50{,}257$, 1,024 positions:</p>
     <div class="eq big step">$$\underbrace{12\cdot12\cdot768^2}_{\text{blocks}}\approx84.9\text{M}+\underbrace{50{,}257\cdot768}_{\text{token emb.}}\approx38.6\text{M}+\underbrace{1024\cdot768}_{\text{positions}}\approx0.8\text{M}\approx\mathbf{124\text{M}}$$</div>
-    <p class="step small">The output layer usually reuses the embedding matrix (weight tying): $\mathbf z_t=\bh_t\bE^\top$. Modern LLMs: the same recipe with $N\approx80$, $d\approx8{,}000$: tens of billions of parameters.</p>
+    <p class="step small">The output layer usually reuses the embedding matrix (weight tying): $\mathbf z_t=\bh_t\bE^\top$, so it adds no parameters. Modern LLMs: the same recipe with $N\approx80$, $d\approx8{,}000$: tens of billions of parameters.</p>
   </div>
 </section>
 
@@ -303,7 +331,7 @@ d["cat"]          <span class="c"># hard lookup → v1</span>
     </div>
     <div class="stack" style="gap:10px">
       <p class="small"><b>Autoregressive</b>: the model gives a distribution over the next token; one token is chosen, appended to the input, and the model runs again.</p>
-      <p class="small">Training is parallel (the mask), <b>generation is sequential</b>: 500 tokens of answer = 500 forward passes. The keys and values of past tokens are cached so each pass only processes the new token.</p>
+      <p class="small">Training is parallel (the mask), <b>generation is sequential</b>: 500 tokens of answer = 500 forward passes. The keys and values of past tokens are cached (the <b>KV cache</b>) so each pass only processes the new token.</p>
       <p class="small why">How the token is chosen from the probabilities: next slide.</p>
     </div>
   </div>
@@ -312,7 +340,7 @@ d["cat"]          <span class="c"># hard lookup → v1</span>
 <section class="slide">
   <h2>Decoding: from probabilities to text</h2>
   <div class="cols">
-    <div class="widget" data-fig="decode" data-auto="t=0.3 :: low temperature: almost greedy, &quot;here&quot; every time | t=1.8 :: high temperature: a flat distribution, surprising words | t=1; k=3 :: top-k = 3: only the 3 best candidates can be sampled">
+    <div class="widget" data-fig="decode" data-auto="t=0.3 :: low temperature: almost greedy, &quot;here&quot; every time | t=1.8 :: high temperature: a flat distribution, surprising words | t=1; k=3 :: top-k = 3: only the 3 best candidates can be sampled | go=click :: sample one word from this distribution (press the button for more)">
       <svg class="fig" aria-label="Next-token probabilities after temperature and top-k"></svg>
       <div class="ctl"><label for="dc-t">temperature</label><input type="range" id="dc-t" data-k="t" min="0.1" max="2.5" step="0.05" value="1"><span class="v" data-v="t">1.00</span></div>
       <div class="ctl"><label for="dc-k">top-k</label><input type="range" id="dc-k" data-k="k" min="1" max="8" step="1" value="8"><span class="v" data-v="k">8</span>
@@ -331,11 +359,54 @@ d["cat"]          <span class="c"># hard lookup → v1</span>
 </section>
 
 <section class="slide">
-  <h2>Demo GPT:</h2>
-  <div class="stack center grow" style="gap:20px">
-    <p style="font-size:30px">Can you please come <span style="color:var(--red)">here</span> ?</p>
-    <p class="muted">history → word being predicted</p>
-    <p style="font-size:28px"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/Text_Generation_with_Transformers.ipynb" target="_blank" rel="noopener">Demo GPT</a></p>
+  <h2>Measuring a language model: perplexity</h2>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p class="small">A language model can also <b>score</b> a text: look at the probability it gave to each actual next token. The average of minus their logs is the training loss (cross-entropy per token):</p>
+      <div class="eq">$$J=-\frac1T\sum_{t=1}^{T}\log p(x_t\mid x_{\lt t})$$</div>
+      <div class="bluebox">$$\text{perplexity}=e^{J}$$</div>
+      <p class="small step"><b>Meaning.</b> If the model gave every true next token probability $\frac14$: $J=\log4$ and the perplexity is 4. The model is as uncertain as if it had to pick among <b>4 equally likely tokens</b> at every step.</p>
+      <p class="small step">Uniform guessing over GPT-2's 50,257 tokens gives perplexity 50,257. Lower is better.</p>
+    </div>
+    <div class="stack" style="gap:10px">
+      <p class="small step"><b>GPT-2 small, measured in Lab 14:</b></p>
+      <table class="t step" style="font-size:17px">
+        <tr><th>text</th><th>perplexity</th></tr>
+        <tr><td>The cat sat on the mat and looked out of the window.</td><td>21.7</td></tr>
+        <tr><td>the same words, shuffled</td><td>1,536</td></tr>
+        <tr><td>the same sentence in Spanish</td><td>235</td></tr>
+        <tr><td>Paris is the capital of France.</td><td>15.8</td></tr>
+        <tr><td>Paris is the capital of Germany.</td><td>17.8</td></tr>
+      </table>
+      <p class="small step why">Word order matters a lot (×70), GPT-2 saw little Spanish, and it prefers the true fact only slightly: it learned statistics about words, not facts.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide lab">
+  <div class="labtag">LAB 14</div>
+  <h2>Text generation with transformers (GPT-2)</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:10px">
+      <p>Open up GPT-2 small (124 M parameters) and find every piece of this chapter inside a real model.</p>
+      <ol class="todo">
+        <li>Byte-pair encoding from scratch; how GPT-2 cuts English and Spanish text.</li>
+        <li>Count the parameters (the $12d^2$ per block) and run one forward pass: a next-token distribution at every position.</li>
+        <li>Score text: log-likelihood, <b>perplexity</b>, per-token surprisal.</li>
+        <li>Look at the <b>causal attention</b> patterns of the heads.</li>
+        <li>Decoding from scratch: greedy, temperature, top-k, top-p; the <b>KV cache</b>; beam search.</li>
+        <li>A base model is not an assistant: prompting and few-shot learning.</li>
+      </ol>
+    </div>
+    <div class="labcard">
+      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/Text_Generation_with_Transformers.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <dl class="gloss">
+        <dt>notebook</dt><dd><code>Text_Generation_with_Transformers.ipynb</code></dd>
+        <dt>you need</dt><dd>attention, the causal mask, the transformer block, language modelling, decoding and perplexity (this chapter)</dd>
+        <dt>runs on</dt><dd>CPU works; a GPU is faster</dd>
+        <dt>data</dt><dd>GPT-2 weights (≈500 MB) from the Hugging Face Hub</dd>
+      </dl>
+    </div>
   </div>
 </section>
 
@@ -352,14 +423,64 @@ d["cat"]          <span class="c"># hard lookup → v1</span>
     <div class="stack" style="gap:12px">
       <ul>
         <li>Split each document into <b>chunks</b> (a few hundred tokens, with some overlap).</li>
-        <li>Turn each chunk into an embedding vector: dim 512, 768, 1,024…</li>
+        <li>Turn each chunk into an embedding vector: dim 384, 768, 1,024…</li>
         <li><b>Cosine similarity</b> to select the top-$k$ chunks for a question:</li>
       </ul>
       <div class="eq big">$$\cos(\mathbf a,\mathbf b)=\frac{\mathbf a\cdot\mathbf b}{\norm{\mathbf a}\,\norm{\mathbf b}}$$</div>
-      <p class="small">Evaluate retrieval with recall@k and MRR, before judging the generated answers.</p>
-      <p style="font-size:24px"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/rag_embeddings_demo.ipynb" target="_blank" rel="noopener">Lab embeddings</a></p>
+      <p class="small">1 = same direction (same meaning), 0 = unrelated, −1 = opposite. With vectors normalized to length 1, the cosine is just the dot product.</p>
+      <p class="small">Evaluate the retrieval first (next slide), then the generated answers.</p>
     </div>
     <svg class="fig" data-fig="cosine" aria-label="A question vector and chunk vectors; the two with the highest cosine similarity are selected"></svg>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Measuring retrieval: hit rate@k and MRR</h2>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p class="small">Before judging the LLM's answers, check the <b>search</b>. Take test questions whose relevant chunk is known, and look at the <b>rank</b> of the first relevant chunk in the results (1 = top).</p>
+      <ul class="small">
+        <li><b>Hit rate@k</b>: the fraction of questions whose relevant chunk is in the top $k$ (often called recall@k). If it is not among the $k$ chunks given to the LLM, the LLM cannot use it.</li>
+        <li><b>Mean reciprocal rank</b>: $\ \mathrm{MRR}=\dfrac{1}{|Q|}\displaystyle\sum_q\frac{1}{\text{rank}_q}$. It is 1 if the answer is always first, 0.5 if always second.</li>
+      </ul>
+    </div>
+    <div class="stack" style="gap:10px">
+      <table class="t" style="font-size:17px">
+        <tr><th>question</th><th>rank of the relevant chunk</th><th>1 / rank</th></tr>
+        <tr><td>q1</td><td>1</td><td>1</td></tr>
+        <tr><td>q2</td><td>3</td><td>0.33</td></tr>
+        <tr><td>q3</td><td>1</td><td>1</td></tr>
+        <tr><td>q4</td><td>not found in the top 10</td><td>0</td></tr>
+      </table>
+      <ul class="small"><li>hit@1 $=2/4=0.50$ (q1 and q3 are first)</li><li>hit@3 $=3/4=0.75$ (q2 enters at rank 3)</li><li>MRR $=(1+0.33+1+0)/4\approx0.58$</li></ul>
+      <p class="small why">In Lab 15, on 16 questions: word TF-IDF hit@1 = 0.56; character n-grams and a neural sentence encoder both reach 0.81.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide lab">
+  <div class="labtag">LAB 15</div>
+  <h2>RAG: embeddings, search and grounded answers</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:10px">
+      <p>A fictional guide to the coffee shops of an invented city (in Spanish), and a small chatbot that answers from it.</p>
+      <ol class="todo">
+        <li>Similarity: dot product, cosine and Euclidean distance.</li>
+        <li>Four ways to embed text: word TF-IDF, character n-grams, LSA and a neural sentence encoder, compared with hit rate@k and MRR.</li>
+        <li>Search at scale: exact vs approximate nearest neighbours (IVF).</li>
+        <li>Chunking long documents.</li>
+        <li>An LLM answering with and without the retrieved context; failure modes: retrieval misses, hallucination, prompt injection.</li>
+      </ol>
+    </div>
+    <div class="labcard">
+      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/rag_embeddings_demo.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <dl class="gloss">
+        <dt>notebook</dt><dd><code>rag_embeddings_demo.ipynb</code></dd>
+        <dt>you need</dt><dd>embeddings (ch. 5), cosine similarity, RAG and retrieval metrics (this part), decoding (Lab 14)</dd>
+        <dt>runs on</dt><dd>CPU works; a GPU speeds up the generation part</dd>
+        <dt>data</dt><dd>a sentence encoder (≈470 MB) and two small Qwen2.5 instruct models (≈4 GB) from the Hugging Face Hub</dd>
+      </dl>
+    </div>
   </div>
 </section>
 
@@ -372,15 +493,18 @@ d["cat"]          <span class="c"># hard lookup → v1</span>
       <dt>self / cross-attention</dt><dd>Q, K, V from the same sequence / Q from one, K, V from another.</dd>
       <dt>multi-head</dt><dd>several attentions in parallel, concatenated and mixed by $\bW_O$.</dd>
       <dt>positional encoding</dt><dd>added to the embeddings, since attention ignores order.</dd>
+      <dt>causal mask</dt><dd>$-\infty$ above the diagonal: no peeking at the future.</dd>
     </dl>
     <dl class="gloss">
-      <dt>causal mask</dt><dd>$-\infty$ above the diagonal: no peeking at the future.</dd>
       <dt>transformer block</dt><dd>attention + MLP, each with a residual and LayerNorm.</dd>
       <dt>BPE token</dt><dd>a sub-word unit from repeated merges of frequent pairs.</dd>
       <dt>temperature, top-k</dt><dd>how the next token is sampled from the probabilities.</dd>
+      <dt>perplexity</dt><dd>$e^{\text{loss}}$: the number of equally likely choices the model hesitates between.</dd>
       <dt>RAG</dt><dd>retrieve relevant chunks by embedding similarity, give them to the LLM.</dd>
+      <dt>hit rate@k, MRR</dt><dd>how often, and how high, the right chunk is retrieved.</dd>
     </dl>
   </div>
+  <p class="labline">Theory notes for this chapter: <a href="https://github.com/imagra93/ML-course-labs/blob/main/notes/neural_networks/05_attention_transformers.ipynb" target="_blank" rel="noopener">notes 05 · Attention and transformers</a> (with a tiny GPT trained from scratch) · <a href="https://github.com/imagra93/ML-course-labs/blob/main/notes/neural_networks/06_embeddings_rag.ipynb" target="_blank" rel="noopener">notes 06 · Embeddings, retrieval and RAG</a>.</p>
 </section>
 
 <section class="slide cover">
@@ -388,10 +512,10 @@ d["cat"]          <span class="c"># hard lookup → v1</span>
   <p class="mail">imanolgranada@gmail.com</p>
 </section>
 </div></div>
-<script src="../assets/figures.js?v=20260929"></script>
-<script src="assets/nn-core.js?v=20260929"></script>
-<script src="assets/fig-nn-rnn.js?v=20260929"></script>
-<script src="assets/fig-nn-transformer.js?v=20260929"></script>
-<script src="../assets/deck.js?v=20260929"></script>
+<script src="../assets/figures.js?v=20260930"></script>
+<script src="assets/nn-core.js?v=20260930"></script>
+<script src="assets/fig-nn-rnn.js?v=20260930"></script>
+<script src="assets/fig-nn-transformer.js?v=20260930"></script>
+<script src="../assets/deck.js?v=20260930"></script>
 </body>
 </html>

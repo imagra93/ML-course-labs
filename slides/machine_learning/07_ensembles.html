@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="../assets/deck.css">
 <script src="../assets/mathjax-config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
+<style>table.t tr td.oob{background:var(--orange-soft);color:#c55a11;font-weight:700}</style>
 </head>
 <body data-deck="7 · Bagging, random forest and boosting" data-prev="06_decision_trees.html" data-next="08_svm.html">
 <div id="viewport"><div id="stage">
@@ -23,120 +24,168 @@
 </section>
 
 <section class="slide">
-  <h2>Ensemble methods – idea!</h2>
+  <h2>Ensemble methods: the idea</h2>
   <div class="cols">
-    <div class="stack" style="gap:14px">
-      <p><b>Class exercise:</b> how much does an Apple AirTag cost? Give <b>independent</b> answers.</p>
-      <p class="step">Each guess is noisy, but the <b>average</b> of the class is usually close to the real price (39 €).</p>
-      <p class="step">Averaging reduces variance (if independent):</p>
-      <div class="eq step">$$\mathrm{Var}\big(\hat f_{\text{bag}}(\bx)\big)=\frac1M\mathrm{Var}\big(f(\bx)\big)$$</div>
-      <p class="step">With correlation $\rho$ between the models:</p>
+    <div class="stack" style="gap:12px">
+      <p><b>Class exercise:</b> how much does an Apple AirTag cost? Everyone writes a guess, <b>without talking</b> to anyone.</p>
+      <p class="step">Each guess is noisy, but the <b>average</b> of the class is usually close to the real price (35 €).</p>
+      <p class="step">Averaging $B$ <b>independent</b> guesses, each with variance $\sigma^2$, divides the variance by $B$:</p>
+      <div class="eq step">$$\mathrm{Var}\Big(\frac1B\sum_{b=1}^Bh_b\Big)=\frac{\sigma^2}{B}$$</div>
+      <p class="step">If the guesses are <b>correlated</b> (people talk), with correlation $\rho$ between any two:</p>
       <div class="bluebox step">$$\mathrm{Var}(\bar h)=\rho\,\sigma^2+\frac{1-\rho}{B}\,\sigma^2$$</div>
     </div>
-    <div class="widget" data-fig="avg" data-auto="r=0;b=10 :: ρ = 0: the variance falls like 1/B|r=0.3;b=100 :: B = 100 with ρ = 0.3: almost at the floor ρσ²|r=0.8;b=100 :: ρ = 0.8: correlated models, averaging barely helps">
-      <svg class="fig" aria-label="Variance of an average of B models as B grows, with the floor rho sigma squared"></svg>
+    <div class="widget" data-fig="avg" data-auto="r=0;b=10 :: ρ = 0: independent models, the variance falls like 1/B|r=0.3;b=100 :: ρ = 0.3, B = 100: almost at the floor ρσ² (dashed)|r=0.8;b=100 :: ρ = 0.8: correlated models, averaging barely helps">
+      <svg class="fig" style="max-height:262px" aria-label="Variance of an average of B models as B grows, with the floor rho sigma squared"></svg>
       <div class="ctl"><label for="av-r">correlation ρ</label><input type="range" id="av-r" data-k="r" min="0" max="1" step="0.01" value="0.3"><span class="v" data-v="r">0.30</span></div>
       <div class="ctl"><label for="av-b">models B</label><input type="range" id="av-b" data-k="b" min="1" max="100" step="1" value="10"><span class="v" data-v="b">10</span></div>
-      <p class="why">More models never hurt, but the floor $\rho\sigma^2$ stays: to go lower, make the models <b>less correlated</b>.</p>
+      <div class="ro"><div class="m"><span>Var(average)</span><b data-r="v">–</b></div><div class="m"><span>floor ρσ² (dashed)</span><b data-r="f">–</b></div></div>
+      <p class="why">More models never hurt, but the floor $\rho\sigma^2$ stays. To go lower, make the models <b>less correlated</b>.</p>
     </div>
   </div>
 </section>
 
 <section class="slide">
-  <h2>Ensemble methods – Why averaging works (proof)</h2>
-  <div class="stack" style="gap:14px;max-width:1080px">
-    <p>$B$ models at a fixed point $\bx$, each with variance $\sigma^2$ and pairwise correlation $\rho$. Their average is $\bar h=\frac1B\sum_bh_b$.</p>
-    <p class="step"><b>1 ·</b> The variance of a sum is the sum of all variances plus all covariances: $B$ variances and $B(B-1)$ covariances $\rho\sigma^2$.</p>
-    <div class="eq big step">$$\mathrm{Var}\Big(\sum_bh_b\Big)=B\sigma^2+B(B-1)\rho\sigma^2$$</div>
-    <p class="step"><b>2 ·</b> Divide by $B^2$ (the $\frac1B$ inside the average, squared):</p>
-    <div class="eq big step">$$\mathrm{Var}(\bar h)=\frac{\sigma^2}{B}+\frac{B-1}{B}\rho\sigma^2=\rho\sigma^2+\frac{1-\rho}{B}\sigma^2\ \ \blacksquare$$</div>
-    <ul class="small step"><li>The <b>bias</b> doesn't change, so average <b>low-bias</b> models: deep trees.</li><li>As $B\to\infty$ the second term vanishes: more trees never overfit, the error levels off.</li></ul>
+  <h2>Ensemble methods: why averaging works (proof)</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:8px">
+      <p class="small">$B$ models at a fixed point $\bx$. Each has variance $\mathrm{Var}(h_b)=\sigma^2$, and any two have correlation $\rho$, i.e. covariance $\mathrm{Cov}(h_b,h_{b'})=\rho\,\sigma\cdot\sigma=\rho\sigma^2$.</p>
+      <div class="step"><p class="small"><b>1 · Variance of a sum</b> = all the variances + the covariances of all pairs:</p>
+        <div class="eq s">$$\mathrm{Var}\Big(\sum_{b=1}^Bh_b\Big)=\sum_b\mathrm{Var}(h_b)+\sum_{b\ne b'}\mathrm{Cov}(h_b,h_{b'})$$</div></div>
+      <div class="step"><p class="small"><b>2 · Count the terms:</b> $B$ variances, and $B(B-1)$ ordered pairs with $b\ne b'$:</p>
+        <div class="eq s">$$=B\sigma^2+B(B-1)\,\rho\sigma^2$$</div></div>
+      <div class="step"><p class="small"><b>3 · The average</b> is the sum times $\frac1B$, and $\mathrm{Var}(cX)=c^2\,\mathrm{Var}(X)$:</p>
+        <div class="eq s">$$\mathrm{Var}(\bar h)=\frac{B\sigma^2+B(B-1)\rho\sigma^2}{B^2}=\frac{\sigma^2}{B}+\frac{B-1}{B}\,\rho\sigma^2$$</div></div>
+      <div class="step"><p class="small"><b>4 · Rearrange</b>, using $\frac{B-1}{B}=1-\frac1B$:</p>
+        <div class="eq s">$$=\frac{\sigma^2}{B}+\rho\sigma^2-\frac{\rho\sigma^2}{B}=\rho\sigma^2+\frac{1-\rho}{B}\,\sigma^2\quad\blacksquare$$</div></div>
+    </div>
+    <div class="stack" style="gap:12px">
+      <div class="note step"><p class="small"><b>Numbers:</b> $\sigma^2=1$, $\rho=0.3$. One model: 1. &nbsp;$B=10$: $0.3+0.07=0.37$. &nbsp;$B=100$: $0.307$. &nbsp;$B\to\infty$: $0.3$.</p></div>
+      <ul class="small step">
+        <li>Averaging does not change the <b>bias</b> (the average of the models has the same expected value as one model), so average <b>low-bias</b> models: deep trees.</li>
+        <li>As $B\to\infty$ the second term vanishes: more trees never overfit, the error just levels off.</li>
+        <li>The floor $\rho\sigma^2$ only goes down if the models are <b>less alike</b>.</li>
+      </ul>
+    </div>
   </div>
 </section>
 
 <section class="slide">
-  <h2>Ensemble methods – The bootstrap</h2>
+  <h2>Ensemble methods: the bootstrap</h2>
   <div class="cols">
-    <div class="widget" data-fig="boot" data-auto="go=click :: A new bootstrap sample: some points twice, some never|go=click :: Another one|go100=click :: 100 more: the left-out fraction settles near 0.35">
+    <div class="widget" data-fig="boot" data-auto="go=click :: A new bootstrap sample: some examples twice, some never|go=click :: Another one: a different set is left out|go100=click :: 100 more: the left-out fraction settles near 35 %">
       <p class="small">Original training set, m = 10:</p>
       <div data-k="orig" style="line-height:52px"></div>
-      <p class="small">One bootstrap sample: drawn <b>with replacement</b> (×n = drawn n times, dashed = never drawn):</p>
+      <p class="small">One bootstrap sample, drawn <b>with replacement</b> (×n = drawn n times, dashed = never drawn):</p>
       <div data-k="samp" style="line-height:52px"></div>
       <div class="ctl"><button type="button" class="bluebox" data-k="go" style="border:0;cursor:pointer;font:700 17px var(--font);padding:6px 16px">Draw a new sample</button><button type="button" data-k="go100" style="border:1px solid var(--blue);background:#fff;color:var(--blue);cursor:pointer;font:700 17px var(--font);padding:6px 16px">Draw 100 more</button></div>
       <div class="ro"><div class="m"><span>samples</span><b data-r="n">–</b></div><div class="m"><span>left out, this one</span><b data-r="o">–</b></div><div class="m"><span>left out, average</span><b data-r="a">–</b></div></div>
     </div>
-    <div class="stack" style="gap:12px">
-      <p>We only have one training set. To get "different" ones, draw $m$ examples <b>with replacement</b>.</p>
-      <p class="step">Each draw misses a given example with probability $1-\frac1m$; there are $m$ draws:</p>
-      <div class="eq big step">$$P(\text{left out})=\Big(1-\frac1m\Big)^m\xrightarrow{m\to\infty}e^{-1}\approx0.368$$</div>
-      <p class="step small">For m = 10 it is $0.9^{10}=0.349$. Each sample holds ~63 % of the distinct examples. The rest are <b>out-of-bag (OOB)</b>: predict each point with only the trees that never saw it, and you get a nearly free estimate of the test error.</p>
+    <div class="stack" style="gap:6px">
+      <p>We have <b>one</b> training set of $m$ examples. To get "different" ones, draw $m$ examples <b>with replacement</b>: a <b>bootstrap sample</b>.</p>
+      <p class="step small">One draw misses a given example with probability $1-\frac1m$. The $m$ draws are independent, so:</p>
+      <div class="eq step">$$P(\text{left out})=\Big(1-\frac1m\Big)^m$$</div>
+      <div class="step"><div class="eq s">$$\ln\Big(1-\frac1m\Big)^m=m\ln\Big(1-\frac1m\Big)\approx m\cdot\Big(-\frac1m\Big)=-1$$</div><p class="why">for a small $u$, $\ln(1-u)\approx-u$</p></div>
+      <div class="bluebox step" style="font-size:21px">$$P(\text{left out})\xrightarrow{m\to\infty}e^{-1}\approx0.368$$</div>
+      <table class="t step" style="font-size:17px;width:auto"><tr><th>$m$</th><th>10</th><th>100</th><th>1000</th></tr><tr><td>$(1-1/m)^m$</td><td>0.349</td><td>0.366</td><td>0.368</td></tr></table>
+      <p class="small step">Each bootstrap sample holds about <b>63 %</b> of the distinct examples (65 % for $m=10$). The other ~37 % are its <b>out-of-bag</b> (OOB) examples.</p>
     </div>
   </div>
 </section>
 
 <section class="slide">
-  <h2>Ensemble methods – Bagging</h2>
+  <h2>Ensemble methods: out-of-bag (OOB) error</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:10px">
+      <p class="small">6 training examples, 5 trees. Each cell says how many times the example is in that tree's bootstrap sample. <b>0 = out-of-bag</b>: that tree never saw it.</p>
+      <table class="t" style="font-size:18px;text-align:center">
+        <tr><th>example</th><th>tree 1</th><th>tree 2</th><th>tree 3</th><th>tree 4</th><th>tree 5</th><th>OOB trees</th></tr>
+        <tr><td>1</td><td>1</td><td class="oob">0</td><td>3</td><td>1</td><td class="oob">0</td><td>2, 5</td></tr>
+        <tr><td>2</td><td>1</td><td class="oob">0</td><td>1</td><td>2</td><td>2</td><td>2</td></tr>
+        <tr><td>3</td><td class="oob">0</td><td>3</td><td>2</td><td>2</td><td class="oob">0</td><td>1, 5</td></tr>
+        <tr><td>4</td><td>2</td><td>1</td><td class="oob">0</td><td class="oob">0</td><td>3</td><td>3, 4</td></tr>
+        <tr><td>5</td><td class="oob">0</td><td>1</td><td class="oob">0</td><td>1</td><td>1</td><td>1, 3</td></tr>
+        <tr><td>6</td><td>2</td><td>1</td><td class="oob">0</td><td class="oob">0</td><td class="oob">0</td><td>3, 4, 5</td></tr>
+      </table>
+      <p class="small muted">Each column adds up to 6: every tree is trained on 6 draws.</p>
+    </div>
+    <div class="stack" style="gap:10px">
+      <p>For every training example:</p>
+      <ol class="small"><li class="step">take only the trees that did <b>not</b> see it (its OOB trees),</li><li class="step">average their predictions for it (example 4: trees 3 and 4),</li><li class="step">compare with its true label.</li></ol>
+      <p class="step">The average error over all examples is the <b>OOB error</b>. Every prediction is made by trees that did not train on that example, so it estimates the <b>test error</b>, like cross-validation, but for free: no extra training and no held-out set.</p>
+      <p class="small step">With many trees, each example is OOB for about 37 % of them. In scikit-learn: <code>RandomForestClassifier(oob_score=True)</code>, then read <code>oob_score_</code>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Ensemble methods: bagging</h2>
   <div class="cols c46" style="align-items:center">
     <div class="stack" style="gap:14px">
-      <p><b>B</b>ootstrap <b>agg</b>regat<b>ing</b>:</p>
-      <ul><li>Train K classifiers on K bootstrap sub-samples of the dataset.</li><li>Aggregate the output: average (regression) or vote / average the probabilities (classification).</li><li>A good, stable global model.</li></ul>
-      <p class="small">Works for any <b>unstable</b> model: deep trees are the classic case. A stable model like linear regression gains almost nothing.</p>
+      <p><b>B</b>ootstrap <b>agg</b>regat<b>ing</b> (Breiman, 1996):</p>
+      <pre style="font-family:var(--mono);font-size:15px;line-height:1.5;background:#f2f2f2;padding:12px 16px;margin:0;white-space:pre">for b = 1, ..., B:
+    draw a bootstrap sample D_b (m examples)
+    fit a deep tree h_b on D_b     # no pruning
+predict:
+    regression:      average of the h_b(x)
+    classification:  majority vote
+                     (or average the probabilities)</pre>
+      <p class="small">It helps any <b>unstable</b> model (small changes in the data → big changes in the model): deep trees are the classic case. A stable model such as linear regression gains almost nothing.</p>
     </div>
-    <svg class="fig" data-fig="bag-diagram" aria-label="Bagging: bootstrap samples of the dataset train K classifiers that are aggregated"></svg>
+    <svg class="fig" data-fig="bag-diagram" aria-label="Bagging: bootstrap samples of the dataset train B trees whose outputs are aggregated"></svg>
   </div>
 </section>
 
 <section class="slide">
-  <h2>Ensemble methods – Random Forest</h2>
+  <h2>Ensemble methods: random forest</h2>
   <div class="cols">
     <div class="stack" style="gap:10px">
-      <p>Random Forests contain N different decision "weaker" trees.</p>
-      <ul class="small">
-        <li><b>Step 1:</b> divide the dataset into N (bootstrap) subsets.</li>
-        <li><b>Step 2:</b> train (in parallel) the decision trees on the selected data points and <b>a random subset of the features</b> at every split.</li>
-        <li><b>Step 3:</b> for new data points, find the prediction of each decision tree.</li>
-        <li><b>Step 4:</b> ensemble the results from all trees (majority vote).</li>
-      </ul>
-      <p class="small">Many ways to ensemble: average (regression), majority vote, or mix in probability.</p>
-      <p class="small step"><b>Why the random features?</b> Bagged trees are still correlated: a strong feature ends up at the top of almost every tree. Random features lower $\rho$, and the variance floor with it.</p>
+      <p><b>Random forest</b> (Breiman, 2001) = bagging + one more source of randomness:</p>
+      <ol class="small">
+        <li>Draw $B$ bootstrap samples of the training set.</li>
+        <li>On each one grow a <b>deep</b> tree, but at <b>every split</b> only a random subset of <code>max_features</code> features may be used (a new subset at each node).</li>
+        <li>Combine the $B$ trees: majority vote or average of the probabilities (classification), average (regression).</li>
+      </ol>
+      <p class="step"><b>Why the random features?</b> Bagged trees are still <b>correlated</b>: if one feature is very strong, almost every tree puts it at the top, the trees look alike, and $\rho$ stays high.</p>
+      <p class="step">Random features make the trees less alike: lower $\rho$, lower floor $\rho\sigma^2$. Each tree gets a little worse, but the average gets better.</p>
+      <p class="small step">Typical <code>max_features</code>, with $n$ features: $\sqrt n$ for classification, $n/3$ for regression (scikit-learn's default there is all $n$). Using all $n$ features is plain bagging.</p>
     </div>
-    <svg class="fig" data-fig="rf-vote" aria-label="Several trees trained on the dataset, combined by majority vote"></svg>
+    <svg class="fig" data-fig="rf-vote" aria-label="Several trees trained on bootstrap samples, combined by majority vote"></svg>
   </div>
 </section>
 
 <section class="slide">
-  <h2>Random Forest – One tree vs a forest</h2>
+  <h2>Random forest: one tree vs a forest</h2>
   <div class="cols c64">
-    <div class="widget" data-fig="forest" data-auto="m=tree :: One deep tree: jagged boxes around single noisy points|m=forest;b=3 :: A forest of 3 trees|m=forest;b=50 :: 50 trees: smooth boundary, graded probabilities, better test accuracy">
+    <div class="widget" data-fig="forest" data-auto="m=tree :: One deep tree: jagged boxes around single noisy points|m=forest;b=1 :: A forest of 1 tree: a single bootstrap tree, just as jagged|m=forest;b=5 :: 5 trees: the accidents start to average out|m=forest;b=50 :: 50 trees: smoother boundary, graded probabilities, higher test accuracy">
       <svg class="fig" aria-label="Decision regions of a single deep tree or of a random forest"></svg>
       <div class="ctl"><span class="seg" role="group" aria-label="Model"><button type="button" data-m="tree" aria-pressed="false">One deep tree</button><button type="button" data-m="forest" aria-pressed="true">Random forest</button></span></div>
       <div class="ctl"><label for="fo-b">number of trees</label><input type="range" id="fo-b" data-k="b" min="1" max="50" step="1" value="25"><span class="v" data-v="b">25</span></div>
     </div>
     <div class="stack" style="gap:12px;padding-top:20px">
-      <p>220 noisy points (15 % of labels flipped). Deep trees, bootstrap samples, one random feature per split.</p>
-      <div class="ro"><div class="m"><span>test accuracy</span><b data-r="acc">–</b></div></div>
+      <p>220 noisy points (15 % of the labels flipped). Deep trees on bootstrap samples, 1 random feature (of 2) per split. Accuracy on 1000 new points:</p>
+      <div class="ro"><div class="m"><span>one deep tree</span><b data-r="acc1">–</b></div><div class="m"><span>forest of B trees</span><b data-r="acc">–</b></div></div>
       <ul class="small">
         <li>The single tree carves tiny regions around individual noisy points.</li>
-        <li>The forest averages those accidents away: smoother boundary, graded probabilities.</li>
+        <li>The forest averages those accidents away: a smoother boundary and graded probabilities (pale colour = unsure).</li>
+        <li>The best possible accuracy here is 0.85: 15 % of the labels are noise.</li>
       </ul>
     </div>
   </div>
 </section>
 
 <section class="slide">
-  <h2>Random Forest – Review</h2>
+  <h2>Random forest: review</h2>
   <div class="cols">
-    <div class="stack">
-      <ul>
-        <li>Pros:
-          <ul><li>They reduce the overfitting risks of decision trees.</li><li>Very good accuracy on classification tasks.</li><li>Very used!</li><li>Work well on non-linear data.</li><li>Robust to outliers (many trees will not learn them).</li></ul></li>
-        <li>Cons:
-          <ul><li>Slower training.</li><li>Less interpretable than a decision tree.</li><li>Not so suitable for very sparse features.</li></ul></li>
-      </ul>
+    <div class="stack" style="gap:8px">
+      <p><b>Pros</b></p>
+      <ul class="small"><li>Much less overfitting than a single tree; very good accuracy with little tuning.</li><li>No feature scaling; handles non-linear effects and interactions.</li><li>Robust to outliers in the inputs (trees only use the order of the values).</li><li>Trees are independent: training runs in parallel. The OOB error comes for free.</li></ul>
+      <p><b>Cons</b></p>
+      <ul class="small"><li>Less interpretable than one tree; bigger and slower to predict ($B$ trees).</li><li>Can't extrapolate beyond the training range.</li><li>Less suited to very sparse, high-dimensional data (e.g. text), where linear models do well.</li></ul>
     </div>
     <div class="stack" style="gap:12px">
-      <table class="t" style="font-size:17px"><tr><th>Hyperparameter</th><th>Effect</th></tr><tr><td>n_estimators</td><td>more = lower variance, never overfits</td></tr><tr><td>max_features</td><td>lower = less correlated trees ($\sqrt n$ for classification)</td></tr><tr><td>max_depth, min_samples_leaf</td><td>per-tree complexity (usually fully grown)</td></tr></table>
-      <p class="small"><b>Feature importance:</b> MDI (total impurity decrease per feature, free but biased to high-cardinality features) or <b>permutation importance</b> (shuffle one feature in validation data and measure the drop; more trustworthy).</p>
+      <table class="t" style="font-size:17px"><tr><th>Hyperparameter</th><th>Effect</th></tr><tr><td><code>n_estimators</code> ($B$)</td><td>more = lower variance, never overfits; stop when the OOB error is flat</td></tr><tr><td><code>max_features</code></td><td>lower = less correlated but weaker trees ($\sqrt n$ for classification)</td></tr><tr><td><code>max_depth</code>, <code>min_samples_leaf</code></td><td>complexity of each tree (usually fully grown)</td></tr></table>
+      <p class="small"><b>Feature importance.</b> <b>MDI</b> (<code>feature_importances_</code>): add up the impurity decreases of all the splits on each feature, averaged over the trees. Free, but computed on training data and biased towards features with many distinct values.</p>
+      <p class="small"><b>Permutation importance</b>: shuffle one feature in the validation data and measure how much the score drops. More trustworthy.</p>
     </div>
   </div>
 </section>
@@ -150,74 +199,153 @@
 </section>
 
 <section class="slide">
-  <h2>Boosting</h2>
-  <div class="cols c46">
-    <div class="stack" style="gap:16px">
-      <p><b>Bagging:</b> train a bunch of individual models in a <b>parallel</b> way. Each model is trained on a random subset of the data.</p>
-      <p><b>Boosting:</b> train a bunch of individual models in a <b>sequential</b> way. Each individual model learns from the mistakes made by the previous model.</p>
-      <div class="eq">$$F_M(\bx)=F_0(\bx)+\nu\sum_{t=1}^Mh_t(\bx)$$</div>
-      <p class="small">Many <b>weak</b>, shallow trees added one after another.</p>
-    </div>
-    <svg class="fig" data-fig="boost-diagram" aria-label="Boosting: each classifier is trained on data re-weighted by the previous classifier's mistakes"></svg>
-  </div>
-</section>
-
-<section class="slide">
-  <h2>AdaBoost</h2>
-  <div class="stack" style="gap:14px">
-    <svg class="fig" data-fig="adaboost" style="max-height:300px" aria-label="Two weak learners on re-weighted data combined into a strong learner"></svg>
-    <div class="cols c3">
-      <div class="stack"><h3>Weak learners</h3><p class="small">Usually decision <b>stumps</b>: trees with a single split.</p></div>
-      <div class="stack"><h3>Weights on data points</h3><p class="small">Every example starts with equal weight. After each learner, the weights of the <b>misclassified</b> examples are increased: the next learner focuses on the hard ones.</p></div>
-      <div class="stack"><h3>Weights on models</h3><p class="small">Each learner gets a vote from its error: $\alpha_t=\frac12\log\frac{1-\varepsilon_t}{\varepsilon_t}$. Final prediction: a weighted vote.</p></div>
-    </div>
-  </div>
-</section>
-
-<section class="slide">
-  <h2>Gradient Boosting</h2>
+  <h2>Boosting: the idea</h2>
   <div class="cols c46">
     <div class="stack" style="gap:12px">
-      <p>Gradient Boosting learns from the mistake, the <b>residual error</b>, directly, rather than updating the weights of data points.</p>
+      <p><b>Bagging:</b> many strong (deep) models trained <b>independently</b>, in parallel. The average lowers the <b>variance</b>.</p>
+      <p><b>Boosting:</b> many <b>weak</b> models (shallow trees) trained <b>one after another</b>. Each one focuses on what the ensemble so far gets wrong. It lowers the <b>bias</b>.</p>
+      <p class="step">The result is an <b>additive model</b>: a weighted sum of $M$ weak learners,</p>
+      <div class="eq step">$$F_M(\bx)=\sum_{t=1}^M\alpha_t\,h_t(\bx)$$</div>
+      <p class="small step">Two ways to "focus on the mistakes": <b>AdaBoost</b> re-weights the training examples; <b>gradient boosting</b> fits each new tree to the remaining errors (the residuals).</p>
+    </div>
+    <svg class="fig" data-fig="seqpar" aria-label="Bagging trains deep trees in parallel and averages them; boosting trains stumps in sequence and adds them with weights"></svg>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>AdaBoost: the algorithm</h2>
+  <div class="cols">
+    <div class="stack" style="gap:6px">
+      <p class="small">Labels $y^{(i)}\in\{-1,+1\}$. Weak learners $h_t(\bx)\in\{-1,+1\}$, usually <b>stumps</b> (trees with a single split). Start with equal weights $w_i=\frac1m$. For $t=1,\dots,M$:</p>
+      <div class="step"><p class="small"><b>1 · Fit</b> the stump with the smallest <b>weighted error</b>:</p><div class="eq s">$$\varepsilon_t=\sum_{i:\ h_t(\bx^{(i)})\ne y^{(i)}}w_i$$</div></div>
+      <div class="step"><p class="small"><b>2 · Its vote</b>, large when its error is small:</p><div class="eq s">$$\alpha_t=\frac12\ln\frac{1-\varepsilon_t}{\varepsilon_t}$$</div></div>
+      <div class="step"><p class="small"><b>3 · Re-weight</b>: mistakes up by $e^{\alpha_t}$, hits down by $e^{-\alpha_t}$, then divide by the total so the weights add up to 1:</p><div class="eq s">$$w_i\leftarrow w_i\,e^{-\alpha_t\,y^{(i)}h_t(\bx^{(i)})}$$</div><p class="why">$y\,h(\bx)=+1$ if the stump is right, $-1$ if it is wrong</p></div>
+      <div class="step"><p class="small"><b>Predict</b> with the weighted vote:</p><div class="eq s">$$H(\bx)=\operatorname{sign}\Big(\sum_{t=1}^M\alpha_t\,h_t(\bx)\Big)$$</div></div>
+    </div>
+    <div class="stack" style="gap:6px">
+      <p class="step small"><b>Round 1 of the next demo.</b> $m=30$, all $w_i=\frac1{30}$. The best stump misclassifies 5 points:</p>
+      <div class="step"><div class="eq s">$$\varepsilon_1=\tfrac{5}{30}=\tfrac16,\qquad\alpha_1=\tfrac12\ln\frac{5/6}{1/6}=\tfrac12\ln5=0.80$$</div></div>
+      <div class="step"><div class="eq s">$$e^{\alpha_1}=\sqrt5,\qquad e^{-\alpha_1}=\tfrac1{\sqrt5}$$</div><p class="why">$e^{\frac12\ln5}=5^{1/2}$</p></div>
+      <div class="step"><div class="eq s">$$\text{mistakes: }5\cdot\tfrac{\sqrt5}{30}=0.373\qquad\text{hits: }25\cdot\tfrac{1}{30\sqrt5}=0.373$$</div><p class="why">the new weights add up to $0.745$: divide each one by it</p></div>
+      <div class="bluebox step" style="font-size:20px">each mistake: $\frac1{30}\to\frac1{10}$ &nbsp;·&nbsp; each hit: $\frac1{30}\to\frac1{50}$</div>
+      <p class="small step">The 5 mistakes now carry <b>half</b> of the total weight (this always happens), so the next stump cannot ignore them.</p>
+      <p class="small step">A coin flip, $\varepsilon_t=\frac12$, gets $\alpha_t=\frac12\ln1=0$: no vote. Each weak learner only has to be a little better than chance.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>AdaBoost in action</h2>
+  <div class="widget" data-fig="ada" data-auto="t=1 :: Round 1: equal weights. The best stump (dashed) gets 5 points wrong (ringed): ε = 1/6, α = 0.80|t=2 :: Round 2: the 5 mistakes are now big, so the new stump splits on the other feature. With two stumps the vote is just the stronger one|t=3 :: Round 3: three votes combine into a staircase: 3 training errors left|t=6 :: Round 6: a single training error left|t=20 :: Round 20: no training errors. Axis-aligned steps approximate the diagonal boundary (dashed)">
+    <svg class="fig" style="max-height:388px" aria-label="Left: the current stump and the weighted points. Right: the decision regions of the weighted vote of all stumps so far"></svg>
+    <div class="ctl"><label for="ad-t">round t</label><input type="range" id="ad-t" data-k="t" min="1" max="20" step="1" value="1" style="max-width:320px"><span class="v" data-v="t">1</span>
+      <div class="ro"><div class="m"><span>weighted error ε<sub>t</sub></span><b data-r="e">–</b></div><div class="m"><span>vote α<sub>t</sub></span><b data-r="a">–</b></div><div class="m"><span>stump t wrong on</span><b data-r="nw">–</b></div><div class="m"><span>errors of the vote</span><b data-r="err">–</b></div></div></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Gradient boosting: fit the residuals</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:10px">
+      <p>Regression with the squared loss. Instead of re-weighting points, <b>each new tree predicts what is still missing</b>: the residual.</p>
       <ol class="small">
         <li>Start with a constant: $F_0=\bar y$.</li>
-        <li>Compute the residuals $r^{(i)}=y^{(i)}-F(\bx^{(i)})$.</li>
-        <li>Fit a small tree $h_t$ to the residuals.</li>
-        <li>Update $F\leftarrow F+\nu\,h_t$ and repeat from 2.</li>
+        <li>Compute the residuals $r^{(i)}=y^{(i)}-F_{t-1}(\bx^{(i)})$.</li>
+        <li>Fit a small tree $h_t$ to the pairs $(\bx^{(i)},r^{(i)})$.</li>
+        <li>Update with a learning rate $\nu$ ("shrinkage"): $F_t=F_{t-1}+\nu\,h_t$. Back to 2.</li>
       </ol>
-      <p class="small why">For any loss, the residual is replaced by the negative gradient $-\partial\ell/\partial F$: gradient descent in function space. For log-loss it is $y-p$.</p>
+      <p class="small step">Why $\nu\lt1$? Many small corrections generalize better than a few big ones.</p>
     </div>
-    <div class="widget" data-fig="boost" data-auto="m=1;nu=0.3 :: M = 1: one shallow tree, a rough staircase|m=20;nu=0.3 :: M = 20: the residuals are being fitted|m=200;nu=0.3 :: M = 200: train MSE keeps falling, validation MSE rises: overfitting|m=200;nu=1 :: ν = 1: bigger steps, overfits sooner|m=200;nu=0.1 :: ν = 0.1: slower, needs more trees, more robust">
-      <svg class="fig" aria-label="Data and the boosted model after M trees, and train and validation error"></svg>
+    <div class="stack" style="gap:10px">
+      <p class="small step"><b>By hand:</b> 4 points, stumps, $\nu=0.5$. Start: $F_0=\bar y=\frac{2+4+8+10}{4}=6$.</p>
+      <table class="t step" style="font-size:18px;text-align:center">
+        <tr><th>$x$</th><th>$y$</th><th>$F_0$</th><th>$r_1=y-F_0$</th><th>$h_1(x)$</th><th>$F_1=F_0+0.5\,h_1$</th><th>$r_2=y-F_1$</th></tr>
+        <tr><td>1</td><td>2</td><td>6</td><td>−4</td><td>−3</td><td>4.5</td><td>−2.5</td></tr>
+        <tr><td>2</td><td>4</td><td>6</td><td>−2</td><td>−3</td><td>4.5</td><td>−0.5</td></tr>
+        <tr><td>3</td><td>8</td><td>6</td><td>+2</td><td>+3</td><td>7.5</td><td>+0.5</td></tr>
+        <tr><td>4</td><td>10</td><td>6</td><td>+4</td><td>+3</td><td>7.5</td><td>+2.5</td></tr>
+      </table>
+      <p class="small step">$h_1$: the best stump on the residuals splits at $x\le2.5$ and predicts the mean residual on each side: $\frac{-4-2}{2}=-3$ and $\frac{2+4}{2}=+3$.</p>
+      <p class="small step">Squared error: $\sum r_1^2=16+4+4+16=40$, then $\sum r_2^2=6.25+0.25+0.25+6.25=13$. The next tree is fitted to $r_2$, and so on.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Gradient boosting: why "gradient"?</h2>
+  <div class="cols">
+    <div class="stack" style="gap:8px">
+      <p>Treat the predictions at the training points, $F(\bx^{(i)})$, as the parameters, and do a gradient descent step on the loss $\sum_i\ell\big(y^{(i)},F(\bx^{(i)})\big)$:</p>
+      <div class="eq">$$F(\bx^{(i)})\ \leftarrow\ F(\bx^{(i)})-\nu\,\frac{\partial\ell}{\partial F(\bx^{(i)})}$$</div>
+      <p class="step"><b>Squared loss</b> $\ell=\frac12(y-F)^2$:</p>
+      <div class="step"><div class="eq">$$\frac{\partial\ell}{\partial F}=-(y-F)\ \ \Rightarrow\ \ -\frac{\partial\ell}{\partial F}=y-F=r$$</div><p class="why">the negative gradient <b>is</b> the residual</p></div>
+      <p class="step">A tree $h_t$ fitted to the negative gradients lets us apply the step at <b>any</b> $\bx$, not only at the training points: $F_t=F_{t-1}+\nu h_t$. Gradient descent "in function space".</p>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="step"><b>Any differentiable loss</b> works: fit each tree to the <b>pseudo-residuals</b> $r^{(i)}=-\partial\ell/\partial F$, evaluated at $F_{t-1}(\bx^{(i)})$.</p>
+      <p class="step"><b>Log-loss</b> (classification), with $F$ = log-odds and $p=\sigma(F)$:</p>
+      <div class="step"><div class="eq s">$$\frac{\partial\ell}{\partial p}=-\frac yp+\frac{1-y}{1-p}=\frac{p-y}{p(1-p)},\qquad\frac{\partial p}{\partial F}=p(1-p)$$</div></div>
+      <div class="step"><div class="eq s">$$\frac{\partial\ell}{\partial F}=\frac{p-y}{p(1-p)}\cdot p(1-p)=p-y\ \ \Rightarrow\ \ r=y-p$$</div><p class="why">chain rule; the same cancellation as in logistic regression</p></div>
+      <p class="small step">$F_0$ is the best constant: the mean of $y$ (squared loss) or the log-odds of the base rate (log-loss).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Gradient boosting in action</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:10px">
+      <p>80 noisy points ($\sigma=0.3$) around the dashed curve. Trees of depth 2 with at least 5 points per leaf.</p>
+      <ul class="small">
+        <li><b>More trees:</b> the training error always falls; the validation error falls, then <b>rises</b>. Unlike a forest, boosting <b>does overfit</b>.</li>
+        <li>Choose $M$ by <b>early stopping</b>: stop when the validation error stops improving.</li>
+        <li><b>Smaller $\nu$:</b> more trees are needed, but the validation error usually gets lower.</li>
+        <li>No model beats the noise: the MSE on new data stays above $\sigma^2=0.09$ (dotted).</li>
+      </ul>
+    </div>
+    <div class="widget" data-fig="boost" data-auto="m=1;nu=0.3 :: M = 1: the mean plus one small tree, a rough staircase|m=10;nu=0.3 :: M = 10: the best validation MSE for ν = 0.3|m=200;nu=0.3 :: M = 200: the training MSE keeps falling, the validation MSE rises: overfitting|m=200;nu=1 :: ν = 1: best after only 5 trees, then it overfits fast|m=200;nu=0.1 :: ν = 0.1: best after 29 trees, with the lowest validation MSE">
+      <svg class="fig" aria-label="Data and the boosted model after M trees, and train and validation error against M"></svg>
       <div class="ctl"><label for="bo-m">trees M</label><input type="range" id="bo-m" data-k="m" min="0" max="200" step="1" value="5"><span class="v" data-v="m">5</span>
         <span class="seg" role="group" aria-label="Learning rate"><button type="button" data-nu="0.1" aria-pressed="false">ν 0.1</button><button type="button" data-nu="0.3" aria-pressed="true">ν 0.3</button><button type="button" data-nu="1" aria-pressed="false">ν 1.0</button></span></div>
-      <div class="ro"><div class="m"><span>train MSE</span><b data-r="tr">–</b></div><div class="m"><span>validation MSE</span><b data-r="va">–</b></div><div class="m"><span>best M</span><b data-r="bm">–</b></div></div>
-      <p class="why">Unlike a forest, boosting <b>does</b> overfit: stop early on a validation set.</p>
+      <div class="ro"><div class="m"><span>train MSE</span><b data-r="tr">–</b></div><div class="m"><span>validation MSE</span><b data-r="va">–</b></div><div class="m"><span>best M (its MSE)</span><b data-r="bm">–</b></div></div>
     </div>
   </div>
 </section>
 
 <section class="slide">
   <h2>XGBoost</h2>
-  <div class="cols c46">
-    <div class="stack" style="gap:14px">
-      <ul><li>Extremely efficient and powerful for <b>tabular data</b>.</li><li>Used in many Kaggle-winning solutions.</li></ul>
-      <ul><li>Not so good for formatted data (sequences, images, …).</li><li>For those cases deep learning performs the best!</li></ul>
-      <p class="small">For squared loss, the value XGBoost puts in a leaf is roughly</p>
-      <div class="eq">$$w=\frac{\sum_{i\in\text{leaf}}r^{(i)}}{N_{\text{leaf}}+\lambda}$$</div>
-      <p class="small">the mean residual, shrunk towards 0 by <code>reg_lambda</code>. Splits that gain less than <code>gamma</code> are not made.</p>
+  <div class="cols">
+    <div class="stack" style="gap:8px">
+      <p><b>eXtreme Gradient Boosting</b>: gradient boosting with regularized trees and a very fast implementation.</p>
+      <ul class="small">
+        <li>Penalizes complex trees: $\lambda$ (<code>reg_lambda</code>) shrinks the leaf values, and $\gamma$ (<code>gamma</code>) is the minimum gain needed to make a split.</li>
+        <li>Uses the first <b>and second</b> derivatives of the loss (a Newton step).</li>
+        <li>Learning rate <code>eta</code>, row and column subsampling, early stopping, missing values, parallel split search.</li>
+        <li>A top choice for <b>tabular</b> data, with LightGBM and CatBoost. For images, audio and text, deep learning wins.</li>
+      </ul>
     </div>
-    <div class="stack" style="gap:10px">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;font-size:17px;text-align:center">
-        <div class="note"><b>Decision trees</b><br><span class="tiny">a graphical set of if/else rules</span></div>
-        <div class="note"><b>Bagging</b><br><span class="tiny">many trees on bootstrap samples, averaged</span></div>
-        <div class="note"><b>Random forest</b><br><span class="tiny">bagging + random features at each split</span></div>
-        <div class="warnbox"><b>Boosting</b><br><span class="tiny">models built sequentially on the previous errors</span></div>
-        <div class="warnbox"><b>Gradient boosting</b><br><span class="tiny">each tree fits the gradient of the loss</span></div>
-        <div class="warnbox" style="background:#ece3f5"><b>XGBoost</b><br><span class="tiny">optimised, regularised gradient boosting</span></div>
-      </div>
-      <table class="t" style="font-size:16px"><tr><th></th><th>Bagging / RF</th><th>Boosting</th></tr><tr><td>trees</td><td>deep, independent</td><td>shallow, sequential</td></tr><tr><td>reduces</td><td>variance</td><td>bias</td></tr><tr><td>more trees</td><td>never overfits</td><td>early stopping</td></tr><tr><td>tuning</td><td>little</td><td>ν, M, depth</td></tr></table>
+    <div class="stack" style="gap:8px">
+      <p class="step"><b>The value of a leaf</b> (squared loss): the constant $w$ that best fits the leaf's residuals, with an L2 penalty on $w$:</p>
+      <div class="eq s step">$$\min_w\ \sum_{i\in\text{leaf}}\tfrac12\big(r^{(i)}-w\big)^2+\tfrac12\lambda w^2$$</div>
+      <div class="step"><div class="eq s">$$-\sum_{i\in\text{leaf}}\big(r^{(i)}-w\big)+\lambda w=0\ \ \Rightarrow\ \ w\,\big(N_{\text{leaf}}+\lambda\big)=\sum_{i\in\text{leaf}}r^{(i)}$$</div><p class="why">derivative with respect to $w$ set to zero, and $\sum_{i\in\text{leaf}}w=N_{\text{leaf}}\,w$</p></div>
+      <div class="bluebox step">$$w=\frac{\sum_{i\in\text{leaf}}r^{(i)}}{N_{\text{leaf}}+\lambda}$$</div>
+      <p class="small step">$\lambda=0$ gives the mean residual, as in plain gradient boosting. $\lambda\gt0$ shrinks it towards 0, more for small leaves. Example: residuals $\{2,4\}$ and $\lambda=1$ give $w=\frac{6}{3}=2$ instead of 3.</p>
     </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Summary: from one tree to boosting</h2>
+  <div class="cols">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;font-size:18px;text-align:center;align-content:start">
+      <div class="note"><b>Decision tree</b><br><span class="tiny">a set of if / else rules</span></div>
+      <div class="note"><b>Bagging</b><br><span class="tiny">deep trees on bootstrap samples, averaged</span></div>
+      <div class="note"><b>Random forest</b><br><span class="tiny">bagging + random features at each split</span></div>
+      <div class="warnbox"><b>AdaBoost</b><br><span class="tiny">stumps in sequence, re-weighting the mistakes</span></div>
+      <div class="warnbox"><b>Gradient boosting</b><br><span class="tiny">each tree fits the negative gradient of the loss</span></div>
+      <div class="warnbox" style="background:#ece3f5"><b>XGBoost</b><br><span class="tiny">regularized, fast gradient boosting</span></div>
+    </div>
+    <table class="t" style="font-size:18px"><tr><th></th><th>Bagging / random forest</th><th>Boosting</th></tr><tr><td>trees</td><td>deep, independent</td><td>shallow, sequential</td></tr><tr><td>mainly reduces</td><td>variance</td><td>bias</td></tr><tr><td>combination</td><td>plain average / vote</td><td>weighted sum</td></tr><tr><td>more trees</td><td>never overfits, levels off</td><td>eventually overfits: early stopping</td></tr><tr><td>tuning</td><td>little (good defaults)</td><td>$\nu$, $M$, depth, subsampling</td></tr></table>
   </div>
 </section>
 

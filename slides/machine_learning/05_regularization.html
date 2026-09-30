@@ -34,7 +34,7 @@
       </ol>
       <div class="note"><p class="small">Regularization accepts a little more training error (<b>bias</b>) in exchange for a more stable model (less <b>variance</b>).</p></div>
     </div>
-    <div class="widget" data-fig="overfit" data-auto="d=15;l=-6 :: Degree 15, λ = 0: the curve passes through the noise, huge coefficients|d=15;l=-3 :: λ = 0.001: the wiggles start to calm down|d=15;l=-1.5 :: λ ≈ 0.03: close to the true sine, best test RMSE|d=15;l=1 :: λ = 10: over-penalized, the curve flattens: underfitting">
+    <div class="widget" data-fig="overfit" data-auto="d=15;l=-6 :: Degree 15, λ = 0: the curve wiggles to reach the noisy points, huge coefficients|d=15;l=-3 :: λ = 0.001: the wiggles start to calm down|d=15;l=-0.5 :: λ ≈ 0.3: close to the true sine, the best test RMSE (0.40)|d=15;l=1 :: λ = 10: over-penalized, the curve flattens: underfitting">
       <svg class="fig" style="max-height:330px" aria-label="Polynomial fit to noisy points"></svg>
       <div class="ctl"><label for="of-d">Degree</label><input type="range" id="of-d" data-k="d" min="0" max="15" step="1" value="15"><span class="v" data-v="d">15</span></div>
       <div class="ctl"><label for="of-l">λ (log scale)</label><input type="range" id="of-l" data-k="l" min="-6" max="1" step="0.25" value="-6"><span class="v" data-v="l">0</span></div>
@@ -47,8 +47,8 @@
   <h2>Regularization – The idea in one picture</h2>
   <div class="cols c64">
     <div class="stack" style="gap:12px">
-      <p>The degree-15 curve on the previous slide passes through every noisy point. Its coefficients look like this:</p>
-      <div class="eq s">$$\theta\approx(0.2,\ 3,\ -41,\ 312,\ -1\,840,\ 6\,100,\ \dots)$$</div>
+      <p>The degree-15 curve on the previous slide ($\lambda=0$) wiggles to reach the noisy points. Written as a plain polynomial $\theta_0+\theta_1t+\dots+\theta_{15}t^{15}$ (with $t=2x-1$), its coefficients are</p>
+      <div class="eq s">$$\bth\approx(0,\ -4,\ 3,\ 90,\ -70,\ -1\,267,\ 373,\ 8\,302,\ \dots)\quad\text{up to }\approx49\,000$$</div>
       <p class="step"><b>Wiggles need huge coefficients with alternating signs.</b> A smooth curve has small ones. So: make large coefficients <b>expensive</b>.</p>
       <div class="eq big step">$$\text{minimize}\quad\underbrace{J(\bth)}_{\text{fit the data}}\ +\ \lambda\cdot\underbrace{\text{size}(\bth)}_{\text{a tax on big }\theta\text{'s}}$$</div>
       <ul class="step">
@@ -147,9 +147,10 @@
       <p class="step small"><b>Lasso subtracts, Ridge divides.</b> The L2 penalty's slope $2\theta$ vanishes near 0, so it never pushes all the way. The L1 penalty pushes with constant force $\lambda$, however small $\theta$ is: anything with $|z|\le\lambda$ is pushed <b>exactly</b> to 0.</p>
     </div>
     <div class="widget" data-fig="shrink" data-auto="l=0 :: λ = 0: Ridge and Lasso both equal OLS (the diagonal)|l=0.5 :: λ = 0.5: Ridge divides by 1.5; Lasso subtracts 0.5 and zeroes every |z| ≤ 0.5|l=1.5 :: λ = 1.5: a wide dead zone, only large coefficients survive Lasso">
-      <svg class="fig" aria-label="Regularized coefficient against the OLS coefficient for OLS, Ridge and Lasso"></svg>
+      <svg class="fig" style="max-height:350px" aria-label="Regularized coefficient against the OLS coefficient for OLS, Ridge and Lasso"></svg>
       <div class="ctl"><label for="sh-l">λ</label><input type="range" id="sh-l" data-k="l" min="0" max="2" step="0.05" value="0.8"><span class="v" data-v="l">0.80</span></div>
       <div class="legend"><span><i style="background:var(--muted)"></i>OLS</span><span><i style="background:var(--blue)"></i>Ridge</span><span><i style="background:var(--red)"></i>Lasso</span></div>
+      <p class="why">Both penalties here are per example: Ridge $\frac12(\theta-z)^2+\frac\lambda2\theta^2$ gives $\theta=\frac{z}{1+\lambda}$ (the $\lambda/m$ of the Ridge slide is written $\lambda$).</p>
     </div>
   </div>
 </section>
@@ -222,11 +223,41 @@
   <h2>Regularization – Input variables</h2>
   <div class="cols c3">
     <div class="stack"><h3>Scale numerics</h3><p class="small">Standardize before GD and before any penalty. Compute $\mu_j,\sigma_j$ on the <b>training</b> data only and reuse them everywhere. After standardizing, $\theta_j$ = effect of +1 standard deviation: comparable across features.</p></div>
-    <div class="stack"><h3>One-hot categoricals</h3><p class="small">Keep $K-1$ dummies with an intercept (dummy trap). With L2, keeping all $K$ is also fine: the penalty makes the solution unique. High-cardinality categories: group rare levels, or target-encode inside the CV folds.</p></div>
+    <div class="stack"><h3>Encode categoricals</h3><p class="small">Ordinal codes for ordered levels, one-hot for unordered ones (chapter 02: "which encoder when?"). One-hot: keep $K-1$ dummies with an intercept (dummy trap). With L2, keeping all $K$ is also fine: the penalty makes the solution unique. High-cardinality categories: group rare levels, or target-encode inside the CV folds.</p></div>
     <div class="stack"><h3>Add transforms</h3>
       <table class="t" style="font-size:16px"><tr><th>pattern</th><th>feature</th></tr><tr><td>curved</td><td>$x^2$, splines</td></tr><tr><td>skewed</td><td>$\log(1+x)$</td></tr><tr><td>interaction</td><td>$x_1x_2$</td></tr><tr><td>periodic</td><td>$\sin\frac{2\pi t}{T},\cos\frac{2\pi t}{T}$</td></tr></table></div>
   </div>
   <div class="warnbox"><p class="small">More features means more variance: pair them with regularization and CV. Watch for <b>leakage features</b>, known only after the outcome (e.g. "claim paid amount" when predicting fraud at claim opening).</p></div>
+</section>
+
+<section class="slide">
+  <h2>Practical guide – what to do when… (the data)</h2>
+  <table class="t" style="font-size:18px">
+    <tr><th style="width:24%">Situation</th><th style="width:30%">What you see</th><th>What to do</th></tr>
+    <tr><td>features on very different scales</td><td>GD zig-zags; the penalty hits some features harder</td><td><b>standardize</b>, with $\mu$ and $\sigma$ from the training data</td></tr>
+    <tr><td>a skewed feature (income, claim amount)</td><td>a long right tail, a few huge values</td><td>use $\log(1+x)$</td></tr>
+    <tr><td>outliers</td><td>a few points far from the rest</td><td>first check they are not errors; <code>RobustScaler</code>, the MAE or Huber loss; trees are robust</td></tr>
+    <tr><td>missing values</td><td>empty cells (NaN)</td><td>impute (median or most frequent) <b>+</b> a 0/1 column "was missing"; fit on train only</td></tr>
+    <tr><td>a categorical with many levels</td><td>postcode, car model</td><td>group the rare levels; frequency or target encoding</td></tr>
+    <tr><td>a level never seen in training</td><td>an error at prediction time</td><td><code>OneHotEncoder(handle_unknown="ignore")</code></td></tr>
+    <tr><td>a rare positive class</td><td>great accuracy, poor recall</td><td>class weights, move the threshold, PR metrics (chapter 03)</td></tr>
+  </table>
+  <p class="why">Every "fit" in the last column (scaler, imputer, encoder) is learned on the training data only and then applied to validation and test: put them in a <code>Pipeline</code>.</p>
+</section>
+
+<section class="slide">
+  <h2>Practical guide – what to do when… (the model)</h2>
+  <table class="t" style="font-size:18px">
+    <tr><th style="width:27%">Symptom</th><th style="width:22%">Diagnosis</th><th>What to do</th></tr>
+    <tr><td>high error on train <b>and</b> validation</td><td>underfitting (bias)</td><td>better features ($x^2$, interactions, logs), a smaller $\lambda$, a more flexible model</td></tr>
+    <tr><td>low train error, high validation error</td><td>overfitting (variance)</td><td>more data, a larger $\lambda$, fewer features, a simpler model</td></tr>
+    <tr><td>validation score suspiciously good</td><td>leakage?</td><td>preprocessing inside the CV folds; drop features known only after the outcome; no duplicates across splits</td></tr>
+    <tr><td>coefficients jump between runs, odd signs</td><td>collinearity</td><td>check the VIF (next slide); drop or combine features; Ridge</td></tr>
+    <tr><td>residuals show a curve</td><td>non-linearity</td><td>add transforms ($x^2$, $\log x$, splines)</td></tr>
+    <tr><td>residuals fan out</td><td>heteroscedasticity</td><td>model $\log y$; weighted least squares</td></tr>
+    <tr><td>a skewed target (prices, claim costs)</td><td>large errors on the expensive cases</td><td>fit $\log y$, then convert the predictions back with $e^{\hat y}$</td></tr>
+  </table>
+  <p class="why">First compare train and validation errors: that single check tells you whether to add complexity or to remove it.</p>
 </section>
 
 <section class="slide">
@@ -286,7 +317,7 @@
       <li><b>L2 (Ridge):</b> closed form $(\bX^\top\bX+\lambda\mathbf L)^{-1}\bX^\top\by$, always unique; shrinks, never zeroes; Gaussian prior; weight decay in GD.</li>
       <li><b>L1 (Lasso):</b> soft-thresholding, exact zeros, feature selection; Laplace prior. <b>Elastic Net</b> for correlated features.</li>
       <li>Logistic regression: L2 guarantees a finite solution; scikit-learn uses $C=1/\lambda$.</li>
-      <li>Inputs: scale, one-hot with $K-1$ dummies, transforms, watch collinearity (VIF) and leakage.</li>
+      <li>Inputs: scale, encode (ordinal or one-hot with $K-1$ dummies), transforms, watch collinearity (VIF) and leakage. Practical guide: "what to do when…".</li>
     </ul>
     <div class="stack center" style="gap:16px">
       <div class="note" style="text-align:left"><p class="small"><b>lab 3: Polynomial Regression and Regularisation.</b> Overfitting, train vs test error, Ridge, λ by cross-validation, Ridge vs Lasso coefficients.</p></div>

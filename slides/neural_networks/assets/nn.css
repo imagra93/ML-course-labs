@@ -42,3 +42,29 @@ table.t.xs{font-size:16px} table.t.xs th,table.t.xs td{padding:4px 8px}
 .fig text.mono{font-family:var(--mono);font-size:13px}
 .slide .grow-fig{flex:1;min-height:0;display:flex;flex-direction:column}
 .slide .grow-fig svg.fig{max-height:none;height:100%}
+/* lab slides: one per notebook, placed right after the theory it needs */
+.slide.lab{background:linear-gradient(90deg,#f2f8ee 0,#fff 42%)}
+.slide.lab .labtag{align-self:flex-start;background:#548235;color:#fff;font-weight:700;font-size:17px;letter-spacing:.08em;padding:3px 12px;margin-bottom:-6px}
+.slide.lab h2{font-size:44px}
+.labcard{border:1px solid var(--line);border-top:4px solid #548235;background:#fff;padding:16px 20px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.labcard .gloss{font-size:17px;gap:6px 14px}
+.labcard .gloss dt{color:#548235}
+a.colab{display:inline-flex;align-items:center;gap:10px;align-self:flex-start;background:#f9ab00;color:#1f1f1f;font-weight:700;font-size:22px;text-decoration:none;padding:9px 18px;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+a.colab:hover,a.colab:focus-visible{background:#ffc53d}
+a.colab .co{font-family:var(--mono);font-size:19px;background:#1f1f1f;color:#f9ab00;border-radius:4px;padding:1px 6px}
+.lab ol.todo{counter-reset:t;list-style:none;padding-left:0;gap:7px}
+.lab ol.todo li{counter-increment:t;position:relative;padding-left:34px;font-size:19px;line-height:1.3}
+.lab ol.todo li::before{content:counter(t);position:absolute;left:0;top:1px;width:24px;height:24px;border-radius:50%;background:#e2f0d9;color:#385723;font-weight:700;font-size:15px;display:grid;place-items:center}
+/* small "lab later / lab now" pointer line used on plan and vocabulary slides */
+.labline{font-size:17px;color:#385723;background:#f2f8ee;border-left:4px solid #548235;padding:5px 12px}
+.labline a{color:#385723;font-weight:700}
+/* derivations: numbered steps with a short comment on the right */
+.deriv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;align-items:center}
+.deriv .eq{font-size:20px}
+.deriv .why{font-size:16px}
+.deriv.s .eq{font-size:18px}
+/* compact key-idea box */
+.idea{background:#fff2cc;border-left:5px solid var(--gold);padding:8px 14px;font-size:19px}
+.idea b{color:#7f6000}
+/* phone layout (deck.js adds body.flow below 760 px): one column everywhere */
+body.flow .cards,body.flow .cards.c3,body.flow .cards.c4,body.flow .cards.c2{grid-template-columns:minmax(0,1fr)}

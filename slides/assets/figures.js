@@ -134,7 +134,8 @@ FIG['overfit']=root=>{const r=rng(7);const tr=[],te=[];for(let i=0;i<20;i++){con
   const P=Plot(svgOf(root),{w:600,h:360,x:[0,1],y:[-2,2],m:{l:40,r:14,t:14,b:36}});P.axes({xt:[0,0.25,0.5,0.75,1],yt:[-2,-1,0,1,2],xl:'x',yl:'y'});P.fn(x=>Math.sin(2*Math.PI*x),'ln thin sm dash',0,1,200,P.bg);
   const id=q(root,'d'),il=q(root,'l');
   function draw(){const d=+id.value,le=+il.value,lam=le<=-6?0:Math.pow(10,le);setV(root,'d',d);setV(root,'l',lam===0?'0':lam<0.01?lam.toExponential(0):fmt(lam,2));const f=fit(d,lam);P.clear();P.fn(f.pred,'ln sr',0,1,400);tr.forEach(p=>P.dot(p[0],p[1],5,'pt fb'));
-    setR(root,'tr',fmt(f.tr,3));setR(root,'te',f.te>9?'> 9':fmt(f.te,3));setR(root,'vd',d<3?'Underfitting':(f.te>0.45?'Overfitting':'Just right'))}
+    setR(root,'tr',fmt(f.tr,3));setR(root,'te',f.te>9?'> 9':fmt(f.te,3));/* train RMSE above 0.45 (noise σ = 0.3): can't fit even the training data; else test RMSE above 0.5: fails on new data */
+    setR(root,'vd',f.tr>0.45?'Underfitting':(f.te>0.5?'Overfitting':'Just right'))}
   id.addEventListener('input',draw);il.addEventListener('input',draw);draw()};
 FIG['l1l2']=root=>{const svg=initSvg(svgOf(root),960,330);const c=[2.3,1.0],A=[[1,-0.6],[-0.6,1]],t=1.2;const J=(a,b)=>{const u=a-c[0],v=b-c[1];return A[0][0]*u*u+2*A[0][1]*u*v+A[1][1]*v*v};
   [['L1 norm · sparsity inducing',1,'fb'],['L2 norm · weight sharing',2,'fo'],['L1 + L2 · compromise',3,'fy']].forEach(([lab,kind,fc],k)=>{
@@ -172,13 +173,13 @@ function fitLogit(X,y,lam,iters){/* Newton, X rows with leading 1 */const n=X[0]
     X.forEach((x,i)=>{const z=x.reduce((s,v,k)=>s+v*w[k],0);const p=1/(1+Math.exp(-z));for(let a=0;a<n;a++){g[a]+=(p-y[i])*x[a];for(let b=0;b<n;b++)H[a][b]+=p*(1-p)*x[a]*x[b]}});
     for(let a=0;a<n;a++){g[a]+=lam*w[a];H[a][a]+=lam}const st=solve(H,g);w=w.map((v,k)=>v-st[k])}return w}
 const sig=z=>1/(1+Math.exp(-z));
-FIG['ovr']=root=>{const svg=initSvg(svgOf(root),700,330);const r=rng(4);const C=[[[0.25,0.75],'fgr','Class 1'],[[0.3,0.25],'fb','Class 2'],[[0.75,0.6],'fo','Class 3']];const pts=[];
+FIG['ovr']=root=>{const svg=initSvg(svgOf(root),700,330);const pm=root.hasAttribute('data-pm');/* data-pm: SVM-style labels +1 / −1 */const r=rng(4);const C=[[[0.25,0.75],'fgr','Class 1'],[[0.3,0.25],'fb','Class 2'],[[0.75,0.6],'fo','Class 3']];const pts=[];
   C.forEach((c,k)=>{for(let i=0;i<7;i++)pts.push([c[0][0]+0.07*randn(r),c[0][1]+0.07*randn(r),k])});
   const P=Plot(svg,{at:[0,40],w:260,h:260,x:[0,1],y:[0,1],m:{l:14,r:10,t:10,b:14}});P.axes({grid:false});pts.forEach(p=>P.dot(p[0],p[1],6,'pt '+C[p[2]][1]));T(P.root,130,-14,'K = 3 classes','lab');
   const lines=[[1,-1,0.1],[1,1,-0.95],[-1,0.3,0.45]];
   C.forEach((c,k)=>{const Q=Plot(svg,{at:[300+Math.floor(k/1)*0,k*110],w:190,h:110,x:[0,1],y:[0,1],m:{l:10,r:6,t:6,b:6}});Q.axes({grid:false});
     pts.forEach(p=>{const d=Q.dot(p[0],p[1],4.5,p[2]===k?'pt '+c[1]:'nof');if(p[2]!==k)d.setAttribute('style','stroke:#8c8c8c;stroke-width:1.2')});
-    T(Q.root,200,50,c[2]+' vs the rest','lab','start');T(Q.root,200,72,'label 1 for '+c[2].toLowerCase()+', 0 for the rest','','start')});
+    T(Q.root,200,50,c[2]+' vs the rest','lab','start');T(Q.root,200,72,pm?'+1 for '+c[2].toLowerCase()+', −1 for the rest':'label 1 for '+c[2].toLowerCase()+', 0 for the rest','','start')});
   arrowPx(svg,262,170,298,70,'ln thin sm','fm');arrowPx(svg,262,170,298,170,'ln thin sm','fm');arrowPx(svg,262,170,298,280,'ln thin sm','fm')};
 FIG['cv-lambda']=root=>{const r=rng(7);const tr=[],va=[];for(let i=0;i<20;i++){const x=(i+0.2+0.6*r())/20;tr.push([x,Math.sin(2*Math.PI*x)+0.3*randn(r)])}for(let i=0;i<300;i++){const x=r();va.push([x,Math.sin(2*Math.PI*x)+0.3*randn(r)])}
   const d=15;const basis=x=>{const t=2*x-1;const b=[1,t];for(let k=1;k<d;k++)b.push(((2*k+1)*t*b[k]-k*b[k-1])/(k+1));return b};

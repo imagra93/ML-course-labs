@@ -44,6 +44,7 @@ code{font-family:var(--mono);font-size:.82em;background:#f2f2f2;padding:1px 5px;
 .eq mjx-container[display="true"]{margin:4px 0 !important}
 .bluebox{background:var(--blue);color:#fff;padding:10px 18px;align-self:flex-start;font-size:24px}
 .bluebox mjx-container{color:#fff}
+.bluebox .hl{color:var(--gold)}
 .hint{border:1px solid var(--gold);background:#fff}
 .hint>.hd{background:var(--gold);color:#000;font-weight:700;padding:4px 12px;font-size:19px}
 .hint>.bd{padding:8px 12px;font-size:19px}
@@ -138,9 +139,13 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(-
 #bar a.nx{margin-left:6px;color:var(--gold)}
 /* phone: stacked, scrolling */
 body.flow{overflow:auto;padding:12px 16px}
-body.flow #viewport{position:static;display:block}
-body.flow #stage{width:auto;height:auto;transform:none !important;display:flex;flex-direction:column;gap:16px}
-body.flow .slide{position:relative;inset:auto;visibility:visible;opacity:1;padding:22px 18px 80px;overflow:visible}
+body.flow #viewport{position:static;display:block;place-items:normal;overflow:visible}
+body.flow #stage{width:auto;height:auto;transform:none !important;display:flex;flex-direction:column;gap:16px;min-width:0}
+body.flow .cols{grid-template-columns:minmax(0,1fr) !important}
+body.flow table.t{display:block;max-width:100%;overflow-x:auto}
+body.flow pre.code,body.flow .eq,body.flow .bluebox{max-width:100%;overflow-x:auto}
+body.flow code{overflow-wrap:anywhere}
+body.flow .slide{position:relative;inset:auto;visibility:visible;opacity:1;padding:22px 18px 80px;overflow-x:auto;min-width:0}
 body.flow .step{opacity:1}
 body.flow .cols,body.flow .cols.c64,body.flow .cols.c46,body.flow .cols.c3{grid-template-columns:1fr}
 body.flow h2{font-size:30px} body.flow .cover h1{font-size:48px}
