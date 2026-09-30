@@ -29,3 +29,8 @@ notebooks/neural_networks/checkpoints_plain/
 logs/
 logs_lightning/
 notebooks/neural_networks/logs_lightning/
+
+# Quarto web version of the notes (see _quarto.yml): caches. The rendered .html and _files/ next to each .qmd are committed.
+/.quarto/
+/_freeze/
+**/*.quarto_ipynb
