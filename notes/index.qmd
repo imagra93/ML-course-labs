@@ -1,0 +1,44 @@
+---
+title: "ML course notes"
+subtitle: "Máster en Innovación Tecnológica (MINT) · theory with full derivations"
+toc: false
+format:
+  html:
+    include-in-header:
+      - text: <link rel="stylesheet" href="assets/notes.css">
+    include-after-body:
+      - text: <script src="assets/notes-nav.js"></script>
+---
+
+Self-contained notes for the course. Each note has the theory with every derivation, the assumptions of the method
+with how to check them and what to do when they fail, and code that reproduces every plot and number.
+The interactive figures are the same ones used in the [slides](../slides/index.html).
+
+## Machine learning
+
+| # | Note | Contents |
+|---|---|---|
+| 00 | [Supervised learning, splits and CV](machine_learning/00_supervised_learning.qmd) | problem setup, notation, empirical risk, bias–variance, train/val/test, k-fold CV, leakage |
+| 01 | [Linear regression](machine_learning/01_linear_regression.qmd) | MSE loss, gradient, gradient descent, learning rate, normal equation, convexity, MLE, metrics |
+| 02 | [Logistic regression](machine_learning/02_logistic_regression.qmd) | sigmoid, log-odds, cross-entropy = MLE, gradient, convexity, separability, classification metrics, calibration |
+| 02b | [Generalised linear models](machine_learning/02b_generalized_linear_models.qmd) | distribution + linear score + link, one gradient and one convexity proof for all GLMs, Poisson regression |
+| 03 | [Regularisation, inputs, assumptions](machine_learning/03_regularization_inputs_assumptions.qmd) | Ridge, Lasso, Elastic Net, MAP view; scaling, encoding, collinearity; model assumptions |
+| 04 | [Softmax regression](machine_learning/04_softmax_regression.qmd) | softmax, categorical cross-entropy, gradient, convexity, multiclass metrics |
+| 05 | [Support vector classifier](machine_learning/05_support_vector_classifier.qmd) | margin, the dual, soft margin, kernel trick, hinge loss, sub-gradient descent |
+| 06 | [Decision trees and CART](machine_learning/06_decision_trees_cart.qmd) | impurity, split search, CART from scratch, regression trees, pruning |
+| 07 | [Bagging, random forests, boosting](machine_learning/07_bagging_random_forest_boosting.qmd) | variance of an average, bootstrap and OOB, random forests, AdaBoost, gradient boosting |
+
+## Neural networks
+
+| # | Note | Contents |
+|---|---|---|
+| 00 | [Neural networks and the MLP](neural_networks/00_neural_networks_mlp.qmd) | neuron = logistic regression, XOR, forward pass, activations, losses as MLE, universal approximation |
+| 01 | [Backpropagation](neural_networks/01_backpropagation.qmd) | chain rule on graphs, backprop derivation, gradient checking, initialisation, vanishing gradients |
+| 02 | [Training: optimisation and regularisation](neural_networks/02_training_optimization_regularization.qmd) | SGD, momentum, Adam, schedules, learning curves, weight decay, dropout, normalisation |
+| 03 | [CNNs, transfer and multi-task learning](neural_networks/03_cnn_transfer_multitask.qmd) | convolution, equivariance, pooling, receptive field, ResNet, transfer and multi-task learning |
+| 04 | [Embeddings, RNNs and LSTMs](neural_networks/04_rnn_lstm.qmd) | embeddings, RNN, BPTT, vanishing gradients, LSTM and GRU |
+| 05 | [Attention and transformers](neural_networks/05_attention_transformers.qmd) | BPE, attention, √d scaling, causal mask, multi-head, a tiny GPT, decoding |
+| 06 | [Embeddings, retrieval and RAG](neural_networks/06_embeddings_rag.qmd) | similarity, TF-IDF, LSA, neural embeddings, nearest-neighbour search, retrieval metrics, RAG |
+
+The hands-on labs are the notebooks in
+[`notebooks/`](https://github.com/imagra93/ML-course-labs/tree/main/notebooks), each with an *Open in Colab* button.

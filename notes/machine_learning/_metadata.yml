@@ -1,5 +1,6 @@
-# Shared by every note in notes/: the slide figure engine and its styles (paths are relative to the
-# rendered page, notes/<part>/<note>.html). Each note adds its own topic file, fig-<topic>.js, in its header.
+# Shared by every note in this folder: the slide figure engine, the notes styles and the navigation bar.
+# Paths are relative to the rendered page (notes/machine_learning/<note>.html). Each note adds its own topic file,
+# fig-<topic>.js, in its header; it must come after these scripts, which Quarto's merge order guarantees.
 format:
   html:
     include-in-header:
@@ -8,5 +9,6 @@ format:
           <link rel="stylesheet" href="../assets/notes.css">
     include-after-body:
       - text: |
+          <script src="../assets/notes-nav.js"></script>
           <script src="../../slides/assets/figures.js"></script>
           <script src="../assets/notes-widgets.js"></script>

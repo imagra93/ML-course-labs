@@ -158,7 +158,7 @@ window.Quarto = {
 
 
 <p>Regularisation, input variables and the assumptions of the model are in notebook <strong>03</strong>.</p>
-<div id="4b4baf39" class="cell" data-execution_count="1">
+<div id="16405f8a" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>plt.rcParams.update({<span class="st">"figure.dpi"</span>: <span class="dv">90</span>, <span class="st">"axes.grid"</span>: <span class="va">True</span>, <span class="st">"grid.alpha"</span>: <span class="fl">0.3</span>,</span>
@@ -177,7 +177,7 @@ h_{\boldsymbol{\theta}}(\mathbf{x}) = \theta_0 + \theta_1 x_1 + \dots + \theta_n
 <li><span class="math inline">\(\theta_j\)</span> is the change in the prediction when <span class="math inline">\(x_j\)</span> increases by one unit <strong>with all other features fixed</strong>.</li>
 </ul>
 <p>“Linear” means linear <strong>in the parameters</strong>. The features can be any fixed transformation of the raw inputs (<span class="math inline">\(x^2\)</span>, <span class="math inline">\(\log x\)</span>, <span class="math inline">\(x_1 x_2\)</span>, …) and the model is still linear regression (see notebook 03).</p>
-<div id="f32bd5b0" class="cell" data-execution_count="2">
+<div id="44d7d37e" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Running example: y = 4 + 3 x + noise</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>m <span class="op">=</span> <span class="dv">100</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> rng.uniform(<span class="dv">0</span>, <span class="dv">2</span>, m)</span>
@@ -312,7 +312,7 @@ t\,J(u) + (1-t)\,J(v) - J\big(tu + (1-t)v\big) = \frac{S_{xx}}{2m}\; t(1-t)\,(u 
 </tbody>
 </table>
 <p>Dividing by <span class="math inline">\(S_{xx}\)</span> becomes multiplying by <span class="math inline">\((\mathbf{X}^\top\mathbf{X})^{-1}\)</span>, and “the second derivative is positive” becomes “the Hessian is positive semi-definite”.</p>
-<div id="e7dac097" class="cell" data-execution_count="3">
+<div id="2b25cb8c" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Warm-up data: y = 3 x + noise, model h(x) = theta * x (no intercept)</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>rng_w <span class="op">=</span> np.random.default_rng(<span class="dv">0</span>)</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>xw <span class="op">=</span> rng_w.uniform(<span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">30</span>)</span>
@@ -390,7 +390,7 @@ J''(theta) = Sxx/m = 1.544 &gt; 0  -&gt; convex; GD stable iff alpha &lt; 1.296<
 \]</span></p>
 <p>The component form is also easy to get directly with the chain rule: <span class="math inline">\(\frac{\partial}{\partial\theta_j}\frac{1}{2}(\boldsymbol{\theta}^\top\mathbf{x} - y)^2 = (\boldsymbol{\theta}^\top\mathbf{x} - y)\,x_j\)</span>.</p>
 <p><strong>Reading it:</strong> each example pushes <span class="math inline">\(\boldsymbol{\theta}\)</span> proportionally to its error times its input. Examples that are already well predicted barely contribute.</p>
-<div id="75f659d1" class="cell" data-execution_count="4">
+<div id="ad0f368e" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> J(theta, X, y):</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    r <span class="op">=</span> X <span class="op">@</span> theta <span class="op">-</span> y</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> (r <span class="op">@</span> r) <span class="op">/</span> (<span class="dv">2</span> <span class="op">*</span> <span class="bu">len</span>(y))</span>
@@ -418,7 +418,7 @@ numerical: [-7.85318134 -9.13831664]</code></pre>
 <p><em>Why does a small step decrease <span class="math inline">\(J\)</span>?</em> First-order Taylor expansion: <span class="math inline">\(J(\boldsymbol{\theta} - \alpha\mathbf{g}) \approx J(\boldsymbol{\theta}) - \alpha\,\mathbf{g}^\top\mathbf{g} = J(\boldsymbol{\theta}) - \alpha\lVert\mathbf{g}\rVert^2 &lt; J(\boldsymbol{\theta})\)</span> whenever <span class="math inline">\(\mathbf{g}\neq 0\)</span> and <span class="math inline">\(\alpha\)</span> is small.</p>
 <p><strong>Algorithm (batch GD)</strong> 1. Initialise <span class="math inline">\(\boldsymbol{\theta}\)</span> (e.g.&nbsp;zeros; for a convex <span class="math inline">\(J\)</span> the start does not change the answer). 2. Repeat until <span class="math inline">\(J\)</span> stops decreasing (or for a fixed number of iterations): compute the gradient <strong>using all <span class="math inline">\(m\)</span> examples</strong>, update all <span class="math inline">\(\theta_j\)</span> <strong>simultaneously</strong>.</p>
 <p><em>Batch</em> means every step uses the full training set. Variants: <strong>stochastic GD</strong> uses one random example per step, <strong>mini-batch GD</strong> uses a small random subset (e.g.&nbsp;32–512). They are noisier per step but much cheaper, and they are what is used for large <span class="math inline">\(m\)</span> and in deep learning.</p>
-<div id="eee23638" class="cell" data-execution_count="5">
+<div id="a6735d36" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> gradient_descent(X, y, alpha, n_iters, theta0<span class="op">=</span><span class="va">None</span>):</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    theta <span class="op">=</span> np.zeros(X.shape[<span class="dv">1</span>]) <span class="cf">if</span> theta0 <span class="kw">is</span> <span class="va">None</span> <span class="cf">else</span> theta0.astype(<span class="bu">float</span>).copy()</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    path, costs <span class="op">=</span> [theta.copy()], [J(theta, X, y)]</span>
@@ -459,7 +459,7 @@ numerical: [-7.85318134 -9.13831664]</code></pre>
 <li><strong>Too small</strong>: converges, but needs many iterations.</li>
 <li><strong>Too large</strong>: overshoots the minimum; <span class="math inline">\(J\)</span> oscillates or grows (divergence).</li>
 </ul>
-<div id="25fb5abd" class="cell" data-execution_count="6">
+<div id="d11f1bcf" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="fl">3.8</span>))</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a, c <span class="kw">in</span> <span class="bu">zip</span>([<span class="fl">0.02</span>, <span class="fl">0.3</span>, <span class="fl">0.9</span>, <span class="fl">1.02</span>], [<span class="st">"C0"</span>, <span class="st">"C2"</span>, <span class="st">"C1"</span>, <span class="st">"C3"</span>]):</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    _, p, cst <span class="op">=</span> gradient_descent(X, y, alpha<span class="op">=</span>a, n_iters<span class="op">=</span><span class="dv">40</span>)</span>
@@ -503,7 +503,7 @@ numerical: [-7.85318134 -9.13831664]</code></pre>
   <p class="why">After scaling, gradient-descent steps are updated at the same rate for all the features.</p>
   <p class="from">Same figure as <a href="../../slides/machine_learning/02_linear_regression.html#21">slide 21</a> of the Linear Regression deck.</p>
 </div>
-<div id="bba451c5" class="cell" data-execution_count="7">
+<div id="867592e5" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>H <span class="op">=</span> X.T <span class="op">@</span> X <span class="op">/</span> m</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>lam <span class="op">=</span> np.linalg.eigvalsh(H)</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"eigenvalues of H: </span><span class="sc">{</span>lam<span class="sc">.</span><span class="bu">round</span>(<span class="dv">3</span>)<span class="sc">}</span><span class="ss"> -&gt; alpha must be &lt; </span><span class="sc">{</span><span class="dv">2</span><span class="op">/</span>lam<span class="sc">.</span><span class="bu">max</span>()<span class="sc">:.3f}</span><span class="ss">  (1.02 diverged, 0.9 did not)"</span>)</span>
@@ -576,7 +576,7 @@ numerical: [-7.85318134 -9.13831664]</code></pre>
 </tbody>
 </table>
 <p>In practice, never form the inverse explicitly; solve the linear system (<code>np.linalg.solve</code>) or use <code>np.linalg.lstsq</code> (QR/SVD), which is numerically more stable.</p>
-<div id="e1c67556" class="cell" data-execution_count="8">
+<div id="fc7e52d2" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>theta_ne <span class="op">=</span> np.linalg.solve(X.T <span class="op">@</span> X, X.T <span class="op">@</span> y)</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>theta_ls <span class="op">=</span> np.linalg.lstsq(X, y, rcond<span class="op">=</span><span class="va">None</span>)[<span class="dv">0</span>]</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"normal equation :"</span>, theta_ne.<span class="bu">round</span>(<span class="dv">4</span>))</span>
@@ -603,7 +603,7 @@ X^T (y - X theta*) = [0. 0.]  &lt;- residual orthogonal to the columns of X</cod
 \]</span></p>
 <p>For any <span class="math inline">\(\mathbf{v}\)</span>: <span class="math inline">\(\;\mathbf{v}^\top\mathbf{X}^\top\mathbf{X}\mathbf{v} = (\mathbf{X}\mathbf{v})^\top(\mathbf{X}\mathbf{v}) = \lVert\mathbf{X}\mathbf{v}\rVert^2 \ge 0\)</span>. So <span class="math inline">\(J\)</span> is convex. <span class="math inline">\(\blacksquare\)</span></p>
 <p>It is <strong>strictly</strong> convex iff <span class="math inline">\(\lVert\mathbf{X}\mathbf{v}\rVert^2 &gt; 0\)</span> for every <span class="math inline">\(\mathbf{v}\neq 0\)</span>, i.e.&nbsp;iff <span class="math inline">\(\mathbf{X}\mathbf{v}\neq\mathbf{0}\)</span> for <span class="math inline">\(\mathbf{v}\neq 0\)</span>, which is the definition of <strong>linearly independent columns</strong>. The same condition makes <span class="math inline">\(\mathbf{X}^\top\mathbf{X}\)</span> invertible (a PD matrix has no zero eigenvalue), which justifies the normal-equation formula.</p>
-<div id="132c4ca5" class="cell" data-execution_count="9">
+<div id="b20a54d1" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mpl_toolkits.mplot3d <span class="im">import</span> Axes3D  <span class="co"># noqa: F401</span></span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plt.figure(figsize<span class="op">=</span>(<span class="dv">11</span>, <span class="dv">4</span>))</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> fig.add_subplot(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">1</span>, projection<span class="op">=</span><span class="st">"3d"</span>)</span>
@@ -701,7 +701,7 @@ p(y^{(i)}\mid\mathbf{x}^{(i)};\boldsymbol{\theta}) = \frac{1}{\sqrt{2\pi}\,\sigm
 </table>
 <p><strong>Interpreting <span class="math inline">\(R^2\)</span>.</strong> The denominator is the error of the dumbest model, “always predict <span class="math inline">\(\bar{y}\)</span>”. So <span class="math inline">\(R^2 = 1\)</span> is a perfect fit, <span class="math inline">\(R^2 = 0\)</span> is no better than the mean, and on test data <span class="math inline">\(R^2\)</span> can be <strong>negative</strong> (worse than the mean). On <em>training</em> data with an intercept, <span class="math inline">\(0 \le R^2 \le 1\)</span> and <span class="math inline">\(R^2\)</span> never decreases when you add a feature, even a random one. That’s why adjusted <span class="math inline">\(R^2\)</span> exists and why you should always look at validation metrics.</p>
 <p>Always look at a <strong>residual plot</strong> as well: a good model leaves residuals that look like structureless noise around 0 (more in notebook 03).</p>
-<div id="ad821d95" class="cell" data-execution_count="10">
+<div id="2130f0b5" class="cell" data-execution_count="10">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> mean_squared_error, mean_absolute_error, r2_score</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>x_new <span class="op">=</span> rng.uniform(<span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">50</span>)<span class="op">;</span> y_new <span class="op">=</span> <span class="dv">4</span> <span class="op">+</span> <span class="dv">3</span> <span class="op">*</span> x_new <span class="op">+</span> rng.normal(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">50</span>)</span>
@@ -1152,6 +1152,7 @@ R^2  = 0.776  (sklearn 0.776)</code></pre>
   });
   </script>
 </div> <!-- /content -->
+<script src="../assets/notes-nav.js"></script>
 <script src="../../slides/assets/figures.js"></script>
 <script src="../assets/notes-widgets.js"></script>
 <script src="../../slides/machine_learning/assets/fig-linear.js"></script>

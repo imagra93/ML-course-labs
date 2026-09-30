@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>00 · Supervised Learning, Data Splits and Cross-Validation</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="00_supervised_learning_files/libs/clipboard/clipboard.min.js"></script>
+<script src="00_supervised_learning_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="00_supervised_learning_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="00_supervised_learning_files/libs/quarto-html/popper.min.js"></script>
+<script src="00_supervised_learning_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="00_supervised_learning_files/libs/quarto-html/anchor.min.js"></script>
+<link href="00_supervised_learning_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="00_supervised_learning_files/libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="00_supervised_learning_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="00_supervised_learning_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="00_supervised_learning_files/libs/bootstrap/bootstrap-f6084e8f51ea63a515d0251813187206.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&amp;display=swap">
+<link rel="stylesheet" href="../assets/notes.css">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#the-supervised-learning-problem" id="toc-the-supervised-learning-problem" class="nav-link active" data-scroll-target="#the-supervised-learning-problem">1. The supervised learning problem</a></li>
+  <li><a href="#notation-used-in-all-the-notes" id="toc-notation-used-in-all-the-notes" class="nav-link" data-scroll-target="#notation-used-in-all-the-notes">2. Notation used in all the notes</a></li>
+  <li><a href="#loss-risk-and-empirical-risk" id="toc-loss-risk-and-empirical-risk" class="nav-link" data-scroll-target="#loss-risk-and-empirical-risk">3. Loss, risk and empirical risk</a></li>
+  <li><a href="#underfitting-overfitting-bias-and-variance" id="toc-underfitting-overfitting-bias-and-variance" class="nav-link" data-scroll-target="#underfitting-overfitting-bias-and-variance">4. Underfitting, overfitting, bias and variance</a>
+  <ul class="collapse">
+  <li><a href="#biasvariance-decomposition-for-squared-error" id="toc-biasvariance-decomposition-for-squared-error" class="nav-link" data-scroll-target="#biasvariance-decomposition-for-squared-error">Bias–variance decomposition (for squared error)</a></li>
+  </ul></li>
+  <li><a href="#train-validation-test-split" id="toc-train-validation-test-split" class="nav-link" data-scroll-target="#train-validation-test-split">5. Train / validation / test split</a></li>
+  <li><a href="#k-fold-cross-validation" id="toc-k-fold-cross-validation" class="nav-link" data-scroll-target="#k-fold-cross-validation">6. <span class="math inline">\(k\)</span>-fold cross-validation</a></li>
+  <li><a href="#practical-rules" id="toc-practical-rules" class="nav-link" data-scroll-target="#practical-rules">7. Practical rules</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">00 · Supervised Learning, Data Splits and Cross-Validation</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>These notes set up the language used in every other notebook: what a supervised learning problem is, what “training” means, and how we measure whether a model will work on data it has never seen.</p>
+<section id="the-supervised-learning-problem" class="level2">
+<h2 class="anchored" data-anchor-id="the-supervised-learning-problem">1. The supervised learning problem</h2>
+<p>We observe pairs <span class="math inline">\((\mathbf{x}, y)\)</span> drawn from an unknown distribution <span class="math inline">\(P(\mathbf{x}, y)\)</span>:</p>
+<ul>
+<li><span class="math inline">\(\mathbf{x}\)</span> are the <strong>input variables</strong> (features, predictors, covariates).</li>
+<li><span class="math inline">\(y\)</span> is the <strong>target</strong> (label, response).</li>
+</ul>
+<p>We want a function <span class="math inline">\(h\)</span> (the <strong>hypothesis</strong> or <strong>model</strong>) such that <span class="math inline">\(h(\mathbf{x}) \approx y\)</span> on <strong>new</strong> pairs from the same distribution.</p>
+<p>It is <em>supervised</em> because the training data contains the correct answer <span class="math inline">\(y\)</span> for every <span class="math inline">\(\mathbf{x}\)</span>. Two big families:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Task</th>
+<th>Target <span class="math inline">\(y\)</span></th>
+<th>Examples in these notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Regression</strong></td>
+<td>real number, <span class="math inline">\(y \in \mathbb{R}\)</span></td>
+<td>Linear regression, regression trees</td>
+</tr>
+<tr class="even">
+<td><strong>Classification</strong></td>
+<td>a class, <span class="math inline">\(y \in \{0,1\}\)</span> or <span class="math inline">\(\{1,\dots,K\}\)</span></td>
+<td>Logistic, softmax, SVM, classification trees</td>
+</tr>
+</tbody>
+</table>
+<p>A model family is chosen first (e.g.&nbsp;“all linear functions”), and it is described by <strong>parameters</strong> <span class="math inline">\(\boldsymbol{\theta}\)</span>. <em>Learning</em> means choosing the <span class="math inline">\(\boldsymbol{\theta}\)</span> that makes the model good on the data. We write the model as <span class="math inline">\(h_{\boldsymbol{\theta}}(\mathbf{x})\)</span>.</p>
+</section>
+<section id="notation-used-in-all-the-notes" class="level2">
+<h2 class="anchored" data-anchor-id="notation-used-in-all-the-notes">2. Notation used in all the notes</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Symbol</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\(m\)</span></td>
+<td>number of training examples</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(n\)</span></td>
+<td>number of input variables (features)</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(\mathbf{x}^{(i)} \in \mathbb{R}^{n}\)</span></td>
+<td>the <span class="math inline">\(i\)</span>-th input vector; <span class="math inline">\(x^{(i)}_j\)</span> is its <span class="math inline">\(j\)</span>-th feature</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(y^{(i)}\)</span></td>
+<td>the <span class="math inline">\(i\)</span>-th target</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(\boldsymbol{\theta}\)</span></td>
+<td>parameter vector; <span class="math inline">\(\theta_0\)</span> is the intercept (bias)</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(h_{\boldsymbol{\theta}}(\mathbf{x})\)</span></td>
+<td>model prediction; also written <span class="math inline">\(\hat{y}\)</span></td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(\mathbf{X} \in \mathbb{R}^{m \times (n+1)}\)</span></td>
+<td>design matrix: one row per example, first column all ones</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(\mathbf{y} \in \mathbb{R}^{m}\)</span></td>
+<td>vector of all targets</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(J(\boldsymbol{\theta})\)</span></td>
+<td>loss (cost) function we minimise</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(\alpha\)</span></td>
+<td>learning rate of gradient descent</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(\lambda\)</span></td>
+<td>regularisation strength</td>
+</tr>
+</tbody>
+</table>
+<p>The trick of adding <span class="math inline">\(x_0 = 1\)</span> to every example lets us write the intercept inside the dot product:</p>
+<p><span class="math display">\[
+\boldsymbol{\theta}^\top \mathbf{x} = \theta_0 \cdot 1 + \theta_1 x_1 + \dots + \theta_n x_n ,
+\qquad
+\mathbf{X} =
+\begin{bmatrix}
+1 &amp; x^{(1)}_1 &amp; \cdots &amp; x^{(1)}_n \\
+1 &amp; x^{(2)}_1 &amp; \cdots &amp; x^{(2)}_n \\
+\vdots &amp; \vdots &amp; \ddots &amp; \vdots \\
+1 &amp; x^{(m)}_1 &amp; \cdots &amp; x^{(m)}_n
+\end{bmatrix}
+\]</span></p>
+<p>so that the vector of all predictions is simply <span class="math inline">\(\mathbf{X}\boldsymbol{\theta}\)</span>.</p>
+</section>
+<section id="loss-risk-and-empirical-risk" class="level2">
+<h2 class="anchored" data-anchor-id="loss-risk-and-empirical-risk">3. Loss, risk and empirical risk</h2>
+<p>A <strong>per-example loss</strong> <span class="math inline">\(\ell(\hat{y}, y)\)</span> measures how bad one prediction is (e.g.&nbsp;squared error <span class="math inline">\((\hat{y}-y)^2\)</span>, or 1 if the class is wrong and 0 otherwise).</p>
+<p>What we really care about is the <strong>expected loss on new data</strong>, the <em>risk</em>:</p>
+<p><span class="math display">\[
+R(\boldsymbol{\theta}) = \mathbb{E}_{(\mathbf{x},y)\sim P}\big[\ell(h_{\boldsymbol{\theta}}(\mathbf{x}), y)\big].
+\]</span></p>
+<p>We cannot compute it, because <span class="math inline">\(P\)</span> is unknown. What we can compute is the average loss on the training set, the <strong>empirical risk</strong>, which is what we call the loss function <span class="math inline">\(J\)</span>:</p>
+<p><span class="math display">\[
+J(\boldsymbol{\theta}) = \frac{1}{m}\sum_{i=1}^{m} \ell\big(h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)}), y^{(i)}\big).
+\]</span></p>
+<p>Training = minimising <span class="math inline">\(J\)</span>. The whole problem of machine learning is that <strong>a small <span class="math inline">\(J\)</span> on training data does not guarantee a small <span class="math inline">\(R\)</span> on new data</strong>. The rest of this notebook is about how to detect and control that gap.</p>
+</section>
+<section id="underfitting-overfitting-bias-and-variance" class="level2">
+<h2 class="anchored" data-anchor-id="underfitting-overfitting-bias-and-variance">4. Underfitting, overfitting, bias and variance</h2>
+<ul>
+<li><strong>Underfitting</strong>: the model family is too simple to represent the pattern. Error is high on training <em>and</em> new data.</li>
+<li><strong>Overfitting</strong>: the model is flexible enough to memorise the noise of the training set. Training error is low, error on new data is high.</li>
+</ul>
+<p>The example below fits polynomials of increasing degree to 30 noisy points from a smooth curve.</p>
+<div id="db38229a" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>plt.rcParams.update({<span class="st">"figure.dpi"</span>: <span class="dv">90</span>, <span class="st">"axes.grid"</span>: <span class="va">True</span>, <span class="st">"grid.alpha"</span>: <span class="fl">0.3</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"axes.spines.top"</span>: <span class="va">False</span>, <span class="st">"axes.spines.right"</span>: <span class="va">False</span>})</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">0</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>f_true <span class="op">=</span> <span class="kw">lambda</span> x: np.sin(<span class="dv">2</span> <span class="op">*</span> np.pi <span class="op">*</span> x)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>x_tr <span class="op">=</span> np.sort(rng.uniform(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">30</span>))<span class="op">;</span> y_tr <span class="op">=</span> f_true(x_tr) <span class="op">+</span> rng.normal(<span class="dv">0</span>, <span class="fl">0.25</span>, <span class="dv">30</span>)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>x_te <span class="op">=</span> np.sort(rng.uniform(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">200</span>))<span class="op">;</span> y_te <span class="op">=</span> f_true(x_te) <span class="op">+</span> rng.normal(<span class="dv">0</span>, <span class="fl">0.25</span>, <span class="dv">200</span>)</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> poly_fit(x, y, d):</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    Phi <span class="op">=</span> np.vander(x, d <span class="op">+</span> <span class="dv">1</span>, increasing<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.linalg.lstsq(Phi, y, rcond<span class="op">=</span><span class="va">None</span>)[<span class="dv">0</span>]</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> poly_pred(theta, x):</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.vander(x, <span class="bu">len</span>(theta), increasing<span class="op">=</span><span class="va">True</span>) <span class="op">@</span> theta</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>grid <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">300</span>)</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">13</span>, <span class="fl">3.6</span>), sharey<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax, d, title <span class="kw">in</span> <span class="bu">zip</span>(axes, [<span class="dv">1</span>, <span class="dv">4</span>, <span class="dv">15</span>], [<span class="st">"degree 1: underfit"</span>, <span class="st">"degree 4: good"</span>, <span class="st">"degree 15: overfit"</span>]):</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    th <span class="op">=</span> poly_fit(x_tr, y_tr, d)</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    ax.scatter(x_tr, y_tr, s<span class="op">=</span><span class="dv">18</span>, color<span class="op">=</span><span class="st">"k"</span>, label<span class="op">=</span><span class="st">"train"</span>)</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    ax.plot(grid, f_true(grid), <span class="st">"g--"</span>, lw<span class="op">=</span><span class="dv">1</span>, label<span class="op">=</span><span class="st">"true $f$"</span>)</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    ax.plot(grid, poly_pred(th, grid), <span class="st">"C0"</span>, lw<span class="op">=</span><span class="dv">2</span>, label<span class="op">=</span><span class="st">"model"</span>)</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    ax.set_ylim(<span class="op">-</span><span class="dv">2</span>, <span class="dv">2</span>)<span class="op">;</span> ax.set_title(title)</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].legend(loc<span class="op">=</span><span class="st">"lower left"</span>)</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="00_supervised_learning_files/figure-html/cell-2-output-1.png" width="1160" height="313" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<div id="6656329c" class="cell" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>degrees <span class="op">=</span> <span class="bu">range</span>(<span class="dv">0</span>, <span class="dv">16</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>tr_err, te_err <span class="op">=</span> [], []</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> d <span class="kw">in</span> degrees:</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    th <span class="op">=</span> poly_fit(x_tr, y_tr, d)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    tr_err.append(np.mean((poly_pred(th, x_tr) <span class="op">-</span> y_tr) <span class="op">**</span> <span class="dv">2</span>))</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    te_err.append(np.mean((poly_pred(th, x_te) <span class="op">-</span> y_te) <span class="op">**</span> <span class="dv">2</span>))</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="fl">6.5</span>, <span class="fl">3.6</span>))</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>plt.plot(degrees, tr_err, <span class="st">"o-"</span>, label<span class="op">=</span><span class="st">"training error"</span>)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>plt.plot(degrees, te_err, <span class="st">"s-"</span>, label<span class="op">=</span><span class="st">"error on new data"</span>)</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>plt.yscale(<span class="st">"log"</span>)<span class="op">;</span> plt.xlabel(<span class="st">"polynomial degree (model complexity)"</span>)<span class="op">;</span> plt.ylabel(<span class="st">"MSE"</span>)</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Training error always falls; error on new data is U-shaped"</span>)</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>plt.legend()<span class="op">;</span> plt.tight_layout()<span class="op">;</span> plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="00_supervised_learning_files/figure-html/cell-3-output-1.png" width="574" height="312" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<section id="biasvariance-decomposition-for-squared-error" class="level3">
+<h3 class="anchored" data-anchor-id="biasvariance-decomposition-for-squared-error">Bias–variance decomposition (for squared error)</h3>
+<p>Assume <span class="math inline">\(y = f(\mathbf{x}) + \varepsilon\)</span> with <span class="math inline">\(\mathbb{E}[\varepsilon]=0\)</span>, <span class="math inline">\(\mathrm{Var}(\varepsilon)=\sigma^2\)</span>. Train the model on a random training set <span class="math inline">\(\mathcal{D}\)</span>; call the fitted function <span class="math inline">\(\hat f\)</span> (it is random because <span class="math inline">\(\mathcal{D}\)</span> is). At a fixed point <span class="math inline">\(\mathbf{x}\)</span>, write <span class="math inline">\(\bar f = \mathbb{E}_{\mathcal{D}}[\hat f(\mathbf{x})]\)</span>.</p>
+<p><strong>Claim.</strong> <span class="math display">\[
+\mathbb{E}\big[(y-\hat f(\mathbf{x}))^2\big] = \underbrace{\big(f(\mathbf{x})-\bar f\big)^2}_{\text{bias}^2} + \underbrace{\mathbb{E}\big[(\hat f(\mathbf{x})-\bar f)^2\big]}_{\text{variance}} + \underbrace{\sigma^2}_{\text{noise}}.
+\]</span></p>
+<p><strong>Proof.</strong> Add and subtract <span class="math inline">\(f\)</span> and <span class="math inline">\(\bar f\)</span>: <span class="math display">\[
+y - \hat f = \underbrace{(y - f)}_{\varepsilon} + \underbrace{(f - \bar f)}_{\text{constant}} + \underbrace{(\bar f - \hat f)}_{\text{mean } 0}.
+\]</span> Square and take expectations. The three cross terms vanish: <span class="math inline">\(\varepsilon\)</span> is independent of <span class="math inline">\(\hat f\)</span> and has mean 0; <span class="math inline">\((f-\bar f)\)</span> is a constant multiplying <span class="math inline">\(\mathbb{E}[\bar f - \hat f] = 0\)</span>. What is left is the sum of the three squared terms. <span class="math inline">\(\blacksquare\)</span></p>
+<ul>
+<li>Simple models: large bias, small variance (degree 1 above).</li>
+<li>Flexible models: small bias, large variance (degree 15 above).</li>
+<li><span class="math inline">\(\sigma^2\)</span> cannot be removed by any model.</li>
+</ul>
+<p>Every technique in these notes that “controls complexity” (regularisation, tree depth, <span class="math inline">\(C\)</span> in SVMs, averaging trees in a forest) is a way of moving along this trade-off.</p>
+</section>
+</section>
+<section id="train-validation-test-split" class="level2">
+<h2 class="anchored" data-anchor-id="train-validation-test-split">5. Train / validation / test split</h2>
+<p>Because training error is optimistic, we must estimate performance on data <strong>the model did not see</strong>. The standard protocol splits the data once, at random, into three disjoint parts:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Set</th>
+<th>Typical size</th>
+<th>Used for</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Training</strong></td>
+<td>60–80 %</td>
+<td>fitting the parameters <span class="math inline">\(\boldsymbol{\theta}\)</span> (minimising <span class="math inline">\(J\)</span>)</td>
+</tr>
+<tr class="even">
+<td><strong>Validation</strong></td>
+<td>10–20 %</td>
+<td>choosing <strong>hyperparameters</strong> (degree, <span class="math inline">\(\lambda\)</span>, tree depth, <span class="math inline">\(C\)</span>, …) and comparing models</td>
+</tr>
+<tr class="odd">
+<td><strong>Test</strong></td>
+<td>10–20 %</td>
+<td>one final, unbiased estimate of performance. Touched <strong>once</strong>, at the end.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Parameters vs.&nbsp;hyperparameters.</strong> Parameters (<span class="math inline">\(\boldsymbol{\theta}\)</span>) are learned by minimising <span class="math inline">\(J\)</span> on the training set. Hyperparameters are choices made <em>before</em> training that <span class="math inline">\(J\)</span> cannot choose for you (minimising training error would always pick the most complex model, as the plot above shows). They are chosen by validation error.</p>
+<p><strong>Why a separate test set?</strong> If you pick the hyperparameter with the best validation score, that score is itself optimistically biased: you selected the winner of a contest on that very data. The test set is an independent referee.</p>
+<div id="0e5ed478" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> train_test_split</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>x_all <span class="op">=</span> rng.uniform(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">150</span>)<span class="op">;</span> y_all <span class="op">=</span> f_true(x_all) <span class="op">+</span> rng.normal(<span class="dv">0</span>, <span class="fl">0.25</span>, <span class="dv">150</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co"># 60 / 20 / 20: first cut off the test set, then split the rest</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>x_rest, x_test, y_rest, y_test <span class="op">=</span> train_test_split(x_all, y_all, test_size<span class="op">=</span><span class="fl">0.20</span>, random_state<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>x_train, x_val, y_train, y_val <span class="op">=</span> train_test_split(x_rest, y_rest, test_size<span class="op">=</span><span class="fl">0.25</span>, random_state<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"train=</span><span class="sc">{</span><span class="bu">len</span>(x_train)<span class="sc">}</span><span class="ss">, val=</span><span class="sc">{</span><span class="bu">len</span>(x_val)<span class="sc">}</span><span class="ss">, test=</span><span class="sc">{</span><span class="bu">len</span>(x_test)<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>val_err <span class="op">=</span> []</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> d <span class="kw">in</span> degrees:</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    th <span class="op">=</span> poly_fit(x_train, y_train, d)</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    val_err.append(np.mean((poly_pred(th, x_val) <span class="op">-</span> y_val) <span class="op">**</span> <span class="dv">2</span>))</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>best_d <span class="op">=</span> <span class="bu">int</span>(np.argmin(val_err))</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a><span class="co"># refit on train+val with the chosen hyperparameter, report on test once</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>th <span class="op">=</span> poly_fit(np.r_[x_train, x_val], np.r_[y_train, y_val], best_d)</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"best degree on validation = </span><span class="sc">{</span>best_d<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"test MSE (reported once)  = </span><span class="sc">{</span>np<span class="sc">.</span>mean((poly_pred(th, x_test) <span class="op">-</span> y_test)<span class="op">**</span><span class="dv">2</span>)<span class="sc">:.3f}</span><span class="ss">   (noise variance = </span><span class="sc">{</span><span class="fl">0.25</span><span class="op">**</span><span class="dv">2</span><span class="sc">:.3f}</span><span class="ss">)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>train=90, val=30, test=30
+best degree on validation = 6
+test MSE (reported once)  = 0.056   (noise variance = 0.062)</code></pre>
+</div>
+</div>
+</section>
+<section id="k-fold-cross-validation" class="level2">
+<h2 class="anchored" data-anchor-id="k-fold-cross-validation">6. <span class="math inline">\(k\)</span>-fold cross-validation</h2>
+<p>A single validation split is <strong>noisy</strong>: with few data, the score depends heavily on which points landed in the validation set. It also “wastes” data that could be used for training.</p>
+<p><strong><span class="math inline">\(k\)</span>-fold cross-validation</strong> (on the train+validation data; the test set stays aside):</p>
+<ol type="1">
+<li>Shuffle and split the data into <span class="math inline">\(k\)</span> folds of (almost) equal size <span class="math inline">\(F_1,\dots,F_k\)</span>.</li>
+<li>For <span class="math inline">\(r = 1,\dots,k\)</span>: train on all folds except <span class="math inline">\(F_r\)</span>, compute the error <span class="math inline">\(E_r\)</span> on <span class="math inline">\(F_r\)</span>.</li>
+<li>The CV estimate is the average <span class="math inline">\(\;\mathrm{CV} = \frac{1}{k}\sum_{r=1}^k E_r\)</span> (report also the standard deviation of the <span class="math inline">\(E_r\)</span>).</li>
+</ol>
+<p>Every example is used for validation exactly once and for training <span class="math inline">\(k-1\)</span> times.</p>
+<ul>
+<li><span class="math inline">\(k=5\)</span> or <span class="math inline">\(k=10\)</span> are the usual choices.</li>
+<li><span class="math inline">\(k=m\)</span> is <strong>leave-one-out</strong> (LOOCV): nearly unbiased but expensive and high-variance.</li>
+<li>Cost: <span class="math inline">\(k\)</span> trainings per hyperparameter value.</li>
+</ul>
+<p>After choosing the hyperparameter by CV, <strong>refit on all the non-test data</strong>, then evaluate once on the test set.</p>
+<div id="6112e7a5" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib.patches <span class="im">import</span> Rectangle</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>k <span class="op">=</span> <span class="dv">5</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="fl">2.6</span>))</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> r <span class="kw">in</span> <span class="bu">range</span>(k):</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> f <span class="kw">in</span> <span class="bu">range</span>(k):</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>        ax.add_patch(Rectangle((f, k <span class="op">-</span> <span class="dv">1</span> <span class="op">-</span> r), <span class="fl">0.95</span>, <span class="fl">0.8</span>, color<span class="op">=</span><span class="st">"C1"</span> <span class="cf">if</span> f <span class="op">==</span> r <span class="cf">else</span> <span class="st">"C0"</span>, alpha<span class="op">=</span><span class="fl">0.85</span>))</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    ax.text(k <span class="op">+</span> <span class="fl">0.1</span>, k <span class="op">-</span> <span class="dv">1</span> <span class="op">-</span> r <span class="op">+</span> <span class="fl">0.4</span>, <span class="ss">f"split </span><span class="sc">{</span>r<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss">: $E_</span><span class="sc">{</span>r<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss">$"</span>, va<span class="op">=</span><span class="st">"center"</span>)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>ax.set_xlim(<span class="dv">0</span>, k <span class="op">+</span> <span class="fl">1.3</span>)<span class="op">;</span> ax.set_ylim(<span class="op">-</span><span class="fl">0.2</span>, k)<span class="op">;</span> ax.axis(<span class="st">"off"</span>)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"5-fold CV   (blue = train, orange = validation)"</span>)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="00_supervised_learning_files/figure-html/cell-5-output-1.png" width="711" height="224" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<div id="fd62d182" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> KFold</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>X_rest <span class="op">=</span> x_rest  <span class="co"># train + validation data (test still untouched)</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>kf <span class="op">=</span> KFold(n_splits<span class="op">=</span><span class="dv">5</span>, shuffle<span class="op">=</span><span class="va">True</span>, random_state<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>cv_mean, cv_std <span class="op">=</span> [], []</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> d <span class="kw">in</span> degrees:</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    errs <span class="op">=</span> []</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> tr_idx, va_idx <span class="kw">in</span> kf.split(X_rest):</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>        th <span class="op">=</span> poly_fit(X_rest[tr_idx], y_rest[tr_idx], d)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>        errs.append(np.mean((poly_pred(th, X_rest[va_idx]) <span class="op">-</span> y_rest[va_idx]) <span class="op">**</span> <span class="dv">2</span>))</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    cv_mean.append(np.mean(errs))<span class="op">;</span> cv_std.append(np.std(errs))</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>cv_mean, cv_std <span class="op">=</span> np.array(cv_mean), np.array(cv_std)</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="fl">6.5</span>, <span class="fl">3.6</span>))</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>plt.plot(degrees, cv_mean, <span class="st">"o-"</span>, label<span class="op">=</span><span class="st">"5-fold CV error (mean)"</span>)</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>plt.fill_between(degrees, cv_mean <span class="op">-</span> cv_std, cv_mean <span class="op">+</span> cv_std, alpha<span class="op">=</span><span class="fl">0.2</span>, label<span class="op">=</span><span class="st">"± 1 std over folds"</span>)</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>plt.yscale(<span class="st">"log"</span>)<span class="op">;</span> plt.xlabel(<span class="st">"degree"</span>)<span class="op">;</span> plt.ylabel(<span class="st">"MSE"</span>)<span class="op">;</span> plt.legend()</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="ss">f"CV picks degree </span><span class="sc">{</span><span class="bu">int</span>(np.argmin(cv_mean))<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="00_supervised_learning_files/figure-html/cell-6-output-1.png" width="574" height="312" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="practical-rules" class="level2">
+<h2 class="anchored" data-anchor-id="practical-rules">7. Practical rules</h2>
+<ol type="1">
+<li><strong>No information from validation/test may enter training.</strong> This is called <em>data leakage</em>. The classic mistake: standardising features (computing mean and std) on the <em>whole</em> dataset before splitting. Compute <span class="math inline">\(\mu, \sigma\)</span> on the training fold only and apply them to the validation/test data. In scikit-learn, put preprocessing inside a <code>Pipeline</code> so it is refit on each CV fold.</li>
+<li><strong>Stratify classification splits</strong> (<code>stratify=y</code>, <code>StratifiedKFold</code>) so each fold has the same class proportions. Essential with imbalanced classes.</li>
+<li><strong>Grouped data</strong>: if several rows belong to the same entity (same customer, same patient, several photos of the same car), all rows of that entity must go in the same fold (<code>GroupKFold</code>). Otherwise the model is validated on near-copies of its training data.</li>
+<li><strong>Time series</strong>: never shuffle. Train on the past, validate on the future (<code>TimeSeriesSplit</code>, rolling or expanding window).</li>
+<li><strong>The test set is used once.</strong> If you go back and change the model after looking at the test score, it has become a validation set.</li>
+</ol>
+<p><strong>Summary</strong></p>
+<ul>
+<li>Learning = minimising the empirical loss <span class="math inline">\(J(\boldsymbol{\theta})\)</span> over the training set.</li>
+<li>What matters is error on new data; training error underestimates it.</li>
+<li>Parameters are fit on training data; hyperparameters are chosen on validation data or by <span class="math inline">\(k\)</span>-fold CV; the test set gives the final number.</li>
+</ul>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<script src="../assets/notes-nav.js"></script>
+<script src="../../slides/assets/figures.js"></script>
+<script src="../assets/notes-widgets.js"></script>
+<script src="../../slides/machine_learning/assets/fig-supervised.js"></script>
+
+
+
+
+</body></html>

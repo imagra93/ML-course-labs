@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>00 · Neural Networks: from Logistic Regression to the MLP</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="00_neural_networks_mlp_files/libs/clipboard/clipboard.min.js"></script>
+<script src="00_neural_networks_mlp_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="00_neural_networks_mlp_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="00_neural_networks_mlp_files/libs/quarto-html/popper.min.js"></script>
+<script src="00_neural_networks_mlp_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="00_neural_networks_mlp_files/libs/quarto-html/anchor.min.js"></script>
+<link href="00_neural_networks_mlp_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="00_neural_networks_mlp_files/libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="00_neural_networks_mlp_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="00_neural_networks_mlp_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="00_neural_networks_mlp_files/libs/bootstrap/bootstrap-f6084e8f51ea63a515d0251813187206.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&amp;display=swap">
+<link rel="stylesheet" href="../assets/notes.css">
+<link rel="stylesheet" href="../assets/notes-nn.css">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#notation-same-as-the-ml-notes" id="toc-notation-same-as-the-ml-notes" class="nav-link active" data-scroll-target="#notation-same-as-the-ml-notes">Notation (same as the ML notes)</a></li>
+  <li><a href="#one-neuron-logistic-regression" id="toc-one-neuron-logistic-regression" class="nav-link" data-scroll-target="#one-neuron-logistic-regression">1. One neuron = logistic regression</a></li>
+  <li><a href="#the-limit-of-linear-models-xor" id="toc-the-limit-of-linear-models-xor" class="nav-link" data-scroll-target="#the-limit-of-linear-models-xor">2. The limit of linear models: XOR</a></li>
+  <li><a href="#hidden-layers-learn-the-features" id="toc-hidden-layers-learn-the-features" class="nav-link" data-scroll-target="#hidden-layers-learn-the-features">3. Hidden layers learn the features</a></li>
+  <li><a href="#the-multilayer-perceptron-mlp" id="toc-the-multilayer-perceptron-mlp" class="nav-link" data-scroll-target="#the-multilayer-perceptron-mlp">4. The multilayer perceptron (MLP)</a></li>
+  <li><a href="#why-the-activation-must-be-non-linear" id="toc-why-the-activation-must-be-non-linear" class="nav-link" data-scroll-target="#why-the-activation-must-be-non-linear">5. Why the activation must be non-linear</a></li>
+  <li><a href="#activation-functions" id="toc-activation-functions" class="nav-link" data-scroll-target="#activation-functions">6. Activation functions</a></li>
+  <li><a href="#output-layer-loss-maximum-likelihood" id="toc-output-layer-loss-maximum-likelihood" class="nav-link" data-scroll-target="#output-layer-loss-maximum-likelihood">7. Output layer + loss = maximum likelihood</a></li>
+  <li><a href="#universal-approximation-a-constructive-picture" id="toc-universal-approximation-a-constructive-picture" class="nav-link" data-scroll-target="#universal-approximation-a-constructive-picture">8. Universal approximation (a constructive picture)</a></li>
+  <li><a href="#the-loss-is-no-longer-convex" id="toc-the-loss-is-no-longer-convex" class="nav-link" data-scroll-target="#the-loss-is-no-longer-convex">9. The loss is no longer convex</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">00 · Neural Networks: from Logistic Regression to the MLP</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>A neural network is a stack of logistic-regression-like units whose <strong>features are learned</strong> instead of hand-designed. This notebook builds the model and its forward pass; notebook 01 shows how to train it (backpropagation).</p>
+<div id="fc9faa9a" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>plt.rcParams.update({<span class="st">"figure.dpi"</span>: <span class="dv">90</span>, <span class="st">"axes.grid"</span>: <span class="va">True</span>, <span class="st">"grid.alpha"</span>: <span class="fl">0.3</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"axes.spines.top"</span>: <span class="va">False</span>, <span class="st">"axes.spines.right"</span>: <span class="va">False</span>})</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">0</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<section id="notation-same-as-the-ml-notes" class="level2">
+<h2 class="anchored" data-anchor-id="notation-same-as-the-ml-notes">Notation (same as the ML notes)</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Symbol</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\(m\)</span>, <span class="math inline">\(n\)</span></td>
+<td>number of examples, number of input features</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(\mathbf{x}^{(i)}\)</span>, <span class="math inline">\(y^{(i)}\)</span></td>
+<td><span class="math inline">\(i\)</span>-th input and target; <span class="math inline">\(\mathbf{X}\in\mathbb{R}^{m\times n}\)</span> stacks the inputs as rows</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(L\)</span></td>
+<td>number of layers (hidden + output); <span class="math inline">\(n_l\)</span> = number of units in layer <span class="math inline">\(l\)</span>, <span class="math inline">\(n_0 = n\)</span></td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(\mathbf{W}^{[l]}\in\mathbb{R}^{n_{l-1}\times n_l}\)</span>, <span class="math inline">\(\mathbf{b}^{[l]}\in\mathbb{R}^{1\times n_l}\)</span></td>
+<td>weights and bias of layer <span class="math inline">\(l\)</span></td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(\boldsymbol{\theta} = \{\mathbf{W}^{[l]}, \mathbf{b}^{[l]}\}_{l=1}^L\)</span></td>
+<td><strong>all</strong> parameters of the network</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(\mathbf{Z}^{[l]}, \mathbf{A}^{[l]}\)</span></td>
+<td>pre-activation and activation of layer <span class="math inline">\(l\)</span> (one row per example); <span class="math inline">\(\mathbf{A}^{[0]} = \mathbf{X}\)</span></td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(g^{[l]}\)</span></td>
+<td>activation function of layer <span class="math inline">\(l\)</span> (applied element-wise)</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(J(\boldsymbol{\theta})\)</span></td>
+<td>loss, <span class="math inline">\(\alpha\)</span> learning rate</td>
+</tr>
+</tbody>
+</table>
+<p>Unlike the ML notes, the bias is kept as a separate vector <span class="math inline">\(\mathbf{b}\)</span> instead of a column of ones in <span class="math inline">\(\mathbf{X}\)</span>. This is the convention of every deep learning library.</p>
+</section>
+<section id="one-neuron-logistic-regression" class="level2">
+<h2 class="anchored" data-anchor-id="one-neuron-logistic-regression">1. One neuron = logistic regression</h2>
+<p>A <strong>neuron</strong> computes a weighted sum of its inputs plus a bias, then applies an <strong>activation function</strong> <span class="math inline">\(g\)</span>:</p>
+<p><span class="math display">\[
+a = g(z), \qquad z = \mathbf{x}^\top\mathbf{w} + b = \sum_{j=1}^n w_jx_j + b .
+\]</span></p>
+<p>With <span class="math inline">\(g = \sigma\)</span> (sigmoid) and the cross-entropy loss, a single neuron <strong>is</strong> logistic regression (ML notes 02): <span class="math inline">\(\mathbf{w}\)</span> plays the role of <span class="math inline">\((\theta_1,\dots,\theta_n)\)</span> and <span class="math inline">\(b\)</span> of <span class="math inline">\(\theta_0\)</span>. With <span class="math inline">\(g\)</span> = identity and squared loss it is linear regression. Its decision boundary <span class="math inline">\(\mathbf{x}^\top\mathbf{w} + b = 0\)</span> is a hyperplane.</p>
+</section>
+<section id="the-limit-of-linear-models-xor" class="level2">
+<h2 class="anchored" data-anchor-id="the-limit-of-linear-models-xor">2. The limit of linear models: XOR</h2>
+<p>Four points with labels <span class="math inline">\(y = \mathbb{1}[x_1x_2 &gt; 0]\)</span>:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th><span class="math inline">\(x_1\)</span></th>
+<th><span class="math inline">\(x_2\)</span></th>
+<th><span class="math inline">\(y\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\(+1\)</span></td>
+<td><span class="math inline">\(+1\)</span></td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(-1\)</span></td>
+<td><span class="math inline">\(-1\)</span></td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(+1\)</span></td>
+<td><span class="math inline">\(-1\)</span></td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(-1\)</span></td>
+<td><span class="math inline">\(+1\)</span></td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Claim.</strong> No linear classifier <span class="math inline">\(\hat{y} = \mathbb{1}[w_1x_1 + w_2x_2 + b &gt; 0]\)</span> gets all four right.</p>
+<p><em>Proof.</em> The two positive points need <span class="math inline">\(b + w_1 + w_2 &gt; 0\)</span> and <span class="math inline">\(b - w_1 - w_2 &gt; 0\)</span>. Adding them gives <span class="math inline">\(2b &gt; 0\)</span>. The two negative points need <span class="math inline">\(b + w_1 - w_2 \le 0\)</span> and <span class="math inline">\(b - w_1 + w_2 \le 0\)</span>. Adding them gives <span class="math inline">\(2b \le 0\)</span>. Contradiction. <span class="math inline">\(\blacksquare\)</span></p>
+<p>Logistic regression on XOR-like data therefore stays near 50 % accuracy, however long it trains.</p>
+<div id="dfe7e6c2" class="cell" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.linear_model <span class="im">import</span> LogisticRegression</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>m <span class="op">=</span> <span class="dv">1000</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> rng.normal(size<span class="op">=</span>(m, <span class="dv">2</span>))<span class="op">;</span> y <span class="op">=</span> (X[:, <span class="dv">0</span>] <span class="op">*</span> X[:, <span class="dv">1</span>] <span class="op">&gt;</span> <span class="dv">0</span>).astype(<span class="bu">int</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>g1, g2 <span class="op">=</span> np.meshgrid(np.linspace(<span class="op">-</span><span class="dv">3</span>, <span class="dv">3</span>, <span class="dv">300</span>), np.linspace(<span class="op">-</span><span class="dv">3</span>, <span class="dv">3</span>, <span class="dv">300</span>))<span class="op">;</span> G <span class="op">=</span> np.c_[g1.ravel(), g2.ravel()]</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> plot_boundary(ax, predict_proba, title):</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    P <span class="op">=</span> predict_proba(G).reshape(g1.shape)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    ax.contourf(g1, g2, P, levels<span class="op">=</span><span class="dv">20</span>, cmap<span class="op">=</span><span class="st">"coolwarm"</span>, alpha<span class="op">=</span><span class="fl">0.6</span>)<span class="op">;</span> ax.contour(g1, g2, P, levels<span class="op">=</span>[<span class="fl">0.5</span>], colors<span class="op">=</span><span class="st">"k"</span>)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    ax.scatter(X[:, <span class="dv">0</span>], X[:, <span class="dv">1</span>], c<span class="op">=</span>y, cmap<span class="op">=</span><span class="st">"coolwarm"</span>, s<span class="op">=</span><span class="dv">6</span>, edgecolor<span class="op">=</span><span class="st">"none"</span>)<span class="op">;</span> ax.set_title(title)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>lr <span class="op">=</span> LogisticRegression().fit(X, y)</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="fl">4.5</span>, <span class="dv">4</span>))</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>plot_boundary(ax, <span class="kw">lambda</span> A: lr.predict_proba(A)[:, <span class="dv">1</span>], <span class="ss">f"Logistic regression: acc </span><span class="sc">{</span>lr<span class="sc">.</span>score(X, y)<span class="sc">:.2f}</span><span class="ss">"</span>)</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="00_neural_networks_mlp_files/figure-html/cell-3-output-1.png" width="396" height="349" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="hidden-layers-learn-the-features" class="level2">
+<h2 class="anchored" data-anchor-id="hidden-layers-learn-the-features">3. Hidden layers learn the features</h2>
+<p>In ML notes 03 we fixed non-linear data by <strong>adding features by hand</strong> (e.g.&nbsp;<span class="math inline">\(x_1x_2\)</span> solves XOR at once). A neural network <strong>learns</strong> the features: a first layer of neurons computes new features <span class="math inline">\(\mathbf{a}^{[1]} = g(\mathbf{x}^\top\mathbf{W}^{[1]} + \mathbf{b}^{[1]})\)</span>, and a final logistic-regression neuron classifies using them.</p>
+<p><strong>XOR by hand with 2 hidden ReLU units</strong>, <span class="math inline">\(\mathrm{ReLU}(z) = \max(0,z)\)</span>. Take <span class="math display">\[
+a_1 = \mathrm{ReLU}(x_1 + x_2), \qquad a_2 = \mathrm{ReLU}(-x_1 - x_2), \qquad z_{\text{out}} = a_1 + a_2 - 1 .
+\]</span> Then <span class="math inline">\(a_1 + a_2 = |x_1 + x_2|\)</span>, which is 2 for the positive points <span class="math inline">\((\pm1,\pm1)\)</span> and 0 for the negative ones <span class="math inline">\((\pm1,\mp1)\)</span>. So <span class="math inline">\(z_{\text{out}} = +1\)</span> for class 1 and <span class="math inline">\(-1\)</span> for class 0. In the hidden-feature space <span class="math inline">\((a_1, a_2)\)</span> the classes <strong>are</strong> linearly separable. That is the whole idea: each layer transforms the data until a linear classifier suffices.</p>
+<div id="c753a35a" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>X4 <span class="op">=</span> np.array([[<span class="dv">1</span>, <span class="dv">1</span>], [<span class="op">-</span><span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span>], [<span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span>], [<span class="op">-</span><span class="dv">1</span>, <span class="dv">1</span>]])<span class="op">;</span> y4 <span class="op">=</span> np.array([<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">0</span>])</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>relu <span class="op">=</span> <span class="kw">lambda</span> z: np.maximum(<span class="dv">0</span>, z)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>A1 <span class="op">=</span> relu(X4 <span class="op">@</span> np.array([[<span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span>], [<span class="dv">1</span>, <span class="op">-</span><span class="dv">1</span>]]))            <span class="co"># columns = the two hidden units</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>z_out <span class="op">=</span> A1 <span class="op">@</span> np.array([<span class="dv">1</span>, <span class="dv">1</span>]) <span class="op">-</span> <span class="dv">1</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"hidden features a1, a2:</span><span class="ch">\n</span><span class="st">"</span>, A1)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"output score:"</span>, z_out, <span class="st">" -&gt; predicted class:"</span>, (z_out <span class="op">&gt;</span> <span class="dv">0</span>).astype(<span class="bu">int</span>), <span class="st">" true:"</span>, y4)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>hidden features a1, a2:
+ [[2 0]
+ [0 2]
+ [0 0]
+ [0 0]]
+output score: [ 1  1 -1 -1]  -&gt; predicted class: [1 1 0 0]  true: [1 1 0 0]</code></pre>
+</div>
+</div>
+</section>
+<section id="the-multilayer-perceptron-mlp" class="level2">
+<h2 class="anchored" data-anchor-id="the-multilayer-perceptron-mlp">4. The multilayer perceptron (MLP)</h2>
+<p>An MLP (fully connected feed-forward network) stacks <span class="math inline">\(L\)</span> layers. <strong>Forward propagation</strong>, for the whole batch at once:</p>
+<p><span class="math display">\[
+\mathbf{A}^{[0]} = \mathbf{X}, \qquad
+\mathbf{Z}^{[l]} = \mathbf{A}^{[l-1]}\mathbf{W}^{[l]} + \mathbf{b}^{[l]}, \qquad
+\mathbf{A}^{[l]} = g^{[l]}\big(\mathbf{Z}^{[l]}\big), \qquad l = 1,\dots,L,
+\]</span></p>
+<p>and the prediction is <span class="math inline">\(\hat{\mathbf{Y}} = \mathbf{A}^{[L]}\)</span>. (The bias row <span class="math inline">\(\mathbf{b}^{[l]}\)</span> is added to every row: “broadcasting”.)</p>
+<p><strong>Shapes</strong>: <span class="math inline">\(\mathbf{A}^{[l-1]}\)</span> is <span class="math inline">\(m\times n_{l-1}\)</span>, <span class="math inline">\(\mathbf{W}^{[l]}\)</span> is <span class="math inline">\(n_{l-1}\times n_l\)</span>, so <span class="math inline">\(\mathbf{Z}^{[l]}\)</span> and <span class="math inline">\(\mathbf{A}^{[l]}\)</span> are <span class="math inline">\(m\times n_l\)</span>. Checking shapes is the fastest way to debug a network.</p>
+<p><strong>Number of parameters</strong>: <span class="math inline">\(\sum_{l=1}^L (n_{l-1}n_l + n_l) = \sum_l (n_{l-1}+1)\,n_l\)</span>. Example: a 784 → 128 → 10 network (Fashion-MNIST lab) has <span class="math inline">\(785\cdot128 + 129\cdot10 = 101{,}770\)</span> parameters.</p>
+<p>The network is just a composed function <span class="math inline">\(h_{\boldsymbol{\theta}}(\mathbf{x}) = g^{[L]}\big(\cdots g^{[1]}(\mathbf{x}^\top\mathbf{W}^{[1]} + \mathbf{b}^{[1]})\cdots\big)\)</span>.</p>
+<div id="7a37196a" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> init_params(sizes, rng):</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""sizes = [n0, n1, ..., nL]; small random weights, zero biases."""</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> [(rng.normal(<span class="dv">0</span>, np.sqrt(<span class="dv">2</span> <span class="op">/</span> a), (a, b)), np.zeros((<span class="dv">1</span>, b))) <span class="cf">for</span> a, b <span class="kw">in</span> <span class="bu">zip</span>(sizes[:<span class="op">-</span><span class="dv">1</span>], sizes[<span class="dv">1</span>:])]</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> forward(X, params, g_hidden, g_out):</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    A <span class="op">=</span> X</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> l, (W, b) <span class="kw">in</span> <span class="bu">enumerate</span>(params):</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        Z <span class="op">=</span> A <span class="op">@</span> W <span class="op">+</span> b</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        A <span class="op">=</span> g_out(Z) <span class="cf">if</span> l <span class="op">==</span> <span class="bu">len</span>(params) <span class="op">-</span> <span class="dv">1</span> <span class="cf">else</span> g_hidden(Z)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> A</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>sigmoid <span class="op">=</span> <span class="kw">lambda</span> z: <span class="dv">1</span> <span class="op">/</span> (<span class="dv">1</span> <span class="op">+</span> np.exp(<span class="op">-</span>z))</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>params <span class="op">=</span> init_params([<span class="dv">2</span>, <span class="dv">16</span>, <span class="dv">16</span>, <span class="dv">1</span>], rng)</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> l, (W, b) <span class="kw">in</span> <span class="bu">enumerate</span>(params, <span class="dv">1</span>):</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"layer </span><span class="sc">{</span>l<span class="sc">}</span><span class="ss">: W </span><span class="sc">{</span>W<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">, b </span><span class="sc">{</span>b<span class="sc">.</span>shape<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"parameters:"</span>, <span class="bu">sum</span>(W.size <span class="op">+</span> b.size <span class="cf">for</span> W, b <span class="kw">in</span> params))</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"output for 3 inputs (random, untrained net):"</span>, forward(X[:<span class="dv">3</span>], params, relu, sigmoid).ravel().<span class="bu">round</span>(<span class="dv">3</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>layer 1: W (2, 16), b (1, 16)
+layer 2: W (16, 16), b (1, 16)
+layer 3: W (16, 1), b (1, 1)
+parameters: 337
+output for 3 inputs (random, untrained net): [0.504 0.473 0.652]</code></pre>
+</div>
+</div>
+</section>
+<section id="why-the-activation-must-be-non-linear" class="level2">
+<h2 class="anchored" data-anchor-id="why-the-activation-must-be-non-linear">5. Why the activation must be non-linear</h2>
+<p><strong>Claim.</strong> Without non-linear activations, any number of layers collapses to a single linear layer.</p>
+<p><em>Proof.</em> With <span class="math inline">\(g\)</span> = identity, <span class="math inline">\(\mathbf{A}^{[2]} = (\mathbf{X}\mathbf{W}^{[1]} + \mathbf{b}^{[1]})\mathbf{W}^{[2]} + \mathbf{b}^{[2]} = \mathbf{X}\underbrace{\mathbf{W}^{[1]}\mathbf{W}^{[2]}}_{\mathbf{W}'} + \underbrace{\mathbf{b}^{[1]}\mathbf{W}^{[2]} + \mathbf{b}^{[2]}}_{\mathbf{b}'}\)</span>, which is one affine layer. By induction the same holds for <span class="math inline">\(L\)</span> layers. <span class="math inline">\(\blacksquare\)</span></p>
+<p>So a deep <em>linear</em> network is no more expressive than linear regression. The non-linearity is what gives depth its power.</p>
+</section>
+<section id="activation-functions" class="level2">
+<h2 class="anchored" data-anchor-id="activation-functions">6. Activation functions</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th><span class="math inline">\(g(z)\)</span></th>
+<th><span class="math inline">\(g'(z)\)</span></th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Sigmoid</td>
+<td><span class="math inline">\(\sigma(z) = \frac{1}{1+e^{-z}}\)</span></td>
+<td><span class="math inline">\(\sigma(z)(1-\sigma(z)) \le \frac14\)</span></td>
+<td>output layer for binary tasks; <strong>saturates</strong> → vanishing gradients in hidden layers</td>
+</tr>
+<tr class="even">
+<td>tanh</td>
+<td><span class="math inline">\(\frac{e^z - e^{-z}}{e^z + e^{-z}} = 2\sigma(2z) - 1\)</span></td>
+<td><span class="math inline">\(1 - \tanh^2(z) \le 1\)</span></td>
+<td>zero-centred; still saturates; used in RNNs</td>
+</tr>
+<tr class="odd">
+<td>ReLU</td>
+<td><span class="math inline">\(\max(0, z)\)</span></td>
+<td><span class="math inline">\(\mathbb{1}[z &gt; 0]\)</span></td>
+<td>default for hidden layers: cheap, no saturation for <span class="math inline">\(z&gt;0\)</span>; units can “die” (always <span class="math inline">\(z&lt;0\)</span>)</td>
+</tr>
+<tr class="even">
+<td>Leaky ReLU</td>
+<td><span class="math inline">\(\max(\beta z, z)\)</span>, <span class="math inline">\(\beta\approx0.01\)</span></td>
+<td><span class="math inline">\(1\)</span> or <span class="math inline">\(\beta\)</span></td>
+<td>never fully dead</td>
+</tr>
+<tr class="odd">
+<td>GELU</td>
+<td><span class="math inline">\(z\,\Phi(z)\)</span></td>
+<td>smooth</td>
+<td>used in transformers</td>
+</tr>
+</tbody>
+</table>
+<p><em>Proof that <span class="math inline">\(\tanh(z) = 2\sigma(2z) - 1\)</span>:</em> <span class="math inline">\(2\sigma(2z) - 1 = \frac{2}{1+e^{-2z}} - 1 = \frac{1-e^{-2z}}{1+e^{-2z}}\)</span>; multiply numerator and denominator by <span class="math inline">\(e^z\)</span> to get <span class="math inline">\(\frac{e^z - e^{-z}}{e^z + e^{-z}}\)</span>.</p>
+<p><strong>Saturation.</strong> Where the curve is flat (<span class="math inline">\(|z|\)</span> large for sigmoid/tanh), <span class="math inline">\(g'(z)\approx0\)</span>. In backpropagation every layer multiplies the gradient by <span class="math inline">\(g'\)</span> (notebook 01), so flat regions stop learning. ReLU’s derivative is exactly 1 for <span class="math inline">\(z&gt;0\)</span>.</p>
+<div id="0177d3dc" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>z <span class="op">=</span> np.linspace(<span class="op">-</span><span class="dv">5</span>, <span class="dv">5</span>, <span class="dv">500</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>acts <span class="op">=</span> {<span class="st">"sigmoid"</span>: (sigmoid(z), sigmoid(z) <span class="op">*</span> (<span class="dv">1</span> <span class="op">-</span> sigmoid(z))),</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>        <span class="st">"tanh"</span>: (np.tanh(z), <span class="dv">1</span> <span class="op">-</span> np.tanh(z) <span class="op">**</span> <span class="dv">2</span>),</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>        <span class="st">"ReLU"</span>: (relu(z), (z <span class="op">&gt;</span> <span class="dv">0</span>).astype(<span class="bu">float</span>)),</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>        <span class="st">"leaky ReLU (β=0.1)"</span>: (np.maximum(<span class="fl">0.1</span> <span class="op">*</span> z, z), np.where(z <span class="op">&gt;</span> <span class="dv">0</span>, <span class="dv">1</span>, <span class="fl">0.1</span>))}</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="fl">3.6</span>))</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, (f, d) <span class="kw">in</span> acts.items():</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    axes[<span class="dv">0</span>].plot(z, f, lw<span class="op">=</span><span class="dv">2</span>, label<span class="op">=</span>name)<span class="op">;</span> axes[<span class="dv">1</span>].plot(z, d, lw<span class="op">=</span><span class="dv">2</span>, label<span class="op">=</span>name)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">"activation $g(z)$"</span>)<span class="op">;</span> axes[<span class="dv">1</span>].set_title(<span class="st">"derivative $g'(z)$"</span>)<span class="op">;</span> axes[<span class="dv">0</span>].set_ylim(<span class="op">-</span><span class="fl">1.5</span>, <span class="dv">3</span>)</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax <span class="kw">in</span> axes: ax.legend()<span class="op">;</span> ax.set_xlabel(<span class="st">"$z$"</span>)</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="00_neural_networks_mlp_files/figure-html/cell-6-output-1.png" width="1070" height="311" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="output-layer-loss-maximum-likelihood" class="level2">
+<h2 class="anchored" data-anchor-id="output-layer-loss-maximum-likelihood">7. Output layer + loss = maximum likelihood</h2>
+<p>The hidden layers are generic. The <strong>output layer and loss are chosen by the task</strong>, with exactly the reasoning of the ML notes: pick a distribution for <span class="math inline">\(y\)</span> given the network’s output, and minimise the negative log-likelihood.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Task</th>
+<th>Output layer <span class="math inline">\(g^{[L]}\)</span></th>
+<th>Distribution of <span class="math inline">\(y\mid\mathbf{x}\)</span></th>
+<th>Loss <span class="math inline">\(J(\boldsymbol{\theta})\)</span></th>
+<th>PyTorch</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Regression</td>
+<td>identity</td>
+<td>Gaussian</td>
+<td>MSE <span class="math inline">\(\frac{1}{m}\sum(\hat{y}-y)^2\)</span></td>
+<td><code>MSELoss</code></td>
+</tr>
+<tr class="even">
+<td>Binary classification</td>
+<td>sigmoid, 1 unit</td>
+<td>Bernoulli</td>
+<td>binary cross-entropy</td>
+<td><code>BCEWithLogitsLoss</code></td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(K\)</span> classes</td>
+<td>softmax, <span class="math inline">\(K\)</span> units</td>
+<td>categorical</td>
+<td>categorical cross-entropy</td>
+<td><code>CrossEntropyLoss</code></td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(K\)</span> independent labels (multi-label)</td>
+<td><span class="math inline">\(K\)</span> sigmoids</td>
+<td><span class="math inline">\(K\)</span> Bernoullis</td>
+<td>sum of BCEs</td>
+<td><code>BCEWithLogitsLoss</code></td>
+</tr>
+</tbody>
+</table>
+<p>The derivations are ML notes 01 (Gaussian → MSE), 02 (Bernoulli → BCE) and 04 (categorical → cross-entropy). A neural network is simply linear/logistic/softmax regression <strong>on learned features</strong> <span class="math inline">\(\mathbf{A}^{[L-1]}\)</span>.</p>
+<p><strong>Work with logits.</strong> Libraries take the pre-activation <span class="math inline">\(z\)</span> (the <em>logit</em>) and fuse the sigmoid/softmax into the loss, because it is numerically stable. For BCE with <span class="math inline">\(p = \sigma(z)\)</span>: <span class="math display">\[
+-\big[y\log\sigma(z) + (1-y)\log(1-\sigma(z))\big] = \log(1+e^{z}) - yz = \max(z, 0) - yz + \log\big(1 + e^{-|z|}\big),
+\]</span> and the last form never overflows. (<em>Proof of the first equality:</em> <span class="math inline">\(\log\sigma(z) = -\log(1+e^{-z})\)</span> and <span class="math inline">\(\log(1-\sigma(z)) = -z - \log(1+e^{-z})\)</span>, so the bracket is <span class="math inline">\(-\log(1+e^{-z}) - (1-y)z\)</span>, and <span class="math inline">\(\log(1+e^{-z}) + z = \log(1+e^{z})\)</span>.) The same applies to softmax: <code>CrossEntropyLoss</code> takes raw logits; <code>NLLLoss</code> needs <code>log_softmax</code> first.</p>
+</section>
+<section id="universal-approximation-a-constructive-picture" class="level2">
+<h2 class="anchored" data-anchor-id="universal-approximation-a-constructive-picture">8. Universal approximation (a constructive picture)</h2>
+<p><strong>Theorem (Cybenko 1989; Hornik 1991; Leshno et al.&nbsp;1993).</strong> A network with <strong>one</strong> hidden layer and any non-polynomial activation can approximate any continuous function on a bounded domain to any accuracy, given enough hidden units.</p>
+<p><strong>Why, for ReLU in 1D.</strong> A one-hidden-layer ReLU network computes <span class="math inline">\(h(x) = c + \sum_k v_k\,\mathrm{ReLU}(x - t_k)\)</span>, a <strong>piecewise-linear</strong> function with kinks at the <span class="math inline">\(t_k\)</span>. Each unit changes the slope by <span class="math inline">\(v_k\)</span> at <span class="math inline">\(x = t_k\)</span>. So to interpolate a target <span class="math inline">\(f\)</span> at knots <span class="math inline">\(t_0 &lt; t_1 &lt; \dots &lt; t_K\)</span>, set <span class="math inline">\(c = f(t_0)\)</span>, the first slope <span class="math inline">\(v_0 = s_0\)</span>, and <span class="math inline">\(v_k = s_k - s_{k-1}\)</span>, where <span class="math inline">\(s_k\)</span> is the slope of the segment <span class="math inline">\([t_k, t_{k+1}]\)</span>. More units = finer knots = smaller error. The cell below builds such a network <strong>by hand, without training</strong>.</p>
+<p>Caveats: the theorem says such weights <em>exist</em>. It says nothing about how many units are needed (possibly exponentially many), or whether gradient descent finds them, or how well they generalise. In practice <strong>depth</strong> helps: deep networks can represent many functions with far fewer units than shallow ones (compositions create exponentially many linear pieces).</p>
+<div id="887cb5e8" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>f <span class="op">=</span> <span class="kw">lambda</span> x: np.sin(<span class="dv">2</span> <span class="op">*</span> x) <span class="op">+</span> <span class="fl">0.3</span> <span class="op">*</span> x</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>xs <span class="op">=</span> np.linspace(<span class="op">-</span><span class="dv">3</span>, <span class="dv">3</span>, <span class="dv">600</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">15</span>, <span class="fl">3.6</span>), sharey<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax, K <span class="kw">in</span> <span class="bu">zip</span>(axes, [<span class="dv">3</span>, <span class="dv">8</span>, <span class="dv">30</span>]):</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    t <span class="op">=</span> np.linspace(<span class="op">-</span><span class="dv">3</span>, <span class="dv">3</span>, K <span class="op">+</span> <span class="dv">1</span>)                       <span class="co"># knots</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    s <span class="op">=</span> np.diff(f(t)) <span class="op">/</span> np.diff(t)                      <span class="co"># slopes of each segment</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    v <span class="op">=</span> np.r_[s[<span class="dv">0</span>], np.diff(s)]                         <span class="co"># slope changes = output weights</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    h <span class="op">=</span> f(t[<span class="dv">0</span>]) <span class="op">+</span> <span class="bu">sum</span>(vk <span class="op">*</span> relu(xs <span class="op">-</span> tk) <span class="cf">for</span> vk, tk <span class="kw">in</span> <span class="bu">zip</span>(v, t[:<span class="op">-</span><span class="dv">1</span>]))</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    ax.plot(xs, f(xs), <span class="st">"k--"</span>, lw<span class="op">=</span><span class="dv">1</span>, label<span class="op">=</span><span class="st">"target $f$"</span>)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    ax.plot(xs, h, lw<span class="op">=</span><span class="dv">2</span>, label<span class="op">=</span><span class="ss">f"</span><span class="sc">{</span>K<span class="sc">}</span><span class="ss"> ReLU units"</span>)</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    ax.set_title(<span class="ss">f"</span><span class="sc">{</span>K<span class="sc">}</span><span class="ss"> hidden units, max error </span><span class="sc">{</span>np<span class="sc">.</span><span class="bu">max</span>(np.<span class="bu">abs</span>(h <span class="op">-</span> f(xs)))<span class="sc">:.3f}</span><span class="ss">"</span>)<span class="op">;</span> ax.legend()</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="00_neural_networks_mlp_files/figure-html/cell-7-output-1.png" width="1340" height="313" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>A trained MLP on the XOR data.</strong> Trained with backpropagation (notebook 01, here via scikit-learn). Each hidden unit learns a line, and the output combines them into a non-linear boundary.</p>
+<div id="c194dd35" class="cell" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.neural_network <span class="im">import</span> MLPClassifier</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">4</span>, figsize<span class="op">=</span>(<span class="dv">18</span>, <span class="dv">4</span>))</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax, h <span class="kw">in</span> <span class="bu">zip</span>(axes[:<span class="dv">3</span>], [<span class="dv">2</span>, <span class="dv">4</span>, <span class="dv">32</span>]):</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    mlp <span class="op">=</span> MLPClassifier(hidden_layer_sizes<span class="op">=</span>(h,), activation<span class="op">=</span><span class="st">"relu"</span>, max_iter<span class="op">=</span><span class="dv">3000</span>, random_state<span class="op">=</span><span class="dv">1</span>).fit(X, y)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    plot_boundary(ax, <span class="kw">lambda</span> A: mlp.predict_proba(A)[:, <span class="dv">1</span>], <span class="ss">f"MLP, </span><span class="sc">{</span>h<span class="sc">}</span><span class="ss"> hidden ReLUs: acc </span><span class="sc">{</span>mlp<span class="sc">.</span>score(X, y)<span class="sc">:.2f}</span><span class="ss">"</span>)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>mlp4 <span class="op">=</span> MLPClassifier(hidden_layer_sizes<span class="op">=</span>(<span class="dv">4</span>,), activation<span class="op">=</span><span class="st">"relu"</span>, max_iter<span class="op">=</span><span class="dv">3000</span>, random_state<span class="op">=</span><span class="dv">1</span>).fit(X, y)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>W1, b1 <span class="op">=</span> mlp4.coefs_[<span class="dv">0</span>], mlp4.intercepts_[<span class="dv">0</span>]</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">3</span>].scatter(X[:, <span class="dv">0</span>], X[:, <span class="dv">1</span>], c<span class="op">=</span>y, cmap<span class="op">=</span><span class="st">"coolwarm"</span>, s<span class="op">=</span><span class="dv">6</span>)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">4</span>):   <span class="co"># line where hidden unit k switches on: x1*W[0,k] + x2*W[1,k] + b_k = 0</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    axes[<span class="dv">3</span>].plot(g1[<span class="dv">0</span>], <span class="op">-</span>(W1[<span class="dv">0</span>, k] <span class="op">*</span> g1[<span class="dv">0</span>] <span class="op">+</span> b1[k]) <span class="op">/</span> W1[<span class="dv">1</span>, k], lw<span class="op">=</span><span class="dv">2</span>, label<span class="op">=</span><span class="ss">f"unit </span><span class="sc">{</span>k<span class="op">+</span><span class="dv">1</span><span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">3</span>].set_ylim(<span class="op">-</span><span class="dv">3</span>, <span class="dv">3</span>)<span class="op">;</span> axes[<span class="dv">3</span>].legend(fontsize<span class="op">=</span><span class="dv">8</span>)<span class="op">;</span> axes[<span class="dv">3</span>].set_title(<span class="st">"the 4 hidden units' lines $z_k=0$"</span>)</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="00_neural_networks_mlp_files/figure-html/cell-8-output-1.png" width="1611" height="348" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Two hidden units are enough for the four XOR corner points (section 3), but not for this quadrant-shaped cloud: the boundary needs two full lines through the origin, and with 2 ReLUs gradient descent finds only a partial solution. With 4 units each quadrant edge gets its own unit (right panel), and more units make the boundary sharper.</p>
+</section>
+<section id="the-loss-is-no-longer-convex" class="level2">
+<h2 class="anchored" data-anchor-id="the-loss-is-no-longer-convex">9. The loss is no longer convex</h2>
+<p>Linear, logistic and softmax regression have convex losses (ML notes). Neural networks do not.</p>
+<p><strong>Proof (hidden-unit symmetry).</strong> Swap hidden units <span class="math inline">\(j\)</span> and <span class="math inline">\(k\)</span> of a layer: swap columns <span class="math inline">\(j,k\)</span> of <span class="math inline">\(\mathbf{W}^{[l]}\)</span> and entries <span class="math inline">\(j,k\)</span> of <span class="math inline">\(\mathbf{b}^{[l]}\)</span>, and rows <span class="math inline">\(j,k\)</span> of <span class="math inline">\(\mathbf{W}^{[l+1]}\)</span>. The network computes exactly the same function, so if <span class="math inline">\(\boldsymbol{\theta}^*\)</span> is a minimiser, so is the swapped <span class="math inline">\(\boldsymbol{\theta}'\)</span>. If <span class="math inline">\(J\)</span> were convex, the midpoint <span class="math inline">\(\frac12(\boldsymbol{\theta}^*+\boldsymbol{\theta}')\)</span> would also be a minimiser (a convex function is <span class="math inline">\(\le\)</span> the average of its values at the endpoints). But at the midpoint units <span class="math inline">\(j\)</span> and <span class="math inline">\(k\)</span> have <strong>identical</strong> weights, so they compute the same feature, and the network has lost one unit of capacity. Generically this raises the loss. So <span class="math inline">\(J\)</span> is not convex. <span class="math inline">\(\blacksquare\)</span></p>
+<p>Consequences: - There are many (equivalent) minima, plus saddle points and flat regions. - The result depends on the <strong>initialisation</strong> and on the optimiser (notebooks 01–02). - In practice, for large networks most local minima found by SGD are about as good as each other; the harder problems are saddle points, plateaus and bad conditioning.</p>
+<div id="af5cd772" class="cell" data-execution_count="8">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Loss along the straight line between a trained network and its hidden-unit-swapped copy</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> copy</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>Xt, yt <span class="op">=</span> X[:<span class="dv">400</span>], y[:<span class="dv">400</span>]</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>net <span class="op">=</span> MLPClassifier(hidden_layer_sizes<span class="op">=</span>(<span class="dv">4</span>,), activation<span class="op">=</span><span class="st">"relu"</span>, max_iter<span class="op">=</span><span class="dv">5000</span>, random_state<span class="op">=</span><span class="dv">1</span>).fit(Xt, yt)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>W1, W2 <span class="op">=</span> net.coefs_<span class="op">;</span> b1, b2 <span class="op">=</span> net.intercepts_</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>perm <span class="op">=</span> [<span class="dv">1</span>, <span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">3</span>]</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>theta_a <span class="op">=</span> [W1, b1, W2, b2]</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>theta_b <span class="op">=</span> [W1[:, perm], b1[perm], W2[perm, :], b2]</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> bce_at(theta):</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    W1_, b1_, W2_, b2_ <span class="op">=</span> theta</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    p <span class="op">=</span> sigmoid(relu(Xt <span class="op">@</span> W1_ <span class="op">+</span> b1_) <span class="op">@</span> W2_ <span class="op">+</span> b2_).ravel()</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">-</span>np.mean(yt <span class="op">*</span> np.log(p <span class="op">+</span> <span class="fl">1e-12</span>) <span class="op">+</span> (<span class="dv">1</span> <span class="op">-</span> yt) <span class="op">*</span> np.log(<span class="dv">1</span> <span class="op">-</span> p <span class="op">+</span> <span class="fl">1e-12</span>))</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>ts <span class="op">=</span> np.linspace(<span class="op">-</span><span class="fl">0.2</span>, <span class="fl">1.2</span>, <span class="dv">141</span>)</span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>loss <span class="op">=</span> [bce_at([(<span class="dv">1</span> <span class="op">-</span> t) <span class="op">*</span> a <span class="op">+</span> t <span class="op">*</span> b <span class="cf">for</span> a, b <span class="kw">in</span> <span class="bu">zip</span>(theta_a, theta_b)]) <span class="cf">for</span> t <span class="kw">in</span> ts]</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="fl">6.5</span>, <span class="fl">3.6</span>))<span class="op">;</span> plt.plot(ts, loss, lw<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>plt.scatter([<span class="dv">0</span>, <span class="dv">1</span>], [bce_at(theta_a), bce_at(theta_b)], color<span class="op">=</span><span class="st">"C3"</span>, zorder<span class="op">=</span><span class="dv">3</span>, label<span class="op">=</span><span class="st">"two equivalent minima"</span>)</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="vs">r"</span><span class="dv">$</span><span class="vs">t</span><span class="dv">$</span><span class="vs"> in </span><span class="dv">$</span><span class="kw">(</span><span class="vs">1-t</span><span class="kw">)</span><span class="ch">\,\t</span><span class="vs">heta</span><span class="dv">^</span><span class="op">*</span><span class="vs"> </span><span class="op">+</span><span class="vs"> t</span><span class="ch">\,\t</span><span class="vs">heta'</span><span class="dv">$</span><span class="vs">"</span>)<span class="op">;</span> plt.ylabel(<span class="vs">r"</span><span class="dv">$</span><span class="vs">J</span><span class="dv">$</span><span class="vs">"</span>)<span class="op">;</span> plt.legend()</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"The chord between two minima lies below the loss: not convex"</span>)<span class="op">;</span> plt.tight_layout()<span class="op">;</span> plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="00_neural_networks_mlp_files/figure-html/cell-9-output-1.png" width="573" height="311" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<ul>
+<li>A neuron is <span class="math inline">\(g(\mathbf{x}^\top\mathbf{w}+b)\)</span>; one sigmoid neuron is logistic regression.</li>
+<li>Linear models can’t solve XOR (proof); a hidden layer learns features that make the problem linearly separable.</li>
+<li>MLP forward pass: <span class="math inline">\(\mathbf{Z}^{[l]} = \mathbf{A}^{[l-1]}\mathbf{W}^{[l]} + \mathbf{b}^{[l]}\)</span>, <span class="math inline">\(\mathbf{A}^{[l]} = g^{[l]}(\mathbf{Z}^{[l]})\)</span>; parameters <span class="math inline">\(\boldsymbol{\theta} = \{\mathbf{W}^{[l]},\mathbf{b}^{[l]}\}\)</span>.</li>
+<li>Non-linear activations are essential (linear layers collapse). ReLU is the default in hidden layers; sigmoid/softmax go in the output layer.</li>
+<li>The output layer and loss come from maximum likelihood, as in the ML notes; pass logits to fused, stable losses.</li>
+<li>One hidden layer is a universal approximator, but depth is more efficient.</li>
+<li>The loss is non-convex (hidden-unit symmetry), so initialisation and optimisation matter.</li>
+</ul>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<script src="../assets/notes-nav.js"></script>
+<script src="../../slides/assets/figures.js"></script>
+<script src="../../slides/neural_networks/assets/nn-core.js"></script>
+<script src="../assets/notes-widgets.js"></script>
+<script src="../../slides/neural_networks/assets/fig-nn-intro.js"></script>
+
+
+
+
+</body></html>

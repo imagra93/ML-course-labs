@@ -1,0 +1,28 @@
+/* Extra styles for the neural-network figures inside the notes pages, on top of notes.css.
+   Lines 23-28, 34-35, 41-42 and 62-68 of slides/neural_networks/assets/nn.css, copied verbatim (step panels, chips,
+   SVG label styles, derivation grids, key-idea box). Not copied: .card/.cards (they clash with Bootstrap's .card),
+   code blocks, lab-slide and slide-layout rules. Notes-only rules are at the end. */
+.panels{background:#f5f7fb;padding:12px 18px;min-height:150px}
+.panels>[hidden]{display:none}
+.panels p{font-size:20px}
+.panels p.small{font-size:18px}
+.panels .eq{font-size:21px}
+.panels .eq.big{font-size:24px}
+.chip{display:inline-block;border:1px solid var(--blue);color:var(--blue);border-radius:12px;padding:0 10px;font-size:15px;font-weight:700;vertical-align:middle}
+.chip.o{border-color:var(--orange);color:var(--orange)} .chip.g{border-color:#548235;color:#548235}
+.fig text.w{fill:#fff}
+.fig text.mono{font-family:var(--mono);font-size:13px}
+.deriv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;align-items:center}
+.deriv .eq{font-size:20px}
+.deriv .why{font-size:16px}
+.deriv.s .eq{font-size:18px}
+/* compact key-idea box */
+.idea{background:#fff2cc;border-left:5px solid var(--gold);padding:8px 14px;font-size:19px}
+.idea b{color:#7f6000}
+
+/* ---- notes only: panel text at the size of the notes, not of a 1280 px slide ---- */
+.widget .panels{padding:10px 14px;min-height:0}
+.widget .panels p,.widget .panels li{font-size:15px;line-height:1.4}
+.widget .panels p.small{font-size:14px}
+.widget .panels .eq,.widget .deriv .eq{font-size:16px}
+.widget .idea{font-size:15px}

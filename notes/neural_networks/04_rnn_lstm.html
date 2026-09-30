@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>04 · Sequence Models: Embeddings, RNNs and LSTMs</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="04_rnn_lstm_files/libs/clipboard/clipboard.min.js"></script>
+<script src="04_rnn_lstm_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="04_rnn_lstm_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="04_rnn_lstm_files/libs/quarto-html/popper.min.js"></script>
+<script src="04_rnn_lstm_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="04_rnn_lstm_files/libs/quarto-html/anchor.min.js"></script>
+<link href="04_rnn_lstm_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="04_rnn_lstm_files/libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="04_rnn_lstm_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="04_rnn_lstm_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="04_rnn_lstm_files/libs/bootstrap/bootstrap-f6084e8f51ea63a515d0251813187206.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&amp;display=swap">
+<link rel="stylesheet" href="../assets/notes.css">
+<link rel="stylesheet" href="../assets/notes-nn.css">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#sequences-and-why-mlps-dont-fit" id="toc-sequences-and-why-mlps-dont-fit" class="nav-link active" data-scroll-target="#sequences-and-why-mlps-dont-fit">1. Sequences and why MLPs don’t fit</a></li>
+  <li><a href="#from-text-to-vectors" id="toc-from-text-to-vectors" class="nav-link" data-scroll-target="#from-text-to-vectors">2. From text to vectors</a></li>
+  <li><a href="#the-recurrent-neural-network-rnn" id="toc-the-recurrent-neural-network-rnn" class="nav-link" data-scroll-target="#the-recurrent-neural-network-rnn">3. The recurrent neural network (RNN)</a></li>
+  <li><a href="#backpropagation-through-time-and-vanishing-gradients" id="toc-backpropagation-through-time-and-vanishing-gradients" class="nav-link" data-scroll-target="#backpropagation-through-time-and-vanishing-gradients">4. Backpropagation through time and vanishing gradients</a></li>
+  <li><a href="#the-lstm" id="toc-the-lstm" class="nav-link" data-scroll-target="#the-lstm">5. The LSTM</a></li>
+  <li><a href="#the-gru" id="toc-the-gru" class="nav-link" data-scroll-target="#the-gru">6. The GRU</a></li>
+  <li><a href="#practicalities" id="toc-practicalities" class="nav-link" data-scroll-target="#practicalities">7. Practicalities</a></li>
+  <li><a href="#experiment-how-far-back-can-an-rnn-and-an-lstm-remember" id="toc-experiment-how-far-back-can-an-rnn-and-an-lstm-remember" class="nav-link" data-scroll-target="#experiment-how-far-back-can-an-rnn-and-an-lstm-remember">8. Experiment: how far back can an RNN and an LSTM remember?</a></li>
+  <li><a href="#limits-of-recurrence-attention" id="toc-limits-of-recurrence-attention" class="nav-link" data-scroll-target="#limits-of-recurrence-attention">9. Limits of recurrence → attention</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">04 · Sequence Models: Embeddings, RNNs and LSTMs</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<div id="d2c62a16" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch, torch.nn <span class="im">as</span> nn, torch.nn.functional <span class="im">as</span> F</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>plt.rcParams.update({<span class="st">"figure.dpi"</span>: <span class="dv">90</span>, <span class="st">"axes.grid"</span>: <span class="va">True</span>, <span class="st">"grid.alpha"</span>: <span class="fl">0.3</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"axes.spines.top"</span>: <span class="va">False</span>, <span class="st">"axes.spines.right"</span>: <span class="va">False</span>})</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">0</span>)<span class="op">;</span> torch.manual_seed(<span class="dv">0</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="1">
+<pre><code>&lt;torch._C.Generator at 0x7b0788dcee30&gt;</code></pre>
+</div>
+</div>
+<section id="sequences-and-why-mlps-dont-fit" class="level2">
+<h2 class="anchored" data-anchor-id="sequences-and-why-mlps-dont-fit">1. Sequences and why MLPs don’t fit</h2>
+<p>Text, audio, time series and event logs are <strong>sequences</strong> <span class="math inline">\(\mathbf{x}_1, \mathbf{x}_2, \dots, \mathbf{x}_T\)</span>. The order matters (“not good, bad” ≠ “not bad, good”), and the length <span class="math inline">\(T\)</span> varies. An MLP needs a fixed-size input and treats every position independently: it would need separate weights for “word at position 3” and “word at position 30”, even though a word means the same thing wherever it appears.</p>
+<p>A recurrent network reads the sequence one step at a time, with the <strong>same weights at every step</strong>, and keeps a <strong>hidden state</strong> <span class="math inline">\(\mathbf{h}_t\)</span> that summarises what it has read so far. This is weight sharing across time, just as a CNN shares weights across space.</p>
+</section>
+<section id="from-text-to-vectors" class="level2">
+<h2 class="anchored" data-anchor-id="from-text-to-vectors">2. From text to vectors</h2>
+<ol type="1">
+<li><strong>Tokenise</strong>: split the text into tokens (words, sub-words, characters).</li>
+<li><strong>Index</strong>: map each token to an integer in a vocabulary of size <span class="math inline">\(|V|\)</span> (plus special tokens: <code>&lt;PAD&gt;</code>, <code>&lt;UNK&gt;</code> for unknown words, <code>&lt;START&gt;</code>).</li>
+<li><strong>Embed</strong>: map each index to a dense vector <span class="math inline">\(\mathbf{x}_t = \mathbf{E}[\text{index}_t] \in\mathbb{R}^d\)</span>, where <span class="math inline">\(\mathbf{E}\in\mathbb{R}^{|V|\times d}\)</span> is a learned <strong>embedding matrix</strong> (<code>nn.Embedding</code>).</li>
+</ol>
+<p><strong>An embedding layer is a linear layer on one-hot vectors.</strong> If <span class="math inline">\(\mathbf{o}_k\in\{0,1\}^{|V|}\)</span> is the one-hot vector of token <span class="math inline">\(k\)</span>, then <span class="math inline">\(\mathbf{o}_k^\top\mathbf{E} = \mathbf{E}_{k,:}\)</span> (the product just selects row <span class="math inline">\(k\)</span>). So “looking up a row” is exactly a dense layer without bias applied to the one-hot encoding, implemented without the huge sparse multiplication. It is trained by backprop like any other weight: only the rows of the tokens present in the batch receive gradient.</p>
+<p>Why dense embeddings: one-hot vectors are huge (<span class="math inline">\(|V|\)</span> is often <span class="math inline">\(10^4\)</span>–<span class="math inline">\(10^5\)</span>) and all equally far apart (“good” is as far from “great” as from “banana”). Learned embeddings are small (<span class="math inline">\(d\sim 32\)</span>–<span class="math inline">\(1024\)</span>) and place tokens used in similar contexts close together (notebook 06).</p>
+<div id="48c00d25" class="cell" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>V, d <span class="op">=</span> <span class="dv">10</span>, <span class="dv">4</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>E <span class="op">=</span> nn.Embedding(V, d)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>idx <span class="op">=</span> torch.tensor([<span class="dv">3</span>, <span class="dv">7</span>, <span class="dv">3</span>])</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>onehot <span class="op">=</span> F.one_hot(idx, V).<span class="bu">float</span>()</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"lookup E[idx]        :</span><span class="ch">\n</span><span class="st">"</span>, E(idx).detach().numpy().<span class="bu">round</span>(<span class="dv">3</span>))</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"one-hot @ E.weight   :</span><span class="ch">\n</span><span class="st">"</span>, (onehot <span class="op">@</span> E.weight).detach().numpy().<span class="bu">round</span>(<span class="dv">3</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>lookup E[idx]        :
+ [[ 0.12   1.238  1.117 -0.247]
+ [-0.174 -0.679  0.938  0.489]
+ [ 0.12   1.238  1.117 -0.247]]
+one-hot @ E.weight   :
+ [[ 0.12   1.238  1.117 -0.247]
+ [-0.174 -0.679  0.938  0.489]
+ [ 0.12   1.238  1.117 -0.247]]</code></pre>
+</div>
+</div>
+</section>
+<section id="the-recurrent-neural-network-rnn" class="level2">
+<h2 class="anchored" data-anchor-id="the-recurrent-neural-network-rnn">3. The recurrent neural network (RNN)</h2>
+<p>With row-vector notation as in the previous notebooks (<span class="math inline">\(\mathbf{x}_t\in\mathbb{R}^{1\times d}\)</span>, <span class="math inline">\(\mathbf{h}_t\in\mathbb{R}^{1\times d_h}\)</span>):</p>
+<p><span class="math display">\[
+\mathbf{h}_t = \tanh\big(\mathbf{x}_t\mathbf{W}_x + \mathbf{h}_{t-1}\mathbf{W}_h + \mathbf{b}\big), \qquad \mathbf{h}_0 = \mathbf{0},
+\]</span></p>
+<p>with parameters <span class="math inline">\(\boldsymbol{\theta} = \{\mathbf{W}_x\in\mathbb{R}^{d\times d_h}, \mathbf{W}_h\in\mathbb{R}^{d_h\times d_h}, \mathbf{b}\}\)</span> <strong>shared by all time steps</strong>. Unrolled over time, it is a very deep feed-forward network (one layer per time step) whose layers share their weights.</p>
+<p><strong>Architectures by input/output:</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Pattern</th>
+<th>Example</th>
+<th>Output</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>many-to-one</td>
+<td>sentiment of a review (LSTM lab)</td>
+<td>a head on the last state <span class="math inline">\(\mathbf{h}_T\)</span> (or on a pooled summary)</td>
+</tr>
+<tr class="even">
+<td>many-to-many (aligned)</td>
+<td>part-of-speech tagging, per-step forecasting</td>
+<td>a head on every <span class="math inline">\(\mathbf{h}_t\)</span></td>
+</tr>
+<tr class="odd">
+<td>sequence-to-sequence</td>
+<td>translation</td>
+<td>encoder RNN → decoder RNN</td>
+</tr>
+<tr class="even">
+<td>language model</td>
+<td>next-token prediction</td>
+<td>softmax over <span class="math inline">\(\lvert V\rvert\)</span> at every step, trained with cross-entropy</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="backpropagation-through-time-and-vanishing-gradients" class="level2">
+<h2 class="anchored" data-anchor-id="backpropagation-through-time-and-vanishing-gradients">4. Backpropagation through time and vanishing gradients</h2>
+<p><strong>BPTT</strong> is ordinary backprop on the unrolled graph. Because <span class="math inline">\(\mathbf{W}_h\)</span> is used at every step, its gradient is the <strong>sum</strong> over time steps of the per-step contributions (shared weights → gradients add up, as in notebook 01).</p>
+<p>The gradient that reaches an early state is a product of Jacobians. With <span class="math inline">\(\mathbf{a}_t\)</span> the pre-activation, <span class="math inline">\(\mathbf{h}_t = \tanh(\mathbf{a}_t)\)</span>:</p>
+<p><span class="math display">\[
+\frac{\partial\mathbf{h}_t}{\partial\mathbf{h}_{t-1}} = \mathrm{diag}\big(1 - \mathbf{h}_t^2\big)\,\mathbf{W}_h^\top
+\qquad\Rightarrow\qquad
+\frac{\partial J}{\partial\mathbf{h}_k} = \frac{\partial J}{\partial\mathbf{h}_T}\prod_{t=k+1}^{T}\mathrm{diag}\big(1-\mathbf{h}_t^2\big)\mathbf{W}_h^\top
+\]</span></p>
+<p>(the order of the factors follows the chain rule). Take norms: <span class="math inline">\(\lVert\mathrm{diag}(1-\mathbf{h}_t^2)\rVert\le1\)</span>, since <span class="math inline">\(\tanh'\le1\)</span>, so</p>
+<p><span class="math display">\[
+\Big\lVert\frac{\partial J}{\partial\mathbf{h}_k}\Big\rVert \le \Big\lVert\frac{\partial J}{\partial\mathbf{h}_T}\Big\rVert\;\lVert\mathbf{W}_h\rVert^{\,T-k}.
+\]</span></p>
+<p>If <span class="math inline">\(\lVert\mathbf{W}_h\rVert &lt; 1\)</span> the signal from <span class="math inline">\(T-k\)</span> steps back shrinks <strong>exponentially</strong>: <strong>vanishing gradients</strong>. The network cannot learn that the label depends on something 50 steps ago. If the largest singular value is <span class="math inline">\(&gt;1\)</span> (and the units are not saturated), the product can blow up: <strong>exploding gradients</strong>, fixed by gradient clipping. Vanishing is the harder problem, and it is what the LSTM solves.</p>
+<div id="c3a8201f" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Norm of d h_T / d h_0 for a random tanh RNN, as a function of T and of the scale of W_h</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> jac_norm(T, scale, dh<span class="op">=</span><span class="dv">32</span>, seed<span class="op">=</span><span class="dv">0</span>):</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    g <span class="op">=</span> torch.Generator().manual_seed(seed)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    Wh <span class="op">=</span> torch.randn(dh, dh, generator<span class="op">=</span>g) <span class="op">*</span> scale <span class="op">/</span> np.sqrt(dh)     <span class="co"># spectral radius ~ scale</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    Wx <span class="op">=</span> torch.randn(<span class="dv">8</span>, dh, generator<span class="op">=</span>g) <span class="op">/</span> np.sqrt(<span class="dv">8</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    xs <span class="op">=</span> torch.randn(T, <span class="dv">1</span>, <span class="dv">8</span>, generator<span class="op">=</span>g)                            <span class="co"># random inputs x_1..x_T</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> run(h):</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> t <span class="kw">in</span> <span class="bu">range</span>(T):</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>            h <span class="op">=</span> torch.tanh(xs[t] <span class="op">@</span> Wx <span class="op">+</span> h <span class="op">@</span> Wh)</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> h</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> torch.autograd.functional.jacobian(run, torch.zeros(<span class="dv">1</span>, dh)).norm().item()</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>Ts <span class="op">=</span> [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">5</span>, <span class="dv">10</span>, <span class="dv">20</span>, <span class="dv">40</span>, <span class="dv">60</span>]</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="fl">6.5</span>, <span class="fl">3.8</span>))</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> scale <span class="kw">in</span> [<span class="fl">0.5</span>, <span class="fl">1.0</span>, <span class="fl">1.5</span>, <span class="fl">3.0</span>]:</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    plt.plot(Ts, [jac_norm(T, scale) <span class="cf">for</span> T <span class="kw">in</span> Ts], <span class="st">"o-"</span>, label<span class="op">=</span><span class="ss">f"scale of $W_h$ = </span><span class="sc">{</span>scale<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>plt.yscale(<span class="st">"log"</span>)<span class="op">;</span> plt.xlabel(<span class="st">"number of steps back $T$"</span>)<span class="op">;</span> plt.ylabel(<span class="vs">r"</span><span class="dv">$</span><span class="ch">\|</span><span class="er">\</span><span class="vs">partial h_T/</span><span class="er">\</span><span class="vs">partial h_0</span><span class="ch">\|</span><span class="dv">$</span><span class="vs">"</span>)</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Vanilla tanh RNN: the influence of old inputs vanishes or explodes"</span>)<span class="op">;</span> plt.legend()<span class="op">;</span> plt.tight_layout()<span class="op">;</span> plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="04_rnn_lstm_files/figure-html/cell-4-output-1.png" width="575" height="328" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Both failure modes appear. With small recurrent weights the influence of <span class="math inline">\(\mathbf{h}_0\)</span> on <span class="math inline">\(\mathbf{h}_T\)</span> <strong>vanishes</strong> exponentially (for scale 0.5 it underflows to 0 before <span class="math inline">\(T=60\)</span>). With large weights it <strong>explodes</strong> exponentially. Saturation of the tanh units (<span class="math inline">\(1-h_t^2\approx0\)</span>) slows the explosion but doesn’t stop it here. Only a narrow range in between keeps the signal roughly constant, and training cannot be expected to stay there. That is why gating (next section) and gradient clipping are needed.</p>
+</section>
+<section id="the-lstm" class="level2">
+<h2 class="anchored" data-anchor-id="the-lstm">5. The LSTM</h2>
+<p>The <strong>Long Short-Term Memory</strong> (Hochreiter &amp; Schmidhuber, 1997) adds a <strong>cell state</strong> <span class="math inline">\(\mathbf{c}_t\)</span>, a memory that is updated <strong>additively</strong> and controlled by <strong>gates</strong>, which are sigmoids in <span class="math inline">\((0,1)\)</span> that act as soft switches. With <span class="math inline">\([\mathbf{h}_{t-1}, \mathbf{x}_t]\)</span> the concatenation:</p>
+<p><span class="math display">\[
+\begin{aligned}
+\mathbf{f}_t &amp;= \sigma\big([\mathbf{h}_{t-1},\mathbf{x}_t]\mathbf{W}_f + \mathbf{b}_f\big) &amp;&amp; \text{forget gate: how much old memory to keep}\\
+\mathbf{i}_t &amp;= \sigma\big([\mathbf{h}_{t-1},\mathbf{x}_t]\mathbf{W}_i + \mathbf{b}_i\big) &amp;&amp; \text{input gate: how much new content to write}\\
+\tilde{\mathbf{c}}_t &amp;= \tanh\big([\mathbf{h}_{t-1},\mathbf{x}_t]\mathbf{W}_c + \mathbf{b}_c\big) &amp;&amp; \text{candidate content}\\
+\mathbf{c}_t &amp;= \mathbf{f}_t\odot\mathbf{c}_{t-1} + \mathbf{i}_t\odot\tilde{\mathbf{c}}_t &amp;&amp; \text{memory update (additive)}\\
+\mathbf{o}_t &amp;= \sigma\big([\mathbf{h}_{t-1},\mathbf{x}_t]\mathbf{W}_o + \mathbf{b}_o\big) &amp;&amp; \text{output gate: how much memory to expose}\\
+\mathbf{h}_t &amp;= \mathbf{o}_t\odot\tanh(\mathbf{c}_t)
+\end{aligned}
+\]</span></p>
+<p><strong>Why the gradient survives.</strong> Along the memory path, <span class="math display">\[
+\frac{\partial\mathbf{c}_t}{\partial\mathbf{c}_{t-1}} = \mathrm{diag}(\mathbf{f}_t) \quad(\text{plus terms through the gates}),
+\qquad
+\frac{\partial\mathbf{c}_T}{\partial\mathbf{c}_k}\approx\prod_{t=k+1}^T\mathrm{diag}(\mathbf{f}_t).
+\]</span> There is no weight matrix and no squashing derivative in this product, only the forget gates. When the network wants to remember (it has learned <span class="math inline">\(\mathbf{f}_t\approx1\)</span>), the gradient flows back almost unchanged over many steps. This is the same idea as the residual connection <span class="math inline">\(\mathbf{y} = \mathbf{x} + F(\mathbf{x})\)</span> in notebook 03: an additive path with a near-identity Jacobian. (Practical tip: initialise the forget-gate bias to a positive value, so the LSTM starts out remembering; section 8 shows how much this matters.)</p>
+<p><strong>Parameters</strong>: four gate blocks, each with a <span class="math inline">\((d_h + d)\times d_h\)</span> matrix and a bias, so <span class="math inline">\(4\big(d_h(d_h + d) + d_h\big)\)</span>. (PyTorch stores two bias vectors per gate, giving <span class="math inline">\(4d_h\)</span> more.)</p>
+</section>
+<section id="the-gru" class="level2">
+<h2 class="anchored" data-anchor-id="the-gru">6. The GRU</h2>
+<p>The <strong>Gated Recurrent Unit</strong> (Cho et al., 2014) merges the cell and hidden state and uses two gates: <span class="math display">\[
+\mathbf{z}_t = \sigma(\cdot),\quad \mathbf{r}_t = \sigma(\cdot),\quad
+\tilde{\mathbf{h}}_t = \tanh\big([\mathbf{r}_t\odot\mathbf{h}_{t-1}, \mathbf{x}_t]\mathbf{W} + \mathbf{b}\big),\quad
+\mathbf{h}_t = (1-\mathbf{z}_t)\odot\mathbf{h}_{t-1} + \mathbf{z}_t\odot\tilde{\mathbf{h}}_t .
+\]</span> It has the same additive “keep or overwrite” update with ¾ of the LSTM’s parameters. In practice the two perform similarly; the GRU is a bit faster.</p>
+</section>
+<section id="practicalities" class="level2">
+<h2 class="anchored" data-anchor-id="practicalities">7. Practicalities</h2>
+<ul>
+<li><strong>Padding and truncation.</strong> Batches need equal lengths: pad short sequences with <code>&lt;PAD&gt;</code> (index 0) and truncate long ones (the LSTM lab keeps 100 tokens). Cutting reviews at 100 words loses information: sentiment is often at the end.</li>
+<li><strong>Masking / packing.</strong> Pad tokens should not influence the result. Use <code>nn.utils.rnn.pack_padded_sequence</code>, or at least take the hidden state at each sequence’s <strong>true</strong> last position, and mask pads out of losses and pooling. Otherwise, left-pad so the real tokens come last.</li>
+<li><strong>Many-to-one heads.</strong> The last hidden state <span class="math inline">\(\mathbf{h}_T\)</span> must summarise the whole sequence, a bottleneck for long inputs. Alternatives: mean/max-pool all <span class="math inline">\(\mathbf{h}_t\)</span>, or attention pooling (notebook 05).</li>
+<li><strong>Bidirectional RNNs</strong> run one RNN left-to-right and another right-to-left and concatenate their states. Fine for classification, not for generation (the future is unknown).</li>
+<li><strong>Stacking</strong>: 2–3 layers of LSTM (<code>num_layers</code>), with dropout between layers.</li>
+<li><strong>Gradient clipping</strong> is standard for RNNs (<code>clip_grad_norm_</code>, notebook 02).</li>
+</ul>
+</section>
+<section id="experiment-how-far-back-can-an-rnn-and-an-lstm-remember" class="level2">
+<h2 class="anchored" data-anchor-id="experiment-how-far-back-can-an-rnn-and-an-lstm-remember">8. Experiment: how far back can an RNN and an LSTM remember?</h2>
+<p>Task: sequences of <span class="math inline">\(T\)</span> random tokens from a vocabulary of 20. The label is 1 if the <strong>first</strong> token is one of tokens 0–9; every later token is noise. The model reads the whole sequence and classifies from its <strong>last</strong> hidden state, so it must carry one bit of information across <span class="math inline">\(T-1\)</span> irrelevant steps. Chance is 50 %. Every training step draws a fresh batch (unlimited data, so we measure memory, not overfitting). Every model gets the same budget of 800 steps.</p>
+<p>We compare a vanilla RNN, an LSTM with PyTorch’s default initialisation, and an LSTM whose <strong>forget-gate bias starts at 5</strong> (<span class="math inline">\(f_t\approx\sigma(5)\approx0.993\)</span> at the start). Section 5 predicts that the gradient through the memory is <span class="math inline">\(\prod_t f_t\)</span>. With the default init <span class="math inline">\(f_t\approx0.5\)</span> and <span class="math inline">\(0.5^{50}\approx10^{-15}\)</span>, while <span class="math inline">\(0.993^{100}\approx0.5\)</span>.</p>
+<div id="4819e034" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SeqClassifier(nn.Module):</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, cell, V<span class="op">=</span><span class="dv">20</span>, d<span class="op">=</span><span class="dv">16</span>, dh<span class="op">=</span><span class="dv">32</span>, forget_bias<span class="op">=</span><span class="va">None</span>):</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.emb <span class="op">=</span> nn.Embedding(V, d)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.rnn <span class="op">=</span> nn.LSTM(d, dh, batch_first<span class="op">=</span><span class="va">True</span>) <span class="cf">if</span> cell <span class="op">==</span> <span class="st">"LSTM"</span> <span class="cf">else</span> nn.RNN(d, dh, batch_first<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> forget_bias <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span>:              <span class="co"># PyTorch gate order: input, forget, cell, output</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>            <span class="cf">with</span> torch.no_grad():</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>                <span class="va">self</span>.rnn.bias_ih_l0[dh:<span class="dv">2</span> <span class="op">*</span> dh].fill_(forget_bias)<span class="op">;</span> <span class="va">self</span>.rnn.bias_hh_l0[dh:<span class="dv">2</span> <span class="op">*</span> dh].fill_(<span class="fl">0.0</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.head <span class="op">=</span> nn.Linear(dh, <span class="dv">1</span>)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> forward(<span class="va">self</span>, tokens):                   <span class="co"># tokens: (B, T)</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>        out, _ <span class="op">=</span> <span class="va">self</span>.rnn(<span class="va">self</span>.emb(tokens))      <span class="co"># out: (B, T, dh)</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.head(out[:, <span class="op">-</span><span class="dv">1</span>]).squeeze(<span class="op">-</span><span class="dv">1</span>) <span class="co"># many-to-one: last hidden state -&gt; logit</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> batch(n, T, g):</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    x <span class="op">=</span> torch.randint(<span class="dv">0</span>, <span class="dv">20</span>, (n, T), generator<span class="op">=</span>g)</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> x, (x[:, <span class="dv">0</span>] <span class="op">&lt;</span> <span class="dv">10</span>).<span class="bu">float</span>()</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> train_and_test(cell, T, forget_bias<span class="op">=</span><span class="va">None</span>, steps<span class="op">=</span><span class="dv">800</span>, seed<span class="op">=</span><span class="dv">0</span>):</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>    torch.manual_seed(seed)<span class="op">;</span> g <span class="op">=</span> torch.Generator().manual_seed(seed)</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>    model <span class="op">=</span> SeqClassifier(cell, forget_bias<span class="op">=</span>forget_bias)<span class="op">;</span> opt <span class="op">=</span> torch.optim.Adam(model.parameters(), lr<span class="op">=</span><span class="fl">3e-3</span>)</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(steps):</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>        xb, yb <span class="op">=</span> batch(<span class="dv">64</span>, T, g)</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>        opt.zero_grad()<span class="op">;</span> F.binary_cross_entropy_with_logits(model(xb), yb).backward()</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>        nn.utils.clip_grad_norm_(model.parameters(), <span class="fl">1.0</span>)<span class="op">;</span> opt.step()</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>    Xte, yte <span class="op">=</span> batch(<span class="dv">2000</span>, T, torch.Generator().manual_seed(<span class="dv">999</span>))</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> torch.no_grad():</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> ((model(Xte) <span class="op">&gt;</span> <span class="dv">0</span>).<span class="bu">float</span>() <span class="op">==</span> yte).<span class="bu">float</span>().mean().item()</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>torch.set_num_threads(<span class="dv">4</span>)</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>lengths <span class="op">=</span> [<span class="dv">5</span>, <span class="dv">10</span>, <span class="dv">25</span>, <span class="dv">50</span>, <span class="dv">100</span>]</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>configs <span class="op">=</span> {<span class="st">"RNN"</span>: (<span class="st">"RNN"</span>, <span class="va">None</span>), <span class="st">"LSTM (default init)"</span>: (<span class="st">"LSTM"</span>, <span class="va">None</span>), <span class="st">"LSTM (forget bias = 5)"</span>: (<span class="st">"LSTM"</span>, <span class="fl">5.0</span>)}</span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>res <span class="op">=</span> {name: [train_and_test(cell, T, fb) <span class="cf">for</span> T <span class="kw">in</span> lengths] <span class="cf">for</span> name, (cell, fb) <span class="kw">in</span> configs.items()}</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="fl">6.5</span>, <span class="fl">3.8</span>))</span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, accs <span class="kw">in</span> res.items(): plt.plot(lengths, accs, <span class="st">"o-"</span>, lw<span class="op">=</span><span class="dv">2</span>, label<span class="op">=</span>name)</span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>plt.axhline(<span class="fl">0.5</span>, color<span class="op">=</span><span class="st">"k"</span>, ls<span class="op">=</span><span class="st">":"</span>, label<span class="op">=</span><span class="st">"chance"</span>)</span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>plt.xscale(<span class="st">"log"</span>)<span class="op">;</span> plt.xlabel(<span class="st">"sequence length $T$ (distance to the relevant token)"</span>)<span class="op">;</span> plt.ylabel(<span class="st">"test accuracy"</span>)</span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Remembering the first token (800 training steps)"</span>)<span class="op">;</span> plt.legend()<span class="op">;</span> plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, accs <span class="kw">in</span> res.items(): <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>name<span class="sc">:&gt;24}</span><span class="ss">:"</span>, <span class="st">"  "</span>.join(<span class="ss">f"T=</span><span class="sc">{</span>T<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>a<span class="sc">:.2f}</span><span class="ss">"</span> <span class="cf">for</span> T, a <span class="kw">in</span> <span class="bu">zip</span>(lengths, accs)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="04_rnn_lstm_files/figure-html/cell-5-output-1.png" width="574" height="326" class="figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                     RNN: T=5: 1.00  T=10: 1.00  T=25: 0.50  T=50: 0.52  T=100: 0.51
+     LSTM (default init): T=5: 1.00  T=10: 1.00  T=25: 0.50  T=50: 0.52  T=100: 0.53
+  LSTM (forget bias = 5): T=5: 1.00  T=10: 1.00  T=25: 1.00  T=50: 1.00  T=100: 1.00</code></pre>
+</div>
+</div>
+<p>With the same 800 steps, the vanilla RNN and the default-initialised LSTM both drop to chance once the relevant token is 25 or more steps back. The LSTM whose forget gates start <strong>open</strong> solves every length up to 100. That is section 5 made concrete: the LSTM <em>can</em> carry gradient over long ranges, but only if <span class="math inline">\(\prod_t f_t\)</span> is not tiny. With the default init (<span class="math inline">\(f_t\approx0.5\)</span>) it is as badly off as the RNN until it slowly learns to open the gate, which takes more than this budget. With the gate starting near 1, the gradient reaches the first token from step one.</p>
+<p>Practical lessons: initialise LSTM forget-gate biases to a positive value (1 is the classic recommendation; larger for very long dependencies), and remember that “the architecture can represent it” is not the same as “gradient descent will find it quickly”.</p>
+</section>
+<section id="limits-of-recurrence-attention" class="level2">
+<h2 class="anchored" data-anchor-id="limits-of-recurrence-attention">9. Limits of recurrence → attention</h2>
+<p>Even LSTMs have two structural limits: 1. <strong>Bottleneck</strong>: everything must pass through a fixed-size state; in a many-to-one or encoder–decoder model, early information must survive many updates. 2. <strong>Sequential computation</strong>: <span class="math inline">\(\mathbf{h}_t\)</span> needs <span class="math inline">\(\mathbf{h}_{t-1}\)</span>, so the <span class="math inline">\(T\)</span> steps can’t be computed in parallel. Training on long sequences is slow on GPUs.</p>
+<p><strong>Attention</strong> lets every position look directly at every other position, with a path of length 1 between any two tokens, all in parallel. Transformers (notebook 05) are built from attention alone and have largely replaced RNNs for text.</p>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<ul>
+<li>Text → tokens → indices → embeddings; an embedding is a linear layer on one-hot vectors, learned by backprop.</li>
+<li>RNN: <span class="math inline">\(\mathbf{h}_t = \tanh(\mathbf{x}_t\mathbf{W}_x + \mathbf{h}_{t-1}\mathbf{W}_h + \mathbf{b})\)</span>, weights shared across time; trained by BPTT.</li>
+<li>Gradients to old steps are products of <span class="math inline">\(\mathrm{diag}(1-\mathbf{h}^2)\mathbf{W}_h^\top\)</span>, which vanish (or explode) exponentially with distance.</li>
+<li>LSTM/GRU: gated, <strong>additive</strong> memory; <span class="math inline">\(\partial\mathbf{c}_t/\partial\mathbf{c}_{t-1}\approx\mathrm{diag}(\mathbf{f}_t)\)</span> lets gradients flow over long ranges (same idea as residual connections).</li>
+<li>In practice: pad/truncate and mask, pick a sensible many-to-one head, clip gradients.</li>
+<li>Recurrence is sequential and has a state bottleneck; attention removes both.</li>
+</ul>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<script src="../assets/notes-nav.js"></script>
+<script src="../../slides/assets/figures.js"></script>
+<script src="../../slides/neural_networks/assets/nn-core.js"></script>
+<script src="../assets/notes-widgets.js"></script>
+<script src="../../slides/neural_networks/assets/fig-nn-rnn.js"></script>
+
+
+
+
+</body></html>

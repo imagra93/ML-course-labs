@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>02 · Training Neural Networks: Optimisation and Regularisation</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="02_training_optimization_regularization_files/libs/clipboard/clipboard.min.js"></script>
+<script src="02_training_optimization_regularization_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="02_training_optimization_regularization_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="02_training_optimization_regularization_files/libs/quarto-html/popper.min.js"></script>
+<script src="02_training_optimization_regularization_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="02_training_optimization_regularization_files/libs/quarto-html/anchor.min.js"></script>
+<link href="02_training_optimization_regularization_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="02_training_optimization_regularization_files/libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="02_training_optimization_regularization_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="02_training_optimization_regularization_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="02_training_optimization_regularization_files/libs/bootstrap/bootstrap-f6084e8f51ea63a515d0251813187206.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&amp;display=swap">
+<link rel="stylesheet" href="../assets/notes.css">
+<link rel="stylesheet" href="../assets/notes-nn.css">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#mini-batch-stochastic-gradient-descent" id="toc-mini-batch-stochastic-gradient-descent" class="nav-link active" data-scroll-target="#mini-batch-stochastic-gradient-descent">1. Mini-batch stochastic gradient descent</a></li>
+  <li><a href="#momentum" id="toc-momentum" class="nav-link" data-scroll-target="#momentum">2. Momentum</a></li>
+  <li><a href="#rmsprop-and-adam" id="toc-rmsprop-and-adam" class="nav-link" data-scroll-target="#rmsprop-and-adam">3. RMSProp and Adam</a></li>
+  <li><a href="#learning-rate-schedules" id="toc-learning-rate-schedules" class="nav-link" data-scroll-target="#learning-rate-schedules">4. Learning-rate schedules</a></li>
+  <li><a href="#the-pytorch-training-loop" id="toc-the-pytorch-training-loop" class="nav-link" data-scroll-target="#the-pytorch-training-loop">5. The PyTorch training loop</a></li>
+  <li><a href="#reading-learning-curves" id="toc-reading-learning-curves" class="nav-link" data-scroll-target="#reading-learning-curves">6. Reading learning curves</a></li>
+  <li><a href="#regularisation" id="toc-regularisation" class="nav-link" data-scroll-target="#regularisation">7. Regularisation</a>
+  <ul class="collapse">
+  <li><a href="#weight-decay-l2" id="toc-weight-decay-l2" class="nav-link" data-scroll-target="#weight-decay-l2">7.1 Weight decay (L2)</a></li>
+  <li><a href="#dropout" id="toc-dropout" class="nav-link" data-scroll-target="#dropout">7.2 Dropout</a></li>
+  <li><a href="#data-augmentation" id="toc-data-augmentation" class="nav-link" data-scroll-target="#data-augmentation">7.3 Data augmentation</a></li>
+  <li><a href="#early-stopping" id="toc-early-stopping" class="nav-link" data-scroll-target="#early-stopping">7.4 Early stopping</a></li>
+  </ul></li>
+  <li><a href="#normalisation-layers" id="toc-normalisation-layers" class="nav-link" data-scroll-target="#normalisation-layers">8. Normalisation layers</a></li>
+  <li><a href="#gradient-clipping-and-other-practicalities" id="toc-gradient-clipping-and-other-practicalities" class="nav-link" data-scroll-target="#gradient-clipping-and-other-practicalities">9. Gradient clipping and other practicalities</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">02 · Training Neural Networks: Optimisation and Regularisation</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>Backprop gives the gradient. This notebook covers everything else needed to train a network well: how to use the gradient (SGD, momentum, Adam, learning-rate schedules), the standard PyTorch training loop, and how to stop the network from memorising the training set (weight decay, dropout, augmentation, early stopping, normalisation).</p>
+<div id="2eedad8e" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch, torch.nn <span class="im">as</span> nn</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>plt.rcParams.update({<span class="st">"figure.dpi"</span>: <span class="dv">90</span>, <span class="st">"axes.grid"</span>: <span class="va">True</span>, <span class="st">"grid.alpha"</span>: <span class="fl">0.3</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"axes.spines.top"</span>: <span class="va">False</span>, <span class="st">"axes.spines.right"</span>: <span class="va">False</span>})</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">0</span>)<span class="op">;</span> torch.manual_seed(<span class="dv">0</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display" data-execution_count="1">
+<pre><code>&lt;torch._C.Generator at 0x727a713cee10&gt;</code></pre>
+</div>
+</div>
+<section id="mini-batch-stochastic-gradient-descent" class="level2">
+<h2 class="anchored" data-anchor-id="mini-batch-stochastic-gradient-descent">1. Mini-batch stochastic gradient descent</h2>
+<p>The loss is an average over examples, <span class="math inline">\(J(\boldsymbol{\theta}) = \frac1m\sum_{i=1}^m\ell^{(i)}(\boldsymbol{\theta})\)</span>, so its gradient is an average of per-example gradients. For large <span class="math inline">\(m\)</span> one exact gradient is expensive. Instead, at each step pick a random <strong>mini-batch</strong> <span class="math inline">\(\mathcal{B}\)</span> of size <span class="math inline">\(B\)</span> and use</p>
+<p><span class="math display">\[
+\mathbf{g} = \frac{1}{B}\sum_{i\in\mathcal{B}}\nabla_{\boldsymbol{\theta}}\ell^{(i)}(\boldsymbol{\theta}), \qquad \boldsymbol{\theta}\leftarrow\boldsymbol{\theta} - \alpha\,\mathbf{g}.
+\]</span></p>
+<p><strong>It is an unbiased estimate.</strong> If the batch is drawn uniformly, each example appears with the same probability, so <span class="math inline">\(\mathbb{E}[\mathbf{g}] = \frac1m\sum_i\nabla\ell^{(i)} = \nabla J\)</span>. On average we move in the right direction.</p>
+<p><strong>Its noise shrinks with <span class="math inline">\(B\)</span>.</strong> For i.i.d. draws, <span class="math inline">\(\mathrm{Cov}(\mathbf{g}) = \frac{1}{B}\mathrm{Cov}(\nabla\ell^{(i)})\)</span>, so the standard deviation falls like <span class="math inline">\(1/\sqrt{B}\)</span>. Doubling the batch halves the variance but doubles the cost per step.</p>
+<p><strong>Vocabulary.</strong> One <strong>iteration</strong> = one mini-batch update. One <strong>epoch</strong> = one pass over the training set = <span class="math inline">\(\lceil m/B\rceil\)</span> iterations (shuffle each epoch).</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Batch size</th>
+<th>Pros</th>
+<th>Cons</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\(B = m\)</span> (full batch)</td>
+<td>exact gradient, smooth curve</td>
+<td>very expensive per step, doesn’t fit in memory</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(B = 1\)</span> (pure SGD)</td>
+<td>cheapest step</td>
+<td>very noisy, can’t use vectorised hardware</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(B = 32\)</span>–<span class="math inline">\(512\)</span> (mini-batch)</td>
+<td>GPU-efficient, noise helps escape saddles/sharp minima</td>
+<td>the usual choice</td>
+</tr>
+</tbody>
+</table>
+<p>Because of the noise, SGD with a constant <span class="math inline">\(\alpha\)</span> does not converge to a point but hovers around a minimum. Decaying <span class="math inline">\(\alpha\)</span> fixes this (section 4).</p>
+</section>
+<section id="momentum" class="level2">
+<h2 class="anchored" data-anchor-id="momentum">2. Momentum</h2>
+<p>Plain gradient descent zig-zags in long, narrow valleys (ill-conditioning, ML notes 01). <strong>Momentum</strong> keeps a running velocity:</p>
+<p><span class="math display">\[
+\mathbf{v}\leftarrow\beta\,\mathbf{v} + \mathbf{g}, \qquad \boldsymbol{\theta}\leftarrow\boldsymbol{\theta} - \alpha\,\mathbf{v}, \qquad \beta\approx 0.9 .
+\]</span></p>
+<p>Unrolling, <span class="math inline">\(\mathbf{v}_t = \sum_{k\le t}\beta^{t-k}\mathbf{g}_k\)</span> is an exponentially weighted sum of past gradients. Components that keep the same sign (the valley floor direction) add up, to about <span class="math inline">\(\frac{1}{1-\beta} = 10\times\)</span> for <span class="math inline">\(\beta = 0.9\)</span>. Components that alternate sign (across the valley) cancel. Result: faster along the valley, less zig-zag.</p>
+</section>
+<section id="rmsprop-and-adam" class="level2">
+<h2 class="anchored" data-anchor-id="rmsprop-and-adam">3. RMSProp and Adam</h2>
+<p><strong>RMSProp</strong> divides each parameter’s step by a running root-mean-square of its gradient, so that every parameter moves at a similar rate regardless of its gradient scale: <span class="math display">\[
+\mathbf{s}\leftarrow\beta_2\mathbf{s} + (1-\beta_2)\,\mathbf{g}\odot\mathbf{g}, \qquad \boldsymbol{\theta}\leftarrow\boldsymbol{\theta} - \alpha\,\frac{\mathbf{g}}{\sqrt{\mathbf{s}} + \varepsilon}.
+\]</span></p>
+<p><strong>Adam</strong> = momentum (first moment) + RMSProp (second moment) + bias correction: <span class="math display">\[
+\mathbf{m}_t = \beta_1\mathbf{m}_{t-1} + (1-\beta_1)\mathbf{g}_t, \quad
+\mathbf{s}_t = \beta_2\mathbf{s}_{t-1} + (1-\beta_2)\mathbf{g}_t^2, \quad
+\hat{\mathbf{m}}_t = \frac{\mathbf{m}_t}{1-\beta_1^t}, \quad
+\hat{\mathbf{s}}_t = \frac{\mathbf{s}_t}{1-\beta_2^t}, \quad
+\boldsymbol{\theta}_t = \boldsymbol{\theta}_{t-1} - \alpha\,\frac{\hat{\mathbf{m}}_t}{\sqrt{\hat{\mathbf{s}}_t} + \varepsilon}
+\]</span> with defaults <span class="math inline">\(\beta_1 = 0.9\)</span>, <span class="math inline">\(\beta_2 = 0.999\)</span>, <span class="math inline">\(\varepsilon = 10^{-8}\)</span>, <span class="math inline">\(\alpha = 10^{-3}\)</span>.</p>
+<p><strong>Why the bias correction?</strong> Both averages start at 0, so early on they are biased towards 0. Unrolling with <span class="math inline">\(\mathbf{m}_0 = 0\)</span>: <span class="math inline">\(\mathbf{m}_t = (1-\beta_1)\sum_{k=1}^t\beta_1^{t-k}\mathbf{g}_k\)</span>. If the gradients have a constant mean <span class="math inline">\(\mathbb{E}[\mathbf{g}]\)</span>, then <span class="math inline">\(\mathbb{E}[\mathbf{m}_t] = (1-\beta_1)\frac{1-\beta_1^t}{1-\beta_1}\mathbb{E}[\mathbf{g}] = (1-\beta_1^t)\,\mathbb{E}[\mathbf{g}]\)</span> (geometric series). Dividing by <span class="math inline">\(1-\beta_1^t\)</span> removes the bias. The same argument applies to <span class="math inline">\(\mathbf{s}_t\)</span>.</p>
+<p><strong>Properties.</strong> The step size is roughly <span class="math inline">\(\alpha\)</span> per parameter whatever the gradient’s scale, so Adam is robust to poor scaling and needs little tuning. It is the default for most deep-learning work (transformers in particular). SGD + momentum is still common for CNNs and sometimes generalises slightly better.</p>
+<div id="153976bd" class="cell" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Optimisers on an ill-conditioned quadratic J = 0.5*(a*t1^2 + b*t2^2)</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>a_, b_ <span class="op">=</span> <span class="fl">1.0</span>, <span class="fl">25.0</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>grad <span class="op">=</span> <span class="kw">lambda</span> t: np.array([a_ <span class="op">*</span> t[<span class="dv">0</span>], b_ <span class="op">*</span> t[<span class="dv">1</span>]])</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> run(step_fn, T<span class="op">=</span><span class="dv">60</span>):</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>    t, state, path <span class="op">=</span> np.array([<span class="op">-</span><span class="fl">4.0</span>, <span class="fl">1.5</span>]), {}, []</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">1</span>, T <span class="op">+</span> <span class="dv">1</span>):</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>        path.append(t.copy())<span class="op">;</span> t <span class="op">=</span> step_fn(t, grad(t), state, k)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.array(path)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> gd(t, g, s, k, lr<span class="op">=</span><span class="fl">0.075</span>): <span class="cf">return</span> t <span class="op">-</span> lr <span class="op">*</span> g</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> momentum(t, g, s, k, lr<span class="op">=</span><span class="fl">0.05</span>, beta<span class="op">=</span><span class="fl">0.6</span>):</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    s[<span class="st">"v"</span>] <span class="op">=</span> beta <span class="op">*</span> s.get(<span class="st">"v"</span>, <span class="dv">0</span>) <span class="op">+</span> g<span class="op">;</span> <span class="cf">return</span> t <span class="op">-</span> lr <span class="op">*</span> s[<span class="st">"v"</span>]</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> adam(t, g, s, k, lr<span class="op">=</span><span class="fl">0.3</span>, b1<span class="op">=</span><span class="fl">0.9</span>, b2<span class="op">=</span><span class="fl">0.999</span>, eps<span class="op">=</span><span class="fl">1e-8</span>):</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    s[<span class="st">"m"</span>] <span class="op">=</span> b1 <span class="op">*</span> s.get(<span class="st">"m"</span>, <span class="dv">0</span>) <span class="op">+</span> (<span class="dv">1</span> <span class="op">-</span> b1) <span class="op">*</span> g<span class="op">;</span> s[<span class="st">"s"</span>] <span class="op">=</span> b2 <span class="op">*</span> s.get(<span class="st">"s"</span>, <span class="dv">0</span>) <span class="op">+</span> (<span class="dv">1</span> <span class="op">-</span> b2) <span class="op">*</span> g <span class="op">*</span> g</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    mh, sh <span class="op">=</span> s[<span class="st">"m"</span>] <span class="op">/</span> (<span class="dv">1</span> <span class="op">-</span> b1 <span class="op">**</span> k), s[<span class="st">"s"</span>] <span class="op">/</span> (<span class="dv">1</span> <span class="op">-</span> b2 <span class="op">**</span> k)<span class="op">;</span> <span class="cf">return</span> t <span class="op">-</span> lr <span class="op">*</span> mh <span class="op">/</span> (np.sqrt(sh) <span class="op">+</span> eps)</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>T1, T2 <span class="op">=</span> np.meshgrid(np.linspace(<span class="op">-</span><span class="fl">4.5</span>, <span class="fl">1.5</span>, <span class="dv">200</span>), np.linspace(<span class="op">-</span><span class="fl">1.8</span>, <span class="fl">1.8</span>, <span class="dv">200</span>))</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">4</span>))</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>plt.contour(T1, T2, <span class="fl">0.5</span> <span class="op">*</span> (a_ <span class="op">*</span> T1 <span class="op">**</span> <span class="dv">2</span> <span class="op">+</span> b_ <span class="op">*</span> T2 <span class="op">**</span> <span class="dv">2</span>), levels<span class="op">=</span>np.logspace(<span class="op">-</span><span class="dv">2</span>, <span class="fl">1.7</span>, <span class="dv">15</span>), cmap<span class="op">=</span><span class="st">"viridis"</span>, alpha<span class="op">=</span><span class="fl">0.6</span>)</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> fn, name <span class="kw">in</span> [(gd, <span class="st">"gradient descent"</span>), (momentum, <span class="st">"momentum β=0.6"</span>), (adam, <span class="st">"Adam"</span>)]:</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    p <span class="op">=</span> run(fn)<span class="op">;</span> plt.plot(p[:, <span class="dv">0</span>], p[:, <span class="dv">1</span>], <span class="st">".-"</span>, ms<span class="op">=</span><span class="dv">4</span>, label<span class="op">=</span>name)</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>plt.plot(<span class="dv">0</span>, <span class="dv">0</span>, <span class="st">"k*"</span>, ms<span class="op">=</span><span class="dv">12</span>)<span class="op">;</span> plt.legend()<span class="op">;</span> plt.xlabel(<span class="vs">r"</span><span class="dv">$</span><span class="ch">\t</span><span class="vs">heta_1</span><span class="dv">$</span><span class="vs">"</span>)<span class="op">;</span> plt.ylabel(<span class="vs">r"</span><span class="dv">$</span><span class="ch">\t</span><span class="vs">heta_2</span><span class="dv">$</span><span class="vs">"</span>)</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"60 steps on an elongated bowl (condition number 25)"</span>)<span class="op">;</span> plt.tight_layout()<span class="op">;</span> plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="02_training_optimization_regularization_files/figure-html/cell-3-output-1.png" width="708" height="346" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Gradient descent zig-zags across the narrow direction and crawls along the long one. Momentum damps the zig-zag and reaches the minimum. Too much momentum (e.g.&nbsp;β = 0.9 on this small problem) overshoots and spirals, so α and β are tuned together. Adam rescales both directions to a similar step size, so it moves diagonally without zig-zagging; its momentum makes it overshoot a little before settling.</p>
+</section>
+<section id="learning-rate-schedules" class="level2">
+<h2 class="anchored" data-anchor-id="learning-rate-schedules">4. Learning-rate schedules</h2>
+<p>The learning rate is the most important hyperparameter. Too high → loss diverges or oscillates; too low → slow, may stall on plateaus. Common practice is to <strong>start high and decay</strong>:</p>
+<ul>
+<li><strong>Step decay</strong>: multiply by 0.1 every <span class="math inline">\(k\)</span> epochs.</li>
+<li><strong>Cosine decay</strong>: <span class="math inline">\(\alpha_t = \alpha_{\min} + \frac12(\alpha_{\max} - \alpha_{\min})(1 + \cos(\pi t/T))\)</span>.</li>
+<li><strong>Warm-up</strong>: increase linearly from ~0 for the first few hundred steps (important for Adam and transformers, whose early second-moment estimates are poor).</li>
+<li><strong>ReduceLROnPlateau</strong>: halve <span class="math inline">\(\alpha\)</span> when the validation loss stops improving (used in the face labs).</li>
+</ul>
+<p>In PyTorch: <code>torch.optim.lr_scheduler.*</code>, called with <code>scheduler.step()</code> once per epoch (or per step).</p>
+</section>
+<section id="the-pytorch-training-loop" class="level2">
+<h2 class="anchored" data-anchor-id="the-pytorch-training-loop">5. The PyTorch training loop</h2>
+<p>Running example: the scikit-learn <strong>digits</strong> dataset (1,797 greyscale 8×8 images, 10 classes). It is small enough to train in seconds on a CPU. We deliberately train on only 500 images so that overfitting is visible.</p>
+<div id="a4ca649f" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.datasets <span class="im">import</span> load_digits</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> train_test_split</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> torch.utils.data <span class="im">import</span> TensorDataset, DataLoader</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>digits <span class="op">=</span> load_digits()</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>Xd <span class="op">=</span> (digits.data <span class="op">/</span> <span class="fl">16.0</span>).astype(np.float32)<span class="op">;</span> yd <span class="op">=</span> digits.target</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>X_tr, X_rest, y_tr, y_rest <span class="op">=</span> train_test_split(Xd, yd, train_size<span class="op">=</span><span class="dv">500</span>, stratify<span class="op">=</span>yd, random_state<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>X_va, X_te, y_va, y_te <span class="op">=</span> train_test_split(X_rest, y_rest, test_size<span class="op">=</span><span class="fl">0.5</span>, stratify<span class="op">=</span>y_rest, random_state<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>to_ds <span class="op">=</span> <span class="kw">lambda</span> X, y: TensorDataset(torch.tensor(X), torch.tensor(y))</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>train_loader <span class="op">=</span> DataLoader(to_ds(X_tr, y_tr), batch_size<span class="op">=</span><span class="dv">32</span>, shuffle<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>val_loader <span class="op">=</span> DataLoader(to_ds(X_va, y_va), batch_size<span class="op">=</span><span class="dv">256</span>)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"train </span><span class="sc">{</span><span class="bu">len</span>(y_tr)<span class="sc">}</span><span class="ss">, validation </span><span class="sc">{</span><span class="bu">len</span>(y_va)<span class="sc">}</span><span class="ss">, test </span><span class="sc">{</span><span class="bu">len</span>(y_te)<span class="sc">}</span><span class="ss">; input dim </span><span class="sc">{</span>Xd<span class="sc">.</span>shape[<span class="dv">1</span>]<span class="sc">}</span><span class="ss">, 10 classes"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>train 500, validation 648, test 649; input dim 64, 10 classes</code></pre>
+</div>
+</div>
+<div id="560ee2fc" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> make_mlp(p_drop<span class="op">=</span><span class="fl">0.0</span>):</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> nn.Sequential(nn.Linear(<span class="dv">64</span>, <span class="dv">256</span>), nn.ReLU(), nn.Dropout(p_drop),</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>                         nn.Linear(<span class="dv">256</span>, <span class="dv">256</span>), nn.ReLU(), nn.Dropout(p_drop),</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>                         nn.Linear(<span class="dv">256</span>, <span class="dv">10</span>))                    <span class="co"># logits: CrossEntropyLoss applies log-softmax</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> evaluate(model, loader, loss_fn):</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    model.<span class="bu">eval</span>()                                   <span class="co"># dropout off, batch-norm uses running statistics</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    total_loss, correct, n <span class="op">=</span> <span class="fl">0.0</span>, <span class="dv">0</span>, <span class="dv">0</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> torch.no_grad():                          <span class="co"># no graph: faster, less memory</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> xb, yb <span class="kw">in</span> loader:</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>            out <span class="op">=</span> model(xb)</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>            total_loss <span class="op">+=</span> loss_fn(out, yb).item() <span class="op">*</span> <span class="bu">len</span>(yb)      <span class="co"># weight by batch size</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>            correct <span class="op">+=</span> (out.argmax(<span class="dv">1</span>) <span class="op">==</span> yb).<span class="bu">sum</span>().item()<span class="op">;</span> n <span class="op">+=</span> <span class="bu">len</span>(yb)</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> total_loss <span class="op">/</span> n, correct <span class="op">/</span> n</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> train(model, optimizer, epochs<span class="op">=</span><span class="dv">150</span>, patience<span class="op">=</span><span class="va">None</span>):</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    loss_fn <span class="op">=</span> nn.CrossEntropyLoss()</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>    hist <span class="op">=</span> {<span class="st">"train_loss"</span>: [], <span class="st">"val_loss"</span>: [], <span class="st">"val_acc"</span>: []}</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>    best, best_state, wait <span class="op">=</span> np.inf, <span class="va">None</span>, <span class="dv">0</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> epoch <span class="kw">in</span> <span class="bu">range</span>(epochs):</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>        model.train()                              <span class="co"># dropout on</span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>        run_loss, n <span class="op">=</span> <span class="fl">0.0</span>, <span class="dv">0</span></span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> xb, yb <span class="kw">in</span> train_loader:</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>            optimizer.zero_grad()                  <span class="co"># 1. reset accumulated gradients</span></span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>            loss <span class="op">=</span> loss_fn(model(xb), yb)          <span class="co"># 2. forward pass + loss</span></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>            loss.backward()                        <span class="co"># 3. backprop</span></span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>            optimizer.step()                       <span class="co"># 4. parameter update</span></span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>            run_loss <span class="op">+=</span> loss.item() <span class="op">*</span> <span class="bu">len</span>(yb)<span class="op">;</span> n <span class="op">+=</span> <span class="bu">len</span>(yb)</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>        vl, va <span class="op">=</span> evaluate(model, val_loader, loss_fn)</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>        hist[<span class="st">"train_loss"</span>].append(run_loss <span class="op">/</span> n)<span class="op">;</span> hist[<span class="st">"val_loss"</span>].append(vl)<span class="op">;</span> hist[<span class="st">"val_acc"</span>].append(va)</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> vl <span class="op">&lt;</span> best:                              <span class="co"># keep the best weights (checkpoint)</span></span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>            best, wait <span class="op">=</span> vl, <span class="dv">0</span><span class="op">;</span> best_state <span class="op">=</span> {k: v.clone() <span class="cf">for</span> k, v <span class="kw">in</span> model.state_dict().items()}</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>        <span class="cf">else</span>:</span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>            wait <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> patience <span class="kw">is</span> <span class="kw">not</span> <span class="va">None</span> <span class="kw">and</span> wait <span class="op">&gt;=</span> patience:</span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>                <span class="cf">break</span>                              <span class="co"># early stopping</span></span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> hist, best_state</span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a>torch.manual_seed(<span class="dv">0</span>)</span>
+<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> make_mlp()</span>
+<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a>hist_plain, _ <span class="op">=</span> train(model, torch.optim.Adam(model.parameters(), lr<span class="op">=</span><span class="fl">1e-3</span>))</span>
+<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"final: train loss </span><span class="sc">{</span>hist_plain[<span class="st">'train_loss'</span>][<span class="op">-</span><span class="dv">1</span>]<span class="sc">:.4f}</span><span class="ss">, val loss </span><span class="sc">{</span>hist_plain[<span class="st">'val_loss'</span>][<span class="op">-</span><span class="dv">1</span>]<span class="sc">:.3f}</span><span class="ss">, val acc </span><span class="sc">{</span>hist_plain[<span class="st">'val_acc'</span>][<span class="op">-</span><span class="dv">1</span>]<span class="sc">:.3f}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>final: train loss 0.0003, val loss 0.221, val acc 0.957</code></pre>
+</div>
+</div>
+<p><strong>The five lines that every loop has</strong>: <code>zero_grad()</code> → forward → loss → <code>backward()</code> → <code>step()</code>. Plus the two modes: <code>model.train()</code> for training and <code>model.eval()</code> + <code>torch.no_grad()</code> for evaluation. Frameworks like <strong>PyTorch Lightning</strong> (face lab) write this loop, the device handling, checkpointing and early stopping for you, but it is the same loop.</p>
+<p><strong>Averaging metrics over an epoch.</strong> Weight each batch by its size (the last batch is usually smaller). For non-linear metrics, don’t average per-batch values: <span class="math inline">\(\frac1B\sum_b\sqrt{\mathrm{MSE}_b} \le \sqrt{\frac1B\sum_b\mathrm{MSE}_b}\)</span> by Jensen’s inequality (<span class="math inline">\(\sqrt{\cdot}\)</span> is concave), so the average of per-batch RMSEs underestimates the true RMSE. Accumulate sums and take the root at the end.</p>
+</section>
+<section id="reading-learning-curves" class="level2">
+<h2 class="anchored" data-anchor-id="reading-learning-curves">6. Reading learning curves</h2>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Pattern</th>
+<th>Diagnosis</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>train and val loss both high, close together</td>
+<td><strong>underfitting</strong> (high bias)</td>
+<td>bigger model, train longer, higher LR, better features</td>
+</tr>
+<tr class="even">
+<td>train loss ↓ to ~0, val loss ↓ then ↑</td>
+<td><strong>overfitting</strong> (high variance)</td>
+<td>regularise (below), more data/augmentation, early stopping</td>
+</tr>
+<tr class="odd">
+<td>loss explodes / NaN</td>
+<td>LR too high, exploding gradients</td>
+<td>lower LR, gradient clipping, check data</td>
+</tr>
+<tr class="even">
+<td>loss flat from the start</td>
+<td>LR too low, dead units, bug</td>
+<td>LR range test, check init / gradients</td>
+</tr>
+</tbody>
+</table>
+<div id="1dd925fd" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="fl">3.8</span>))</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].plot(hist_plain[<span class="st">"train_loss"</span>], label<span class="op">=</span><span class="st">"train"</span>)<span class="op">;</span> axes[<span class="dv">0</span>].plot(hist_plain[<span class="st">"val_loss"</span>], label<span class="op">=</span><span class="st">"validation"</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>best_ep <span class="op">=</span> <span class="bu">int</span>(np.argmin(hist_plain[<span class="st">"val_loss"</span>]))</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].axvline(best_ep, color<span class="op">=</span><span class="st">"gray"</span>, ls<span class="op">=</span><span class="st">":"</span>, label<span class="op">=</span><span class="ss">f"best val loss (epoch </span><span class="sc">{</span>best_ep<span class="sc">}</span><span class="ss">)"</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_yscale(<span class="st">"log"</span>)<span class="op">;</span> axes[<span class="dv">0</span>].set_xlabel(<span class="st">"epoch"</span>)<span class="op">;</span> axes[<span class="dv">0</span>].set_ylabel(<span class="st">"cross-entropy"</span>)<span class="op">;</span> axes[<span class="dv">0</span>].legend()</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_title(<span class="st">"No regularisation: validation loss turns up = overfitting"</span>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].plot(hist_plain[<span class="st">"val_acc"</span>])<span class="op">;</span> axes[<span class="dv">1</span>].set_xlabel(<span class="st">"epoch"</span>)<span class="op">;</span> axes[<span class="dv">1</span>].set_title(<span class="st">"validation accuracy"</span>)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="02_training_optimization_regularization_files/figure-html/cell-6-output-1.png" width="1068" height="330" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="regularisation" class="level2">
+<h2 class="anchored" data-anchor-id="regularisation">7. Regularisation</h2>
+<section id="weight-decay-l2" class="level3">
+<h3 class="anchored" data-anchor-id="weight-decay-l2">7.1 Weight decay (L2)</h3>
+<p>Add <span class="math inline">\(\frac{\lambda}{2}\lVert\mathbf{W}\rVert^2\)</span> to the loss (ML notes 03; biases usually excluded). Its gradient adds <span class="math inline">\(\lambda\mathbf{W}\)</span>, so the SGD step becomes</p>
+<p><span class="math display">\[
+\mathbf{W}\leftarrow\mathbf{W} - \alpha(\nabla J + \lambda\mathbf{W}) = (1-\alpha\lambda)\,\mathbf{W} - \alpha\nabla J :
+\]</span></p>
+<p>shrink every weight by a constant factor, then take the data step. That is why L2 is called <strong>weight decay</strong>. With Adam the two are <strong>not</strong> equivalent: the <span class="math inline">\(\lambda\mathbf{W}\)</span> term would be divided by <span class="math inline">\(\sqrt{\hat{\mathbf{s}}}\)</span> like the rest of the gradient, so weights with large gradients get less decay. <strong>AdamW</strong> applies the decay directly, <span class="math inline">\(\mathbf{W}\leftarrow\mathbf{W} - \alpha\lambda\mathbf{W}\)</span>, outside the adaptive step. Use <code>torch.optim.AdamW(..., weight_decay=λ)</code>.</p>
+</section>
+<section id="dropout" class="level3">
+<h3 class="anchored" data-anchor-id="dropout">7.2 Dropout</h3>
+<p>During training, each activation is independently set to 0 with probability <span class="math inline">\(p\)</span> and the survivors are scaled by <span class="math inline">\(\frac{1}{1-p}\)</span> (<strong>inverted dropout</strong>): <span class="math display">\[
+\tilde{a}_j = \frac{r_j}{1-p}\,a_j, \qquad r_j\sim\mathrm{Bernoulli}(1-p).
+\]</span> <strong>Expectation is preserved:</strong> <span class="math inline">\(\mathbb{E}[\tilde a_j] = \frac{(1-p)}{1-p}a_j = a_j\)</span>. So at test time dropout is simply switched off (<code>model.eval()</code>) and no rescaling is needed.</p>
+<p>Why it helps: a unit cannot rely on any particular other unit being present, so the network learns redundant, more robust features. It can also be seen as training an exponentially large <strong>ensemble</strong> of thinned sub-networks that share weights and averaging them at test time (compare bagging, ML notes 07). Typical <span class="math inline">\(p\)</span>: 0.1–0.5.</p>
+</section>
+<section id="data-augmentation" class="level3">
+<h3 class="anchored" data-anchor-id="data-augmentation">7.3 Data augmentation</h3>
+<p>Apply random, label-preserving transformations to the training inputs each epoch (images: flips, crops, small rotations, colour jitter; audio: noise, time shift; text: harder). The model rarely sees the exact same input twice, which is like having more data. It also builds the desired <strong>invariances</strong> into the model. Only use transformations that don’t change the label: a horizontal flip is fine for clothes, not for digits (a mirrored “2” is not a “2”).</p>
+</section>
+<section id="early-stopping" class="level3">
+<h3 class="anchored" data-anchor-id="early-stopping">7.4 Early stopping</h3>
+<p>Monitor the validation loss, keep the best checkpoint, and stop after <code>patience</code> epochs without improvement. Training time acts as a regulariser: for a quadratic loss and small initial weights, early-stopped gradient descent behaves much like L2 regularisation.</p>
+<div id="5952be9d" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>results <span class="op">=</span> {<span class="st">"no regularisation"</span>: hist_plain}</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>torch.manual_seed(<span class="dv">0</span>)<span class="op">;</span> m_wd <span class="op">=</span> make_mlp()</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>results[<span class="st">"AdamW, weight decay 0.05"</span>], _ <span class="op">=</span> train(m_wd, torch.optim.AdamW(m_wd.parameters(), lr<span class="op">=</span><span class="fl">1e-3</span>, weight_decay<span class="op">=</span><span class="fl">0.05</span>))</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>torch.manual_seed(<span class="dv">0</span>)<span class="op">;</span> m_do <span class="op">=</span> make_mlp(p_drop<span class="op">=</span><span class="fl">0.5</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>results[<span class="st">"dropout p=0.5"</span>], _ <span class="op">=</span> train(m_do, torch.optim.Adam(m_do.parameters(), lr<span class="op">=</span><span class="fl">1e-3</span>))</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>torch.manual_seed(<span class="dv">0</span>)<span class="op">;</span> m_es <span class="op">=</span> make_mlp()</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>results[<span class="st">"early stopping (patience 10)"</span>], best_state <span class="op">=</span> train(m_es, torch.optim.Adam(m_es.parameters(), lr<span class="op">=</span><span class="fl">1e-3</span>), patience<span class="op">=</span><span class="dv">10</span>)</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>m_es.load_state_dict(best_state)</span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">13</span>, <span class="dv">4</span>))</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, h <span class="kw">in</span> results.items():</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>    axes[<span class="dv">0</span>].plot(h[<span class="st">"val_loss"</span>], label<span class="op">=</span>name)<span class="op">;</span> axes[<span class="dv">1</span>].plot(h[<span class="st">"val_acc"</span>], label<span class="op">=</span>name)</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].set_yscale(<span class="st">"log"</span>)<span class="op">;</span> axes[<span class="dv">0</span>].set_ylabel(<span class="st">"validation loss"</span>)<span class="op">;</span> axes[<span class="dv">1</span>].set_ylabel(<span class="st">"validation accuracy"</span>)</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax <span class="kw">in</span> axes: ax.set_xlabel(<span class="st">"epoch"</span>)<span class="op">;</span> ax.legend(fontsize<span class="op">=</span><span class="dv">8</span>)</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].set_ylim(<span class="fl">0.9</span>, <span class="fl">1.0</span>)<span class="op">;</span> plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>test_loader <span class="op">=</span> DataLoader(to_ds(X_te, y_te), batch_size<span class="op">=</span><span class="dv">256</span>)</span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, mdl <span class="kw">in</span> [(<span class="st">"no regularisation"</span>, model), (<span class="st">"weight decay"</span>, m_wd), (<span class="st">"dropout"</span>, m_do), (<span class="st">"early stopping (best ckpt)"</span>, m_es)]:</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>    tl, ta <span class="op">=</span> evaluate(mdl, test_loader, nn.CrossEntropyLoss())</span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>name<span class="sc">:&gt;28}</span><span class="ss">: test loss </span><span class="sc">{</span>tl<span class="sc">:.3f}</span><span class="ss">   test accuracy </span><span class="sc">{</span>ta<span class="sc">:.3f}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="02_training_optimization_regularization_files/figure-html/cell-7-output-1.png" width="1159" height="348" class="figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>           no regularisation: test loss 0.153   test accuracy 0.972
+                weight decay: test loss 0.136   test accuracy 0.971
+                     dropout: test loss 0.118   test accuracy 0.974
+  early stopping (best ckpt): test loss 0.116   test accuracy 0.969</code></pre>
+</div>
+</div>
+<p>With only 500 training images, all three regularisers stop the validation loss from climbing, and they improve the test <strong>loss</strong>, but the test <strong>accuracy</strong> barely moves. The unregularised model mostly becomes <em>over-confident</em> rather than <em>wrong</em>: its argmax is still right, but its probabilities are too extreme. That is the same lesson as boosting in ML notes 07. On harder problems, or with less data, regularisation changes the accuracy as well.</p>
+</section>
+</section>
+<section id="normalisation-layers" class="level2">
+<h2 class="anchored" data-anchor-id="normalisation-layers">8. Normalisation layers</h2>
+<p><strong>Batch normalisation</strong> (Ioffe &amp; Szegedy, 2015) standardises each unit’s pre-activation over the mini-batch, then lets the network rescale it: <span class="math display">\[
+\hat{z}_j = \frac{z_j - \mu_{\mathcal{B},j}}{\sqrt{\sigma^2_{\mathcal{B},j} + \varepsilon}}, \qquad \text{output} = \gamma_j\hat{z}_j + \beta_j
+\]</span> with learnable <span class="math inline">\(\gamma_j, \beta_j\)</span>. It keeps activations at a stable scale throughout training (the problem of section 6 in notebook 01), allowing higher learning rates and faster training, with a mild regularising effect (batch noise). <strong>Train vs.&nbsp;eval</strong>: in training it uses the batch statistics; at test time it uses running averages collected during training. This is another reason <code>model.eval()</code> matters.</p>
+<p><strong>Layer normalisation</strong> normalises over the features of each example instead of over the batch. It doesn’t depend on the batch size and behaves the same in training and inference, which is why it is used in RNNs and transformers (notebook 05).</p>
+</section>
+<section id="gradient-clipping-and-other-practicalities" class="level2">
+<h2 class="anchored" data-anchor-id="gradient-clipping-and-other-practicalities">9. Gradient clipping and other practicalities</h2>
+<ul>
+<li><strong>Gradient clipping</strong>: if <span class="math inline">\(\lVert\mathbf{g}\rVert &gt; c\)</span>, rescale <span class="math inline">\(\mathbf{g}\leftarrow c\,\mathbf{g}/\lVert\mathbf{g}\rVert\)</span> (<code>torch.nn.utils.clip_grad_norm_(model.parameters(), c)</code>, between <code>backward()</code> and <code>step()</code>). It prevents a single huge gradient (RNNs, fine-tuning) from wrecking the weights.</li>
+<li><strong>Normalise the inputs</strong> (standardise features, or scale pixels to [0,1] / ImageNet statistics for pre-trained models). Same reason as for linear models: conditioning.</li>
+<li><strong>Overfit a tiny batch first.</strong> A correct model and training loop must reach ~0 loss on 10 examples. If it can’t, there is a bug.</li>
+<li><strong>Seeds</strong> (<code>torch.manual_seed</code>) for reproducibility; GPU operations may still be slightly non-deterministic.</li>
+<li><strong>Mixed precision</strong> (float16/bfloat16) roughly halves memory and speeds up training on modern GPUs.</li>
+</ul>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<ul>
+<li>Mini-batch SGD uses an unbiased, noisy gradient estimate (variance <span class="math inline">\(\propto 1/B\)</span>); an epoch is one pass over the data.</li>
+<li>Momentum averages gradients to damp zig-zags; Adam adds per-parameter scaling and bias correction and is the common default. Decay the learning rate (step, cosine, plateau), with warm-up for transformers.</li>
+<li>Training loop: <code>zero_grad</code> → forward → loss → <code>backward</code> → <code>step</code>; evaluate in <code>eval()</code> mode under <code>no_grad()</code>, weighting metrics by batch size.</li>
+<li>Diagnose with learning curves; fight overfitting with weight decay (AdamW), dropout (inverted, expectation-preserving), augmentation and early stopping with the best checkpoint.</li>
+<li>BatchNorm/LayerNorm stabilise activations; clip gradients when they can explode.</li>
+</ul>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<script src="../assets/notes-nav.js"></script>
+<script src="../../slides/assets/figures.js"></script>
+<script src="../../slides/neural_networks/assets/nn-core.js"></script>
+<script src="../assets/notes-widgets.js"></script>
+<script src="../../slides/neural_networks/assets/fig-nn-training.js"></script>
+
+
+
+
+</body></html>

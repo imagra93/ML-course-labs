@@ -1,15 +1,15 @@
-# Web version of the notes (prototype): each note is a .qmd file (Markdown + Python cells) that Quarto
+# Web version of the notes: each note is a .qmd file (Markdown + Python cells) that Quarto
 # renders to HTML, with the slides' interactive figures inside the text.
-#   quarto render     rebuild the pages listed below, then commit the .html and its _files/ folder
+#   quarto render     rebuild every note (notes/**/*.qmd), then commit each .html and its _files/ folder
 #   quarto preview    live preview while editing
 # The HTML is written next to its .qmd, because GitHub Pages serves this branch as it is:
 #   https://imagra93.github.io/ML-course-labs/notes/machine_learning/01_linear_regression.html
-# Only the files under project.render are built: the notebooks in notes/ and notebooks/ are not touched.
+# Only the notes are built: the lab notebooks in notebooks/ are not touched.
 # Built with Quarto 1.10.
 project:
   type: default
   render:
-    - notes/machine_learning/01_linear_regression.qmd
+    - "notes/**/*.qmd"
 
 format:
   html:
