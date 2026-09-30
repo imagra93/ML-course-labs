@@ -23,7 +23,7 @@ FIG['complexity']=root=>{const r=rng(7);const tr=[],te=[];
   function fit(d){const A=[],bb=[];for(let i=0;i<=d;i++){A.push(new Array(d+1).fill(0));bb.push(0)}
     tr.forEach(([x,y])=>{const f=basis(x,d);for(let i=0;i<=d;i++){bb[i]+=f[i]*y;for(let j=0;j<=d;j++)A[i][j]+=f[i]*f[j]}});for(let i=0;i<=d;i++)A[i][i]+=1e-9;
     const c=solve(A,bb);const pred=x=>basis(x,d).reduce((s,v,i)=>s+v*c[i],0);const rm=D=>Math.sqrt(D.reduce((s,p)=>s+(pred(p[0])-p[1])**2,0)/D.length);return {pred:pred,tr:rm(tr),te:rm(te)}}
-  const F=[];for(let d=0;d<=15;d++)F.push(fit(d));const TOP=1.2,cl=v=>Math.min(v,TOP);
+  const F=[];for(let d=0;d<=15;d++)F.push(fit(d));const best=F.reduce((b,f,d)=>f.te<F[b].te?d:b,0);const TOP=1.2,cl=v=>Math.min(v,TOP);
   const svg=initSvg(svgOf(root),640,340);
   const P=Plot(svg,{at:[0,0],w:370,h:340,x:[0,1],y:[-2,2],m:{l:34,r:8,t:12,b:36}});P.axes({xt:[0,0.5,1],yt:[-2,-1,0,1,2],xl:'x',yl:'y'});P.fn(x=>Math.sin(2*Math.PI*x),'ln thin sm dash',0,1,200,P.bg);
   const Q=Plot(svg,{at:[385,0],w:255,h:340,x:[0,15],y:[0,TOP],m:{l:46,r:8,t:12,b:36}});Q.axes({xt:[0,3,6,9,12,15],yt:[0,0.3,0.6,0.9,1.2],xl:'degree (complexity)',yl:'RMSE'});
@@ -33,7 +33,8 @@ FIG['complexity']=root=>{const r=rng(7);const tr=[],te=[];
   const inp=q(root,'d');
   function draw(){const d=+inp.value;setV(root,'d',d);const f=F[d];P.clear();tr.forEach(p=>P.dot(p[0],p[1],5,'pt fb'));P.fn(f.pred,'ln sr',0,1,400);
     Q.clear();Q.line(d,0,d,TOP,'ln thin sm dash');Q.dot(d,f.tr,5,'fb pt');Q.dot(d,cl(f.te),5,'fo pt');if(f.te>TOP)Q.text(d,TOP,'↑ '+fmt(f.te,1),'lab','end',-7,14);
-    setR(root,'tr',fmt(f.tr,3));setR(root,'te',fmt(f.te,3));setR(root,'vd',f.tr>0.45?'Underfitting':f.te>0.5?'Overfitting':'Just right')}
+    setR(root,'tr',fmt(f.tr,3));setR(root,'te',fmt(f.te,3));/* the verdict compares with the best degree on new data: before it underfits, after it the test error rises */
+    setR(root,'vd',d<best?'Underfitting':d===best?'Just right':f.te>2*F[best].te?'Overfitting':'Mild overfitting')}
   inp.addEventListener('input',draw);draw()};
 
 /* Three ways to split: random (stratified), grouped, by time */

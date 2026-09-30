@@ -7,11 +7,11 @@ Notes 01 and 02 look different (a line vs. an S-curve, MSE vs. cross-entropy), b
 
 **What this note covers.** The three ingredients of a GLM, the loss (minus the log-likelihood), the gradient and the convexity proof for all canonical GLMs at once; the exponential family, which explains where the variance and the "canonical" link come from; Fisher scoring (IRLS) for any link, standard errors and the dispersion parameter; the deviance and the residuals. Then the **assumptions** of a GLM, how to check them and what to do when they fail (section 13), and the practical situations of count and cost data: overdispersion, exposure and offsets, excess zeros, claim severity and pure premium (sections 14 to 16).
 
-**What you need.** [Note 01](01_linear_regression.qmd) (linear regression, least squares = maximum likelihood with Gaussian noise, the normal equation, weighted least squares) and [note 02](02_logistic_regression.qmd) (logistic regression, the Bernoulli likelihood, Newton's method / IRLS, Wald standard errors). From probability: expectation and variance, the law of total variance, the Poisson and Gamma distributions (both are introduced below).
+**What you need.** [Note 01](01_linear_regression.html) (linear regression, least squares = maximum likelihood with Gaussian noise, the normal equation, weighted least squares) and [note 02](02_logistic_regression.html) (logistic regression, the Bernoulli likelihood, Newton's method / IRLS, Wald standard errors). From probability: expectation and variance, the law of total variance, the Poisson and Gamma distributions (both are introduced below).
 
 **After this note you can** choose the distribution and the link for a new kind of target, fit any GLM with a dozen lines of numpy, read its coefficients as rate ratios with confidence intervals, check whether the variance, the link and the linear predictor are right, and handle overdispersed counts, varying exposure, excess zeros, skewed claim amounts and pure premiums.
 
-**Notation.** As in the other notes: $m$ examples $(\mathbf{x}^{(i)}, y^{(i)})$, $n$ features, $\mathbf{x}^{(i)}\in\mathbb{R}^{n+1}$ with $x_0 = 1$, design matrix $\mathbf{X}$, parameters $\boldsymbol{\theta}$ ($\theta_0$ the intercept). The linear score is $z = \boldsymbol{\theta}^\top\mathbf{x}$ (the GLM literature calls it the *linear predictor* $\eta$), the mean of $y$ is $\mu$, and $q = n+1$ is the number of parameters. Softmax regression ([note 04](04_softmax_regression.qmd)) is one more member of the family.
+**Notation.** As in the other notes: $m$ examples $(\mathbf{x}^{(i)}, y^{(i)})$, $n$ features, $\mathbf{x}^{(i)}\in\mathbb{R}^{n+1}$ with $x_0 = 1$, design matrix $\mathbf{X}$, parameters $\boldsymbol{\theta}$ ($\theta_0$ the intercept). The linear score is $z = \boldsymbol{\theta}^\top\mathbf{x}$ (the GLM literature calls it the *linear predictor* $\eta$), the mean of $y$ is $\mu$, and $q = n+1$ is the number of parameters. Softmax regression ([note 04](04_softmax_regression.html)) is one more member of the family.
 
 ```{python}
 import numpy as np
@@ -115,7 +115,7 @@ Write $z = \boldsymbol{\theta}^\top\mathbf{x}$ and use the chain rule $\frac{\pa
 
 **Gaussian.** $\mu = z$, $\;\ell = \frac12(z - y)^2$, $\;\frac{\partial\ell}{\partial z} = z - y = \mu - y$.
 
-**Bernoulli.** $\mu = \sigma(z)$. Shown in [note 02](02_logistic_regression.qmd), section 6: the factor $\sigma'(z) = \mu(1-\mu)$ cancels the denominator of $\frac{\partial\ell}{\partial\mu} = \frac{\mu - y}{\mu(1-\mu)}$, so $\;\frac{\partial\ell}{\partial z} = \mu - y$.
+**Bernoulli.** $\mu = \sigma(z)$. Shown in [note 02](02_logistic_regression.html), section 6: the factor $\sigma'(z) = \mu(1-\mu)$ cancels the denominator of $\frac{\partial\ell}{\partial\mu} = \frac{\mu - y}{\mu(1-\mu)}$, so $\;\frac{\partial\ell}{\partial z} = \mu - y$.
 
 **Poisson.** $\mu = e^z$, so $\log\mu = z$ and $\;\ell = e^z - y\,z$, $\;\frac{\partial\ell}{\partial z} = e^z - y = \mu - y$.
 
@@ -572,7 +572,7 @@ When the truth is log-linear, the binned points follow the identity line and the
 
 **What it says.** Given the features, the $y_i$ are independent.
 
-**Why it matters.** Same mechanism as in [note 02, section 14.1](02_logistic_regression.qmd): the likelihood is a product and the information $\mathcal{I} = \frac1\phi\mathbf{X}^\top\mathbf{W}\mathbf{X}$ adds up independent contributions. Several years of the same policy, or several vehicles of the same fleet, share unobserved risk: the observations carry less information than their number suggests, so naive SEs are too small (*inference*), and a random train/test split lets the model see the same policyholder in both (*optimistic validation*). Shared unobserved risk also makes the marginal counts overdispersed (13.1).
+**Why it matters.** Same mechanism as in [note 02, section 14.1](02_logistic_regression.html): the likelihood is a product and the information $\mathcal{I} = \frac1\phi\mathbf{X}^\top\mathbf{W}\mathbf{X}$ adds up independent contributions. Several years of the same policy, or several vehicles of the same fleet, share unobserved risk: the observations carry less information than their number suggests, so naive SEs are too small (*inference*), and a random train/test split lets the model see the same policyholder in both (*optimistic validation*). Shared unobserved risk also makes the marginal counts overdispersed (13.1).
 
 **How to check.** On 800 synthetic policyholders observed for 5 years each, with a policyholder-level feature (a vehicle-power indicator) and with or without a shared multiplicative risk $u_g\sim\text{Gamma}(2, 2)$ (mean 1): compare the naive SEs with the **cluster-robust** (sandwich) SEs, which sum the scores within each policyholder before squaring (for the Poisson log-link model the score of observation $i$ is $(y_i - \mu_i)\mathbf{x}^{(i)}$), and compute the design effect of the Pearson residuals ($n_c\times$ the variance of the per-policyholder mean residual; about 1 if independent).
 

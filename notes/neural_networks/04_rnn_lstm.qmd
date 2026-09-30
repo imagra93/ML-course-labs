@@ -10,7 +10,7 @@ format:
 
 **What this note covers.** How a neural network reads a *sequence*: text is turned into vectors (tokens, indices, embeddings), a **recurrent neural network** (RNN) reads them one step at a time while carrying a hidden state, and it is trained by **backpropagation through time**. We derive why plain RNNs forget (vanishing gradients) or blow up (exploding gradients), how **gradient clipping** fixes the second problem and how the **LSTM** and **GRU** fix the first, down to the full Jacobian of the LSTM memory. Then the practical side: padding, masking and packing, truncated BPTT, bidirectional and deep RNNs, the assumptions an RNN makes about your data (fixed-size memory, stationarity, no look-ahead, teacher forcing, closed vocabulary, input scale), how to check each one and what to do when it fails.
 
-**What you need.** The MLP and the row convention $\mathbf{Z}^{[l]} = \mathbf{A}^{[l-1]}\mathbf{W}^{[l]} + \mathbf{b}^{[l]}$ ([NN note 00](00_neural_networks_mlp.qmd)); backpropagation and the chain rule on a computational graph, including the fact that a weight used in several places receives the **sum** of the gradients from each use ([NN note 01](01_backpropagation.qmd)); Adam, dropout and gradient clipping as training tools ([NN note 02](02_training_optimization_regularization.qmd)); weight sharing and residual connections ([NN note 03](03_cnn_transfer_multitask.qmd)); softmax and cross-entropy ([ML note 04](../machine_learning/04_softmax_regression.qmd)); train/validation/test splits and cross-validation ([ML note 00](../machine_learning/00_supervised_learning.qmd)).
+**What you need.** The MLP and the row convention $\mathbf{Z}^{[l]} = \mathbf{A}^{[l-1]}\mathbf{W}^{[l]} + \mathbf{b}^{[l]}$ ([NN note 00](00_neural_networks_mlp.html)); backpropagation and the chain rule on a computational graph, including the fact that a weight used in several places receives the **sum** of the gradients from each use ([NN note 01](01_backpropagation.html)); Adam, dropout and gradient clipping as training tools ([NN note 02](02_training_optimization_regularization.html)); weight sharing and residual connections ([NN note 03](03_cnn_transfer_multitask.html)); softmax and cross-entropy ([ML note 04](../machine_learning/04_softmax_regression.html)); train/validation/test splits and cross-validation ([ML note 00](../machine_learning/00_supervised_learning.html)).
 
 **After this note you can** write the RNN, LSTM and GRU equations and count their parameters; derive BPTT and the vanishing-gradient bound; explain, with the Jacobian, why the LSTM memory keeps gradients alive and why the forget-gate bias is initialised positive; clip gradients correctly; batch variable-length sequences without letting the padding change the result; and validate a sequence model without leaking the future.
 
@@ -42,7 +42,7 @@ Four properties make an MLP a poor fit:
 1. **Different lengths.** An MLP needs a fixed-size input; reviews have 5 words or 500.
 2. **Order matters.** "not good, bad" ≠ "not bad, good": same words, opposite meaning.
 3. **Memory.** What happened earlier affects what comes next, so the model needs a state.
-4. **The same pattern can appear at any time step.** An MLP would need separate weights for "word at position 3" and "word at position 30", although a word means the same thing wherever it appears. We want to **share weights across time**, as a CNN shares them across space ([NN note 03](03_cnn_transfer_multitask.qmd)).
+4. **The same pattern can appear at any time step.** An MLP would need separate weights for "word at position 3" and "word at position 30", although a word means the same thing wherever it appears. We want to **share weights across time**, as a CNN shares them across space ([NN note 03](03_cnn_transfer_multitask.html)).
 
 A **recurrent network** reads the sequence one step at a time, with the **same weights at every step**, and keeps a **hidden state** $\mathbf{h}_t$ that summarises what it has read so far.
 
@@ -66,7 +66,7 @@ Each token id $k$ owns one row $\mathbf{e}_k$ of $\mathbf{E}$. Write the token a
 
 **Proof.** Entry $j$ of the product is $(\mathbf{o}_k\mathbf{E})_j = \sum_{l=1}^{|V|}(\mathbf{o}_k)_l E_{lj}$ (definition of the matrix product). Every $(\mathbf{o}_k)_l$ is 0 except $(\mathbf{o}_k)_k = 1$, so the sum is $E_{kj}$. This holds for every $j$, so the product is row $k$. $\blacksquare$
 
-So "looking up a row" is exactly a dense layer without bias applied to the one-hot encoding, implemented without the huge sparse multiplication (in code, `E[ids]`). It is trained by backprop like any other weight. The gradient of the loss with respect to $\mathbf{E}$ is $\mathbf{o}_k^\top\,\partial J/\partial\mathbf{e}_k$ (the gradient of a linear layer, [NN note 01](01_backpropagation.qmd)), which is zero outside row $k$: **only the rows of the tokens present in the batch receive a gradient.** `nn.Embedding(|V|, d)` takes $[B,T]$ integers and returns $[B,T,d]$ floats. Typical sizes: $|V|$ = 10,000–50,000, $d$ = 50–1,024.
+So "looking up a row" is exactly a dense layer without bias applied to the one-hot encoding, implemented without the huge sparse multiplication (in code, `E[ids]`). It is trained by backprop like any other weight. The gradient of the loss with respect to $\mathbf{E}$ is $\mathbf{o}_k^\top\,\partial J/\partial\mathbf{e}_k$ (the gradient of a linear layer, [NN note 01](01_backpropagation.html)), which is zero outside row $k$: **only the rows of the tokens present in the batch receive a gradient.** `nn.Embedding(|V|, d)` takes $[B,T]$ integers and returns $[B,T,d]$ floats. Typical sizes: $|V|$ = 10,000–50,000, $d$ = 50–1,024.
 
 ```{=html}
 <div class="widget"><svg class="fig" data-fig="lookup" style="max-height:260px" aria-label="A one-hot vector for the word movie times the embedding matrix picks out the row of movie"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#4">slide 4</a> of the RNN and LSTM deck.</p></div>
@@ -91,10 +91,10 @@ One-hot vectors are huge ($|V|$ is often $10^4$–$10^5$) and all equally far ap
 
 $\mathbf{E}$ is learned either by the task itself (sentiment, translation…) or beforehand, with a **target/context likelihood model**:
 
-- **word2vec, skip-gram** (Mikolov et al., 2013): for a centre word $c$ and each word $o$ in a window around it, maximise $P(o\mid c) = \exp(\mathbf{u}_o'^\top\mathbf{u}_c)/\sum_{w\in V}\exp(\mathbf{u}_w'^\top\mathbf{u}_c)$, a softmax classifier ([ML note 04](../machine_learning/04_softmax_regression.qmd)) whose input is the centre word's embedding $\mathbf{u}_c$.
+- **word2vec, skip-gram** (Mikolov et al., 2013): for a centre word $c$ and each word $o$ in a window around it, maximise $P(o\mid c) = \exp(\mathbf{u}_o'^\top\mathbf{u}_c)/\sum_{w\in V}\exp(\mathbf{u}_w'^\top\mathbf{u}_c)$, a softmax classifier ([ML note 04](../machine_learning/04_softmax_regression.html)) whose input is the centre word's embedding $\mathbf{u}_c$.
 - **word2vec, CBOW**: predict the centre word from the average of its neighbours' embeddings.
 
-Words used in similar contexts get similar vectors, and some relations become directions: *king − man + woman ≈ queen*. The same idea gives embeddings for whole sentences and documents, the basis of semantic search and RAG ([NN note 06](06_embeddings_rag.qmd), which also shows how negative sampling makes the sum over $V$ affordable).
+Words used in similar contexts get similar vectors, and some relations become directions: *king − man + woman ≈ queen*. The same idea gives embeddings for whole sentences and documents, the basis of semantic search and RAG ([NN note 06](06_embeddings_rag.html), which also shows how negative sampling makes the sum over $V$ affordable).
 
 ```{=html}
 <div class="widget"><svg class="fig" data-fig="embed" aria-label="One-hot vectors versus a word embedding where similar words are close"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#5">slide 5</a> of the RNN and LSTM deck.</p></div>
@@ -125,7 +125,7 @@ $$
 $$
 
 - $\mathbf{x}_t$: the input at time $t$ (e.g. the embedding of the $t$-th word). $\hat{\mathbf{y}}_t$: the output at time $t$ (e.g. "is this word a named entity?").
-- $g_1$ is usually $\tanh$; $g_2$ is the output activation of the task (sigmoid, softmax or identity, [NN note 00](00_neural_networks_mlp.qmd)).
+- $g_1$ is usually $\tanh$; $g_2$ is the output activation of the task (sigmoid, softmax or identity, [NN note 00](00_neural_networks_mlp.html)).
 - The parameters $\boldsymbol{\theta} = \{\mathbf{W}_x\in\mathbb{R}^{d\times d_h},\ \mathbf{W}_h\in\mathbb{R}^{d_h\times d_h},\ \mathbf{b}_h,\ \mathbf{W}_y,\ \mathbf{b}_y\}$ are **shared by all time steps**.
 
 Unrolled over time, an RNN is a very deep feed-forward network, one layer per time step, whose layers share their weights.
@@ -180,7 +180,7 @@ Each step without input **multiplies the memory by at most 0.5** (because $|\tan
 **Try it.** Step through the sequence with $w_h = 0.5$, then move $w_h$ to $0.95$ and to values above 1.
 
 ```{=html}
-<div class="widget" data-fig="rnn-num" data-auto="s=1 :: x = 1 arrives: h jumps to tanh(1) = 0.76 | s=2 :: no input: h = tanh(0.5 · 0.76) = 0.36, the memory fades | s=3 :: fading further | s=4 :: x = −1: the state flips sign | s=6 :: after two quiet steps it is almost gone | w=0.95 :: with wₕ = 0.95 the memory lasts much longer">
+<div class="widget" data-fig="rnn-num" data-auto="s=1 :: x = 1 arrives: h jumps to tanh(1) = 0.76 | s=2 :: no input: h = tanh(0.5 · 0.76) = 0.36, the memory fades | s=3 :: fading further | s=4 :: x = −1: the state flips sign | s=6 :: after two quiet steps about a quarter is left (−0.72 → −0.17) | w=0.95 :: with wₕ = 0.95 the memory lasts much longer">
   <svg class="fig" aria-label="A scalar RNN reading the sequence 1, 0, 0, -1, 0, 0 and its hidden state over time"></svg>
   <div class="ctl"><label for="rn-s">step</label><input type="range" id="rn-s" data-k="s" min="0" max="6" step="1" value="0"><span class="v" data-v="s"></span></div>
   <div class="ctl"><label for="rn-w">recurrent weight wₕ</label><input type="range" id="rn-w" data-k="w" min="0" max="1.5" step="0.05" value="0.5"><span class="v" data-v="w">0.50</span></div>
@@ -231,7 +231,7 @@ with $L(\hat{\mathbf{y}}_t,\mathbf{y}_t)$ the per-step loss of the task (cross-e
 
 ### 4.2 Backpropagation through time (BPTT)
 
-Unroll the network and run ordinary backprop on the unrolled graph. Write the pre-activation $\mathbf{a}_t = \mathbf{x}_t\mathbf{W}_x + \mathbf{h}_{t-1}\mathbf{W}_h + \mathbf{b}$, so $\mathbf{h}_t = \tanh(\mathbf{a}_t)$, and let $\boldsymbol{\delta}_t = \partial L/\partial\mathbf{a}_t$ (a row vector, as in [NN note 01](01_backpropagation.qmd)).
+Unroll the network and run ordinary backprop on the unrolled graph. Write the pre-activation $\mathbf{a}_t = \mathbf{x}_t\mathbf{W}_x + \mathbf{h}_{t-1}\mathbf{W}_h + \mathbf{b}$, so $\mathbf{h}_t = \tanh(\mathbf{a}_t)$, and let $\boldsymbol{\delta}_t = \partial L/\partial\mathbf{a}_t$ (a row vector, as in [NN note 01](01_backpropagation.html)).
 
 1. $\mathbf{h}_t$ influences the loss in two ways: through the output at step $t$, and through $\mathbf{a}_{t+1} = \dots + \mathbf{h}_t\mathbf{W}_h$. By the multivariable chain rule the two contributions add:
 $$\frac{\partial L}{\partial\mathbf{h}_t} = \underbrace{\frac{\partial L_t}{\partial\mathbf{h}_t}}_{\text{output at }t} + \boldsymbol{\delta}_{t+1}\mathbf{W}_h^\top \qquad(\text{with }\boldsymbol{\delta}_{T+1} = \mathbf{0}).$$
@@ -240,7 +240,7 @@ $$\boldsymbol{\delta}_t = \frac{\partial L}{\partial\mathbf{h}_t}\odot\big(1-\ma
 3. $\mathbf{W}_h$ is used at **every** step. The loss depends on it through each $\mathbf{a}_t$, so (chain rule, one term per use; the linear-layer gradient $\partial L/\partial\mathbf{W} = \mathbf{A}^\top\boldsymbol{\delta}$ at each step):
 $$\frac{\partial L}{\partial\mathbf{W}_h} = \sum_{t=1}^{T}\mathbf{h}_{t-1}^\top\boldsymbol{\delta}_t, \qquad \frac{\partial L}{\partial\mathbf{W}_x} = \sum_{t=1}^{T}\mathbf{x}_t^\top\boldsymbol{\delta}_t, \qquad \frac{\partial L}{\partial\mathbf{b}} = \sum_{t=1}^{T}\boldsymbol{\delta}_t .$$
 
-Shared weights ⇒ gradients add up, exactly the "add gate" of [NN note 01](01_backpropagation.qmd). The code runs this recursion from scratch in numpy for a many-to-one RNN with squared-error loss and compares it with PyTorch's autograd.
+Shared weights ⇒ gradients add up, exactly the "add gate" of [NN note 01](01_backpropagation.html). The code runs this recursion from scratch in numpy for a many-to-one RNN with squared-error loss and compares it with PyTorch's autograd.
 
 ```{python}
 r = np.random.default_rng(0)
@@ -354,7 +354,7 @@ $$
 \Big\lVert\frac{\partial J}{\partial\mathbf{h}_k}\Big\rVert \le \Big\lVert\frac{\partial J}{\partial\mathbf{h}_T}\Big\rVert\;\lVert\mathbf{W}_h\rVert^{\,T-k}.
 $$
 
-If $\lVert\mathbf{W}_h\rVert<1$ the signal from $T-k$ steps back shrinks **exponentially**: **vanishing gradients** (Bengio, Simard & Frasconi, 1994). The bound says nothing when $\lVert\mathbf{W}_h\rVert>1$; then, if the units are not saturated, the product can grow exponentially: **exploding gradients**. The same analysis for depth instead of time is in [NN note 01](01_backpropagation.qmd); an RNN is a deep network with $T$ layers and the *same* matrix in each, which makes it worse: the factors cannot compensate each other.
+If $\lVert\mathbf{W}_h\rVert<1$ the signal from $T-k$ steps back shrinks **exponentially**: **vanishing gradients** (Bengio, Simard & Frasconi, 1994). The bound says nothing when $\lVert\mathbf{W}_h\rVert>1$; then, if the units are not saturated, the product can grow exponentially: **exploding gradients**. The same analysis for depth instead of time is in [NN note 01](01_backpropagation.html); an RNN is a deep network with $T$ layers and the *same* matrix in each, which makes it worse: the factors cannot compensate each other.
 
 ```{python}
 # Norm of d h_T / d h_0 for a random tanh RNN, as a function of T and of the scale of W_h
@@ -465,7 +465,7 @@ print(f"clip at τ=1 : mean loss over the last 50 steps {ls[-50:].mean():.3f} (v
       f" median raw norm {np.median(nrm):.1f}, largest {nrm.max():.1f}")
 ```
 
-Without clipping, a few steps with gradient norms in the hundreds and thousands throw the weights into a region where the norms keep growing, and within a few dozen steps the loss is not a number. With clipping, the same large raw gradients still occur (left panel), but each step is at most $\alpha\tau = 0.1$ long, and the network learns the task: the loss falls from about 1 (predicting 0 for a unit-variance target) to about 0.1. Here the raw norm exceeds $\tau = 1$ at every step (median 3.4), so clipping acts as normalised gradient descent; with Adam the effect is similar, since Adam divides by a running gradient scale ([NN note 02](02_training_optimization_regularization.qmd)), but a single huge gradient still distorts its moment estimates, so clipping remains standard.
+Without clipping, a few steps with gradient norms in the hundreds and thousands throw the weights into a region where the norms keep growing, and within a few dozen steps the loss is not a number. With clipping, the same large raw gradients still occur (left panel), but each step is at most $\alpha\tau = 0.1$ long, and the network learns the task: the loss falls from about 1 (predicting 0 for a unit-variance target) to about 0.1. Here the raw norm exceeds $\tau = 1$ at every step (median 3.4), so clipping acts as normalised gradient descent; with Adam the effect is similar, since Adam divides by a running gradient scale ([NN note 02](02_training_optimization_regularization.html)), but a single huge gradient still distorts its moment estimates, so clipping remains standard.
 
 **Remedies for exploding gradients, in order:** clip by norm (always, for RNNs); lower the learning rate; initialise $\mathbf{W}_h$ with spectral radius $\le1$ (e.g. orthogonal initialisation, `nn.init.orthogonal_`); use gated cells (LSTM/GRU), whose memory path has no weight matrix.
 
@@ -626,7 +626,7 @@ $$
 
 So each step's Jacobian is $\mathbf{J}_t = \mathbf{D}_t + \mathbf{E}_t$, with $\mathbf{D}_t = \mathrm{diag}(\mathbf{f}_t)\approx\mathbf{I}$ and $\mathbf{E}_t$ an RNN-like term. Over many steps, $\partial\mathbf{c}_T/\partial\mathbf{c}_k = \mathbf{J}_T\cdots\mathbf{J}_{k+1}$. Expand the product: it is a sum over paths, each choosing $\mathbf{D}$ or $\mathbf{E}$ at every step. The all-direct path contributes $\prod_t\mathrm{diag}(\mathbf{f}_t)\approx\mathbf{I}$; a path that uses $\mathbf{E}$ at $m$ steps behaves like an $m$-step RNN path, but rides on the near-identity highway for the other steps. For a vanilla RNN, *every* path goes through a weight matrix and a squashing derivative at *every* step; that is the whole difference. (The original 1997 LSTM even truncated the gradient through the gates, keeping only the direct path: the "constant error carousel".)
 
-This is the same idea as the residual connection $\mathbf{y} = \mathbf{x} + F(\mathbf{x})$ of [NN note 03](03_cnn_transfer_multitask.qmd): an **additive path with a near-identity Jacobian**.
+This is the same idea as the residual connection $\mathbf{y} = \mathbf{x} + F(\mathbf{x})$ of [NN note 03](03_cnn_transfer_multitask.html): an **additive path with a near-identity Jacobian**.
 
 ### 9.2 Checking it numerically
 
@@ -746,7 +746,7 @@ logit = lambda p: np.log(p / (1 - p))
 print("forget bias that keeps sigma(b)^T >= 0.1:", "  ".join(f"T={T}: b >= {logit(0.1 ** (1 / T)):.1f}" for T in [10, 25, 50, 100]))
 ```
 
-With the same 800 steps, the vanilla RNN and the default-initialised LSTM both drop to chance once the relevant token is 25 or more steps back. The LSTM whose forget gates start **wide open** (bias 5) solves every length up to 100. That is section 9 made concrete: the LSTM *can* carry gradient over long ranges, but only if $\prod_t f_t$ is not tiny. With the default init ($f_t\approx0.5$) it is as badly off as the RNN until it slowly learns to open the gate, which takes more than this budget. The classic bias of 1 is not enough here: it fails from 25 steps on, like the default, because $0.73^{24}\approx5\times10^{-4}$ is still a vanishing factor. A rule of thumb follows from section 9.3: choose $b_f$ so that the initial memory factor $\sigma(b_f)^T$ is not tiny, say at least 0.1, i.e. $b_f\ge\mathrm{logit}(0.1^{1/T})$ (printed below: about 2.3 for $T = 25$ and 3.8 for $T = 100$). Bias 1 is a sensible default for dependencies of a few steps; for 25–100 steps use a larger bias, or a model with direct access to the past ([NN note 05](05_attention_transformers.qmd)).
+With the same 800 steps, the vanilla RNN and the default-initialised LSTM both drop to chance once the relevant token is 25 or more steps back. The LSTM whose forget gates start **wide open** (bias 5) solves every length up to 100. That is section 9 made concrete: the LSTM *can* carry gradient over long ranges, but only if $\prod_t f_t$ is not tiny. With the default init ($f_t\approx0.5$) it is as badly off as the RNN until it slowly learns to open the gate, which takes more than this budget. The classic bias of 1 is not enough here: it fails from 25 steps on, like the default, because $0.73^{24}\approx5\times10^{-4}$ is still a vanishing factor. A rule of thumb follows from section 9.3: choose $b_f$ so that the initial memory factor $\sigma(b_f)^T$ is not tiny, say at least 0.1, i.e. $b_f\ge\mathrm{logit}(0.1^{1/T})$ (printed below: about 2.3 for $T = 25$ and 3.8 for $T = 100$). Bias 1 is a sensible default for dependencies of a few steps; for 25–100 steps use a larger bias, or a model with direct access to the past ([NN note 05](05_attention_transformers.html)).
 
 ```{=html}
 <div class="widget"><svg class="fig" data-fig="memory-exp" aria-label="Accuracy against distance for a vanilla RNN, a default LSTM and an LSTM with an open forget gate"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#19">slide 19</a> of the RNN and LSTM deck (the three original curves of this experiment).</p></div>
@@ -861,9 +861,9 @@ print(f"logits shape {tuple(model(tokens, lengths).shape)}, loss {loss.item():.3
 
 Other practicalities:
 
-- **Many-to-one heads.** The last state must summarise the whole sequence (section 13). Alternatives: mean- or max-pool all real $\mathbf{h}_t$, or attention pooling ([NN note 05](05_attention_transformers.qmd)). For sentiment the pooled head is often better than the last state.
+- **Many-to-one heads.** The last state must summarise the whole sequence (section 13). Alternatives: mean- or max-pool all real $\mathbf{h}_t$, or attention pooling ([NN note 05](05_attention_transformers.html)). For sentiment the pooled head is often better than the last state.
 - **Clip gradients** (norm 1.0) and use Adam; initialise the forget-gate bias to 1 or more.
-- **Regularisation** as in [NN note 02](02_training_optimization_regularization.qmd): dropout on the embeddings and between stacked layers (not on the recurrent connection itself, which would inject new noise at every step), weight decay, early stopping.
+- **Regularisation** as in [NN note 02](02_training_optimization_regularization.html): dropout on the embeddings and between stacked layers (not on the recurrent connection itself, which would inject new noise at every step), weight decay, early stopping.
 - **A baseline first.** In the LSTM lab an order-free TF-IDF + logistic regression reaches 90 % against the LSTM's 87 %: for sentiment, *which* words appear matters more than their order.
 
 ## 13. The limit of recurrence: one vector for everything
@@ -877,7 +877,7 @@ Even gated RNNs have two structural limits:
 <div class="widget"><svg class="fig" data-fig="seq2seq" style="max-height:270px" aria-label="An encoder RNN compressing a sentence into one context vector, read by a decoder RNN"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#23">slide 23</a> of the RNN and LSTM deck.</p></div>
 ```
 
-**Attention** lets every step look directly at every other step, with a path of length 1 between any two tokens, all in parallel. Transformers ([NN note 05](05_attention_transformers.qmd)) are built from attention alone and have largely replaced RNNs for text; RNNs remain common for streaming data, small models and time series, where their constant memory per step is an advantage.
+**Attention** lets every step look directly at every other step, with a path of length 1 between any two tokens, all in parallel. Transformers ([NN note 05](05_attention_transformers.html)) are built from attention alone and have largely replaced RNNs for text; RNNs remain common for streaming data, small models and time series, where their constant memory per step is an advantage.
 
 ## 14. Assumptions: what they mean, how to check them, what to do
 
@@ -933,7 +933,7 @@ plt.title("What the final state still knows about the past"); plt.tight_layout()
 
 The smallest state keeps only the last input or two, 16 units keep about 5 steps, 64 units about 10, and nothing survives 20 steps. The total capacity never exceeds $d_h$ (3.8 of a possible 4 for the smallest state, 13.3 of 64 for the largest) and stays far below the 60 inputs. A trained RNN chooses *what* to keep (section 9.4 kept one bit for 100 steps), but it cannot keep more than its state can hold.
 
-**What to do.** (1) If accuracy falls with distance, use gated cells with a positive forget bias (section 9). (2) Increase $d_h$ (cost $O(d_h^2)$ per step). (3) Don't ask one vector to hold everything: pool over all $\mathbf{h}_t$ or use attention over them ([NN note 05](05_attention_transformers.qmd)), which removes the bottleneck at $O(T)$ extra memory. (4) For very long inputs, split them into chunks and aggregate, or use a transformer.
+**What to do.** (1) If accuracy falls with distance, use gated cells with a positive forget bias (section 9). (2) Increase $d_h$ (cost $O(d_h^2)$ per step). (3) Don't ask one vector to hold everything: pool over all $\mathbf{h}_t$ or use attention over them ([NN note 05](05_attention_transformers.html)), which removes the bottleneck at $O(T)$ extra memory. (4) For very long inputs, split them into chunks and aggregate, or use a transformer.
 
 ### 14.2 The same dynamics at every step (stationarity)
 
@@ -1085,7 +1085,7 @@ plt.title("Dotted: one-step (teacher-forced) error"); plt.legend(); plt.tight_la
 
 The teacher-forced model has the better one-step error (0.112), but its free-running error grows with the horizon, to 0.326 at 60 steps, about three times its one-step error. (Horizon 1 already sits above the dotted line because the dotted line averages positions that have seen up to 80 true inputs, horizon 1 only 20.) The model trained on its own rollouts pays a little in one-step error (0.127) and keeps the long-horizon error much lower (0.185 at 60 steps). That is the check to run: if the free-running curve rises steeply above the dotted line, exposure bias is costing you.
 
-**What to do.** (1) Train on the model's own predictions: scheduled sampling (feed own predictions with a probability that grows during training) or full multi-step rollouts with the loss on the whole horizon, as here. Cost: sequential, slower training. (2) Predict all horizons at once from the encoder state (a "direct" multi-horizon head), so nothing is fed back. (3) Add noise to the teacher-forced inputs so the model sees imperfect inputs. (4) For text, decoding strategies ([NN note 05](05_attention_transformers.qmd)) limit how far a generation drifts.
+**What to do.** (1) Train on the model's own predictions: scheduled sampling (feed own predictions with a probability that grows during training) or full multi-step rollouts with the loss on the whole horizon, as here. Cost: sequential, slower training. (2) Predict all horizons at once from the encoder state (a "direct" multi-horizon head), so nothing is fed back. (3) Add noise to the teacher-forced inputs so the model sees imperfect inputs. (4) For text, decoding strategies ([NN note 05](05_attention_transformers.html)) limit how far a generation drifts.
 
 ### 14.5 A closed vocabulary covers the inputs
 
@@ -1110,7 +1110,7 @@ for min_count in [1, 2, 5]:
 
 Even with every training word in the vocabulary, 6 % of the tokens from the same source are unknown, and on the new domain 16 %. Raising the minimum count (to keep the vocabulary small) raises the OOV rate further. A rule of thumb: an OOV rate above a few per cent on real target data deserves action.
 
-**What to do.** (1) Sub-word tokenisation (BPE, [NN note 05](05_attention_transformers.qmd)) or characters: nothing is ever out of vocabulary, rare words are spelled with frequent pieces. This is the standard fix. (2) Build the vocabulary on data that includes the target domain (unlabelled text is enough), or start from pretrained embeddings with a large vocabulary. (3) **Word dropout**: during training replace a random 1–5 % of tokens by `<UNK>`, so the model learns to use the `<UNK>` embedding and the context instead of ignoring it. (4) Normalise text (case, numbers, accents) so fewer surface forms map to distinct entries.
+**What to do.** (1) Sub-word tokenisation (BPE, [NN note 05](05_attention_transformers.html)) or characters: nothing is ever out of vocabulary, rare words are spelled with frequent pieces. This is the standard fix. (2) Build the vocabulary on data that includes the target domain (unlabelled text is enough), or start from pretrained embeddings with a large vocabulary. (3) **Word dropout**: during training replace a random 1–5 % of tokens by `<UNK>`, so the model learns to use the `<UNK>` embedding and the context instead of ignoring it. (4) Normalise text (case, numbers, accents) so fewer surface forms map to distinct entries.
 
 ### 14.6 Inputs on a common, moderate scale
 
@@ -1169,7 +1169,7 @@ With raw inputs 63 % of the gate pre-activations are saturated, and the model fa
 
 **…the sequences are too long for memory.** *Detect*: out-of-memory errors that scale with $T$. *Why*: BPTT stores all $T$ states. *Remedies*: truncated BPTT with a detached carried state (section 4.4), downsampling or aggregating the time axis, chunking and aggregating chunk representations.
 
-**…an order-free baseline beats the RNN.** *Detect*: always train one (TF-IDF + logistic regression for text, a model on lag features for series). *Why*: order may simply not carry much information for the task (the LSTM lab: 90 % vs 87 %), or the RNN is under-trained or overfitting a small data set. *Remedies*: keep the simpler model; or give the RNN pretrained embeddings, pooled heads, dropout and early stopping ([NN note 02](02_training_optimization_regularization.qmd)).
+**…an order-free baseline beats the RNN.** *Detect*: always train one (TF-IDF + logistic regression for text, a model on lag features for series). *Why*: order may simply not carry much information for the task (the LSTM lab: 90 % vs 87 %), or the RNN is under-trained or overfitting a small data set. *Remedies*: keep the simpler model; or give the RNN pretrained embeddings, pooled heads, dropout and early stopping ([NN note 02](02_training_optimization_regularization.html)).
 
 **…validation is excellent but production is poor (forecasting).** *Detect*: compare random-split and walk-forward validation (section 14.3), replay a past period. *Why*: look-ahead leakage or a regime change (sections 14.2–14.3). *Remedies*: point-in-time features, unidirectional models, walk-forward validation with a gap, retraining on recent data and monitoring the rolling error.
 
@@ -1182,6 +1182,6 @@ With raw inputs 63 % of the gate pre-activations are saturated, and the model fa
 - LSTM/GRU: gated, **additive** memory. $\partial\mathbf{c}_t/\partial\mathbf{c}_{t-1}$ is $\mathrm{diag}(\mathbf{f}_t)$ plus RNN-like indirect terms through $\mathbf{h}_{t-1}$; with $\mathbf{f}\approx1$ the direct path is a near-identity highway and the gradient survives (same idea as residual connections). Initialise the forget-gate bias positive (1, or more for long dependencies).
 - In practice: pad, mask the loss, pack (or take the last real state), clip gradients, compare with an order-free baseline.
 - Assumptions: a fixed-size state, stationary dynamics, no look-ahead, teacher forcing ≈ inference, a closed vocabulary, scaled inputs. Check them with memory probes, rolling errors, walk-forward validation, free-running errors by horizon, OOV rates and saturation fractions.
-- Recurrence is sequential and has a state bottleneck; attention ([NN note 05](05_attention_transformers.qmd)) removes both.
+- Recurrence is sequential and has a state bottleneck; attention ([NN note 05](05_attention_transformers.html)) removes both.
 
 **Lab.** [Sentiment analysis with an LSTM (IMDB)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/LSTM_sentiment.ipynb): a TF-IDF baseline, an RNN and an LSTM from scratch, packing, clipping and early stopping, and a comparison of RNN, LSTM, GRU and bidirectional LSTM.

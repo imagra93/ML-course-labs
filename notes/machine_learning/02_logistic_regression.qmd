@@ -12,13 +12,13 @@ Logistic regression is the classification counterpart of linear regression: the 
 
 **What this note covers.** The model (sigmoid, odds, log-odds), its loss (maximum likelihood), the gradient, convexity, gradient descent and Newton's method (IRLS), what happens with separable data, standard errors and odds ratios, every classification metric of the slides (confusion matrix, precision and recall, ROC and AUC, PR curves, log-loss, Brier score, calibration) and how to choose the threshold. Then the **assumptions** of the model, how to check each one and what to do when it fails (section 14), and a deep dive into **class imbalance** (section 15).
 
-**What you need.** [Note 00](00_supervised_learning.qmd) (train / validation / test sets, cross-validation) and [note 01](01_linear_regression.qmd) (linear regression: the design matrix, gradient descent, the normal equation, convexity through the Hessian, least squares as maximum likelihood). From probability: a Bernoulli variable, independence, expectations and the normal distribution.
+**What you need.** [Note 00](00_supervised_learning.html) (train / validation / test sets, cross-validation) and [note 01](01_linear_regression.html) (linear regression: the design matrix, gradient descent, the normal equation, convexity through the Hessian, least squares as maximum likelihood). From probability: a Bernoulli variable, independence, expectations and the normal distribution.
 
 **After this note you can** fit a logistic regression from scratch with gradient descent or Newton's method, read its coefficients as odds ratios with confidence intervals, evaluate a classifier with the metric that matches the business question, derive the threshold from the costs of the two errors, check the assumptions (linear log-odds, separation, events per variable, influential points, calibration) and deal with imbalanced classes without leaking information.
 
 **Notation.** $m$ examples $(\mathbf{x}^{(i)}, y^{(i)})$ with labels $y^{(i)}\in\{0,1\}$; each $\mathbf{x}^{(i)}\in\mathbb{R}^{n+1}$ has $n$ features plus $x_0 = 1$; the design matrix $\mathbf{X}\in\mathbb{R}^{m\times(n+1)}$ has the $\mathbf{x}^{(i)\top}$ as rows (first column of ones); $\boldsymbol{\theta}\in\mathbb{R}^{n+1}$ are the parameters, $\theta_0$ the intercept. The slides write $g(z)$ for the sigmoid; this note writes $\sigma(z)$.
 
-Related notes: [note 02b](02b_generalized_linear_models.qmd) (logistic regression as one member of the family of generalised linear models), [note 03](03_regularization_inputs_assumptions.qmd) (regularisation, input variables), [note 04](04_softmax_regression.qmd) (more than two classes). Lab: [logistic regression from scratch](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%20-%20Logistic%20Regression.ipynb).
+Related notes: [note 02b](02b_generalized_linear_models.html) (logistic regression as one member of the family of generalised linear models), [note 03](03_regularization_inputs_assumptions.html) (regularisation, input variables), [note 04](04_softmax_regression.html) (more than two classes). Lab: [logistic regression from scratch](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%20-%20Logistic%20Regression.ipynb).
 
 ```{python}
 import numpy as np
@@ -32,7 +32,7 @@ rng = np.random.default_rng(0)
 
 ## 1. Problem statement
 
-Many outputs are **classes**, not numbers: a tumour is malignant or benign, a heart attack occurs or not, a credit is accepted or not, an e-mail is spam or not, a review is positive or negative, a claim is fraudulent or legitimate. (There are also problems with more than two classes, such as hand-written digit recognition or signal classification: section 13 and [note 04](04_softmax_regression.qmd).)
+Many outputs are **classes**, not numbers: a tumour is malignant or benign, a heart attack occurs or not, a credit is accepted or not, an e-mail is spam or not, a review is positive or negative, a claim is fraudulent or legitimate. (There are also problems with more than two classes, such as hand-written digit recognition or signal classification: section 13 and [note 04](04_softmax_regression.html).)
 
 Given $m$ examples $(\mathbf{x}^{(i)}, y^{(i)})$ with $y^{(i)} \in \{0, 1\}$, learn a model that outputs the **probability** that $y=1$:
 
@@ -42,7 +42,7 @@ $$
 
 and then a class, by thresholding that probability.
 
-**Why not just fit linear regression to 0/1 labels?** The first idea is to approximate $y$ by the linear function $h(\mathbf{x}) = \sum_{j=0}^n \theta_j x_j = \boldsymbol{\theta}^\top\mathbf{x}$, fitted by least squares ([note 01](01_linear_regression.qmd)), and to predict class 1 when $h(\mathbf{x}) \ge 0.5$. Two things go wrong:
+**Why not just fit linear regression to 0/1 labels?** The first idea is to approximate $y$ by the linear function $h(\mathbf{x}) = \sum_{j=0}^n \theta_j x_j = \boldsymbol{\theta}^\top\mathbf{x}$, fitted by least squares ([note 01](01_linear_regression.html)), and to predict class 1 when $h(\mathbf{x}) \ge 0.5$. Two things go wrong:
 
 - $\boldsymbol{\theta}^\top\mathbf{x}$ is unbounded: predictions like $-0.3$ or $1.4$ are not probabilities.
 - Squared error punishes points that are *correctly* classified far from the boundary (a very positive score for a $y=1$ point is "wrong" by MSE), so a few far-away points drag the boundary.
@@ -267,12 +267,12 @@ h_{\boldsymbol{\theta}}(\mathbf{x}) \ge \tau
 \end{aligned}
 $$
 
-For $\tau = 0.5$ the right-hand side is $\log 1 = 0$: $h_{\boldsymbol{\theta}}(\mathbf{x}) \ge 0.5 \iff \boldsymbol{\theta}^\top\mathbf{x} \ge 0$. The **decision boundary** $\{\mathbf{x} : \boldsymbol{\theta}^\top\mathbf{x} = \operatorname{logit}(\tau)\}$ is a hyperplane (a line in 2D), so logistic regression is a **linear classifier**. Changing $\tau$ changes only the constant on the right: the boundaries for different thresholds are **parallel** hyperplanes with the same normal vector $(\theta_1,\dots,\theta_n)$. The sigmoid only turns the score, which is proportional to the signed distance to the $\tau=0.5$ hyperplane, into a probability. Curved boundaries need non-linear features ([note 03](03_regularization_inputs_assumptions.qmd)).
+For $\tau = 0.5$ the right-hand side is $\log 1 = 0$: $h_{\boldsymbol{\theta}}(\mathbf{x}) \ge 0.5 \iff \boldsymbol{\theta}^\top\mathbf{x} \ge 0$. The **decision boundary** $\{\mathbf{x} : \boldsymbol{\theta}^\top\mathbf{x} = \operatorname{logit}(\tau)\}$ is a hyperplane (a line in 2D), so logistic regression is a **linear classifier**. Changing $\tau$ changes only the constant on the right: the boundaries for different thresholds are **parallel** hyperplanes with the same normal vector $(\theta_1,\dots,\theta_n)$. The sigmoid only turns the score, which is proportional to the signed distance to the $\tau=0.5$ hyperplane, into a probability. Curved boundaries need non-linear features ([note 03](03_regularization_inputs_assumptions.html)).
 
 **Try it.** Two classes of 150 points each and a fitted logistic regression, $\hat{\boldsymbol{\theta}} = (-6.2, 2.5, 5.4)$. At $\tau = 0.5$ the boundary is the line $\boldsymbol{\theta}^\top\mathbf{x} = 0$ and 153 points are predicted positive; at $\tau = 0.9$ the line moves parallel towards the positive class (127 predicted positive); at $\tau = 0.1$ it moves the other way (191 of the 300 points predicted positive: many more, though not "almost everything" as the last caption says).
 
 ```{=html}
-<div class="widget" data-fig="boundary" data-auto="t=0.5 :: Threshold 0.5: the boundary is the line θᵀx = 0|t=0.9 :: Threshold 0.9: a parallel line, fewer points predicted positive|t=0.1 :: Threshold 0.1: the line moves the other way, almost everything is positive">
+<div class="widget" data-fig="boundary" data-auto="t=0.5 :: Threshold 0.5: the boundary is the line θᵀx = 0|t=0.9 :: Threshold 0.9: a parallel line, fewer points predicted positive|t=0.1 :: Threshold 0.1: the line moves the other way, more points are positive (191 of 300)">
   <svg class="fig" aria-label="Two classes in the plane with the logistic regression decision boundary"></svg>
   <div class="ctl"><label for="bd-t">Threshold</label><input type="range" id="bd-t" data-k="t" min="0.02" max="0.98" step="0.01" value="0.5"><span class="v" data-v="t">0.50</span></div>
   <div class="ro"><div class="m"><span>fitted</span><b data-r="th" style="font-size:17px">–</b></div><div class="m"><span>predicted positive</span><b data-r="n">–</b></div></div>
@@ -316,7 +316,7 @@ $$
 \boxed{J(\boldsymbol{\theta}) = -\frac{1}{m}\,\ell(\boldsymbol{\theta}) = -\frac{1}{m}\sum_{i=1}^m \Big[y^{(i)}\log h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)}) + (1-y^{(i)})\log\big(1-h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)})\big)\Big]}
 $$
 
-So, exactly as for linear regression ([note 01](01_linear_regression.qmd), where least squares was the maximum likelihood under Gaussian noise), **minimising $J$ is maximum likelihood**; only the noise model changed (Bernoulli instead of Gaussian). The independence of the examples is what allowed the product; it is an assumption of the model (section 14.1).
+So, exactly as for linear regression ([note 01](01_linear_regression.html), where least squares was the maximum likelihood under Gaussian noise), **minimising $J$ is maximum likelihood**; only the noise model changed (Bernoulli instead of Gaussian). The independence of the examples is what allowed the product; it is an assumption of the model (section 14.1).
 
 **The loss as a function of the score.** With $z = \boldsymbol{\theta}^\top\mathbf{x}$ and a positive example, $-\log\sigma(z) = -\log\frac{1}{1+e^{-z}} = \log(1+e^{-z})$. For a confident correct score ($z\to+\infty$) this goes to 0; for a confident wrong score ($z\to-\infty$) it behaves like $-z$, so it grows **linearly** in how wrong the score is. For a negative example, by the symmetry property, the loss is $\log(1+e^{z})$.
 
@@ -356,7 +356,7 @@ $$
 \boxed{\nabla_{\boldsymbol{\theta}} J(\boldsymbol{\theta}) = \frac{1}{m}\sum_{i=1}^m\big(h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)}) - y^{(i)}\big)\mathbf{x}^{(i)} = \frac{1}{m}\mathbf{X}^\top\big(\sigma(\mathbf{X}\boldsymbol{\theta}) - \mathbf{y}\big)}
 $$
 
-The factor $h(1-h)$ from the sigmoid cancels the denominator from the logarithm exactly; that cancellation is why cross-entropy and the sigmoid work so well together. **It is the same formula as linear regression**, "(prediction − target) × input", with $\sigma(\mathbf{X}\boldsymbol{\theta})$ in place of $\mathbf{X}\boldsymbol{\theta}$. (This is no accident: both are *generalised linear models* with their "canonical" link, see [note 02b](02b_generalized_linear_models.qmd).)
+The factor $h(1-h)$ from the sigmoid cancels the denominator from the logarithm exactly; that cancellation is why cross-entropy and the sigmoid work so well together. **It is the same formula as linear regression**, "(prediction − target) × input", with $\sigma(\mathbf{X}\boldsymbol{\theta})$ in place of $\mathbf{X}\boldsymbol{\theta}$. (This is no accident: both are *generalised linear models* with their "canonical" link, see [note 02b](02b_generalized_linear_models.html).)
 
 The code below implements $J$ and $\nabla J$ and checks the formula against centred finite differences, $\frac{\partial J}{\partial\theta_j}\approx\frac{J(\boldsymbol{\theta}+\varepsilon\mathbf{e}_j)-J(\boldsymbol{\theta}-\varepsilon\mathbf{e}_j)}{2\varepsilon}$, on a small random problem.
 
@@ -375,7 +375,7 @@ print("finite differences:", fd.round(8))
 
 ## 7. Convexity, step by step
 
-**What we must show.** $J$ is convex if its **Hessian** $\mathbf{H}$ (the matrix of second derivatives, $H_{jk} = \partial^2 J/\partial\theta_j\partial\theta_k$) satisfies $\mathbf{v}^\top\mathbf{H}\mathbf{v}\ge 0$ for every vector $\mathbf{v}$ (positive semi-definite). Same test as for linear regression, where $\mathbf{H} = \frac1m\mathbf{X}^\top\mathbf{X}$ ([note 01](01_linear_regression.qmd)).
+**What we must show.** $J$ is convex if its **Hessian** $\mathbf{H}$ (the matrix of second derivatives, $H_{jk} = \partial^2 J/\partial\theta_j\partial\theta_k$) satisfies $\mathbf{v}^\top\mathbf{H}\mathbf{v}\ge 0$ for every vector $\mathbf{v}$ (positive semi-definite). Same test as for linear regression, where $\mathbf{H} = \frac1m\mathbf{X}^\top\mathbf{X}$ ([note 01](01_linear_regression.html)).
 
 **Step 1 · the gradient** (section 6), one component: $\frac{\partial J}{\partial\theta_j} = \frac1m\sum_{i=1}^m\big(h^{(i)}-y^{(i)}\big)\,x_j^{(i)}$.
 
@@ -447,7 +447,7 @@ $$
 \boldsymbol{\theta} \leftarrow \boldsymbol{\theta} - \frac{\alpha}{m}\mathbf{X}^\top\big(\sigma(\mathbf{X}\boldsymbol{\theta}) - \mathbf{y}\big).
 $$
 
-It looks exactly like linear regression, with its own non-linear hypothesis. Everything from [note 01](01_linear_regression.qmd) applies: standardise the features, choose $\alpha$ by watching $J$ decrease (too large → oscillation; too small → slow). **A safe step size.** Since $s_i = \sigma'(z^{(i)}) \le \tfrac14$, the Hessian (section 7) satisfies $\mathbf{v}^\top\mathbf{H}\mathbf{v} \le \frac{1}{4}\,\mathbf{v}^\top\big(\frac1m\mathbf{X}^\top\mathbf{X}\big)\mathbf{v}$, so its largest eigenvalue is at most $\frac14\lambda_{\max}(\frac1m\mathbf{X}^\top\mathbf{X})$. Gradient descent on a function whose Hessian eigenvalues never exceed $L$ decreases $J$ for any $\alpha < 2/L$ (the bound of note 01), so any $\alpha < 8/\lambda_{\max}(\frac1m\mathbf{X}^\top\mathbf{X})$ is stable.
+It looks exactly like linear regression, with its own non-linear hypothesis. Everything from [note 01](01_linear_regression.html) applies: standardise the features, choose $\alpha$ by watching $J$ decrease (too large → oscillation; too small → slow). **A safe step size.** Since $s_i = \sigma'(z^{(i)}) \le \tfrac14$, the Hessian (section 7) satisfies $\mathbf{v}^\top\mathbf{H}\mathbf{v} \le \frac{1}{4}\,\mathbf{v}^\top\big(\frac1m\mathbf{X}^\top\mathbf{X}\big)\mathbf{v}$, so its largest eigenvalue is at most $\frac14\lambda_{\max}(\frac1m\mathbf{X}^\top\mathbf{X})$. Gradient descent on a function whose Hessian eigenvalues never exceed $L$ decreases $J$ for any $\alpha < 2/L$ (the bound of note 01), so any $\alpha < 8/\lambda_{\max}(\frac1m\mathbf{X}^\top\mathbf{X})$ is stable.
 
 **Try it.** Sixty points in one dimension, gradient descent with $\alpha = 0.5$ on the standardised feature, starting at $\boldsymbol{\theta} = \mathbf{0}$. At iteration 0 the model says $p = 0.5$ for everyone, so $J = \log 2 = 0.693$. The S-curve forms within a few iterations ($J = 0.434$ at iteration 5); $J$ is still falling at iteration 30 ($0.276$) and has flattened out by 200 ($0.247$).
 
@@ -581,7 +581,7 @@ print(f"sum of predicted probabilities = {sigmoid(X @ theta_nt).sum():.4f},   nu
 - For $c > 0$, the scaled parameters $c\bar{\boldsymbol{\theta}}$ give each positive the loss $\log(1+e^{-c\,\bar{\boldsymbol{\theta}}^\top\mathbf{x}^{(i)}})$ and each negative $\log(1+e^{c\,\bar{\boldsymbol{\theta}}^\top\mathbf{x}^{(i)}})$ (section 5). Both go to 0 as $c\to\infty$, because the exponent goes to $-\infty$. So $\inf_{\boldsymbol{\theta}} J = 0$.
 - For every finite $\boldsymbol{\theta}$, each $p^{(i)}$ is strictly between 0 and 1, so each loss term is strictly positive and $J(\boldsymbol{\theta}) > 0$.
 
-The infimum 0 is never attained: **the maximum likelihood estimate does not exist**. $\blacksquare$ Gradient descent keeps increasing $\lVert\boldsymbol{\theta}\rVert$ forever: the boundary settles but the probabilities become ever more over-confident, $\sigma(c\,z)$ for growing $c$ (figure). The fix is **L2 regularisation** ([note 03](03_regularization_inputs_assumptions.qmd)), $J + \frac{\lambda}{2m}\sum_{j\ge1}\theta_j^2$, whose penalty grows without bound and so gives a finite minimiser; scikit-learn does this by default with $C = 1/\lambda = 1$. Section 14.4 shows how to detect separation, including the more common *quasi-complete* case, and all the remedies.
+The infimum 0 is never attained: **the maximum likelihood estimate does not exist**. $\blacksquare$ Gradient descent keeps increasing $\lVert\boldsymbol{\theta}\rVert$ forever: the boundary settles but the probabilities become ever more over-confident, $\sigma(c\,z)$ for growing $c$ (figure). The fix is **L2 regularisation** ([note 03](03_regularization_inputs_assumptions.html)), $J + \frac{\lambda}{2m}\sum_{j\ge1}\theta_j^2$, whose penalty grows without bound and so gives a finite minimiser; scikit-learn does this by default with $C = 1/\lambda = 1$. Section 14.4 shows how to detect separation, including the more common *quasi-complete* case, and all the remedies.
 
 ```{=html}
 <div class="widget"><svg class="fig" data-fig="steep" aria-label="Sigmoids that get steeper as theta is scaled up"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/03_logistic_regression.html#17">slide 17</a> of the Logistic Regression deck: \(\sigma(c\,z)\) for \(c = 1, 3, 10\), the same boundary, ever more confident.</p></div>
@@ -941,7 +941,7 @@ plt.tight_layout(); plt.show()
 
 ### 12.8 Choosing the threshold, simply
 
-The model gives every claim a score; the threshold is **where you cut**. Three ways to decide, all on the **validation set** (never on the test set, which must stay an unbiased estimate of the final performance, [note 00](00_supervised_learning.qmd)):
+The model gives every claim a score; the threshold is **where you cut**. Three ways to decide, all on the **validation set** (never on the test set, which must stay an unbiased estimate of the final performance, [note 00](00_supervised_learning.html)):
 
 1. **I have a budget.** "We can investigate 5 % of the claims." Sort the claims by score and flag the top 5 %: the threshold is simply the score at that rank. The threshold follows the budget, not the other way round.
 2. **I have a requirement.** "We must catch 90 % of the fraud": lower the threshold until recall reaches 0.9, then stop. "No more than 2 % of legit claims may be bothered": raise it until the FPR is 0.02. Read the point off the PR or ROC curve.
@@ -1084,11 +1084,11 @@ With $K$ classes, the simplest reduction to binary problems is **one-vs-rest** (
 <div class="widget"><svg class="fig" data-fig="ovr" aria-label="Three classes and three one-versus-rest binary problems"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/03_logistic_regression.html#34">slide 34</a> of the Logistic Regression deck.</p></div>
 ```
 
-It works with any binary classifier, but the $K$ outputs are fitted separately and do not sum to 1. **Softmax regression** does multiclass in one model with one loss and outputs a proper distribution: [note 04](04_softmax_regression.qmd), which also compares the two.
+It works with any binary classifier, but the $K$ outputs are fitted separately and do not sum to 1. **Softmax regression** does multiclass in one model with one loss and outputs a proper distribution: [note 04](04_softmax_regression.html), which also compares the two.
 
 ## 14. Assumptions: what they mean, how to check them, what to do
 
-Logistic regression needs **fewer** assumptions than linear regression. There is no additive error term, so there is no normality and no homoscedasticity assumption: the Bernoulli variance $p(1-p)$ is part of the model, and it changes with $\mathbf{x}$ by design. (Constant variance is an assumption of linear regression's standard errors, figure; see [note 01](01_linear_regression.qmd).) Nor does it assume normally distributed features, or a linear relation between $\mathbf{x}$ and $p$ itself (that relation is S-shaped by construction).
+Logistic regression needs **fewer** assumptions than linear regression. There is no additive error term, so there is no normality and no homoscedasticity assumption: the Bernoulli variance $p(1-p)$ is part of the model, and it changes with $\mathbf{x}$ by design. (Constant variance is an assumption of linear regression's standard errors, figure; see [note 01](01_linear_regression.html).) Nor does it assume normally distributed features, or a linear relation between $\mathbf{x}$ and $p$ itself (that relation is S-shaped by construction).
 
 ```{=html}
 <div class="widget"><svg class="fig" data-fig="homo" aria-label="Constant error variance versus error variance that grows with x"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/03_logistic_regression.html#35">slide 35</a> of the Logistic Regression deck: homoscedasticity is a linear-regression assumption; logistic regression has no such error term.</p></div>
@@ -1130,7 +1130,7 @@ def fit_logit(X, y, lam=0.0, firth=False, n_iter=50, tol=1e-8):
 
 ### 14.1 Binary outcome and independent observations
 
-**What it says.** Given $\mathbf{x}^{(i)}$, each $y^{(i)}$ is a Bernoulli variable with parameter $\sigma(\boldsymbol{\theta}^\top\mathbf{x}^{(i)})$, and the $y^{(i)}$ are **independent** of each other. (If $y$ has more than two unordered categories, use softmax, [note 04](04_softmax_regression.qmd); if the categories are ordered, such as damage severity, an ordinal model; if each row records $k$ successes out of $n$ trials, a binomial model, i.e. logistic regression with $n$ as a weight.)
+**What it says.** Given $\mathbf{x}^{(i)}$, each $y^{(i)}$ is a Bernoulli variable with parameter $\sigma(\boldsymbol{\theta}^\top\mathbf{x}^{(i)})$, and the $y^{(i)}$ are **independent** of each other. (If $y$ has more than two unordered categories, use softmax, [note 04](04_softmax_regression.html); if the categories are ordered, such as damage severity, an ordinal model; if each row records $k$ successes out of $n$ trials, a binomial model, i.e. logistic regression with $n$ as a weight.)
 
 **Why it matters.** Independence is what turned the likelihood into a product (section 5) and the gradient into a sum of independent terms, whose variance gave the standard errors (section 11). Real data are often **clustered**: several claims from the same policyholder, several photos of the same car, several years of the same policy. Observations within a cluster share unobserved factors, so they carry less independent information than their number suggests.
 
@@ -1254,7 +1254,7 @@ Left: points on the line, Box–Tidwell not significant ($z = 0.62$). Right: bot
 1. **Transform** the feature when theory or the diagnostics suggest a shape: $\log x$ for amounts, incomes, durations; $x^2$ for U-shapes; $\hat\lambda$ from Box–Tidwell as a guide. Keeps one interpretable coefficient ("each doubling of the amount multiplies the odds by $2^{\theta}$").
 2. **Splines** (`SplineTransformer`): a flexible smooth curve made of piecewise polynomials, a few coefficients per feature. The safe default when there is no theory; interpret by plotting the fitted curve.
 3. **Binning** (`KBinsDiscretizer`, or business bands such as age groups): a step function. Simple and robust, but it throws information away and creates jumps at the cut points.
-4. **Interactions** when the effect of one feature depends on another ($x_1 x_2$ terms, [note 03](03_regularization_inputs_assumptions.qmd)).
+4. **Interactions** when the effect of one feature depends on another ($x_1 x_2$ terms, [note 03](03_regularization_inputs_assumptions.html)).
 
 The fix, applied to the right-hand data: refit with $\log x$ and with a cubic spline in $x$, compare log-loss on a held-out half, and repeat the Box–Tidwell check on the transformed feature. Both fixes lower the held-out log-loss (the log, which matches the truth, slightly more than the spline), and the Box–Tidwell test no longer objects.
 
@@ -1275,7 +1275,7 @@ print(f"Box–Tidwell on the (shifted) log x feature: z = {z_bt2:+.2f}, p = {p_b
 
 **What it says.** No feature is (nearly) a linear combination of the others. Exact collinearity makes $\mathbf{X}^\top\mathbf{S}\mathbf{X}$ singular: the MLE is not unique. Near-collinearity makes it ill-conditioned.
 
-**Why it matters.** Exactly as in linear regression ([note 01](01_linear_regression.qmd), where this is treated in full): the data cannot tell the effects of correlated features apart, so their coefficients become unstable (large SEs, signs that flip between samples) while their sum, and therefore the **predictions**, stays well determined. It hurts *interpretation and inference*, not prediction (as long as the correlation persists in new data).
+**Why it matters.** Exactly as in linear regression ([note 01](01_linear_regression.html), where this is treated in full): the data cannot tell the effects of correlated features apart, so their coefficients become unstable (large SEs, signs that flip between samples) while their sum, and therefore the **predictions**, stays well determined. It hurts *interpretation and inference*, not prediction (as long as the correlation persists in new data).
 
 **How to check.** The **variance inflation factor** of feature $j$ regresses it on the other features: $\mathrm{VIF}_j = \frac{1}{1-R_j^2}$, with $R_j^2$ the $R^2$ of that regression. It measures by how much the variance of $\hat\theta_j$ is inflated compared with uncorrelated features. It depends only on $\mathbf{X}$, not on $y$, so it is computed exactly as for linear regression. (Strictly, the logistic SEs come from $\mathbf{X}^\top\mathbf{S}\mathbf{X}$, a *weighted* version, but with weights that vary smoothly the ordinary VIF is an excellent guide.) Rules of thumb: VIF > 5 is worth a look, > 10 is serious; caveat: a large VIF on a nuisance control variable is harmless.
 
@@ -1315,7 +1315,7 @@ With correlation 0.95 the VIFs are about 10, the SEs of the two coefficients are
 
 1. **Drop** one of the correlated features, or **combine** them into one meaningful feature (the mean of the standardised amount and estimate above: one coefficient with a small SE, whose meaning is "claim size").
 2. **PCA** or other dimensionality reduction on the correlated block (loses direct interpretability).
-3. **L2 regularisation** stabilises the coefficients by shrinking them towards each other ([note 03](03_regularization_inputs_assumptions.qmd)).
+3. **L2 regularisation** stabilises the coefficients by shrinking them towards each other ([note 03](03_regularization_inputs_assumptions.html)).
 4. If only prediction matters: nothing.
 
 ### 14.4 Complete and quasi-complete separation
@@ -1453,7 +1453,7 @@ At EPV 2 the MLE of a coefficient whose true value is 0.5 averages 0.72 with a s
 **What to do.**
 
 1. **Fewer parameters**: choose features by subject knowledge before looking at the outcome; merge rare categories; prefer one transform to a many-knot spline. (Selecting features by their p-values on the same data makes things worse.)
-2. **Penalise**: L2 (or L1) with $\lambda$ chosen by cross-validation for prediction ([note 03](03_regularization_inputs_assumptions.qmd)); Firth for inference.
+2. **Penalise**: L2 (or L1) with $\lambda$ chosen by cross-validation for prediction ([note 03](03_regularization_inputs_assumptions.html)); Firth for inference.
 3. **Collect more events** (a longer period, more regions), or, for rare events, a case–control design with the intercept correction of section 15.1.
 4. Report uncertainty honestly (bootstrap the whole modelling procedure; validate calibration).
 
@@ -1465,7 +1465,7 @@ At EPV 2 the MLE of a coefficient whose true value is 0.5 averages 0.72 with a s
 
 **How to check.** Three per-observation quantities, all from the fit:
 
-- **Pearson residual** $r_{P,i} = \frac{y_i - p_i}{\sqrt{p_i(1-p_i)}}$ (the raw residual divided by its standard deviation under the model) and **deviance residual** $r_{D,i} = \operatorname{sign}(y_i - p_i)\sqrt{-2\big[y_i\log p_i + (1-y_i)\log(1-p_i)\big]}$ (the signed square root of the observation's contribution to $2mJ$, so $\sum_i r_{D,i}^2 = 2mJ$, the deviance of [note 02b](02b_generalized_linear_models.qmd)). A point with $|r| > 3$ is surprising under the model. For binary $y$ the residuals take only two values at each $p$, so residual-vs-fitted plots show two bands; look at the extremes, or average them in bins.
+- **Pearson residual** $r_{P,i} = \frac{y_i - p_i}{\sqrt{p_i(1-p_i)}}$ (the raw residual divided by its standard deviation under the model) and **deviance residual** $r_{D,i} = \operatorname{sign}(y_i - p_i)\sqrt{-2\big[y_i\log p_i + (1-y_i)\log(1-p_i)\big]}$ (the signed square root of the observation's contribution to $2mJ$, so $\sum_i r_{D,i}^2 = 2mJ$, the deviance of [note 02b](02b_generalized_linear_models.html)). A point with $|r| > 3$ is surprising under the model. For binary $y$ the residuals take only two values at each $p$, so residual-vs-fitted plots show two bands; look at the extremes, or average them in bins.
 - **Leverage.** At convergence IRLS is a weighted least-squares fit (section 9), whose hat matrix is $\mathbf{H} = \mathbf{S}^{1/2}\mathbf{X}(\mathbf{X}^\top\mathbf{S}\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{S}^{1/2}$. Its diagonal $h_{ii} = s_i\,\mathbf{x}^{(i)\top}(\mathbf{X}^\top\mathbf{S}\mathbf{X})^{-1}\mathbf{x}^{(i)}$ is the leverage: how much the point's own label can move its own fitted value. The $h_{ii}$ sum to the number of parameters $q = n+1$ (the trace of a projection), so the average is $q/m$ and $h_{ii} > 2q/m$ is "high". Unlike in linear regression, leverage depends on the fit through $s_i = p_i(1-p_i)$: an extreme point that the model predicts with $p\approx 0$ or 1 has low leverage.
 - **Cook's distance**, how far the whole coefficient vector moves when point $i$ is removed. Derivation of the one-step approximation (Pregibon, 1981): start at $\hat{\boldsymbol{\theta}}$ and take one Newton step on the data without $i$.
 

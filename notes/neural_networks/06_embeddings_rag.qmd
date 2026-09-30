@@ -10,7 +10,7 @@ format:
 
 **What this note covers.** How companies build chatbots that answer from their own documents. The pieces: **embeddings** that turn text into vectors (sparse TF-IDF and BM25, dense LSA, learned neural encoders), **similarity search** (cosine, exact and approximate nearest neighbours, hybrid lexical + dense retrieval), how to **measure** retrieval (hit rate, recall, MRR, nDCG), how to **chunk** documents, and the **RAG** pipeline that pastes the retrieved chunks into an LLM's prompt. Then the assumptions RAG rests on (similarity ≈ relevance, matching vocabularies, chunks that fit, a current index, trustworthy text) and its failure modes, from retrieval misses to prompt injection and access control, each with a check and a remedy.
 
-**What you need.** Vectors, dot products and norms; the SVD (as in PCA); softmax and cross-entropy ([ML note 04](../machine_learning/04_softmax_regression.qmd)); embeddings as lookup tables and word2vec ([NN note 04](04_rnn_lstm.qmd)); transformers, encoders vs decoders, tokens and context windows ([NN note 05](05_attention_transformers.qmd)).
+**What you need.** Vectors, dot products and norms; the SVD (as in PCA); softmax and cross-entropy ([ML note 04](../machine_learning/04_softmax_regression.html)); embeddings as lookup tables and word2vec ([NN note 04](04_rnn_lstm.html)); transformers, encoders vs decoders, tokens and context windows ([NN note 05](05_attention_transformers.html)).
 
 **After this note you can** prove that cosine and Euclidean rankings coincide for unit vectors; implement TF-IDF, BM25, LSA retrieval and reciprocal rank fusion from scratch; compute hit rate@k, recall@k, MRR and nDCG by hand and in code; choose a chunk size and overlap with a measurement rather than a guess; and design a RAG system that you can evaluate, keep current, and keep safe.
 
@@ -30,7 +30,7 @@ rng = np.random.default_rng(0)
 
 An **embedding** is a map from an object (a word, a sentence, an image, a customer…) to a vector, $\mathrm{embed}:\text{object}\to\mathbb{R}^D$, built so that **similar objects get nearby vectors**. Once objects are vectors, "find related documents", "cluster claims", "recommend items" all become geometry: nearest neighbours, clustering, linear classifiers on top.
 
-We have already met learned embeddings: the `nn.Embedding` layer ([NN note 04](04_rnn_lstm.qmd)), and every hidden layer of a trained network, whose activations $\mathbf{A}^{[L-1]}$ are the features the output layer works on ([NN note 00](00_neural_networks_mlp.qmd)).
+We have already met learned embeddings: the `nn.Embedding` layer ([NN note 04](04_rnn_lstm.html)), and every hidden layer of a trained network, whose activations $\mathbf{A}^{[L-1]}$ are the features the output layer works on ([NN note 00](00_neural_networks_mlp.html)).
 
 The **distributional hypothesis** ("you shall know a word by the company it keeps") is the basis of most text embeddings: words and texts that appear in similar contexts should be close.
 
@@ -46,7 +46,7 @@ An LLM only knows what was in its training data: up to a cut-off date, and never
 2. **Retrieve** (online): embed the question and find the most similar chunks.
 3. **Generate**: give the LLM the question plus the chunks, and ask it to answer from them.
 
-The embeddings come from an encoder transformer trained so that texts with similar meaning get similar vectors ([NN note 05](05_attention_transformers.qmd)): the word2vec idea of [NN note 04](04_rnn_lstm.qmd), for whole paragraphs. The rest of this note builds each piece and measures it.
+The embeddings come from an encoder transformer trained so that texts with similar meaning get similar vectors ([NN note 05](05_attention_transformers.html)): the word2vec idea of [NN note 04](04_rnn_lstm.html), for whole paragraphs. The rest of this note builds each piece and measures it.
 
 ## 2. Similarity measures
 
@@ -257,13 +257,13 @@ plt.tight_layout(); plt.show()
 $$
 P(o\mid c) = \frac{\exp(\mathbf{u}_o'^\top\mathbf{u}_c)}{\sum_{w\in V}\exp(\mathbf{u}_w'^\top\mathbf{u}_c)},
 $$
-a softmax classifier ([ML note 04](../machine_learning/04_softmax_regression.qmd)) whose input is the centre word's embedding, trained with cross-entropy on (centre, context) pairs from a large corpus. The sum over $V$ is expensive, so it is replaced by **negative sampling**: a few binary logistic regressions that tell the true context word from $K$ random "noise" words $w_1,\dots,w_K$,
+a softmax classifier ([ML note 04](../machine_learning/04_softmax_regression.html)) whose input is the centre word's embedding, trained with cross-entropy on (centre, context) pairs from a large corpus. The sum over $V$ is expensive, so it is replaced by **negative sampling**: a few binary logistic regressions that tell the true context word from $K$ random "noise" words $w_1,\dots,w_K$,
 $$
 \log\sigma\big(\mathbf{u}_o'^\top\mathbf{u}_c\big) + \sum_{j=1}^{K}\log\sigma\big(-\mathbf{u}_{w_j}'^\top\mathbf{u}_c\big)\quad\text{(maximised)},
 $$
 which costs $O(K)$ instead of $O(|V|)$ per pair. Words with similar contexts end up with similar vectors, and famously some relations become directions: $\mathbf{u}_{\text{king}} - \mathbf{u}_{\text{man}} + \mathbf{u}_{\text{woman}}\approx\mathbf{u}_{\text{queen}}$. Up to details, word2vec is implicitly factorising a word–context co-occurrence matrix (Levy & Goldberg, 2014), so it is a close relative of LSA.
 
-**Sentence / document encoders** (Sentence-BERT, E5, OpenAI and other embedding APIs) run a transformer **encoder** ([NN note 05](05_attention_transformers.qmd)) over the text and pool the token outputs (e.g. their mean) into one vector. They are trained **contrastively**: for a query $q$ with a relevant passage $p^+$ and other passages $p_1^-,\dots$ in the batch, minimise
+**Sentence / document encoders** (Sentence-BERT, E5, OpenAI and other embedding APIs) run a transformer **encoder** ([NN note 05](05_attention_transformers.html)) over the text and pool the token outputs (e.g. their mean) into one vector. They are trained **contrastively**: for a query $q$ with a relevant passage $p^+$ and other passages $p_1^-,\dots$ in the batch, minimise
 $$
 J = -\log\frac{\exp\big(\cos(q, p^+)/\tau\big)}{\exp\big(\cos(q, p^+)/\tau\big) + \sum_j\exp\big(\cos(q, p_j^-)/\tau\big)} .
 $$

@@ -11,7 +11,7 @@ format:
 
 **What this note covers.** Attention, the mechanism that lets every position of a sequence read directly from every other position, and the transformer built from it. We start from the bottleneck of recurrent encoders, build attention as a soft dictionary lookup (with numbers), write self-attention in matrix form, derive the $\sqrt{d_k}$ scaling, multi-head attention, positional encodings and the causal mask, count the 124M parameters of GPT-2 small, and derive the cost of attention ($O(n^2d)$) against the MLP ($O(nd^2)$) and the memory of the KV cache. Then we train a tiny GPT from scratch, generate text with greedy, beam, temperature, top-$k$ and top-$p$ decoding, measure it with perplexity and bits per character, and break it on purpose: without the causal mask, and with too little data. The note ends with the assumptions behind the transformer and what to do when they fail.
 
-**What you need.** The MLP, softmax outputs and cross-entropy ([NN note 00](00_neural_networks_mlp.qmd), [ML note 04](../machine_learning/04_softmax_regression.qmd)); backpropagation ([NN note 01](01_backpropagation.qmd)); Adam, dropout, LayerNorm and gradient clipping ([NN note 02](02_training_optimization_regularization.qmd)); residual connections ([NN note 03](03_cnn_transfer_multitask.qmd)); embeddings, RNNs and the encoder–decoder bottleneck ([NN note 04](04_rnn_lstm.qmd)).
+**What you need.** The MLP, softmax outputs and cross-entropy ([NN note 00](00_neural_networks_mlp.html), [ML note 04](../machine_learning/04_softmax_regression.html)); backpropagation ([NN note 01](01_backpropagation.html)); Adam, dropout, LayerNorm and gradient clipping ([NN note 02](02_training_optimization_regularization.html)); residual connections ([NN note 03](03_cnn_transfer_multitask.html)); embeddings, RNNs and the encoder–decoder bottleneck ([NN note 04](04_rnn_lstm.html)).
 
 **After this note you can** compute an attention output by hand; write self-attention, multi-head attention and a transformer block in PyTorch; explain why the scores are divided by $\sqrt{d_k}$, why positions must be added and why the causal mask is needed; count the parameters and the cost of a transformer; choose a decoding strategy; compare language models with perplexity or bits per character; and diagnose leakage and overfitting in a small language model.
 
@@ -31,7 +31,7 @@ rng = np.random.default_rng(0); torch.manual_seed(0); torch.set_num_threads(4)
 
 ### 1.1 Problems with LSTMs
 
-The LSTM of [NN note 04](04_rnn_lstm.qmd) fixed the vanishing gradient, but four problems remain:
+The LSTM of [NN note 04](04_rnn_lstm.html) fixed the vanishing gradient, but four problems remain:
 
 - Inputs are **sequential**: step $t$ must wait for step $t-1$, so there is no parallelism over positions.
 - There is no explicit modelling of which positions relate to which; long- and short-range dependencies go through the same state.
@@ -42,7 +42,7 @@ What we want: handle inputs of different lengths; process the entire input in pa
 
 ### 1.2 The bottleneck
 
-Before attention, sequence-to-sequence models **compressed the entire input sequence into a single fixed-size vector** $\mathbf{c} = \mathbf{h}_T$ before decoding it. Long sequences lost information by the time they reached the output ([NN note 04](04_rnn_lstm.qmd) measures how little a fixed-size state remembers).
+Before attention, sequence-to-sequence models **compressed the entire input sequence into a single fixed-size vector** $\mathbf{c} = \mathbf{h}_T$ before decoding it. Long sequences lost information by the time they reached the output ([NN note 04](04_rnn_lstm.html) measures how little a fixed-size state remembers).
 
 ```{=html}
 <div class="widget"><svg class="fig" data-fig="seq2seq" style="max-height:260px" aria-label="An encoder RNN compressing a sentence into one context vector, read by a decoder RNN"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#3">slide 3</a> of the Attention and Transformers deck.</p></div>
@@ -200,12 +200,12 @@ $$
 \end{aligned}
 $$
 
-So raw dot products have standard deviation $\sqrt{d_k}$ (8 for $d_k = 64$). Large scores push the softmax into **saturation**: nearly one-hot, where its gradient is nearly zero. Indeed the softmax Jacobian is $\partial\alpha_i/\partial s_j = \alpha_i(\delta_{ij} - \alpha_j)$, i.e. $\mathrm{diag}(\boldsymbol{\alpha}) - \boldsymbol{\alpha}\boldsymbol{\alpha}^\top$ ([ML note 04](../machine_learning/04_softmax_regression.qmd)), and if $\boldsymbol{\alpha}$ is one-hot every entry is 0. Dividing by $\sqrt{d_k}$ gives $\mathrm{Var}(\mathbf{q}^\top\mathbf{k}/\sqrt{d_k}) = d_k/d_k = 1$ (variance scales with the square of a constant), whatever the dimension. $\blacksquare$
+So raw dot products have standard deviation $\sqrt{d_k}$ (8 for $d_k = 64$). Large scores push the softmax into **saturation**: nearly one-hot, where its gradient is nearly zero. Indeed the softmax Jacobian is $\partial\alpha_i/\partial s_j = \alpha_i(\delta_{ij} - \alpha_j)$, i.e. $\mathrm{diag}(\boldsymbol{\alpha}) - \boldsymbol{\alpha}\boldsymbol{\alpha}^\top$ ([ML note 04](../machine_learning/04_softmax_regression.html)), and if $\boldsymbol{\alpha}$ is one-hot every entry is 0. Dividing by $\sqrt{d_k}$ gives $\mathrm{Var}(\mathbf{q}^\top\mathbf{k}/\sqrt{d_k}) = d_k/d_k = 1$ (variance scales with the square of a constant), whatever the dimension. $\blacksquare$
 
-**Try it.** Eight random keys and one query, one random draw per $d_k$; the read-outs give the largest weight of each softmax. At $d_k = 4$ the two are close (0.61 raw, 0.41 scaled); at $d_k = 64$ the raw softmax gives 0.94 to one key, the scaled one 0.33; at $d_k = 512$, 0.88 against 0.26. The raw maximum fluctuates from draw to draw, but it stays near one-hot, while the scaled one stays soft at every $d_k$.
+**Try it.** Eight random keys and one query, one random draw per $d_k$; the read-outs give the largest weight of each softmax. At $d_k = 4$ both are soft (0.61 raw, 0.41 scaled); at $d_k = 64$ the raw softmax gives 0.94 to one key, the scaled one 0.33; at $d_k = 512$, 0.88 against 0.26. The raw maximum fluctuates from draw to draw, but it stays near one-hot, while the scaled one stays soft at every $d_k$.
 
 ```{=html}
-<div class="widget" data-fig="sqrtd" data-auto="d=2 :: dₖ = 4: raw and scaled look alike | d=6 :: dₖ = 64: the raw softmax is almost one-hot | d=9 :: dₖ = 512: raw puts everything on one key; scaled stays soft">
+<div class="widget" data-fig="sqrtd" data-auto="d=2 :: dₖ = 4: both softmaxes are soft (largest weight 0.61 raw, 0.41 scaled) | d=6 :: dₖ = 64: the raw softmax is almost one-hot (0.94); the scaled one stays soft (0.33) | d=9 :: dₖ = 512: raw still puts most weight on one key (0.88); scaled stays soft (0.26)">
   <svg class="fig" aria-label="Softmax of raw and scaled attention scores"></svg>
   <div class="ctl"><label for="sq-d">dₖ (log scale)</label><input type="range" id="sq-d" data-k="d" min="0" max="9" step="1" value="6"><span class="v" data-v="d">64</span></div>
   <div class="ro"><div class="m"><span>max weight, raw</span><b data-r="mx">–</b></div><div class="m"><span>max weight, scaled</span><b data-r="ms">–</b></div></div>
@@ -335,7 +335,7 @@ $e^{-\infty} = 0$, so future tokens get exactly zero weight and each row is a di
 <div class="widget"><svg class="fig" data-fig="mask" style="max-height:270px" aria-label="Scores, the causal mask with minus infinity above the diagonal, and the resulting attention weights"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#15">slide 15</a> of the Attention and Transformers deck.</p></div>
 ```
 
-This is what makes transformers fast to **train**: one forward pass over a sequence of length $n$ computes all $n$ next-token predictions **in parallel**, each seeing only its own past (*teacher forcing*, [NN note 04](04_rnn_lstm.qmd)). An RNN has to run step by step. At **generation** time the model still produces one token at a time (section 13).
+This is what makes transformers fast to **train**: one forward pass over a sequence of length $n$ computes all $n$ next-token predictions **in parallel**, each seeing only its own past (*teacher forcing*, [NN note 04](04_rnn_lstm.html)). An RNN has to run step by step. At **generation** time the model still produces one token at a time (section 13).
 
 ```{python}
 T_ = 6
@@ -444,7 +444,7 @@ $$
 with $\mathbf{W}_1\in\mathbb{R}^{d\times4d}$ and $\mathbf{W}_2\in\mathbb{R}^{4d\times d}$.
 
 - **Attention mixes information between positions; the MLP processes each position separately**: "communicate, then think".
-- **Residual connections** ([NN note 03](03_cnn_transfer_multitask.qmd)) and **LayerNorm** ([NN note 02](02_training_optimization_regularization.qmd)) make deep stacks trainable.
+- **Residual connections** ([NN note 03](03_cnn_transfer_multitask.html)) and **LayerNorm** ([NN note 02](02_training_optimization_regularization.html)) make deep stacks trainable.
 - **Cross-attention** (encoder–decoder models): queries from the decoder, keys and values from the encoder output. This is the alignment of translation (section 1.3), inside the transformer.
 
 ```{=html}
@@ -455,7 +455,7 @@ with $\mathbf{W}_1\in\mathbb{R}^{d\times4d}$ and $\mathbf{W}_2\in\mathbb{R}^{4d\
 
 The figure is the original transformer, with "Add & Norm" **after** each sub-layer (**post-LN**: $\mathbf{X}\leftarrow\mathrm{LN}(\mathbf{X} + F(\mathbf{X}))$). GPT-2 and most modern models apply the LayerNorm **before** each sub-layer, inside the residual branch (**pre-LN**: $\mathbf{X}\leftarrow\mathbf{X} + F(\mathrm{LN}(\mathbf{X}))$). The difference is where the identity path goes.
 
-- In **pre-LN**, the output of block $N$ is the input plus the sum of all sub-layer outputs: $\mathbf{X}_N = \mathbf{X}_0 + \sum_l F_l(\cdot)$. The Jacobian of the output with respect to any earlier residual stream contains an identity term, exactly as in a ResNet or the LSTM memory ([NN note 04](04_rnn_lstm.qmd)), so gradients reach the first layers undiminished. Training is stable without special care; the price is that the stream's norm grows with depth, hence a final LayerNorm before the output layer.
+- In **pre-LN**, the output of block $N$ is the input plus the sum of all sub-layer outputs: $\mathbf{X}_N = \mathbf{X}_0 + \sum_l F_l(\cdot)$. The Jacobian of the output with respect to any earlier residual stream contains an identity term, exactly as in a ResNet or the LSTM memory ([NN note 04](04_rnn_lstm.html)), so gradients reach the first layers undiminished. Training is stable without special care; the price is that the stream's norm grows with depth, hence a final LayerNorm before the output layer.
 - In **post-LN**, the stream passes through a LayerNorm at every sub-layer, so the gradient to early layers is a product of $2N$ LayerNorm Jacobians and there is no clean identity path. At initialisation the gradients of the last layers are large (Xiong et al., 2020), so post-LN transformers need a learning-rate **warm-up** and careful initialisation, and deep ones can diverge. When they do train, they sometimes reach slightly better final quality.
 
 In words: pre-LN keeps a highway from the loss to every layer; post-LN normalises the highway itself.
@@ -470,7 +470,7 @@ In words: pre-LN keeps a highway from the loss to every layer; post-LN normalise
 |---|---|---|---|
 | attention | bidirectional (sees the whole input) | causal (past only) | encoder bidirectional; decoder causal + cross-attention |
 | trained to | fill in masked words (masked language modelling: hide ~15 % of the tokens, predict them) | predict the next token | map input → output (translation, span corruption) |
-| used for | classification, embeddings, search ([NN note 06](06_embeddings_rag.qmd)), tagging | chatbots, code, text generation | translation, summarisation, speech |
+| used for | classification, embeddings, search ([NN note 06](06_embeddings_rag.html)), tagging | chatbots, code, text generation | translation, summarisation, speech |
 | examples | BERT, RoBERTa, sentence encoders | GPT, Llama, Claude | original transformer, T5, Whisper |
 
 ## 10. Language modelling: the objective behind GPT
@@ -483,7 +483,7 @@ $$
 P(x_1,\dots,x_T) = P(x_1)\,P(x_2\mid x_1)\,P(x_3\mid x_1,x_2)\cdots = \prod_{t=1}^T P(x_t\mid x_1,\dots,x_{t-1}).
 $$
 
-So it is enough to learn one thing: the distribution of the **next token given the previous ones**. That is a $|V|$-class classification problem with softmax and cross-entropy ([ML note 04](../machine_learning/04_softmax_regression.qmd)). The network outputs logits $\mathbf{z}_t\in\mathbb{R}^{|V|}$, $P(x_{t+1}\mid x_{\le t}) = \mathrm{softmax}(\mathbf{z}_t)$, and training minimises the **cross-entropy** of the actual next token, i.e. maximum likelihood on the text:
+So it is enough to learn one thing: the distribution of the **next token given the previous ones**. That is a $|V|$-class classification problem with softmax and cross-entropy ([ML note 04](../machine_learning/04_softmax_regression.html)). The network outputs logits $\mathbf{z}_t\in\mathbb{R}^{|V|}$, $P(x_{t+1}\mid x_{\le t}) = \mathrm{softmax}(\mathbf{z}_t)$, and training minimises the **cross-entropy** of the actual next token, i.e. maximum likelihood on the text:
 
 $$
 J(\boldsymbol{\theta}) = -\frac{1}{T}\sum_{t=1}^{T}\log P_{\boldsymbol{\theta}}(x_t\mid x_{<t}).
@@ -977,7 +977,7 @@ A model that starts confidently wrong wastes its first steps undoing the initial
 
 ## 17. Encoders, decoders and modern LLMs
 
-Modern LLMs are decoder-only transformers like the one above: much larger (billions of parameters, contexts of $10^5$ tokens and more), trained on trillions of tokens, then **instruction-tuned** (supervised fine-tuning on prompt/answer pairs) and aligned with human or AI feedback (RLHF, DPO). A base model is not an assistant: it continues text, which is why prompting and few-shot examples matter (Lab 14). **Exposure bias** ([NN note 04](04_rnn_lstm.qmd)): during training the model always sees the true previous tokens (teacher forcing), but during generation it sees its own, possibly wrong, outputs, so errors can compound over long generations; decoding with truncation (top-$k$, top-$p$) limits how far it drifts.
+Modern LLMs are decoder-only transformers like the one above: much larger (billions of parameters, contexts of $10^5$ tokens and more), trained on trillions of tokens, then **instruction-tuned** (supervised fine-tuning on prompt/answer pairs) and aligned with human or AI feedback (RLHF, DPO). A base model is not an assistant: it continues text, which is why prompting and few-shot examples matter (Lab 14). **Exposure bias** ([NN note 04](04_rnn_lstm.html)): during training the model always sees the true previous tokens (teacher forcing), but during generation it sees its own, possibly wrong, outputs, so errors can compound over long generations; decoding with truncation (top-$k$, top-$p$) limits how far it drifts.
 
 ## 18. Assumptions: what they mean, how to check them, what to do
 
@@ -1025,7 +1025,7 @@ print(f"loss with 1, 2, 3, 10, 30, 64 characters of context: {per_pos[[0, 1, 2, 
 
 The loss falls steeply over the first few characters (1.61 nats with one character of context, 0.36 with three, 0.16 with ten) and then stays flat, around 0.1–0.2 nats: once the current sentence is visible, more context does not help, because the sentences of this corpus are drawn independently. For this text a context of about one sentence is enough; for real text the curve keeps falling for thousands of tokens, which is why LLM contexts keep growing.
 
-**What to do.** (1) If the loss is still falling at the end of the window, train with a longer context (cost: section 8.1). (2) For long documents, process them with a sliding window, or retrieve only the relevant passages and put those in the context (RAG, [NN note 06](06_embeddings_rag.qmd)), or summarise earlier parts. (3) With RoPE, position interpolation extends a trained model's context with a short fine-tuning.
+**What to do.** (1) If the loss is still falling at the end of the window, train with a longer context (cost: section 8.1). (2) For long documents, process them with a sliding window, or retrieve only the relevant passages and put those in the context (RAG, [NN note 06](06_embeddings_rag.html)), or summarise earlier parts. (3) With RoPE, position interpolation extends a trained model's context with a short fine-tuning.
 
 ### 18.3 The scale assumption behind $\sqrt{d_k}$
 

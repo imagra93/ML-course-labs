@@ -10,7 +10,7 @@ format:
 
 To train a network with gradient descent we need $\nabla_{\boldsymbol{\theta}}J$ for **every** weight and bias. Backpropagation computes all of them in one backward sweep, at roughly the cost of a forward pass. It is nothing more than the chain rule, organised so that no computation is repeated. This note builds it from a single derivative up to the general algorithm, with the numbers of the slides at every step, then covers what you need to use it safely: gradient checking, automatic differentiation in PyTorch (and its pitfalls), numerically stable losses, initialisation, vanishing and exploding gradients, and the assumptions behind a training run.
 
-**What you need.** From [NN note 00](00_neural_networks_mlp.qmd): the forward pass $\mathbf{Z}^{[l]} = \mathbf{A}^{[l-1]}\mathbf{W}^{[l]} + \mathbf{b}^{[l]}$, $\mathbf{A}^{[l]} = g^{[l]}(\mathbf{Z}^{[l]})$ (examples are the rows of $\mathbf{A}^{[l]}$, $\mathbf{A}^{[0]} = \mathbf{X}$), the activations' derivatives ($\sigma' = \sigma(1-\sigma)$, $\tanh' = 1-\tanh^2$, $\mathrm{ReLU}' = \mathbb{1}[z>0]$), and the fact that for the matching output + loss pairs the gradient at the logits is "prediction − target". From calculus: derivatives and the chain rule. Gradient descent is [ML note 01](../machine_learning/01_linear_regression.qmd): $\boldsymbol{\theta}\leftarrow\boldsymbol{\theta} - \alpha\nabla_{\boldsymbol{\theta}}J$.
+**What you need.** From [NN note 00](00_neural_networks_mlp.html): the forward pass $\mathbf{Z}^{[l]} = \mathbf{A}^{[l-1]}\mathbf{W}^{[l]} + \mathbf{b}^{[l]}$, $\mathbf{A}^{[l]} = g^{[l]}(\mathbf{Z}^{[l]})$ (examples are the rows of $\mathbf{A}^{[l]}$, $\mathbf{A}^{[0]} = \mathbf{X}$), the activations' derivatives ($\sigma' = \sigma(1-\sigma)$, $\tanh' = 1-\tanh^2$, $\mathrm{ReLU}' = \mathbb{1}[z>0]$), and the fact that for the matching output + loss pairs the gradient at the logits is "prediction − target". From calculus: derivatives and the chain rule. Gradient descent is [ML note 01](../machine_learning/01_linear_regression.html): $\boldsymbol{\theta}\leftarrow\boldsymbol{\theta} - \alpha\nabla_{\boldsymbol{\theta}}J$.
 
 **After this note you can**
 
@@ -36,7 +36,7 @@ $$
 \text{data } (\mathbf{x}, y)\ \longrightarrow\ \textbf{forward: } \hat y = h(\mathbf{x})\ \longrightarrow\ \textbf{loss } L(\hat y, y)\ \longrightarrow\ \textbf{backward: } \frac{\partial L}{\partial\theta} \text{ for every } \theta\ \longrightarrow\ \textbf{update: } \theta\leftarrow\theta - \alpha\frac{\partial L}{\partial\theta} .
 $$
 
-[NN note 00](00_neural_networks_mlp.qmd) gave us the forward pass and the loss. Gradient descent needs one more thing: the derivative of the loss with respect to **every** weight and bias. A small MLP has thousands of parameters; GPT-2 (small) has 124 million. We need a method that gets all the gradients cheaply and mechanically. **Backpropagation** is the chain rule, applied from the loss backwards, reusing what the forward pass already computed.
+[NN note 00](00_neural_networks_mlp.html) gave us the forward pass and the loss. Gradient descent needs one more thing: the derivative of the loss with respect to **every** weight and bias. A small MLP has thousands of parameters; GPT-2 (small) has 124 million. We need a method that gets all the gradients cheaply and mechanically. **Backpropagation** is the chain rule, applied from the loss backwards, reusing what the forward pass already computed.
 
 ## 2. A derivative is a sensitivity
 
@@ -152,7 +152,7 @@ Every layer in this course is built from three kinds of node plus element-wise f
 | **multiply** $uv$ (weight × input) | $3\cdot5 = 15$ | $v, u$ | $2\cdot5 = 10$ and $2\cdot3 = 6$ | **swapper**: each input gets upstream × the **other** input |
 | **max** $\max(u, v)$ (ReLU, max-pooling) | $\max(3,5) = 5$ | $\mathbb{1}[u>v], \mathbb{1}[v>u]$ | $0$ and $2$ | **router**: only the winner receives the gradient |
 
-The multiply rule is why a weight's gradient is proportional to the activation feeding it: for $z = wa$, $\partial L/\partial w = \delta\cdot a$ with $\delta = \partial L/\partial z$. The dual of the add gate is the **copy** (a value used in several places, like $\theta$ in section 3): on the way back the gradients arriving from its uses **add up**. Element-wise functions multiply by their derivative, written with the stored output: sigmoid $a(1-a)$, tanh $1-a^2$ ([NN note 00](00_neural_networks_mlp.qmd), section 14).
+The multiply rule is why a weight's gradient is proportional to the activation feeding it: for $z = wa$, $\partial L/\partial w = \delta\cdot a$ with $\delta = \partial L/\partial z$. The dual of the add gate is the **copy** (a value used in several places, like $\theta$ in section 3): on the way back the gradients arriving from its uses **add up**. Element-wise functions multiply by their derivative, written with the stored output: sigmoid $a(1-a)$, tanh $1-a^2$ ([NN note 00](00_neural_networks_mlp.html), section 14).
 
 ```{=html}
 <div class="widget"><svg class="fig" data-fig="gates" style="max-height:260px" aria-label="Add, multiply and max gates with their forward values and how they route the upstream gradient"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/02_backpropagation.html#6">slide 6</a> of the Backpropagation deck.</p></div>
@@ -168,7 +168,7 @@ One neuron, one example: $z = wx + b$, $a = \sigma(z)$, $J = -[y\log a + (1-y)\l
 | $a = \sigma(z)$ | $\sigma(-0.7) = 0.332$ | $\frac{\partial J}{\partial z} = \frac{\partial J}{\partial a}\,a(1-a)$ |
 | $J = -\log a$ | $1.103$ | $\frac{\partial J}{\partial a} = -\frac{1}{a} = -3.014$ |
 
-Backward numbers: $\sigma'(z) = a(1-a) = 0.332\cdot0.668 = 0.222$, so $\frac{\partial J}{\partial z} = -3.014\cdot0.222 = -0.668 = a - y$ (the "prediction minus target" of [NN note 00](00_neural_networks_mlp.qmd)), $\frac{\partial J}{\partial w} = -0.668\cdot2 = -1.336$, $\frac{\partial J}{\partial b} = -0.668$. Both gradients are negative: increase $w$ and $b$.
+Backward numbers: $\sigma'(z) = a(1-a) = 0.332\cdot0.668 = 0.222$, so $\frac{\partial J}{\partial z} = -3.014\cdot0.222 = -0.668 = a - y$ (the "prediction minus target" of [NN note 00](00_neural_networks_mlp.html)), $\frac{\partial J}{\partial w} = -0.668\cdot2 = -1.336$, $\frac{\partial J}{\partial b} = -0.668$. Both gradients are negative: increase $w$ and $b$.
 
 **One step of gradient descent** with $\alpha = 0.5$:
 
@@ -240,7 +240,7 @@ Section 11 counts and times both on a small network.
 
 ## 8. Forward and backward propagation, step by step
 
-The running example is a network with one hidden layer; the superscript $[l]$ is the layer, as in [NN note 00](00_neural_networks_mlp.qmd) and in Lab 7.
+The running example is a network with one hidden layer; the superscript $[l]$ is the layer, as in [NN note 00](00_neural_networks_mlp.html) and in Lab 7.
 
 | Key notation | Shape |
 |---|---|
@@ -280,7 +280,7 @@ The running example is a network with one hidden layer; the superscript $[l]$ is
 
 ## 9. The tiny network: backward with numbers
 
-Same network and example as [NN note 00](00_neural_networks_mlp.qmd) (section 12): tanh hidden layer, sigmoid output, $\mathbf{x} = (1, 2)$, $y = 1$,
+Same network and example as [NN note 00](00_neural_networks_mlp.html) (section 12): tanh hidden layer, sigmoid output, $\mathbf{x} = (1, 2)$, $y = 1$,
 
 $$
 \mathbf{W}^{[1]} = \begin{pmatrix}0.5 & -0.3\\ 0.2 & 0.4\end{pmatrix}, \quad
@@ -354,7 +354,7 @@ print(f"finite difference for W2[0]: {(tiny_loss(plus)[0] - tiny_loss(minus)[0])
 
 ## 10. Backpropagation for an MLP: the derivation
 
-Forward pass ([NN note 00](00_neural_networks_mlp.qmd)): $\mathbf{Z}^{[l]} = \mathbf{A}^{[l-1]}\mathbf{W}^{[l]} + \mathbf{b}^{[l]}$, $\;\mathbf{A}^{[l]} = g^{[l]}(\mathbf{Z}^{[l]})$, and $J$ is the **mean** loss over the $m$ rows.
+Forward pass ([NN note 00](00_neural_networks_mlp.html)): $\mathbf{Z}^{[l]} = \mathbf{A}^{[l-1]}\mathbf{W}^{[l]} + \mathbf{b}^{[l]}$, $\;\mathbf{A}^{[l]} = g^{[l]}(\mathbf{Z}^{[l]})$, and $J$ is the **mean** loss over the $m$ rows.
 
 Define the **error signal** of layer $l$ as the gradient of the loss with respect to its pre-activations:
 
@@ -364,7 +364,7 @@ $$
 
 It says how much the loss would change if the pre-activation of unit $k$ on example $i$ moved. Three facts are enough.
 
-**(a) At the output.** In general, since $A^{[L]}_{ik} = g(Z^{[L]}_{ik})$ acts element by element, $\boldsymbol{\delta}^{[L]} = \frac{\partial J}{\partial\mathbf{A}^{[L]}}\odot g^{[L]\prime}(\mathbf{Z}^{[L]})$ (for the softmax, which mixes the $K$ logits, the full derivation is [NN note 00](00_neural_networks_mlp.qmd), section 20). For the matching pairs (identity + ½·MSE, sigmoid + BCE, softmax + cross-entropy, exponential + Poisson) the derivative of each example's loss with respect to its logits is "prediction − target" ([NN note 00](00_neural_networks_mlp.qmd), section 24.5), and $J$ averages $m$ such terms, so
+**(a) At the output.** In general, since $A^{[L]}_{ik} = g(Z^{[L]}_{ik})$ acts element by element, $\boldsymbol{\delta}^{[L]} = \frac{\partial J}{\partial\mathbf{A}^{[L]}}\odot g^{[L]\prime}(\mathbf{Z}^{[L]})$ (for the softmax, which mixes the $K$ logits, the full derivation is [NN note 00](00_neural_networks_mlp.html), section 20). For the matching pairs (identity + ½·MSE, sigmoid + BCE, softmax + cross-entropy, exponential + Poisson) the derivative of each example's loss with respect to its logits is "prediction − target" ([NN note 00](00_neural_networks_mlp.html), section 24.5), and $J$ averages $m$ such terms, so
 
 $$
 \boldsymbol{\delta}^{[L]} = \frac{1}{m}\big(\mathbf{A}^{[L]} - \mathbf{Y}\big).
@@ -832,7 +832,7 @@ Gradient checking is still the way to test your own layers (a custom backward fo
 
 ### 13.3 Four pitfalls, each with a demonstration
 
-**1. Gradients accumulate.** `backward()` **adds** into `.grad` (that is how the sum over paths works across several `backward` calls). Without a reset, the gradients of successive batches pile up: that is why the training loop calls `optimizer.zero_grad()` before each `backward()` ([NN note 02](02_training_optimization_regularization.qmd)). Accumulation is also a feature: summing the gradients of several small batches before one `step()` simulates a larger batch.
+**1. Gradients accumulate.** `backward()` **adds** into `.grad` (that is how the sum over paths works across several `backward` calls). Without a reset, the gradients of successive batches pile up: that is why the training loop calls `optimizer.zero_grad()` before each `backward()` ([NN note 02](02_training_optimization_regularization.html)). Accumulation is also a feature: summing the gradients of several small batches before one `step()` simulates a larger batch.
 
 ```{python}
 w_acc = torch.tensor(2.0, requires_grad=True)
@@ -891,7 +891,7 @@ Backpropagation needs the stored $\mathbf{Z}^{[l]}$ and $\mathbf{A}^{[l]}$ of ev
 
 ### 13.5 Numerically stable losses
 
-**Softmax + cross-entropy: log-sum-exp.** For logits $\mathbf{z}$ and true class $t$, $L = -z_t + \log\sum_k e^{z_k}$ ([NN note 00](00_neural_networks_mlp.qmd), section 20). With large logits $e^{z_k}$ overflows. For any constant $c$,
+**Softmax + cross-entropy: log-sum-exp.** For logits $\mathbf{z}$ and true class $t$, $L = -z_t + \log\sum_k e^{z_k}$ ([NN note 00](00_neural_networks_mlp.html), section 20). With large logits $e^{z_k}$ overflows. For any constant $c$,
 
 $$
 \begin{aligned}
@@ -902,7 +902,7 @@ $$
 
 and with $c = \max_k z_k$ every exponent is $\le 0$ and the largest term is $e^0 = 1$, so the sum lies in $[1, K]$: no overflow, and its logarithm is between 0 and $\log K$. `nn.CrossEntropyLoss` computes $-z_t + \operatorname{logsumexp}(\mathbf{z})$ this way, which is why it takes **logits**.
 
-**Sigmoid + BCE: `BCEWithLogitsLoss`.** Written with the logit (derived in [NN note 00](00_neural_networks_mlp.qmd), section 19):
+**Sigmoid + BCE: `BCEWithLogitsLoss`.** Written with the logit (derived in [NN note 00](00_neural_networks_mlp.html), section 19):
 
 $$
 L(z, y) = \max(z, 0) - yz + \log\big(1 + e^{-|z|}\big),
@@ -955,10 +955,10 @@ $$
 
 **PyTorch's default** for `nn.Linear` is uniform on $[-1/\sqrt{n_{\text{in}}}, 1/\sqrt{n_{\text{in}}}]$, whose variance is $\frac{(2/\sqrt{n_{\text{in}}})^2}{12} = \frac{1}{3n_{\text{in}}}$: a third of the tanh value and a sixth of He's. Good enough for shallow networks; for deep ones call `nn.init.xavier_normal_` or `nn.init.kaiming_normal_` explicitly.
 
-**Try it.** 10 layers of 100 units on 200 random inputs; the bars are the size (standard deviation) of the activations layer by layer (left) and of the gradients going back (right), on a log scale. The read-outs give the rule, the activation size at layer 10 and the gradient size at layer 1. With tanh, "too small" makes both shrink layer by layer (0.0007 and 0.0015). "Too large" saturates the tanh units (activation size 0.834, close to their limits $\pm1$); the caption says that the gradients die, but this widget reads 6.99 at layer 1: the large weights more than make up for the small derivatives of the saturated units, and the gradient grows on its way back instead. Either way it has lost its scale. Xavier keeps both within an order of magnitude of 1 (0.219 and 0.263; tanh still shrinks the signal a little at each layer). ReLU needs He's $2/n$, and then stays close to 1 (0.917 and 0.662).
+**Try it.** 10 layers of 100 units on 200 random inputs; the bars are the size (standard deviation) of the activations layer by layer (left) and of the gradients going back (right), on a log scale. The read-outs give the rule, the activation size at layer 10 and the gradient size at layer 1. With tanh, "too small" makes both shrink layer by layer (0.0007 and 0.0015). "Too large" saturates the tanh units (activation size 0.834, close to their limits $\pm1$), yet the gradient does not die here: it reads 6.99 at layer 1, because the large weights more than make up for the small derivatives of the saturated units, and it grows on its way back. Either way it has lost its scale. Xavier keeps both within an order of magnitude of 1 (0.219 and 0.263; tanh still shrinks the signal a little at each layer). ReLU needs He's $2/n$, and then stays close to 1 (0.917 and 0.662).
 
 ```{=html}
-<div class="widget" data-fig="init" data-auto="init=small :: too small: activations and gradients shrink layer by layer | init=large :: too large: tanh saturates, gradients die | init=good :: Xavier: both stay near 1 | act=relu; init=good :: ReLU needs He (2/n), and then stays near 1 too">
+<div class="widget" data-fig="init" data-auto="init=small :: too small: activations and gradients shrink layer by layer | init=large :: too large: tanh saturates, and the gradient grows on its way back (6.99 at layer 1) | init=good :: Xavier: both keep their scale, of order 1 (0.22 and 0.26 after 10 layers) | act=relu; init=good :: ReLU needs He (2/n), and then both stay of order 1 too (0.92 and 0.66)">
       <svg class="fig" aria-label="Size of the activations and gradients layer by layer for different initializations"></svg>
       <div class="ctl"><span class="seg" data-g="act" role="group" aria-label="Activation"><button type="button" data-v="tanh" data-act="tanh" aria-pressed="true">tanh</button><button type="button" data-v="relu" data-act="relu" aria-pressed="false">ReLU</button></span>
         <span class="seg" data-g="init" role="group" aria-label="Initialization"><button type="button" data-v="small" data-init="small" aria-pressed="false">too small</button><button type="button" data-v="good" data-init="good" aria-pressed="true">Xavier / He</button><button type="button" data-v="large" data-init="large" aria-pressed="false">too large</button></span></div>
@@ -1027,7 +1027,7 @@ $$
 
 Apply it for $k = L, L-1, \dots, l+1$ and chain the inequalities. $\blacksquare$ (Summing the squares over the examples, the same bound holds for the Frobenius norm of the batch matrix $\boldsymbol{\delta}^{[l]}$.) The weight gradient of one example is the outer product $\mathbf{a}^{[l-1]\top}\boldsymbol{\delta}^{[l]}$ (fact (b)), whose Frobenius norm is $\lVert\mathbf{a}^{[l-1]}\rVert\,\lVert\boldsymbol{\delta}^{[l]}\rVert$: small $\boldsymbol{\delta}$ means small updates for that layer.
 
-**Consequences.** The sigmoid has $\gamma = \frac14$: if every $\lVert\mathbf{W}^{[k]}\rVert_2 < 4$, the gradient shrinks at least geometrically, by $(\lVert\mathbf{W}\rVert_2/4)$ per layer. With $\lVert\mathbf{W}\rVert_2\approx1$, after 10 layers it can be $4^{-10}\approx10^{-6}$: early layers barely learn. These are **vanishing gradients**, the reason why deep sigmoid/tanh networks were hard to train before about 2010. Large weights make the factors $> 1$ and allow **exploding gradients** (the loss becomes `inf`, then `nan`), very common in recurrent networks ([NN note 04](04_rnn_lstm.qmd)). The bound is a worst case: the *typical* factor per layer is governed by the variances of section 14 (for a random $n\times n$ matrix with entries of standard deviation $s$, $\lVert\mathbf{W}\rVert_2\approx2s\sqrt n$, about twice the typical stretch $s\sqrt n$), so a layer can be well initialised and still have $\gamma\lVert\mathbf{W}\rVert_2 > 1$.
+**Consequences.** The sigmoid has $\gamma = \frac14$: if every $\lVert\mathbf{W}^{[k]}\rVert_2 < 4$, the gradient shrinks at least geometrically, by $(\lVert\mathbf{W}\rVert_2/4)$ per layer. With $\lVert\mathbf{W}\rVert_2\approx1$, after 10 layers it can be $4^{-10}\approx10^{-6}$: early layers barely learn. These are **vanishing gradients**, the reason why deep sigmoid/tanh networks were hard to train before about 2010. Large weights make the factors $> 1$ and allow **exploding gradients** (the loss becomes `inf`, then `nan`), very common in recurrent networks ([NN note 04](04_rnn_lstm.html)). The bound is a worst case: the *typical* factor per layer is governed by the variances of section 14 (for a random $n\times n$ matrix with entries of standard deviation $s$, $\lVert\mathbf{W}\rVert_2\approx2s\sqrt n$, about twice the typical stretch $s\sqrt n$), so a layer can be well initialised and still have $\gamma\lVert\mathbf{W}\rVert_2 > 1$.
 
 ```{=html}
 <div class="widget"><svg class="fig" data-fig="vanish-chain" style="max-height:190px" aria-label="Two chains of ten layers ending at the loss, with lines whose width shows the gradient size, shrinking towards layer 1 for sigmoid and constant for ReLU"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/02_backpropagation.html#17">slide 17</a> of the Backpropagation deck.</p></div>
@@ -1105,8 +1105,8 @@ All are used in practice, usually together.
 
 1. **ReLU-family activations** (ReLU, Leaky ReLU, GELU) in hidden layers: $g' = 1$ on the active side, so $\mathbf{D}^{[l]}$ does not shrink the signal.
 2. **Initialisation** that preserves the variance: Xavier for tanh, He for ReLU (section 14), with the derivation above.
-3. **Normalisation layers** (BatchNorm, LayerNorm; [NN note 02](02_training_optimization_regularization.qmd)): they re-standardise the pre-activations of each layer, $\hat z = (z - \mu)/\sqrt{s^2 + \epsilon}$ followed by a learned scale and shift, so the scale cannot drift over depth and saturation is avoided.
-4. **Residual connections** ([NN note 03](03_cnn_transfer_multitask.qmd), and every transformer): $\mathbf{h}^{[l+1]} = \mathbf{h}^{[l]} + F(\mathbf{h}^{[l]})$, where $F$ is a small block of layers. Its Jacobian always contains the identity:
+3. **Normalisation layers** (BatchNorm, LayerNorm; [NN note 02](02_training_optimization_regularization.html)): they re-standardise the pre-activations of each layer, $\hat z = (z - \mu)/\sqrt{s^2 + \epsilon}$ followed by a learned scale and shift, so the scale cannot drift over depth and saturation is avoided.
+4. **Residual connections** ([NN note 03](03_cnn_transfer_multitask.html), and every transformer): $\mathbf{h}^{[l+1]} = \mathbf{h}^{[l]} + F(\mathbf{h}^{[l]})$, where $F$ is a small block of layers. Its Jacobian always contains the identity:
 $$
 \begin{aligned}
 \frac{\partial\mathbf{h}^{[l+1]}}{\partial\mathbf{h}^{[l]}} &= \frac{\partial\mathbf{h}^{[l]}}{\partial\mathbf{h}^{[l]}} + \frac{\partial F(\mathbf{h}^{[l]})}{\partial\mathbf{h}^{[l]}} = \mathbf{I} + \mathbf{J}_F && \text{derivative of a sum; } \partial\mathbf{h}/\partial\mathbf{h} = \mathbf{I}\\
@@ -1114,7 +1114,7 @@ $$
 \end{aligned}
 $$
 The first term passes the gradient back **unchanged** (the add gate copies it, section 5), so even if every $\mathbf{J}_F$ is small the gradient has a direct path to the early layers; the product $\prod_k(\mathbf{I} + \mathbf{J}_{F_k})$ does not collapse the way $\prod_k\mathbf{W}^{[k]\top}\mathbf{D}^{[k-1]}$ can.
-5. **Gradient clipping** for explosions ([NN note 04](04_rnn_lstm.qmd)): before the update, rescale the whole gradient vector $\mathbf{g}$ when its norm exceeds a threshold $c$,
+5. **Gradient clipping** for explosions ([NN note 04](04_rnn_lstm.html)): before the update, rescale the whole gradient vector $\mathbf{g}$ when its norm exceeds a threshold $c$,
 $$
 \mathbf{g}\leftarrow\mathbf{g}\cdot\min\Big(1, \frac{c}{\lVert\mathbf{g}\rVert}\Big),
 $$
@@ -1165,7 +1165,7 @@ Backpropagation is exact calculus, but a training run relies on a few assumption
 
 **What it says.** Every operation between a parameter and the loss has a derivative except on a set of measure zero (the kink of ReLU at 0, ties in max), and those derivatives are not zero almost everywhere.
 
-**Why it matters.** Backpropagation multiplies local derivatives (sections 4–5). At a kink autograd uses a sub-derivative (PyTorch: $\mathrm{ReLU}'(0) = 0$), which is harmless because an exact 0 almost never occurs. But an operation that is **flat almost everywhere** (a step function, rounding, `argmax`, thresholding a probability) has derivative 0 wherever it is defined: every gradient that passes through it is exactly 0, and the parameters before it never learn. That was the problem with the step units of [NN note 00](00_neural_networks_mlp.qmd), section 8.
+**Why it matters.** Backpropagation multiplies local derivatives (sections 4–5). At a kink autograd uses a sub-derivative (PyTorch: $\mathrm{ReLU}'(0) = 0$), which is harmless because an exact 0 almost never occurs. But an operation that is **flat almost everywhere** (a step function, rounding, `argmax`, thresholding a probability) has derivative 0 wherever it is defined: every gradient that passes through it is exactly 0, and the parameters before it never learn. That was the problem with the step units of [NN note 00](00_neural_networks_mlp.html), section 8.
 
 **How to check.** After one `backward()`, list the parameters whose `.grad` is exactly zero (or `None`: not connected to the loss at all). Look at the gradient norm per layer (section 15.3). Gradient-check custom operations.
 
@@ -1205,7 +1205,7 @@ Nothing crashed and the wrong loss is plausible. (Here our `backward` would cras
 
 **What it says.** The shortcut $\boldsymbol{\delta}^{[L]} = \frac1m(\mathbf{A}^{[L]} - \mathbf{Y})$ is only valid for the canonical pairs (linear + ½MSE, sigmoid + BCE, softmax + CE, exponential + Poisson). In general $\boldsymbol{\delta}^{[L]} = \frac{\partial J}{\partial\mathbf{A}^{[L]}}\odot g^{[L]\prime}(\mathbf{Z}^{[L]})$.
 
-**Why it matters.** Every other gradient is computed from $\boldsymbol{\delta}^{[L]}$; if it is wrong, all of them are. With a sigmoid output and the loss $\frac1{2m}\sum(\hat y - y)^2$ the correct output error has the extra factor $\hat y(1-\hat y)$ ([NN note 00](00_neural_networks_mlp.qmd), section 24.5); a backward pass that reuses the BCE shortcut computes the gradient of a different loss.
+**Why it matters.** Every other gradient is computed from $\boldsymbol{\delta}^{[L]}$; if it is wrong, all of them are. With a sigmoid output and the loss $\frac1{2m}\sum(\hat y - y)^2$ the correct output error has the extra factor $\hat y(1-\hat y)$ ([NN note 00](00_neural_networks_mlp.html), section 24.5); a backward pass that reuses the BCE shortcut computes the gradient of a different loss.
 
 **How to check.** A gradient check against the loss actually minimised:
 
@@ -1227,7 +1227,7 @@ for cls in [MSEShortcut, MSECorrect]:
     print(f"{cls.__name__:12s}", grad_check(cls([3, 5, 4, 1], np.random.default_rng(1)), Xs, Ys))
 ```
 
-**What to do.** Either compute $\boldsymbol{\delta}^{[L]}$ from the general formula, or (better) use the canonical loss for the output, which also trains faster ([NN note 00](00_neural_networks_mlp.qmd), section 24.5). With autograd the gradient is always consistent with the loss you wrote; the remaining risk is writing the wrong loss (a softmax applied twice, [NN note 00](00_neural_networks_mlp.qmd), section 25.4).
+**What to do.** Either compute $\boldsymbol{\delta}^{[L]}$ from the general formula, or (better) use the canonical loss for the output, which also trains faster ([NN note 00](00_neural_networks_mlp.html), section 24.5). With autograd the gradient is always consistent with the loss you wrote; the remaining risk is writing the wrong loss (a softmax applied twice, [NN note 00](00_neural_networks_mlp.html), section 25.4).
 
 ### 16.4 All values stay finite
 
@@ -1254,13 +1254,13 @@ print("log(0) =", torch.log(torch.tensor(0.0)).item(), "; 0 * log(0) =", (torch.
 
 The gradient norm grows faster and faster, from $8\times10^{2}$ to $2\times10^{13}$ in five steps, before the loss overflows at step 5: the warning was visible early. The last line is why a hand-written BCE on a saturated sigmoid gives `nan` even when the label makes the offending term "zero".
 
-**What to do.** Scale the inputs and the target ([NN note 00](00_neural_networks_mlp.qmd), section 24.4); lower the learning rate; use the fused, stable losses (section 13.5) instead of `log(sigmoid(...))`; clip the gradient norm (section 15.4); if you must write a log yourself, clamp its argument (`log(p + 1e-12)`, as `MLP.loss` does).
+**What to do.** Scale the inputs and the target ([NN note 00](00_neural_networks_mlp.html), section 24.4); lower the learning rate; use the fused, stable losses (section 13.5) instead of `log(sigmoid(...))`; clip the gradient norm (section 15.4); if you must write a log yourself, clamp its argument (`log(p + 1e-12)`, as `MLP.loss` does).
 
 ### 16.5 The forward pass is deterministic and unmodified between forward and backward
 
 **What it says.** The function evaluated in the forward pass is the one being differentiated: no randomness changes between the evaluations you compare, and no tensor saved for the backward pass is modified in between.
 
-**Why it matters.** Backpropagation differentiates the recorded computation, including the particular dropout mask used ([NN note 02](02_training_optimization_regularization.qmd)). That is correct for training, but a finite-difference check that draws a new mask for $J(\theta+\varepsilon)$ and $J(\theta-\varepsilon)$ compares two different functions and reports nonsense. And an in-place edit of a saved tensor (section 13.3) would make autograd use a value that was never part of the forward computation; PyTorch refuses rather than return a wrong gradient.
+**Why it matters.** Backpropagation differentiates the recorded computation, including the particular dropout mask used ([NN note 02](02_training_optimization_regularization.html)). That is correct for training, but a finite-difference check that draws a new mask for $J(\theta+\varepsilon)$ and $J(\theta-\varepsilon)$ compares two different functions and reports nonsense. And an in-place edit of a saved tensor (section 13.3) would make autograd use a value that was never part of the forward computation; PyTorch refuses rather than return a wrong gradient.
 
 **How to check.** Run gradient checks with dropout off or with a fixed mask; heed PyTorch's in-place error instead of working around it with `.clone()` in the wrong place.
 
@@ -1318,7 +1318,7 @@ With a new mask at every call the "numerical gradient" is noise: relative error 
 5. Train with mini-batch gradient descent; plot the decision boundary and what the hidden units learned.
 6. Experiments: width, learning rate, random restarts, zero initialisation.
 
-You need [NN note 00](00_neural_networks_mlp.qmd) (neuron, MLP, activations, BCE) and this note (backprop, gradient checking, initialisation). Next, Lab 8 builds the same MLP in PyTorch, after optimisers and mini-batches ([NN note 02](02_training_optimization_regularization.qmd)).
+You need [NN note 00](00_neural_networks_mlp.html) (neuron, MLP, activations, BCE) and this note (backprop, gradient checking, initialisation). Next, Lab 8 builds the same MLP in PyTorch, after optimisers and mini-batches ([NN note 02](02_training_optimization_regularization.html)).
 
 ## Summary
 

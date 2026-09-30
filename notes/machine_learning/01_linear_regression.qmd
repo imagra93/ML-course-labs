@@ -12,9 +12,9 @@ Linear regression predicts a number (a claim cost, a premium, a house price) as 
 
 **What this note covers.** Sections 1–8 set up the model and the least-squares loss and minimise it in two ways (gradient descent and the normal equation), with a one-parameter warm-up. Section 9 is Newton's method, section 10 the probabilistic view (least squares = maximum likelihood), sections 11–12 feature engineering and a preview of regularisation, section 13 the metrics. Section 14 derives the statistics of the estimator (bias, variance, standard errors, confidence and prediction intervals, the Gauss–Markov theorem), and section 15 goes through the **assumptions** one by one: what each says, which result needs it, how to check it and what to do when it fails. Section 16 is a practical guide, "what to do when…".
 
-**What you need.** Derivatives and the chain rule; vectors and matrices (products, transpose, inverse, trace, eigenvalues); basic probability (expectation, variance, covariance, the normal distribution). The notation ($m$ examples, $n$ features, $\mathbf{x}^{(i)}$, $y^{(i)}$) and the train/validation/test split come from [note 00](00_supervised_learning.qmd).
+**What you need.** Derivatives and the chain rule; vectors and matrices (products, transpose, inverse, trace, eigenvalues); basic probability (expectation, variance, covariance, the normal distribution). The notation ($m$ examples, $n$ features, $\mathbf{x}^{(i)}$, $y^{(i)}$) and the train/validation/test split come from [note 00](00_supervised_learning.html).
 
-**After this note you can** fit a linear regression from scratch and with scikit-learn, explain why the solution exists and is unique, attach honest uncertainty to its coefficients and predictions, and diagnose and fix the usual problems: curvature, dependent errors, non-constant variance, non-normal noise, collinearity, confounding, influential points and extrapolation. Regularisation (Ridge, Lasso) and the full treatment of input variables are in [note 03](03_regularization_inputs_assumptions.qmd). The lab is [OLS from scratch](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%20-%20Ordinary%20Least%20Squares%20Regression.ipynb).
+**After this note you can** fit a linear regression from scratch and with scikit-learn, explain why the solution exists and is unique, attach honest uncertainty to its coefficients and predictions, and diagnose and fix the usual problems: curvature, dependent errors, non-constant variance, non-normal noise, collinearity, confounding, influential points and extrapolation. Regularisation (Ridge, Lasso) and the full treatment of input variables are in [note 03](03_regularization_inputs_assumptions.html). The lab is [OLS from scratch](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%20-%20Ordinary%20Least%20Squares%20Regression.ipynb).
 
 ```{python}
 import numpy as np
@@ -467,7 +467,7 @@ The fitted values are $\hat{\mathbf{y}} = (2/3,\ 11/3,\ 20/3)$ and the residuals
 
 **Geometric meaning ("normal" = perpendicular).** The equations say $\mathbf{X}^\top(\mathbf{y} - \mathbf{X}\boldsymbol{\theta}^*) = \mathbf{0}$: the residual vector is perpendicular to every column of $\mathbf{X}$. So $\hat{\mathbf{y}} = \mathbf{X}\boldsymbol{\theta}^*$ is the **orthogonal projection** of $\mathbf{y}$ onto the space spanned by the columns of $\mathbf{X}$, the closest point in that space to $\mathbf{y}$. A consequence (first column of ones): $\sum_i r^{(i)} = 0$, the residuals of a model with intercept average to zero. In the worked example, $\frac13 - \frac23 + \frac13 = 0$ (column of ones) and $1\cdot\frac13 - 2\cdot\frac23 + 3\cdot\frac13 = 0$ (column of $x$).
 
-**When is $\mathbf{X}^\top\mathbf{X}$ invertible?** Exactly when the columns of $\mathbf{X}$ are linearly independent (proof in section 8). It fails if $m < n+1$ or if a feature is a linear combination of others (e.g. duplicated feature, or all one-hot columns plus the intercept, section 11). Then there are infinitely many minimisers; use the pseudo-inverse (`np.linalg.lstsq`, which returns the minimum-norm one) or add L2 regularisation ([note 03](03_regularization_inputs_assumptions.qmd)).
+**When is $\mathbf{X}^\top\mathbf{X}$ invertible?** Exactly when the columns of $\mathbf{X}$ are linearly independent (proof in section 8). It fails if $m < n+1$ or if a feature is a linear combination of others (e.g. duplicated feature, or all one-hot columns plus the intercept, section 11). Then there are infinitely many minimisers; use the pseudo-inverse (`np.linalg.lstsq`, which returns the minimum-norm one) or add L2 regularisation ([note 03](03_regularization_inputs_assumptions.html)).
 
 **Normal equation vs. gradient descent**
 
@@ -560,7 +560,7 @@ $$
 
 (With the slides' $\tilde J$, gradient $-2\mathbf{X}^\top\mathbf{y} + 2\mathbf{X}^\top\mathbf{X}\boldsymbol{\theta}$ and Hessian $2\mathbf{X}^\top\mathbf{X}$, the factors 2 cancel in the same way.) The starting point disappears: from **any** $\boldsymbol{\theta}_{\text{old}}$, one Newton step lands exactly on the normal-equation solution. The reason is that $J$ is exactly quadratic, so the Taylor model $q$ is not an approximation but $J$ itself. In the warm-up: $\theta_{\text{new}} = \theta_{\text{old}} - \frac{(14\theta_{\text{old}} - 28)/3}{14/3} = \theta_{\text{old}} - (\theta_{\text{old}} - 2) = 2$.
 
-**Newton vs gradient descent.** In the eigen-directions of section 6, gradient descent multiplies the error along $\mathbf{v}_k$ by $1-\alpha\lambda_k$ with one $\alpha$ for all directions; Newton effectively uses $\alpha_k = 1/\lambda_k$ in each direction, which makes every factor 0. That is why Newton is immune to bad conditioning and to feature scaling. The price is forming and solving an $(n+1)\times(n+1)$ system, $O(mn^2 + n^3)$, which is impractical for $n$ beyond about $10\,000$. For losses that are not quadratic (logistic regression, [note 02](02_logistic_regression.qmd)) the Hessian changes with $\boldsymbol{\theta}$, and Newton needs several iterations, usually very few.
+**Newton vs gradient descent.** In the eigen-directions of section 6, gradient descent multiplies the error along $\mathbf{v}_k$ by $1-\alpha\lambda_k$ with one $\alpha$ for all directions; Newton effectively uses $\alpha_k = 1/\lambda_k$ in each direction, which makes every factor 0. That is why Newton is immune to bad conditioning and to feature scaling. The price is forming and solving an $(n+1)\times(n+1)$ system, $O(mn^2 + n^3)$, which is impractical for $n$ beyond about $10\,000$. For losses that are not quadratic (logistic regression, [note 02](02_logistic_regression.html)) the Hessian changes with $\boldsymbol{\theta}$, and Newton needs several iterations, usually very few.
 
 ```{python}
 def newton_step(theta, X, y):
@@ -623,7 +623,7 @@ $$
 
 the mean squared residual. It is slightly too small on average; section 14.5 shows that $\text{SSE}/(m-n-1)$ is unbiased.
 
-The same recipe, *"write the likelihood of the labels, take minus the log"*, gives the logistic regression loss ([note 02](02_logistic_regression.qmd)), the softmax loss ([note 04](04_softmax_regression.qmd)) and the whole family of generalised linear models ([note 02b](02b_generalized_linear_models.qmd): Poisson regression for claim counts, Gamma regression for claim costs). Changing the noise model changes the loss: Laplace noise gives the absolute error $\sum|r^{(i)}|$.
+The same recipe, *"write the likelihood of the labels, take minus the log"*, gives the logistic regression loss ([note 02](02_logistic_regression.html)), the softmax loss ([note 04](04_softmax_regression.html)) and the whole family of generalised linear models ([note 02b](02b_generalized_linear_models.html): Poisson regression for claim counts, Gamma regression for claim costs). Changing the noise model changes the loss: Laplace noise gives the absolute error $\sum|r^{(i)}|$.
 
 ## 11. Feature engineering, encoding and scaling
 
@@ -640,7 +640,7 @@ The model is linear in $\boldsymbol{\theta}$, but **we** decide what goes into $
 - **Ordinal** (the categories have an order: bad < good < excellent). *Ordinal encoding* replaces the names by $0, 1, \dots, C-1$ **in that order** (Bad → 0, Good → 1, Excellent → 2). In scikit-learn, give the order explicitly with the `categories` argument of `OrdinalEncoder`; otherwise it sorts the labels alphabetically.
 - **Nominal** (no order: cow, dog, cat). *One-hot encoding* creates one 0/1 column per category (Cow → [1,0,0], Dog → [0,1,0], Cat → [0,0,1]). *Dummy encoding* uses $C-1$ columns (Cow → [1,0], Dog → [0,1], Cat → [0,0]): the same information, with the dropped category as the **reference level**.
 
-**The dummy trap.** With an intercept, full one-hot encoding makes $\mathbf{X}^\top\mathbf{X}$ singular. Every row has exactly one 1 among the one-hot columns $d_1, \dots, d_C$, so $d_1 + \dots + d_C = 1 = x_0$: the intercept column is the sum of the one-hot columns, the columns are linearly dependent, and by section 8 $\mathbf{X}^\top\mathbf{X}$ is not invertible. Dropping one level fixes it; each remaining coefficient is then the difference between its level and the reference level. ([Note 03](03_regularization_inputs_assumptions.qmd#categorical-features) proves the rank deficiency in full and shows it in code.)
+**The dummy trap.** With an intercept, full one-hot encoding makes $\mathbf{X}^\top\mathbf{X}$ singular. Every row has exactly one 1 among the one-hot columns $d_1, \dots, d_C$, so $d_1 + \dots + d_C = 1 = x_0$: the intercept column is the sum of the one-hot columns, the columns are linearly dependent, and by section 8 $\mathbf{X}^\top\mathbf{X}$ is not invertible. Dropping one level fixes it; each remaining coefficient is then the difference between its level and the reference level. ([Note 03](03_regularization_inputs_assumptions.html#categorical-features) proves the rank deficiency in full and shows it in code.)
 
 **Which encoder when?**
 
@@ -649,8 +649,8 @@ The model is linear in $\boldsymbol{\theta}$, but **we** decide what goes into $
 | **ordered**, with roughly equal steps | size S < M < L < XL; damage low < medium < high | **ordinal**: 0, 1, 2, 3 in that order |
 | ordered, but the steps are very unequal | "0 / 1–2 / 3–5 / 6+ previous claims" | one-hot, or meaningful numbers (0, 1.5, 4, 7) |
 | **unordered**, a few levels | colour, fuel type, city | **one-hot** (drop one level if the model has an intercept) |
-| unordered, many levels | postcode, car model, workshop (1 000+) | group the rare levels; frequency or target encoding ([note 03](03_regularization_inputs_assumptions.qmd#high-cardinality)) |
-| any categorical, **tree** models | ([note 06](06_decision_trees_cart.qmd)) | ordinal codes are fine: a tree only asks "code ≤ 2?" |
+| unordered, many levels | postcode, car model, workshop (1 000+) | group the rare levels; frequency or target encoding ([note 03](03_regularization_inputs_assumptions.html#high-cardinality)) |
+| any categorical, **tree** models | ([note 06](06_decision_trees_cart.html)) | ordinal codes are fine: a tree only asks "code ≤ 2?" |
 
 What ordinal encoding tells a linear model: with size coded 0, 1, 2, 3 and price $= \theta_0 + \theta_1\cdot\text{size}$, every step up adds the **same** $\theta_1$, from S to M as from L to XL. One-hot gives every level its own coefficient: more flexible, but 3 parameters instead of 1. If the steps really are equal, ordinal is simpler and uses the data better. Never ordinal-encode an unordered feature for a linear model: "city = 3" is not three times "city = 1". Fit the encoders on the training data only, and decide what happens with a level never seen in training (`handle_unknown`).
 
@@ -659,7 +659,7 @@ What ordinal encoding tells a linear model: with size coded 0, 1, 2, 3 and price
 - **Standardisation** $x' = (x-\mu)/\sigma$: mean 0 and standard deviation 1, no fixed range. The default for linear and logistic regression, SVMs, neural networks and any model with a penalty.
 - **Min–max normalisation** $x' = (x - x_{\min})/(x_{\max} - x_{\min}) \in [0,1]$: when a fixed range is needed (pixel intensities). One outlier squeezes all other values into a tiny range.
 
-With outliers, standardisation suffers less than min–max and `RobustScaler` (median and interquartile range) least; trees need no scaling at all. Compute $\min$, $\max$, $\mu$, $\sigma$ on the **training data only** and reuse them on validation, test and production data. For unregularised least squares, scaling changes the coefficients but not the predictions ([note 03](03_regularization_inputs_assumptions.qmd#scaling) proves it); the gd2 widget of section 6 shows what it does to gradient descent.
+With outliers, standardisation suffers less than min–max and `RobustScaler` (median and interquartile range) least; trees need no scaling at all. Compute $\min$, $\max$, $\mu$, $\sigma$ on the **training data only** and reuse them on validation, test and production data. For unregularised least squares, scaling changes the coefficients but not the predictions ([note 03](03_regularization_inputs_assumptions.html#scaling) proves it); the gd2 widget of section 6 shows what it does to gradient descent.
 
 ## 12. Overfitting and regularisation: a preview
 
@@ -683,11 +683,11 @@ A polynomial of degree $m-1$ passes exactly through $m$ points, so $J(\boldsymbo
 
 **Regularisation** adds a penalty on the size of the weights to the cost (never on the intercept $\theta_0$):
 
-- **L2 (Ridge regression)**: $J(\boldsymbol{\theta}) = \frac{1}{2m}\sum_{i=1}^m\big(h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)})-y^{(i)}\big)^2 + \lambda\sum_{j=1}^n\theta_j^2$. Shrinks all coefficients.
+- **L2 (Ridge regression)**: $J(\boldsymbol{\theta}) = \frac{1}{2m}\sum_{i=1}^m\big(h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)})-y^{(i)}\big)^2 + \frac{\lambda}{2m}\sum_{j=1}^n\theta_j^2$. Shrinks all coefficients.
 - **L1 (Lasso regression)**: $J(\boldsymbol{\theta}) = \frac{1}{2m}\sum_{i=1}^m\big(h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)})-y^{(i)}\big)^2 + \lambda\sum_{j=1}^n|\theta_j|$. Forces some coefficients to be exactly zero (feature selection, a simpler model); not differentiable at 0.
 - **Elastic Net**: a combination of the L1 and L2 penalties.
 
-[Note 03](03_regularization_inputs_assumptions.qmd) derives all three slowly: the closed form of Ridge, why L1 gives exact zeros, the geometric picture, how to choose $\lambda$ by cross-validation, and the Bayesian reading. (Books and libraries place the factors $\frac12$ and $\frac1m$ differently, e.g. $\frac{\lambda}{2m}\sum_j\theta_j^2$ in note 03; that only rescales $\lambda$.)
+[Note 03](03_regularization_inputs_assumptions.html) derives all three slowly: the closed form of Ridge, why L1 gives exact zeros, the geometric picture, how to choose $\lambda$ by cross-validation, and the Bayesian reading. (Books and libraries place the factors $\frac12$ and $\frac1m$ differently, e.g. scikit-learn's `Ridge` minimises $\sum_i(\cdot)^2 + \alpha\sum_j\theta_j^2$; that only rescales $\lambda$.)
 
 ## 13. Metrics for regression
 
@@ -1065,7 +1065,7 @@ For any vector $\mathbf{a}$, $\mathbf{a}^\top\mathbf{D}\mathbf{D}^\top\mathbf{a}
 **What it does not buy you.**
 
 - It needs (ii). With heteroscedastic or correlated errors, OLS is no longer best; weighted or generalised least squares is (sections 15.2 and 15.3).
-- "Linear" and "unbiased" are restrictions. A slightly **biased** estimator can have a much smaller mean squared error: Ridge regression ([note 03](03_regularization_inputs_assumptions.qmd#ridge-bias-variance)) always beats OLS in mean squared error for a well-chosen $\lambda$. A **non-linear** estimator (the Huber fit of section 15.7) can be far better when the noise has heavy tails. With Gaussian noise a stronger result holds (OLS has the smallest variance among *all* unbiased estimators, linear or not); we do not prove it here.
+- "Linear" and "unbiased" are restrictions. A slightly **biased** estimator can have a much smaller mean squared error: Ridge regression ([note 03](03_regularization_inputs_assumptions.html#ridge-bias-variance)) always beats OLS in mean squared error for a well-chosen $\lambda$. A **non-linear** estimator (the Huber fit of section 15.7) can be far better when the noise has heavy tails. With Gaussian noise a stronger result holds (OLS has the smallest variance among *all* unbiased estimators, linear or not); we do not prove it here.
 
 **A competitor that loses.** Wald's grouping estimator splits the points at the median of $x$ and uses the slope between the two group means, $\tilde\theta_1 = (\bar y_{\text{upper}} - \bar y_{\text{lower}})/(\bar x_{\text{upper}} - \bar x_{\text{lower}})$. It is linear in $\mathbf{y}$ and unbiased (the expected difference of the group means is $\theta_1(\bar x_{\text{upper}} - \bar x_{\text{lower}})$, the intercepts cancel), so Gauss–Markov says it cannot beat OLS:
 
@@ -1165,10 +1165,10 @@ The violated case shows a U-shaped residual trend; the component-plus-residual p
 
 **What to do** (in order of preference):
 
-1. **Transform the features**, guided by the component-plus-residual plots: $\log x$ for diminishing returns, $x^2$ or splines (`SplineTransformer`) for curvature, bins for thresholds, $\sin/\cos$ for periodic effects ([note 03](03_regularization_inputs_assumptions.qmd#interactions) lists the patterns). Cheap and keeps the model interpretable.
+1. **Transform the features**, guided by the component-plus-residual plots: $\log x$ for diminishing returns, $x^2$ or splines (`SplineTransformer`) for curvature, bins for thresholds, $\sin/\cos$ for periodic effects ([note 03](03_regularization_inputs_assumptions.html#interactions) lists the patterns). Cheap and keeps the model interpretable.
 2. **Add interactions** $x_1x_2$ when the effect of one feature depends on the value of another (the plots vs $x_1$ then fan differently at different $x_2$).
 3. **Transform $y$** (e.g. $\log y$) when effects are multiplicative; this changes the meaning of the coefficients (percent changes) and needs care when converting predictions back (section 16.1).
-4. **A more flexible model** (trees and boosting, notes [06](06_decision_trees_cart.qmd) and [07](07_bagging_random_forest_boosting.qmd)) when the shape is complicated. Every added feature or flexibility adds variance: validate, and regularise ([note 03](03_regularization_inputs_assumptions.qmd)).
+4. **A more flexible model** (trees and boosting, notes [06](06_decision_trees_cart.html) and [07](07_bagging_random_forest_boosting.html)) when the shape is complicated. Every added feature or flexibility adds variance: validate, and regularise ([note 03](03_regularization_inputs_assumptions.html)).
 
 ### 15.2 Independence of errors
 
@@ -1180,7 +1180,7 @@ $$
 \mathrm{Cov}(\hat{\boldsymbol{\theta}}) = \mathbf{A}\boldsymbol{\Sigma}\mathbf{A}^\top = (\mathbf{X}^\top\mathbf{X})^{-1}\,\mathbf{X}^\top\boldsymbol{\Sigma}\mathbf{X}\,(\mathbf{X}^\top\mathbf{X})^{-1} \neq \sigma^2(\mathbf{X}^\top\mathbf{X})^{-1}.
 $$
 
-With positively correlated errors and a feature that itself changes slowly (a trend, a group-level feature), the naive formula is far too small: standard errors too small, confidence intervals too narrow, p-values too small, "significant" effects that are not. OLS is also no longer the most efficient estimator. For **prediction**: random $k$-fold cross-validation puts near-duplicates (the next day, the same policyholder) in training and validation, so validation scores are optimistic ([note 00](00_supervised_learning.qmd)), and ignoring the dependence wastes information (yesterday's residual helps predict today's).
+With positively correlated errors and a feature that itself changes slowly (a trend, a group-level feature), the naive formula is far too small: standard errors too small, confidence intervals too narrow, p-values too small, "significant" effects that are not. OLS is also no longer the most efficient estimator. For **prediction**: random $k$-fold cross-validation puts near-duplicates (the next day, the same policyholder) in training and validation, so validation scores are optimistic ([note 00](00_supervised_learning.html)), and ignoring the dependence wastes information (yesterday's residual helps predict today's).
 
 **How to check.**
 
@@ -1444,7 +1444,7 @@ Even with 8 points and skewed noise, the coefficient intervals keep their 95 % c
 2. For prediction intervals: use the **empirical distribution of held-out residuals** (quantiles, as above) or the bootstrap instead of $\pm t\hat\sigma$.
 3. **Transform $y$** (log for right-skewed costs): it often fixes skewness and heteroscedasticity together (15.3, 16.1).
 4. **Heavy tails or outliers**: a robust loss (15.7).
-5. **Model the distribution**: a generalised linear model with a Gamma or Poisson distribution ([note 02b](02b_generalized_linear_models.qmd)).
+5. **Model the distribution**: a generalised linear model with a Gamma or Poisson distribution ([note 02b](02b_generalized_linear_models.html)).
 
 ### 15.5 No perfect multicollinearity, and collinearity in general {#collinearity}
 
@@ -1550,7 +1550,7 @@ The correlation between age and licence years is 0.998, so both VIFs are about 2
 2. **Use domain knowledge: drop or re-parametrise.** Licence years are almost age minus 18, so either drop one of them, or replace the licence years by a feature that carries the *new* information, the age when the licence was obtained, $\text{age} - \text{licence years}$. This is an invertible linear re-parametrisation of the same columns, so the fit and the predictions are **identical**; only the questions the coefficients answer change ("the effect of age for a fixed age at licence").
 3. **Centre before building polynomial terms and interactions.** For a positive feature, $x$ and $x^2$ rise together; after centring, $\mathrm{Cov}(x_c, x_c^2) = \mathbb{E}[x_c^3]$, which is 0 for a symmetric distribution. Since $(x - c)^2 = x^2 - 2cx + c^2$, the centred columns span the same space: same predictions, much smaller VIFs, and interpretable main effects.
 4. **Principal-component regression (PCR)**: regress $y$ on the first $k$ principal components of the standardised features, i.e. drop the directions with tiny $\lambda_k$, exactly where the variance explodes. Cost: components are hard to interpret, and PCA ignores $y$, so a dropped direction may be the one that matters.
-5. **Ridge regression** ([note 03](03_regularization_inputs_assumptions.qmd#ridge-svd)): it adds $\lambda$ to every eigenvalue, so the variance along $\mathbf{v}_k$ becomes $\sigma^2\lambda_k/(\lambda_k + \lambda)^2 \le \sigma^2/(4\lambda)$, bounded however small $\lambda_k$ is, at the cost of a little bias.
+5. **Ridge regression** ([note 03](03_regularization_inputs_assumptions.html#ridge-svd)): it adds $\lambda$ to every eigenvalue, so the variance along $\mathbf{v}_k$ becomes $\sigma^2\lambda_k/(\lambda_k + \lambda)^2 \le \sigma^2/(4\lambda)$, bounded however small $\lambda_k$ is, at the cost of a little bias.
 
 ```{python}
 from sklearn.pipeline import make_pipeline
@@ -1627,7 +1627,7 @@ print(f"test RMSE on new data from the same process: short {np.sqrt(np.mean((yn_
 
 The short model's slope, about 4.4 instead of 2, is $2 + 0.8\times3$: the true effect plus the omitted effect carried by the correlation. (In sample the identity $\hat\beta_{1,\text{short}} = \hat\beta_{1,\text{long}} + \hat\delta\,\hat\beta_{2,\text{long}}$ holds exactly: substitute $\mathbf{y} = \mathbf{X}_1\hat{\boldsymbol{\beta}}_{1,\text{long}} + \mathbf{x}_2\hat\beta_{2,\text{long}} + \mathbf{e}_{\text{long}}$ in the short formula and use $\mathbf{X}_1^\top\mathbf{e}_{\text{long}} = \mathbf{0}$.) Its residuals are uncorrelated with $x_1$ to machine precision. It still predicts new data from the same process reasonably (worse than the long model, but without bias); what it gets wrong is the effect of *changing* $x_1$ alone: it predicts $+4.4$ where the truth is $+2$.
 
-**What to do.** Measure and include the confounders (anything that causes both the feature and the outcome); do not read coefficients causally without a design that supports it; for prediction, make sure the deployment data look like the training data; when the causal effect is the question, run an experiment. Regularisation does not help here, and Lasso may even drop a confounder ([note 03](03_regularization_inputs_assumptions.qmd#assumptions-regularisation)).
+**What to do.** Measure and include the confounders (anything that causes both the feature and the outcome); do not read coefficients causally without a design that supports it; for prediction, make sure the deployment data look like the training data; when the causal effect is the question, run an experiment. Regularisation does not help here, and Lasso may even drop a confounder ([note 03](03_regularization_inputs_assumptions.html#assumptions-regularisation)).
 
 ### 15.7 Outliers, leverage and influence {#outliers}
 
@@ -1729,7 +1729,7 @@ $$
 $$
 so each point's pull on the fit (its gradient) is capped at $\delta$ instead of growing with the residual. scikit-learn's `HuberRegressor` also estimates the scale of the residuals, so $\delta$ (its `epsilon`, default 1.35) is in units of that scale. Huber protects against outliers in $y$ but not against bad high-leverage points like C; for those, methods with bounded influence such as `RANSACRegressor` or `TheilSenRegressor` exist.
 4. **Never delete points blindly** to improve the fit. If you exclude something, say so and report the fit with and without it.
-5. If the "outliers" are simply the long right tail of a skewed variable, **transform** it (log; section 16.1 for the target, [note 03](03_regularization_inputs_assumptions.qmd#skewed-features) for features).
+5. If the "outliers" are simply the long right tail of a skewed variable, **transform** it (log; section 16.1 for the target, [note 03](03_regularization_inputs_assumptions.html#skewed-features) for features).
 
 ```{python}
 from sklearn.linear_model import HuberRegressor
@@ -1811,7 +1811,7 @@ $$
 
 So $e^{\hat y}$ underestimates the expected cost by the factor $e^{-\sigma^2/2}$, and a reserve or a premium built on it is systematically too low.
 
-**What to do.** Multiply by $e^{\hat\sigma^2/2}$ (if the log-residuals are normal), or by **Duan's smearing factor** $\frac1m\sum_i e^{e_i}$ (the average of the exponentiated residuals, which needs no normality). Alternatively, fit a GLM with a log link (Gamma or Tweedie regression, [note 02b](02b_generalized_linear_models.qmd); scikit-learn's `GammaRegressor`, `TweedieRegressor`), which models the mean directly.
+**What to do.** Multiply by $e^{\hat\sigma^2/2}$ (if the log-residuals are normal), or by **Duan's smearing factor** $\frac1m\sum_i e^{e_i}$ (the average of the exponentiated residuals, which needs no normality). Alternatively, fit a GLM with a log link (Gamma or Tweedie regression, [note 02b](02b_generalized_linear_models.html); scikit-learn's `GammaRegressor`, `TweedieRegressor`), which models the mean directly.
 
 ```{python}
 rng_c16 = np.random.default_rng(17); mc = 2000; s_c = 0.8
