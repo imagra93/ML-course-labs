@@ -1,11 +1,11 @@
 /* Figures for 02_backpropagation.html */
 (function(){
 'use strict';
-const {FIG,lib}=window.MLFIG;const {E,T,initSvg,Plot,arrowPx,rng,randn,fmt,q,setV,setR,svgOf}=lib;const {drawNet,box,stepper,sig,f2,f3,NET,tinyForward,drawTiny}=window.MLNN;
-const FWD=['X','Z₁','A₁','Z₂','A₂','L'],FSUB=['input','linear','activation','linear','prediction','loss'];const BWD=['∂W₁, ∂b₁','δ₁','∂A₁','∂W₂, ∂b₂','δ₂','L'];
-function chain(svg,y,labels,subs,hi,col,back){labels.forEach((t,i)=>{const x=20+i*98;const on=hi.includes(i);E('rect',{x:x,y:y,width:84,height:52,rx:8,fill:on?col:'#f2f2f2',stroke:on?col:'#bfbfbf'},svg);
-  const tt=T(svg,x+42,y+24,t,'lab');tt.style.fill=on?'#fff':'#595959';const st=T(svg,x+42,y+42,subs[i],'');st.style.fill=on?'#fff':'#8c8c8c';if(i<labels.length-1)arrowPx(svg,back?x+96:x+86,y+26,back?x+86:x+96,y+26,'ln thin sm','fm')})}
-FIG['fb-walk']=root=>{const svg=initSvg(root.querySelector('svg'),600,170);const inp=q(root,'s');const panels=[...root.querySelectorAll('[data-i]')];
+const {FIG,lib}=window.MLFIG;const {E,T,initSvg,Plot,arrowPx,rng,randn,fmt,q,setV,setR,svgOf}=lib;const {drawNet,box,stepper,sig,f2,f3,NET,tinyForward,drawTiny,TT}=window.MLNN;
+const FWD=['X','Z^{[1]}','A^{[1]}','Z^{[2]}','A^{[2]}','L'],FSUB=['input','linear','activation','linear','prediction','loss'];const BWD=['∂W^{[1]}, ∂b^{[1]}','δ^{[1]}','∂A^{[1]}','∂W^{[2]}, ∂b^{[2]}','δ^{[2]}','L'];
+function chain(svg,y,labels,subs,hi,col,back){labels.forEach((t,i)=>{const x=12+i*101;const on=hi.includes(i);E('rect',{x:x,y:y,width:90,height:52,rx:8,fill:on?col:'#f2f2f2',stroke:on?col:'#bfbfbf'},svg);
+  const tt=TT(svg,x+45,y+24,t,'lab');tt.style.fill=on?'#fff':'#595959';const st=T(svg,x+45,y+43,subs[i],'');st.style.fill=on?'#fff':'#8c8c8c';if(i<labels.length-1)arrowPx(svg,back?x+100:x+91,y+26,back?x+91:x+100,y+26,'ln thin sm','fm')})}
+FIG['fb-walk']=root=>{const svg=initSvg(root.querySelector('svg'),620,170);const inp=q(root,'s');const panels=[...root.querySelectorAll('[data-i]')];
   const fwdHi=[[0],[0,1],[0,1,2],[0,1,2,3],[0,1,2,3,4],[0,1,2,3,4,5]];const bwdHi=[[5],[4,5],[3,4,5],[2,3,4,5],[1,2,3,4,5],[0,1,2,3,4,5]];
   function draw(){const s=+inp.value;setV(root,'s',s<6?'forward '+(s+1)+'/6':'backward '+(s-5)+'/6');svg.innerHTML='';
     T(svg,10,14,'Forward →','lab','start');chain(svg,22,FWD,FSUB,s<6?fwdHi[s]:fwdHi[5],'#2e7d5b',false);
@@ -44,8 +44,8 @@ FIG['neuron-bp']=root=>{const svg=svgOf(root);const x=2,w=-0.5,b=0.3,y=1,al=0.5;
     fw(50,44,'x = 2');fw(50,134,N?'w = '+f3(w2):'w = −0.5');fw(50,224,N?'b = '+f3(b2):'b = 0.3');fw(190,88,N?f3(w2*x):'−1.0');fw(310,133,N?'z = '+f3(z2):'z = −0.7');fw(430,133,N?'a = '+f3(a2):'a = 0.332');fw(550,133,N?'L = '+f3(L2):'L = 1.103');
     if(s>=1&&!N)bw(490,196,'∂L/∂a = −1/a = '+f3(dLda));if(s>=2&&!N){bw(370,196,'∂L/∂z = '+f3(dLda)+' · '+f3(dadz)+' = '+f3(dLdz));T(svg,430,215,'σ′ = a(1−a) = '+f3(dadz),'')}
     if(s>=3&&!N){bw(120,205,'∂L/∂w = ∂L/∂z · x = '+f3(dLdw));bw(150,290,'∂L/∂b = ∂L/∂z · 1 = '+f3(dLdb))}
-    if(s>=4&&!N){box(svg,340,240,270,44,'w ← w − 0.5·(−1.336) = 0.168\nb ← b − 0.5·(−0.668) = 0.634','#fff2cc',{lh:18,cls:''})}
-    if(N)box(svg,300,240,300,44,'after one step the loss fell from 1.103 to 0.321\nand a rose from 0.332 to 0.725','#e2f0d9',{lh:18,cls:''})})};
+    if(s>=4&&!N){box(svg,318,240,292,44,'w ← w − 0.5·(−1.336) = 0.168\nb ← b − 0.5·(−0.668) = 0.634','#fff2cc',{lh:18,cls:''})}
+    if(N)box(svg,262,240,348,44,'after one step the loss fell from 1.103 to 0.321\nand a rose from 0.332 to 0.725','#e2f0d9',{lh:18,cls:''})})};
 /* ---- the tiny 2-2-1 network: backward with numbers ---- */
 FIG['net-num']=root=>{const svg=svgOf(root);const N=NET;const F=tinyForward(N);const al=0.5;
   const d2=F.yh-N.y;const dW2=F.a1.map(v=>v*d2);const db2=d2;const dA1=[d2*N.W2[0][0],d2*N.W2[1][0]];const d1=dA1.map((v,j)=>v*(1-F.a1[j]**2));const dW1=[[N.x[0]*d1[0],N.x[0]*d1[1]],[N.x[1]*d1[0],N.x[1]*d1[1]]];
@@ -54,12 +54,12 @@ FIG['net-num']=root=>{const svg=svgOf(root);const N=NET;const F=tinyForward(N);c
   stepper(root,s=>{initSvg(svg,600,420);const upd=s>=6;const pos=drawTiny(svg,upd?N2:N,upd?F2:F,5,{hiEdge:(s===2||s===3)?2:s===5?1:0});
     const X=[pos[0][0][0],pos[1][0][0],pos[2][0][0]];E('rect',{x:10,y:292,width:580,height:122,rx:8,fill:'#fdf2f2',stroke:'#e6b8b8'},svg);
     T(svg,20,310,upd?'updated parameters (α = 0.5)':'gradients (backward pass, right to left)','lab','start').style.fill='#c00000';
-    const bw=(col,row,t)=>{const tt=T(svg,X[col],330+row*20+10,t,'','middle');tt.style.fill='#c00000';tt.style.fontSize='15px'};
-    if(!upd){if(s>=1)bw(2,0,'δ₂ = ŷ − y = '+f3(d2));if(s>=2){bw(2,1,'∂W₂ = ('+f3(dW2[0])+', '+f3(dW2[1])+')');bw(2,2,'∂b₂ = '+f3(db2))}
-      if(s>=3)bw(1,0,'∂a = ('+f3(dA1[0])+', '+f3(dA1[1])+')');if(s>=4)bw(1,1,'δ₁ = ('+f3(d1[0])+', '+f3(d1[1])+')');
-      if(s>=5){bw(0,0,'∂W₁ = ['+f3(dW1[0][0])+', '+f3(dW1[0][1])+']');bw(0,1,'        ['+f3(dW1[1][0])+', '+f3(dW1[1][1])+']');bw(0,2,'∂b₁ = ('+f3(d1[0])+', '+f3(d1[1])+')')}
+    const bw=(col,row,t)=>{const tt=TT(svg,X[col],330+row*21+10,t,'','middle',15);tt.style.fill='#c00000';tt.style.fontSize='15px'};const mj=a=>a.map(v=>String(v).replace('-','−')).join(', ');
+    if(!upd){if(s>=1)bw(2,0,'δ^{[2]} = ŷ − y = '+f3(d2));if(s>=2){bw(2,1,'∂W^{[2]} = ('+f3(dW2[0])+', '+f3(dW2[1])+')');bw(2,2,'∂b^{[2]} = '+f3(db2))}
+      if(s>=3)bw(1,0,'∂a^{[1]} = ('+f3(dA1[0])+', '+f3(dA1[1])+')');if(s>=4)bw(1,1,'δ^{[1]} = ('+f3(d1[0])+', '+f3(d1[1])+')');
+      if(s>=5){bw(0,0,'∂W^{[1]} = ['+f3(dW1[0][0])+', '+f3(dW1[0][1])+']');bw(0,1,'['+f3(dW1[1][0])+', '+f3(dW1[1][1])+']');bw(0,2,'∂b^{[1]} = ('+f3(d1[0])+', '+f3(d1[1])+')')}
       if(s===0)T(svg,300,360,'forward pass done: every z and a is stored','','middle')}
-    else{bw(2,0,'W₂ = ('+N2.W2[0][0]+', '+N2.W2[1][0]+')');bw(2,1,'b₂ = '+N2.b2[0]);bw(0,0,'W₁ = ['+N2.W1[0].join(', ')+']');bw(0,1,'       ['+N2.W1[1].join(', ')+']');bw(1,0,'b₁ = ('+N2.b1.join(', ')+')');
+    else{bw(2,0,'W^{[2]} = ('+mj([N2.W2[0][0],N2.W2[1][0]])+')');bw(2,1,'b^{[2]} = '+N2.b2[0]);bw(0,0,'W^{[1]} = ['+mj(N2.W1[0])+']');bw(0,1,'['+mj(N2.W1[1])+']');bw(1,0,'b^{[1]} = ('+mj(N2.b1)+')');
       if(s>=7)bw(1,2,'new loss '+f3(F2.L)+'  (was '+f3(F.L)+')')}})};
 function initSim(scale,act){const r=rng(5);const n=100,m=200,L=10;let A=[...Array(m)].map(()=>[...Array(n)].map(()=>randn(r)));const Ws=[],As=[A],Zs=[];const stdA=[];
   const g=act==='relu'?(z=>z>0?z:0):Math.tanh;const gd=act==='relu'?((z,a)=>z>0?1:0):((z,a)=>1-a*a);
@@ -76,15 +76,27 @@ FIG['init']=root=>{const svg=initSvg(svgOf(root),600,300);let act='tanh',mode='g
     setR(root,'a',fmt(R.stdA[9],4));setR(root,'g',fmt(R.stdG[0],4));setR(root,'v',mode==='good'?(act==='relu'?'He: Var(w) = 2/n':'Xavier: Var(w) = 1/n'):mode==='small'?'too small':'too large')}
   b1.forEach(b=>b.addEventListener('click',()=>{act=b.dataset.v;b1.forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));draw()}));
   b2.forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.v;b2.forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));draw()}));draw()};
-FIG['graph-chain']=root=>{const svg=initSvg(svgOf(root),560,220);const node=(x,y,t,c)=>{E('circle',{cx:x,cy:y,r:24,fill:c,stroke:'#fff'},svg);T(svg,x,y+5,t,'lab').style.fill='#fff'};
+FIG['graph-chain']=root=>{const svg=initSvg(svgOf(root),680,220);const node=(x,y,t,c)=>{E('circle',{cx:x,cy:y,r:24,fill:c,stroke:'#fff'},svg);T(svg,x,y+5,t,'lab').style.fill='#fff'};
   [[60,50,'θ₁'],[60,170,'θ₂']].forEach(p=>node(p[0],p[1],p[2],'#70ad47'));[[230,40,'g₁'],[230,110,'g₂'],[230,180,'g₃']].forEach(p=>node(p[0],p[1],p[2],'#4472c4'));node(420,110,'J','#ed7d31');
   [[60,50],[60,170]].forEach(a=>[[230,40],[230,110],[230,180]].forEach(b=>arrowPx(svg,a[0]+24,a[1],b[0]-26,b[1],'ln thin sm','fm')));[[230,40],[230,110],[230,180]].forEach(b=>arrowPx(svg,b[0]+24,b[1],394,110,'ln thin sm','fm'));
-  T(svg,420,160,'∂J/∂θ₁ = Σⱼ (∂J/∂gⱼ)(∂gⱼ/∂θ₁)','','middle');T(svg,280,212,'sum over every path from θ₁ to J','','middle')};
+  T(svg,450,106,'∂J/∂θ₁ = Σⱼ (∂J/∂gⱼ)(∂gⱼ/∂θ₁)','lab','start');T(svg,450,130,'one term per path from θ₁ to J','','start')};
 /* product of many factors: why gradients vanish or explode */
 FIG['vanish-chain']=root=>{const svg=initSvg(svgOf(root),940,200);
-  [['sigmoid, 10 layers: each factor ≤ 0.25',0.25,'#c00000',30],['ReLU + He init: each factor ≈ 1',1,'#548235',120]].forEach(([lab,f,c,y])=>{T(svg,20,y-10,lab,'lab','start');
-    for(let l=0;l<10;l++){const x=30+l*90;E('rect',{x:x,y:y,width:56,height:30,rx:4,fill:'#f2f2f2',stroke:'#7f7f7f'},svg);T(svg,x+28,y+20,'layer '+(10-l),'');
-      if(l<9){const w=Math.max(0.6,10*Math.pow(f,l+1));E('line',{x1:x+88,y1:y+15,x2:x+58,y2:y+15,stroke:c,'stroke-width':w},svg);const m=Math.pow(f,l+1);T(svg,x+72,y+50,m>=0.01?m.toFixed(2):m.toExponential(0),'')}}
-    T(svg,900,y+20,'← loss','lab','end')});
-  T(svg,470,190,'The arrow width is the size of the gradient that reaches each layer: a product that shrinks (or grows) exponentially with depth.','','middle')};
+  [['sigmoid, 10 layers: each factor ≤ 0.25',0.25,'#c00000',30],['ReLU + He init: each factor ≈ 1',1,'#548235',120]].forEach(([lab,f,c,y])=>{T(svg,16,y-10,lab,'lab','start');
+    const bx=l=>16+(l-1)*84;for(let l=1;l<=10;l++){E('rect',{x:bx(l),y:y,width:58,height:30,rx:4,fill:'#f2f2f2',stroke:'#7f7f7f'},svg);T(svg,bx(l)+29,y+20,'layer '+l,'')}
+    E('rect',{x:856,y:y,width:62,height:30,rx:4,fill:'#fbe5d6',stroke:'#ed7d31'},svg);T(svg,887,y+20,'loss','lab');
+    for(let l=10;l>=1;l--){const k=10-l;const g=Math.pow(f,k);const x1=l===10?856:bx(l+1),x2=bx(l)+58;const w=Math.max(0.6,10*g);E('line',{x1:x1-2,y1:y+15,x2:x2+2,y2:y+15,stroke:c,'stroke-width':w},svg);
+      T(svg,(x1+x2)/2,y+48,g>=0.01?g.toFixed(2):g.toExponential(0),'','middle')}});
+  T(svg,470,192,'Line width = size of the gradient that reaches each layer, starting at the loss (right) and going back to layer 1 (left).','','middle')};
+/* the chain rule with numbers: y = (3x + 1)^2 at x = 1, and a nudge to check it */
+FIG['chain-num']=root=>{const svg=svgOf(root);
+  stepper(root,s=>{initSvg(svg,620,300);const node=(x,y,t,v,c)=>{E('circle',{cx:x,cy:y,r:30,fill:c,stroke:'#404040'},svg);T(svg,x,y+6,t,'lab big');const tt=T(svg,x,y-40,v,'lab');tt.style.fill='#1f3864'};
+    const boxF=(x,t)=>{E('rect',{x:x-62,y:108,width:124,height:44,rx:8,fill:'#dae3f3',stroke:'#4472c4'},svg);TT(svg,x,136,t,'lab')};
+    node(50,130,'x','x = 1','#c5e0b4');boxF(175,'u = 3x + 1');node(300,130,'u','u = 4','#fff2cc');boxF(425,'y = u^2');node(550,130,'y','y = 16','#fbe5d6');
+    arrowPx(svg,80,130,111,130,'ln thin sk','fk');arrowPx(svg,237,130,268,130,'ln thin sk','fk');arrowPx(svg,330,130,361,130,'ln thin sk','fk');arrowPx(svg,487,130,518,130,'ln thin sk','fk');
+    const red=(x,y,t,cls)=>{const tt=TT(svg,x,y,t,cls||'lab','middle');tt.style.fill='#c00000';return tt};
+    if(s>=1){red(175,182,'du/dx = 3');red(425,182,'dy/du = 2u = 8')}
+    if(s>=2){E('rect',{x:150,y:204,width:320,height:36,rx:6,fill:'#fff',stroke:'#c00000'},svg);red(310,228,'dy/dx = (dy/du)·(du/dx) = 8 · 3 = 24')}
+    if(s>=3){T(svg,310,270,'check: x = 1.01 → u = 4.03 → y = 16.2409, so y grew by 0.24 = 24 × 0.01  ✓','','middle')}
+    T(svg,310,24,['forward: compute and keep every intermediate value','each box knows its own local derivative','chain rule: multiply the local derivatives along the path','the derivative predicts what a small nudge does'][Math.min(s,3)],'','middle')})};
 })();

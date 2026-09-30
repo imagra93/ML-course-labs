@@ -8,9 +8,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
-<link rel="stylesheet" href="../assets/deck.css?v=20260929">
-<link rel="stylesheet" href="assets/nn.css?v=20260929">
-<script src="../assets/mathjax-config.js?v=20260929"></script>
+<link rel="stylesheet" href="../assets/deck.css?v=20260930">
+<link rel="stylesheet" href="assets/nn.css?v=20260930">
+<script src="../assets/mathjax-config.js?v=20260930"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
 </head>
 <body data-deck="4 · CNNs, transfer learning, segmentation and detection" data-prev="03_training.html" data-next="05_rnn_lstm.html">
@@ -23,9 +23,9 @@
 <section class="slide">
   <h2>Where we are</h2>
   <div class="cards c3">
-    <div class="card"><h3>Part A · Convolutions</h3><ul><li>images are grids of numbers</li><li>the convolution, with numbers</li><li>filters, channels, output size</li><li>pooling, receptive field</li></ul></div>
-    <div class="card o"><h3>Part B · Architectures</h3><ul><li>a basic CNN, layer by layer</li><li>AlexNet, VGG, ResNet</li><li>1×1 convs, global pooling</li><li>transfer learning, augmentation</li></ul></div>
-    <div class="card g"><h3>Part C · Beyond classification</h3><ul><li>semantic / instance segmentation</li><li>U-Net, IoU and Dice</li><li>object detection, YOLO</li><li>NMS and mAP</li></ul></div>
+    <div class="card"><h3>Part A · Convolutions</h3><ul><li>images are grids of numbers</li><li>from a dense layer to a convolution</li><li>filters, channels, output size</li><li>pooling, receptive field</li></ul></div>
+    <div class="card o"><h3>Part B · Architectures</h3><ul><li>a basic CNN, layer by layer · <b>Lab 10</b></li><li>AlexNet, VGG, ResNet, 1×1 convs</li><li>transfer learning · <b>Lab 12</b></li><li>multi-task learning · <b>Lab 13</b></li></ul></div>
+    <div class="card g"><h3>Part C · Beyond classification</h3><ul><li>semantic / instance segmentation</li><li>U-Net, IoU and Dice</li><li>object detection, YOLO</li><li>NMS and mAP · <b>Lab 10b</b></li></ul></div>
   </div>
   <svg class="fig" data-fig="tasks" style="max-height:300px" aria-label="The same street scene as classification, detection, semantic and instance segmentation"></svg>
 </section>
@@ -50,7 +50,7 @@
     <div class="stack" style="gap:12px">
       <ul>
         <li class="step"><b>Too many parameters.</b> A 224×224 RGB image is 150,528 numbers. One dense layer of 1,000 units: <b>150 million</b> weights.</li>
-        <li class="step"><b>No notion of position.</b> A cat in the top-left and the same cat in the bottom-right share nothing: the MLP must learn the pattern at every position separately.</li>
+        <li class="step"><b>No notion of position.</b> A cat in the top-left and the same cat in the bottom-right share nothing: the MLP must learn the pattern at every position separately. Lab 9 showed it: shift the images a few pixels and the MLP's accuracy collapses.</li>
         <li class="step"><b>No notion of neighbourhood.</b> Neighbouring pixels are related, far ones much less: after flattening, pixel (0,0) is as "close" to (0,1) as to (223,223).</li>
       </ul>
     </div>
@@ -59,6 +59,15 @@
         <ol class="small"><li><b>Local connections</b>: each unit looks at a small patch (3×3), not at the whole image.</li><li><b>Weight sharing</b>: the same small set of weights is used at every position.</li></ol></div>
       <p class="step">Together they give the <b>convolutional layer</b>. A 3×3 conv from 3 to 64 channels has <b>1,792</b> parameters, whatever the image size.</p>
     </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>From a dense layer to a convolution</h2>
+  <svg class="fig" data-fig="dense-vs-conv" style="max-height:300px" aria-label="A dense layer connecting 7 inputs to 5 outputs with 35 different weights, next to a convolution where each output sees 3 neighbouring inputs with the same 3 weights"></svg>
+  <div class="cols">
+    <p class="small">A 1-D picture of the two ideas. <b>Dense</b>: $z_o=\sum_{i=1}^{7}W_{oi}\,x_i$, 35 independent weights. <b>Convolution</b>: each output only sees 3 neighbours (<b>local</b>), always with the same three weights $k_1,k_2,k_3$ (<b>shared</b>): $\ z_o=k_1x_o+k_2x_{o+1}+k_3x_{o+2}$.</p>
+    <p class="small">A convolution <b>is</b> a dense layer whose weight matrix is forced to be banded and repeated: most entries are 0 and the rest are copies of the kernel. Far fewer parameters, and the same pattern detector runs at every position. In 2-D the kernel is a small square (3×3) that slides over rows and columns.</p>
   </div>
 </section>
 
@@ -78,7 +87,7 @@
         <li>A filter "learns" certain features of the input: an edge, a corner, a texture.</li>
       </ul>
       <div class="eq">$$Z_{ij}=\sum_{u=0}^{F-1}\sum_{v=0}^{F-1}X_{i+u,\,j+v}\,K_{uv}+b$$</div>
-      <p class="why">Strictly this is cross-correlation (no kernel flip). Since the kernel is learned, nobody cares.</p>
+      <p class="why">Multiply the patch by the kernel element by element and add everything up. Strictly this is cross-correlation (no kernel flip); since the kernel is learned, nobody cares.</p>
     </div>
   </div>
 </section>
@@ -156,13 +165,13 @@
     <div class="stack" style="gap:10px">
       <p class="small">Each 3×3 layer adds 2 pixels. A <b>stride</b> or a <b>pooling</b> multiplies how much every following layer adds:</p>
       <div class="eq">$$r_l=r_{l-1}+(F_l-1)\prod_{i\lt l}S_i$$</div>
-      <p class="small">Lab CNN (conv3 → pool2 → conv3 → pool2): 3, 4, 8, 10 pixels. ResNet-50: several hundred: the last layer sees the whole image.</p>
+      <p class="small">Example: conv3 → pool2 → conv3 → pool2 gives 3, 4, 8, 10 pixels. ResNet-50: several hundred: the last layer sees the whole image.</p>
       <p class="small"><b>Stacking</b>: layers close to the input learn low-level features (edges); deeper layers combine them into shapes and objects, because they see a larger patch.</p>
     </div>
   </div>
 </section>
 
-<section class="slide divider"><div class="card coral"><h1><b>Part B</b><br>Architectures and transfer learning</h1><ul class="small" style="color:#fff"><li>a basic CNN, layer by layer</li><li>AlexNet, VGG, ResNet</li><li>what a CNN learns</li><li>transfer learning, augmentation</li></ul></div></section>
+<section class="slide divider"><div class="card coral"><h1><b>Part B</b><br>Architectures and transfer learning</h1><ul class="small" style="color:#fff"><li>a basic CNN, layer by layer · Lab 10</li><li>AlexNet, VGG, ResNet</li><li>transfer learning · Lab 12</li><li>multi-task learning · Lab 13</li></ul></div></section>
 
 <section class="slide">
   <h2>Basic CNN architecture:</h2>
@@ -178,8 +187,51 @@
   nn.Linear(128, 10))                         <span class="c"># logits</span></pre>
     <div class="stack" style="gap:8px">
       <p class="small"><b>Pooling combined with more filters!</b> The spatial size shrinks while the number of channels grows. Then flatten and classify with dense layers.</p>
-      <table class="t xs"><tr><th>layer</th><th>params</th></tr><tr><td>conv 1→32</td><td>320</td></tr><tr><td>conv 32→64</td><td>18,496</td></tr><tr><td>dense 3136→128</td><td>401,536</td></tr><tr><td>dense 128→10</td><td>1,290</td></tr></table>
-      <p class="small why">95 % of the weights sit in the first dense layer: that is why modern nets use global average pooling instead.</p>
+      <table class="t xs"><tr><th>layer</th><th>params</th></tr><tr><td>conv 1→32</td><td>(9·1+1)·32 = 320</td></tr><tr><td>conv 32→64</td><td>(9·32+1)·64 = 18,496</td></tr><tr><td>dense 3136→128</td><td>3136·128+128 = 401,536</td></tr><tr><td>dense 128→10</td><td>128·10+10 = 1,290</td></tr></table>
+      <p class="small why">95 % of the weights sit in the first dense layer: that is why modern nets use global average pooling instead (a few slides ahead).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Looking inside a CNN</h2>
+  <svg class="fig" data-fig="inside" style="max-height:260px" aria-label="First-layer filters that look like oriented edges, and a class activation heat map over a car"></svg>
+  <div class="cols">
+    <p class="small">The first layer of any CNN trained on photos learns <b>oriented edges and colour blobs</b>, much like the early visual cortex. That is why those layers transfer so well to new tasks.</p>
+    <p class="small"><b>Grad-CAM</b>: take the gradient of a class score with respect to the last feature maps, weight the maps, and overlay them on the image. If a "wolf" classifier lights up on the snow, it learned a shortcut.</p>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Data augmentation:</h2>
+  <svg class="fig" data-fig="augment" aria-label="An image under flips, rotation, crop, colour shift, noise and cut-out"></svg>
+  <div class="cols">
+    <ul class="small"><li><b>Flip, rotation, crop:</b> the object can appear anywhere, at any small angle.</li><li><b>Colour shift, noise:</b> tolerance to lighting, camera quality.</li><li><b>Cut-out (information loss):</b> parts of the object can be hidden.</li></ul>
+    <div class="stack"><p class="small">Only transformations that keep the label! Applied on the fly, a new random version each epoch, to the <b>training</b> set only. For detection and segmentation, the <b>boxes and masks must be transformed too</b>.</p><p class="small"><a href="https://albumentations.ai/" target="_blank" rel="noopener">albumentations.ai</a> · <code>torchvision.transforms.v2</code></p></div>
+  </div>
+</section>
+
+<section class="slide lab">
+  <div class="labtag">LAB 10</div>
+  <h2>CNNs for image classification (Fashion-MNIST)</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:10px">
+      <p>The same clothes images as Lab 9, now with a convolutional network, and a direct comparison with the MLP.</p>
+      <ol class="todo">
+        <li>The convolution <b>from scratch</b>; padding, stride and the output size; channels and the parameter count.</li>
+        <li>Translation equivariance, pooling and the receptive field, checked in code.</li>
+        <li>Build and train a small CNN; look at its learned filters and feature maps.</li>
+        <li><b>Shifted images</b>: the CNN keeps working where the MLP of Lab 9 fails.</li>
+        <li>Fight overfitting with data augmentation and dropout; a stronger CNN with more filters and BatchNorm.</li>
+      </ol>
+    </div>
+    <div class="labcard">
+      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/Demo_CNN_Multiclass.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <dl class="gloss">
+        <dt>notebook</dt><dd><code>Demo_CNN_Multiclass.ipynb</code></dd>
+        <dt>you need</dt><dd>Part A of this chapter, the basic CNN, augmentation; dropout and BatchNorm (ch. 3); Lab 9</dd>
+        <dt>runs on</dt><dd>CPU works; a GPU is faster (Runtime → Change runtime type → T4 GPU)</dd>
+      </dl>
     </div>
   </div>
 </section>
@@ -223,25 +275,16 @@
 </section>
 
 <section class="slide">
-  <h2>Looking inside a CNN</h2>
-  <svg class="fig" data-fig="inside" style="max-height:260px" aria-label="First-layer filters that look like oriented edges, and a class activation heat map over a car"></svg>
-  <div class="cols">
-    <p class="small">The first layer of any CNN trained on photos learns <b>oriented edges and colour blobs</b>, much like the early visual cortex. That is why those layers transfer so well to new tasks.</p>
-    <p class="small"><b>Grad-CAM</b>: take the gradient of a class score with respect to the last feature maps, weight the maps, and overlay them on the image. If a "wolf" classifier lights up on the snow, it learned a shortcut.</p>
-  </div>
-</section>
-
-<section class="slide">
   <h2>Transfer learning:</h2>
   <div class="cols c46">
     <div class="stack" style="gap:10px">
       <p>You can use the same neural net as Google, but you do not have the same amount of data!</p>
       <p class="small">The first conv layers learn to extract general features from images (edges, textures), so you can reuse that knowledge in new problems:</p>
       <ul class="small">
-        <li>Download a trained net (with the learned weights).</li>
+        <li>Download a trained net (with the learned weights), e.g. a ResNet trained on ImageNet (1.2 M images, 1,000 classes).</li>
         <li>Fix (<b>freeze</b>) the first layers, where the complex feature engineering happens.</li>
         <li>Replace or randomly initialize the last fully connected layers: they learn the more specific, "high-level" features of your problem.</li>
-        <li>Train these (fewer) weights with your (smaller) dataset, with a small learning rate.</li>
+        <li>Train these (fewer) weights with your (smaller) dataset, with a small learning rate. Feed the images normalized <b>as in pre-training</b> (ImageNet mean and std).</li>
       </ul>
       <pre class="code s">m = torchvision.models.resnet18(weights="DEFAULT")
 for p in m.parameters(): p.requires_grad = False
@@ -251,25 +294,110 @@ m.fc = nn.Linear(m.fc.in_features, n_classes)</pre>
   </div>
 </section>
 
+<section class="slide lab">
+  <div class="labtag">LAB 12</div>
+  <h2>Transfer learning: eye positions with a ResNet-50</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:10px">
+      <p>A regression problem on real photos: predict the positions of both eyes, $(x_l,y_l,x_r,y_r)$, from a face image, starting from a network pre-trained on ImageNet. Plain PyTorch, every step written by hand.</p>
+      <ol class="todo">
+        <li>Look at the data; normalize the coordinates to $[0,1]$ (independent of the image size).</li>
+        <li>A <code>Dataset</code> with the transforms: ImageNet normalization, light augmentation.</li>
+        <li>Replace ResNet-50's classifier (<code>fc</code>) by a small regression head with 4 outputs; MSE loss, RMSE metric.</li>
+        <li>A training loop with gradient clipping and checkpointing of the best model; learning curves.</li>
+        <li>Draw the predicted eyes on test faces.</li>
+      </ol>
+    </div>
+    <div class="labcard">
+      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/multitask_face_plain_pytorch.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <dl class="gloss">
+        <dt>notebook</dt><dd><code>multitask_face_plain_pytorch.ipynb</code></dd>
+        <dt>you need</dt><dd>transfer learning and ResNet (this part), regression losses (ch. 1), the training loop (ch. 3)</dd>
+        <dt>runs on</dt><dd><b>GPU</b> (Runtime → Change runtime type → T4 GPU)</dd>
+        <dt>data</dt><dd>downloaded by the notebook with <code>gdown</code></dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
 <section class="slide">
-  <h2>Data augmentation:</h2>
-  <svg class="fig" data-fig="augment" aria-label="An image under flips, rotation, crop, colour shift, noise and cut-out"></svg>
+  <h2>Multi-task learning: one backbone, several heads</h2>
+  <svg class="fig" data-fig="multitask" style="max-height:270px" aria-label="A face image goes through a shared ResNet-50 backbone into a feature vector read by three small heads for eyes, gender and age, whose losses are added with weights"></svg>
   <div class="cols">
-    <ul class="small"><li><b>Flip, rotation, crop:</b> the object can appear anywhere, at any small angle.</li><li><b>Colour shift, noise:</b> tolerance to lighting, camera quality.</li><li><b>Cut-out (information loss):</b> parts of the object can be hidden.</li></ul>
-    <div class="stack"><p class="small">Only transformations that keep the label! Applied on the fly, a new random version each epoch. For detection and segmentation, the <b>boxes and masks must be transformed too</b>.</p><p class="small"><a href="https://albumentations.ai/" target="_blank" rel="noopener">albumentations.ai</a> · <code>torchvision.transforms.v2</code></p></div>
+    <div class="stack" style="gap:6px">
+      <p class="small">Train <b>one network for several related tasks</b>: a shared backbone $\bh=f_{\theta}(\bx)$ and a small head per task, $\hat y_k=g_k(\bh)$. The loss is a weighted sum,</p>
+      <div class="eq s">$$L=\sum_k\lambda_kL_k\quad\Rightarrow\quad\nabla_\theta L=\sum_k\lambda_k\nabla_\theta L_k$$</div>
+      <p class="small">so the backbone receives gradient from every task. Benefits: one forward pass for three outputs, and each task acts as a regularizer for the others.</p>
+    </div>
+    <div class="stack" style="gap:6px">
+      <p class="small"><b>The catch: loss scales.</b> At the start the eye MSE (coordinates in $[0,1]$) is about $10^{-4}$, the gender BCE about $0.69$, the age MSE (in years²) about $73$. With all $\lambda_k=1$ the age term dominates and the eyes are not trained at all.</p>
+      <p class="small"><b>The fix</b>: standardize each regression target, $z=(y-\mu)/\sigma$ with training-set statistics, so every loss starts near 1. For an MSE this is the same as choosing $\lambda=1/\sigma^2$.</p>
+      <p class="small why">It is the same recipe as a detector (next part): one backbone, a box head and a class head, a weighted sum of losses.</p>
+    </div>
   </div>
 </section>
 
 <section class="slide">
-  <h2>Lab – Convolutional Neural Networks:</h2>
-  <div class="stack center grow" style="gap:20px">
-    <p style="max-width:820px">A CNN for multiclass image classification in PyTorch: conv, pooling, dropout and BatchNorm, then transfer learning from a pre-trained network.</p>
-    <p style="font-size:28px"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/Demo_CNN_Multiclass.ipynb" target="_blank" rel="noopener">Lab - CNN</a></p>
-    <p class="small"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/multitask_face_plain_pytorch.ipynb" target="_blank" rel="noopener">Multi-task faces (PyTorch)</a> · <a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/multitask_face_lightning.ipynb" target="_blank" rel="noopener">Multi-task faces (Lightning)</a></p>
+  <h2>Less boilerplate: PyTorch Lightning</h2>
+  <div class="cols c64">
+    <pre class="code s">class FaceNet(L.LightningModule):
+    def __init__(self):
+        super().__init__()
+        self.trunk = resnet50(weights="IMAGENET1K_V2")
+        self.trunk.fc = nn.Identity()           <span class="c"># 2048 features</span>
+        self.eyes = nn.Linear(2048, 4)
+        self.gender = nn.Linear(2048, 1)
+        self.age = nn.Linear(2048, 1)
+
+    def training_step(self, batch, idx):
+        h = self.trunk(batch["image"])
+        loss = (mse(self.eyes(h), batch["eyes_z"])
+              + bce(self.gender(h).squeeze(1), batch["gender"])
+              + mse(self.age(h).squeeze(1), batch["age_z"]))
+        self.log("train/loss", loss)
+        return loss                <span class="c"># no backward(), no step()</span>
+
+    def configure_optimizers(self):
+        return torch.optim.AdamW(self.parameters(), lr=1e-4)
+
+trainer = L.Trainer(max_epochs=20, gradient_clip_val=1.0,
+                    callbacks=[EarlyStopping(monitor="val/loss")])
+trainer.fit(model, datamodule=dm)</pre>
+    <div class="stack" style="gap:10px">
+      <p class="small">The training loop of chapter 3 is always the same: <code>zero_grad</code>, <code>backward</code>, <code>step</code>, move data to the GPU, switch <code>train()</code> / <code>eval()</code>, log, save the best checkpoint.</p>
+      <p class="small"><b>Lightning</b> writes that loop for you. You only fill in the parts that change: the model, <code>training_step</code> (return the loss), <code>validation_step</code>, and <code>configure_optimizers</code>.</p>
+      <p class="small">The <code>Trainer</code> adds GPU support, gradient clipping, early stopping and checkpointing with one argument each.</p>
+      <p class="why">It does not make the model better; it removes a family of silent bugs (a forgotten <code>zero_grad</code>, metrics averaged wrongly, <code>eval()</code> never called).</p>
+    </div>
   </div>
 </section>
 
-<section class="slide divider"><div class="card green"><h1><b>Part C</b><br>Segmentation and object detection</h1><ul class="small"><li>classify every pixel: U-Net</li><li>IoU and Dice</li><li>boxes: YOLO</li><li>NMS and mAP</li></ul></div></section>
+<section class="slide lab">
+  <div class="labtag">LAB 13</div>
+  <h2>Multi-task face analysis with Lightning</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:10px">
+      <p>The same faces and backbone as Lab 12, now with <b>three tasks</b> at once: eye positions (regression), gender (binary classification) and age (regression).</p>
+      <ol class="todo">
+        <li>A trivial baseline for every task first: the numbers to beat.</li>
+        <li>A <code>LightningDataModule</code> that computes the target statistics on the training split only.</li>
+        <li>A <code>LightningModule</code>: shared trunk, three heads, standardized targets, weighted loss, TorchMetrics.</li>
+        <li><code>Trainer</code> with early stopping, checkpointing and a CSV logger.</li>
+        <li>Test evaluation against the baseline, learning curves, predictions on new faces.</li>
+      </ol>
+    </div>
+    <div class="labcard">
+      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/multitask_face_lightning.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <dl class="gloss">
+        <dt>notebook</dt><dd><code>multitask_face_lightning.ipynb</code></dd>
+        <dt>you need</dt><dd>Lab 12, multi-task learning and Lightning (the two previous slides)</dd>
+        <dt>runs on</dt><dd><b>GPU</b> (T4 in Colab)</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card green"><h1><b>Part C</b><br>Segmentation and object detection</h1><ul class="small"><li>classify every pixel: U-Net</li><li>IoU and Dice</li><li>boxes: YOLO</li><li>NMS and mAP · Lab 10b</li></ul></div></section>
 
 <section class="slide">
   <h2>Segmentation: three flavours</h2>
@@ -339,13 +467,14 @@ m.fc = nn.Linear(m.fc.in_features, n_classes)</pre>
   <h2>Measuring masks: IoU and Dice</h2>
   <div class="cols">
     <div class="widget" data-fig="maskiou" data-auto="x=0; r=2.6 :: perfect prediction: IoU = Dice = 1 | x=2 :: shifted by 2 pixels: the overlap drops quickly | r=1.6; x=0 :: too small, but inside: every predicted pixel is correct, still IoU is low">
-      <svg class="fig" aria-label="A ground-truth mask and a predicted mask on a pixel grid with the overlap highlighted"></svg>
+      <svg class="fig" style="max-height:330px" aria-label="A ground-truth mask and a predicted mask on a pixel grid with the overlap highlighted"></svg>
       <div class="ctl"><label for="mi-x">shift prediction</label><input type="range" id="mi-x" data-k="x" min="-3" max="3" step="1" value="1"><span class="v" data-v="x">1</span></div>
       <div class="ctl"><label for="mi-r">prediction size</label><input type="range" id="mi-r" data-k="r" min="1" max="4" step="0.2" value="2.6"><span class="v" data-v="r">2.6</span></div>
       <div class="ro"><div class="m"><span>IoU</span><b data-r="iou">–</b></div><div class="m"><span>Dice</span><b data-r="dice">–</b></div></div>
     </div>
     <div class="stack" style="gap:10px">
       <div class="eq">$$\mathrm{IoU}=\frac{|P\cap G|}{|P\cup G|},\qquad\mathrm{Dice}=\frac{2|P\cap G|}{|P|+|G|}$$</div>
+      <p class="small">$P$ = predicted pixels, $G$ = ground-truth pixels. Both are 1 for a perfect mask and 0 for no overlap.</p>
       <p class="small"><b>Why not pixel accuracy?</b> If damage covers 2 % of the image, predicting "no damage" everywhere is 98 % accurate and useless. IoU ignores the easy background.</p>
       <p class="small"><b>mIoU</b>: the IoU of each class, averaged. The standard segmentation metric.</p>
       <p class="small"><b>Dice loss</b> $=1-\mathrm{Dice}$ computed on the soft probabilities, often added to the cross-entropy to fight class imbalance.</p>
@@ -385,7 +514,7 @@ m.fc = nn.Linear(m.fc.in_features, n_classes)</pre>
       <p class="small">The backbone turns the image into an $S\times S$ grid of feature vectors. A 1×1 conv head predicts, <b>for every cell at once</b>:</p>
       <ul class="small"><li>an <b>objectness</b> score: is there an object whose centre is here?</li><li>the <b>box</b>: centre offset inside the cell, width, height;</li><li><b>class probabilities</b>.</li></ul>
       <p class="small">One forward pass = all boxes. That is "You Only Look Once", and why it runs in real time.</p>
-      <p class="small why">Real YOLOs use 3 grids of different sizes (small, medium, large objects), and each cell can predict more than one box.</p>
+      <p class="small why">This is the original YOLO idea. Modern YOLOs (v8, 11) use 3 grids of different sizes (small, medium, large objects), predict the box as distances from the cell centre to its 4 sides, and drop the objectness score: the class scores themselves say "nothing here".</p>
     </div>
   </div>
 </section>
@@ -394,16 +523,17 @@ m.fc = nn.Linear(m.fc.in_features, n_classes)</pre>
   <h2>Training a detector: the loss</h2>
   <div class="cols">
     <div class="stack" style="gap:10px">
-      <p>For each cell (or anchor) that is <b>assigned</b> a true object:</p>
-      <div class="eq s">$$J=\lambda_{\text{box}}\,\underbrace{J_{\text{box}}}_{\text{1 − IoU, L1}}+\lambda_{\text{obj}}\,\underbrace{J_{\text{obj}}}_{\text{BCE}}+\lambda_{\text{cls}}\,\underbrace{J_{\text{cls}}}_{\text{BCE / CE}}$$</div>
+      <p>A detector is a <b>multi-task</b> network: a box regression and a classification at every cell. For YOLO11 (the lab):</p>
+      <div class="eq s">$$J=\lambda_{\text{box}}\underbrace{\big(1-\mathrm{CIoU}\big)}_{\text{box overlap}}+\lambda_{\text{cls}}\underbrace{\mathrm{BCE}}_{\text{class scores}}+\lambda_{\text{dfl}}\underbrace{\mathrm{DFL}}_{\text{box sides}}$$</div>
       <ul class="small">
-        <li><b>Box</b>: regression of 4 numbers. Losses based on IoU (GIoU, CIoU) don't depend on the object's size.</li>
-        <li><b>Objectness</b>: binary classification, for <b>every</b> cell (most say "no object").</li>
-        <li><b>Class</b>: only for the cells that have an object.</li>
+        <li><b>Box</b>: $1-\mathrm{IoU}$ (CIoU adds penalties for the distance between centres and the aspect ratio). Unlike an L1 on pixels, it does not depend on the object's size.</li>
+        <li><b>Class</b>: an independent sigmoid + BCE per class, at <b>every</b> cell; most cells must say "no class" (all scores low).</li>
+        <li><b>DFL</b> (distribution focal loss): each side distance is predicted as a small distribution over 16 bins, for more precise borders.</li>
       </ul>
+      <p class="small why">Ultralytics' defaults: $\lambda_{\text{box}}=7.5,\ \lambda_{\text{cls}}=0.5,\ \lambda_{\text{dfl}}=1.5$. Older YOLOs (v1–v5) also had an objectness term.</p>
     </div>
     <div class="stack" style="gap:10px">
-      <div class="note"><p class="small"><b>Assignment</b> decides which predictions are responsible for which true object: the cell containing the centre (YOLOv1), the anchor boxes with the best IoU (YOLOv3–5), or a learned score of IoU and class quality (YOLOv8–11, "task-aligned").</p></div>
+      <div class="note"><p class="small"><b>Assignment</b> decides which predictions are responsible for which true object (the "positives"): the cell containing the centre (YOLOv1), the anchor boxes with the best IoU (YOLOv3–5), or a learned score mixing IoU and class confidence (YOLOv8–11, the <b>task-aligned assigner</b>). The box and DFL terms only use the positives.</p></div>
       <p class="small">It is the same recipe as the multi-task face lab: one backbone, several heads, a weighted sum of losses.</p>
       <p class="small why">Class imbalance is huge (thousands of background cells for a few objects): focal loss and careful weighting exist for that.</p>
     </div>
@@ -414,7 +544,7 @@ m.fc = nn.Linear(m.fc.in_features, n_classes)</pre>
   <h2>IoU for boxes: when is a prediction correct?</h2>
   <div class="cols">
     <div class="widget" data-fig="iou" data-auto="x=0; s=1 :: perfect: IoU = 1 | x=1.1 :: shifted by about a quarter of its size: IoU ≈ 0.5, the usual threshold | x=1; s=1.4 :: too large: also punished">
-      <svg class="fig" aria-label="A ground-truth box and a predicted box with their intersection over union"></svg>
+      <svg class="fig" style="max-height:330px" aria-label="A ground-truth box and a predicted box with their intersection over union"></svg>
       <div class="ctl"><label for="iou-x">shift prediction</label><input type="range" id="iou-x" data-k="x" min="-3" max="5" step="0.1" value="1"><span class="v" data-v="x">1.0</span></div>
       <div class="ctl"><label for="iou-s">scale prediction</label><input type="range" id="iou-s" data-k="s" min="0.4" max="1.6" step="0.05" value="1"><span class="v" data-v="s">1.0</span></div>
       <div class="ro"><div class="m"><span>IoU</span><b data-r="iou">–</b></div><div class="m" style="flex:1"><span>at threshold 0.5</span><b data-r="v" style="font-size:17px">–</b></div></div>
@@ -456,10 +586,36 @@ m.fc = nn.Linear(m.fc.in_features, n_classes)</pre>
       <ul class="small">
         <li>Sort all predictions of a class by score. Walk down the list: each one is a TP or an FP.</li>
         <li>Running <b>precision</b> = TP / predictions so far; <b>recall</b> = TP / true objects.</li>
-        <li><b>AP</b>: area under the precision–recall curve (made monotone first).</li>
+        <li><b>AP</b>: area under the precision–recall curve (made monotone first: the shaded staircase).</li>
         <li><b>mAP</b>: the mean of AP over classes. <b>mAP@0.5</b> uses IoU ≥ 0.5; <b>mAP@0.5:0.95</b> (COCO) averages over 10 thresholds, rewarding precise boxes.</li>
       </ul>
       <p class="small why">Same precision and recall as in the logistic-regression classes: AP is the detection version of the area under a curve.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide lab">
+  <div class="labtag">LAB 10b</div>
+  <h2>Object detection with YOLO</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:10px">
+      <p>Detect buffaloes, elephants, rhinos and zebras: first understand every piece by coding it, then fine-tune a real detector.</p>
+      <ol class="todo">
+        <li>Box formats and <b>IoU</b> from scratch.</li>
+        <li>How the YOLO11 head works: the grids, the box as 4 distances, the loss and the assigner.</li>
+        <li><b>NMS</b> and <b>mAP</b> from scratch, checked against the library.</li>
+        <li>Baseline with the COCO-pretrained model, then <b>fine-tune YOLO11n</b> on the African Wildlife dataset.</li>
+        <li>Evaluate on the test set, look at the errors, measure the speed, export to ONNX and build a small Gradio app.</li>
+      </ol>
+    </div>
+    <div class="labcard">
+      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/object_detection_yolo.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <dl class="gloss">
+        <dt>notebook</dt><dd><code>object_detection_yolo.ipynb</code></dd>
+        <dt>you need</dt><dd>transfer learning (Part B), and detection, IoU, NMS, mAP (this part)</dd>
+        <dt>runs on</dt><dd>a GPU is strongly recommended (T4 in Colab)</dd>
+        <dt>data</dt><dd>≈100 MB of images and YOLO11n weights, downloaded by Ultralytics</dd>
+      </dl>
     </div>
   </div>
 </section>
@@ -470,11 +626,10 @@ m.fc = nn.Linear(m.fc.in_features, n_classes)</pre>
     <tr><th>Task</th><th>Output per image</th><th>Loss</th><th>Metric</th><th>Model / library</th></tr>
     <tr><td>Classification</td><td>$K$ probabilities</td><td>cross-entropy</td><td>accuracy, F1</td><td>ResNet, EfficientNet, ViT · <code>torchvision</code>, <code>timm</code></td></tr>
     <tr><td>Semantic segmentation</td><td>$K\times H\times W$</td><td>pixel CE + Dice</td><td>mIoU</td><td>U-Net, DeepLab · <code>segmentation_models_pytorch</code></td></tr>
-    <tr><td>Object detection</td><td>list of (box, class, score)</td><td>box + objectness + class</td><td>mAP@0.5(:0.95)</td><td>YOLO, Faster R-CNN · <code>ultralytics</code></td></tr>
+    <tr><td>Object detection</td><td>list of (box, class, score)</td><td>box (IoU) + class (+ objectness in older YOLOs)</td><td>mAP@0.5(:0.95)</td><td>YOLO, Faster R-CNN · <code>ultralytics</code></td></tr>
     <tr><td>Instance segmentation</td><td>list of (mask, class, score)</td><td>detection + mask BCE</td><td>mask mAP</td><td>Mask R-CNN, YOLO-seg</td></tr>
   </table>
   <div class="note"><p class="small"><b>Vehicle damage from photos</b> uses all four: classify the part, detect each damage with a box, segment its exact extent, and a shared pre-trained backbone underneath.</p></div>
-  <p class="small"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/object_detection_yolo.ipynb" target="_blank" rel="noopener">Lab: fine-tuning YOLO</a> (IoU, NMS and mAP from scratch, then YOLO11 on a real dataset)</p>
 </section>
 
 <section class="slide">
@@ -487,9 +642,11 @@ m.fc = nn.Linear(m.fc.in_features, n_classes)</pre>
       <dt>pooling</dt><dd>max or mean over windows: down-sampling without parameters.</dd>
       <dt>receptive field</dt><dd>the input region that can affect one unit.</dd>
       <dt>backbone</dt><dd>the pre-trained feature extractor shared by all vision tasks.</dd>
+      <dt>residual connection</dt><dd>$\bh=F(\bx)+\bx$: lets the gradient skip layers.</dd>
     </dl>
     <dl class="gloss">
       <dt>transfer learning</dt><dd>reuse a pre-trained backbone; train a new head.</dd>
+      <dt>multi-task learning</dt><dd>one backbone, one head per task, $L=\sum_k\lambda_kL_k$.</dd>
       <dt>semantic / instance</dt><dd>class per pixel / mask per object.</dd>
       <dt>U-Net</dt><dd>encoder + decoder + skip connections, for masks.</dd>
       <dt>IoU, Dice</dt><dd>overlap of prediction and truth, from 0 to 1.</dd>
@@ -497,6 +654,7 @@ m.fc = nn.Linear(m.fc.in_features, n_classes)</pre>
       <dt>mAP</dt><dd>area under precision–recall, averaged over classes.</dd>
     </dl>
   </div>
+  <p class="labline">Theory notes for this chapter: <a href="https://github.com/imagra93/ML-course-labs/blob/main/notes/neural_networks/03_cnn_transfer_multitask.ipynb" target="_blank" rel="noopener">notes 03 · CNNs, transfer and multi-task learning</a>.</p>
 </section>
 
 <section class="slide cover">
@@ -504,9 +662,9 @@ m.fc = nn.Linear(m.fc.in_features, n_classes)</pre>
   <p class="mail">imanolgranada@gmail.com</p>
 </section>
 </div></div>
-<script src="../assets/figures.js?v=20260929"></script>
-<script src="assets/nn-core.js?v=20260929"></script>
-<script src="assets/fig-nn-cnn.js?v=20260929"></script>
-<script src="../assets/deck.js?v=20260929"></script>
+<script src="../assets/figures.js?v=20260930"></script>
+<script src="assets/nn-core.js?v=20260930"></script>
+<script src="assets/fig-nn-cnn.js?v=20260930"></script>
+<script src="../assets/deck.js?v=20260930"></script>
 </body>
 </html>

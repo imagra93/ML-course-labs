@@ -139,6 +139,9 @@ or a set's own `index.html`. → / Space advances (and drives the interactive de
 back, F is full screen, N / P jump between topics. Equations need internet (MathJax from a CDN).
 Editing instructions are in [slides/machine_learning/README.md](slides/machine_learning/README.md)
 and [slides/neural_networks/README.md](slides/neural_networks/README.md).
+In the neural-network decks every lab has its own slide with an **Open in Colab** button, placed right
+after the theory it needs; [slides/neural_networks/index.html](slides/neural_networks/index.html) also lists
+the labs in that order.
 
 ## Machine learning — [slides/machine_learning](slides/machine_learning/index.html)
 

@@ -46,14 +46,14 @@
 <section class="slide">
   <h2>Logistic Regression – Linear assumption</h2>
   <div class="cols c64">
-    <div class="widget" data-fig="why-logit" data-auto="x=0 :: A straight line plus a 0.5 cut: all 9 tumours classified correctly|x=1 :: Add one very large malignant tumour: the line tilts, the cut moves right, two mistakes">
+    <div class="widget" data-fig="why-logit" data-auto="x=0 :: A straight line plus a 0.5 cut: all 9 tumours classified correctly|x=1 :: Add one very large malignant tumour: the line tilts, the cut moves right, and the tumour at 3.3 is now called benign">
       <svg class="fig" aria-label="Tumour size against malignant or benign labels, fitted with a straight line and thresholded at 0.5"></svg>
       <div class="ctl"><span class="seg" role="group" aria-label="Extra data point"><button type="button" data-x="0" aria-pressed="true">Original data</button><button type="button" data-x="1" aria-pressed="false">Add one extra data point</button></span></div>
       <div class="ro"><div class="m"><span>threshold at x =</span><b data-r="x">–</b></div><div class="m"><span>misclassified</span><b data-r="w">–</b></div></div>
     </div>
     <div class="stack" style="gap:16px">
       <p>Approximate $y$ as a linear function of $\bx$:</p>
-      <div class="eq big">$$h(\bx)=\sum_{i=0}^n\theta_i\cdot x_i=\bth^\top\bx$$</div>
+      <div class="eq big">$$h(\bx)=\sum_{j=0}^n\theta_j\cdot x_j=\bth^\top\bx$$</div>
       <p>First perform linear regression and then establish a threshold, e.g. 0.5.</p>
       <p class="step"><b>One extra data point leads to bad results.</b> A clearly malignant tumour far to the right drags the line, and the 0.5 crossing moves into the malignant cases.</p>
       <p class="step why">Also: $\bth^\top\bx$ is unbounded, so predictions like −0.3 or 1.4 are not probabilities.</p>
@@ -185,7 +185,8 @@
     </div>
     <div class="stack">
       <svg class="fig" data-fig="logloss" style="max-height:250px" aria-label="Binary cross-entropy loss for y equals 1 and y equals 0"></svg>
-      <svg class="fig step" data-fig="ce-mse" style="max-height:195px" aria-label="Cross-entropy is convex while MSE with a sigmoid has a flat plateau"></svg>
+      <div class="step"><svg class="fig" data-fig="ce-mse" style="max-height:172px" aria-label="Cross-entropy is convex while MSE with a sigmoid has a flat plateau"></svg>
+      <div class="legend"><span><i style="background:var(--blue)"></i>cross-entropy: one smooth bowl</span><span><i style="background:var(--red)"></i>MSE with a sigmoid: a flat plateau (tiny gradients)</span></div></div>
     </div>
   </div>
 </section>
@@ -391,7 +392,7 @@
   <h2>Logistic Regression – Metrics.</h2>
   <div class="cols c64" style="align-items:center">
     <div class="stack"><p>Confusion matrix:</p><table class="cmx"><tr><td class="blank"></td><td class="blank"></td><th>Positive</th><th>Negative</th><td class="blank"></td></tr><tr><th rowspan="2" style="background:none;border:none">Actual<br>Class</th><th>Positive</th><td class="cell">True Positive (TP)</td><td class="cell">False Negative (FN)<span class="err">Type II Error</span></td><td class="mt on"><b>Sensitivity</b><br>$\frac{TP}{TP+FN}$</td></tr><tr><th>Negative</th><td class="cell">False Positive (FP)<span class="err">Type I Error</span></td><td class="cell">True Negative (TN)</td><td class="mt"><b>Specificity</b><br>$\frac{TN}{TN+FP}$</td></tr><tr><td class="blank"></td><td class="blank"></td><td class="mt"><b>Precision</b><br>$\frac{TP}{TP+FP}$</td><td class="mt"><b>Negative Predictive Value</b><br>$\frac{TN}{TN+FN}$</td><td class="mt"><b>Accuracy</b><br>$\frac{TP+TN}{TP+TN+FP+FN}$</td></tr></table><p class="tiny muted" style="margin-top:4px">Columns: predicted class.</p></div>
-    <div class="stack"><p><b>Sensitivity or Recall:</b></p><ul class="small"><li>True positives to all the actual positives.</li><li>The model didn't miss any true positives.</li><li>Example: cancer patients, we do not want false negatives.</li></ul></div>
+    <div class="stack"><p><b>Sensitivity or Recall:</b></p><ul class="small"><li>True positives to all the actual positives.</li><li>High recall: few real positives are missed.</li><li>Example: cancer patients, we do not want false negatives.</li></ul></div>
   </div>
 </section>
 
@@ -433,7 +434,7 @@
   <div class="cols">
     <svg class="fig" data-fig="pr" aria-label="Precision-recall curve"></svg>
     <div class="stack" style="gap:12px">
-      <p class="small">This tradeoff highly impacts real-world scenarios, therefore precision and recall alone aren't very good metrics to rely on and work with.</p>
+      <p class="small">So one of the two alone can be gamed: flag everything and recall is 1; flag only the surest case and precision is 1. Report both, or combine them:</p>
       <div class="eq">$$F_1=\frac{2}{\frac{1}{\text{Recall}}+\frac{1}{\text{Precision}}}$$</div>
       <ul class="small">
         <li>Widely used, "good" for comparing.</li>
@@ -475,9 +476,9 @@
     <div class="stack" style="gap:10px">
       <p class="small"><b>Receiver operating characteristic</b> curve: TPR against FPR, computed for many different thresholds on a single graph.</p>
       <ul class="small">
-        <li>The diagonal assumes random selection (and a balanced dataset).</li>
+        <li>The diagonal is a model with random scores, whatever the class balance.</li>
         <li>Good for comparing different classifiers: set separation to 0 and the curve collapses to the diagonal (AUC ≈ 0.5).</li>
-        <li>Not good with large class imbalances.</li>
+        <li>With very rare positives it can look too optimistic (FPR is divided by a huge number of negatives): look at the PR curve too.</li>
         <li>Good to answer: what TPR can I obtain if I want to fix FPR to 0.02?</li>
       </ul>
       <div class="note"><p class="small">1 metric → <b>AUC-ROC</b>, the area under the curve, between 0.5 (random) and 1 (perfect).</p></div>
@@ -569,6 +570,7 @@
         <li>Improvements: Tomek links and SMOTE.</li>
         <li>Class weights in the loss (<code>class_weight="balanced"</code>).</li>
         <li>Use precision, recall, F1, PR curves instead of accuracy.</li>
+        <li><b>Resample only the training set.</b> Validation and test keep the real class proportions.</li>
       </ul>
     </div>
     <div class="stack">
@@ -602,6 +604,29 @@
 </section>
 
 <section class="slide">
+  <h2>Metrics – Scoring probabilities, by hand</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:8px">
+      <p class="small">Four claims, the model's probability of fraud $p$, and what really happened:</p>
+      <table class="t" style="font-size:17px;text-align:center">
+        <tr><th>claim</th><th>$y$</th><th>$p$</th><th>log-loss term</th><th>Brier term</th></tr>
+        <tr><td>A</td><td>1</td><td>0.90</td><td>$-\ln0.90=0.11$</td><td>$(0.90-1)^2=0.01$</td></tr>
+        <tr><td>B</td><td>1</td><td>0.60</td><td>$-\ln0.60=0.51$</td><td>$(0.60-1)^2=0.16$</td></tr>
+        <tr><td>C</td><td>0</td><td>0.20</td><td>$-\ln0.80=0.22$</td><td>$(0.20-0)^2=0.04$</td></tr>
+        <tr><td>D</td><td>0</td><td>0.95</td><td>$-\ln0.05=3.00$</td><td>$(0.95-0)^2=0.90$</td></tr>
+      </table>
+      <p class="why">For $y=1$ the log-loss term is $-\ln p$; for $y=0$ it is $-\ln(1-p)$. The Brier term is always $(p-y)^2$.</p>
+    </div>
+    <div class="stack" style="gap:8px">
+      <div class="step"><div class="eq s">$$\text{log-loss}=\tfrac{0.11+0.51+0.22+3.00}{4}=0.96\qquad\text{Brier}=\tfrac{0.01+0.16+0.04+0.90}{4}=0.28$$</div></div>
+      <p class="small step"><b>One confident mistake</b> (D: 95 % sure of fraud, but legit) costs 3.00, more than the other three claims together. Log-loss punishes confident mistakes very hard; a Brier term can never exceed 1.</p>
+      <p class="small step"><b>Baseline</b> "always say 0.5": log-loss $=\ln2=0.69$, Brier $=0.25$. Because of claim D, this model is <b>worse than a coin flip</b> on both.</p>
+      <p class="small step">Accuracy with a 0.5 threshold: 3 of 4 right (75 %). It cannot see how sure the model was. Use log-loss or Brier when the probability itself is used (prices, reserves, expected costs).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
   <h2>Logistic Regression – More than 2 classes?</h2>
   <div class="cols c64">
     <div class="stack"><p><b>One-vs-all (one-vs-rest):</b></p><svg class="fig" data-fig="ovr" aria-label="Three classes and three one-versus-rest binary problems"></svg></div>
@@ -621,8 +646,8 @@
       <li>Pros:
         <ul><li>Simple model and interpretability.</li><li>Computationally efficient.</li></ul></li>
       <li>Cons:
-        <ul><li>Overly-simplistic (linearity assumptions).</li><li>Affected by outliers.</li><li>Assumes the features are not correlated (rare): multicollinearity!
-          <ul><li>Solution: dimensionality reduction techniques (like PCA), or regularization.</li></ul></li><li>Assumes homoscedasticity: constant variance around the mean (linear regression).</li></ul></li>
+        <ul><li>Overly-simplistic (linearity assumptions).</li><li>Affected by outliers.</li><li>Correlated features (multicollinearity) make the coefficients unstable and hard to interpret; the predictions can still be fine.
+          <ul><li>Solution: drop or combine features, dimensionality reduction (like PCA), or regularization.</li></ul></li><li>Its standard errors assume homoscedasticity: constant variance around the line (linear regression).</li></ul></li>
     </ul>
     <svg class="fig" data-fig="homo" aria-label="Constant error variance versus error variance that grows with x"></svg>
   </div>

@@ -22,6 +22,15 @@ function cube(svg,x,y,w,h,d,fill,lab,sub,o){o=o||{};const dx=d*0.6,dy=-d*0.4;E('
 function heat(v,mono){if(mono){const t=Math.max(0,Math.min(1,v));const r=Math.round(255-187*t),g=Math.round(255-141*t),b=Math.round(255-59*t);return 'rgb('+r+','+g+','+b+')'}
   const t=Math.max(-1,Math.min(1,v));if(t>=0){const r=Math.round(255-18*t),g=Math.round(255-130*t),b=Math.round(255-206*t);return 'rgb('+r+','+g+','+b+')'}const s=-t;const r=Math.round(255-187*s),g=Math.round(255-141*s),b=Math.round(255-59*s);return 'rgb('+r+','+g+','+b+')'}
 function gray(v){const c=Math.round(255*(1-Math.max(0,Math.min(1,v))));return 'rgb('+c+','+c+','+c+')'}
+/* pixel intensity: 0 = black, 1 = white (the usual image convention) */
+function pix(v){const c=Math.round(255*Math.max(0,Math.min(1,v)));return 'rgb('+c+','+c+','+c+')'}
+/* SVG text with simple sub/superscripts: "W_h", "W_{hy}", "x^2", "Z^{[1]}". base = font size (px) of the class */
+function TT(parent,x,y,s,cls,anchor,base){cls=cls||'';base=base||(/\bbig\b/.test(cls)?19:/\blab\b/.test(cls)?16:/\bmono\b/.test(cls)?13:14);
+  const t=E('text',{x:x,y:y,'text-anchor':anchor||'middle'},parent);if(cls)t.setAttribute('class',cls);
+  const segs=[];let i=0,cur='';const push=()=>{if(cur)segs.push([cur,0]);cur=''};
+  while(i<s.length){const ch=s[i];if((ch==='_'||ch==='^')&&i+1<s.length){push();const m=ch==='_'?1:2;let body;if(s[i+1]==='{'){const j=s.indexOf('}',i+2);body=s.slice(i+2,j<0?s.length:j);i=j<0?s.length:j+1}else{body=s[i+1];i+=2}segs.push([body,m]);continue}cur+=ch;i++}push();
+  let off=0;segs.forEach(([txt,m])=>{const target=m===1?0.28*base:m===2?-0.4*base:0;const ts=E('tspan',{},t);if(Math.abs(target-off)>0.01)ts.setAttribute('dy',(target-off).toFixed(1));off=target;if(m)ts.setAttribute('font-size',(0.72*base).toFixed(1)+'px');ts.textContent=txt});
+  return t}
 /* rounded box with centred text */
 function box(svg,x,y,w,h,t,fill,o){o=o||{};E('rect',{x:x,y:y,width:w,height:h,rx:o.rx===undefined?6:o.rx,fill:fill||'#fff',stroke:o.stroke||'#404040','stroke-width':o.sw||1,'stroke-dasharray':o.dash||''},svg);
   if(t!==undefined&&t!==null){const lines=String(t).split('\n');const lh=o.lh||17;lines.forEach((s,k)=>{const tt=T(svg,x+w/2,y+h/2+5+(k-(lines.length-1)/2)*lh,s,o.cls||'lab');if(o.tcol)tt.style.fill=o.tcol})}}
@@ -34,9 +43,9 @@ function segs(root,key,cb){const btns=[...root.querySelectorAll('.seg button[dat
   btns.forEach(b=>b.addEventListener('click',()=>{cur=b.dataset[key];btns.forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));cb(cur)}));return ()=>cur}
 const ACT={tanh:{f:z=>Math.tanh(z)},relu:{f:z=>z>0?z:0},sigmoid:{f:z=>1/(1+Math.exp(-z))},linear:{f:z=>z}};
 const sig=z=>1/(1+Math.exp(-z));
-const f3=v=>(Math.abs(v)<5e-4?0:v).toFixed(3);const f2=v=>(Math.abs(v)<5e-3?0:v).toFixed(2);
-/* full-batch Adam on binary cross-entropy. X: m×n, y: m. hidden: e.g. [8] or [6,6] */
-function trainMLP(X,y,hidden,act,steps,lr,seed){const r=rng(seed||1);const sizes=[X[0].length].concat(hidden,[1]);const W=[],B=[];
+const f3=v=>(Math.abs(v)<5e-4?0:v).toFixed(3).replace('-','−');const f2=v=>(Math.abs(v)<5e-3?0:v).toFixed(2).replace('-','−');
+/* full-batch Adam on binary cross-entropy. X: m×n, y: m. hidden: e.g. [8] or [6,6]. l2: optional L2 penalty (λ/2)‖W‖² on the weights */
+function trainMLP(X,y,hidden,act,steps,lr,seed,l2){l2=l2||0;const r=rng(seed||1);const sizes=[X[0].length].concat(hidden,[1]);const W=[],B=[];
   for(let l=0;l<sizes.length-1;l++){const s=Math.sqrt((act==='relu'?2:1)/sizes[l]);W.push([...Array(sizes[l])].map(()=>[...Array(sizes[l+1])].map(()=>s*randn(r))));B.push(new Array(sizes[l+1]).fill(0))}
   const mW=W.map(w=>w.map(r2=>r2.map(()=>0))),sW=W.map(w=>w.map(r2=>r2.map(()=>0))),mB=B.map(b=>b.map(()=>0)),sB=B.map(b=>b.map(()=>0));const g=ACT[act];const dA=act==='relu'?(a=>a>0?1:0):act==='tanh'?(a=>1-a*a):act==='sigmoid'?(a=>a*(1-a)):(()=>1);const m=X.length;const losses=[];
   function forward(x){const A=[x];for(let l=0;l<W.length;l++){const z=B[l].slice();const a=A[l];for(let j=0;j<z.length;j++){let s=z[j];for(let i=0;i<a.length;i++)s+=a[i]*W[l][i][j];z[j]=s}
@@ -46,7 +55,7 @@ function trainMLP(X,y,hidden,act,steps,lr,seed){const r=rng(seed||1);const sizes
       for(let l=W.length-1;l>=0;l--){const a=A[l];for(let i=0;i<a.length;i++)for(let j=0;j<d.length;j++)gW[l][i][j]+=a[i]*d[j];for(let j=0;j<d.length;j++)gB[l][j]+=d[j];
         if(l>0){const nd=new Array(a.length).fill(0);for(let i=0;i<a.length;i++){let s=0;for(let j=0;j<d.length;j++)s+=d[j]*W[l][i][j];nd[i]=s*dA(a[i])}d=nd}}}
     losses.push(L/m);const b1=0.9,b2=0.999;
-    for(let l=0;l<W.length;l++){for(let i=0;i<W[l].length;i++)for(let j=0;j<W[l][i].length;j++){const gg=gW[l][i][j];mW[l][i][j]=b1*mW[l][i][j]+(1-b1)*gg;sW[l][i][j]=b2*sW[l][i][j]+(1-b2)*gg*gg;W[l][i][j]-=lr*(mW[l][i][j]/(1-b1**t))/(Math.sqrt(sW[l][i][j]/(1-b2**t))+1e-8)}
+    for(let l=0;l<W.length;l++){for(let i=0;i<W[l].length;i++)for(let j=0;j<W[l][i].length;j++){const gg=gW[l][i][j]+l2*W[l][i][j];mW[l][i][j]=b1*mW[l][i][j]+(1-b1)*gg;sW[l][i][j]=b2*sW[l][i][j]+(1-b2)*gg*gg;W[l][i][j]-=lr*(mW[l][i][j]/(1-b1**t))/(Math.sqrt(sW[l][i][j]/(1-b2**t))+1e-8)}
       for(let j=0;j<B[l].length;j++){const gg=gB[l][j];mB[l][j]=b1*mB[l][j]+(1-b1)*gg;sB[l][j]=b2*sB[l][j]+(1-b2)*gg*gg;B[l][j]-=lr*(mB[l][j]/(1-b1**t))/(Math.sqrt(sB[l][j]/(1-b2**t))+1e-8)}}}
   return {predict:x=>{const A=forward(x);return A[A.length-1][0]},forward:forward,losses:losses,W:W,B:B}}
 /* the tiny 2-2-1 network with numbers (also used in the backprop deck) */
@@ -55,10 +64,10 @@ function tinyForward(N){const z1=[0,1].map(j=>N.x[0]*N.W1[0][j]+N.x[1]*N.W1[1][j
 function drawTiny(svg,N,F,s,o){o=o||{};const pos=drawNet(svg,[2,2,1],{x0:90,y0:70,w:330,h:170,r:22,titles:['input x','hidden (tanh)','output (sigmoid)'],label:(l,i)=>l===0?'x'+(i+1):l===1?'a'+(i+1):'ŷ',
     edgeStyle:(l,i,j)=>({stroke:(o.hiEdge&&o.hiEdge===l+1)?'#c00000':'#9dafd6',width:(o.hiEdge&&o.hiEdge===l+1)?2.5:1.2})});
   /* weights on the edges */
-  const wl=(a,b2,t,k)=>{const x=a[0]+(b2[0]-a[0])*k,y=a[1]+(b2[1]-a[1])*k;E('rect',{x:x-24,y:y-11,width:48,height:20,fill:'#fff',stroke:'#9dafd6'},svg);T(svg,x,y+4,t,'')};
+  const wl=(a,b2,t,k)=>{const x=a[0]+(b2[0]-a[0])*k,y=a[1]+(b2[1]-a[1])*k;E('rect',{x:x-26,y:y-11,width:52,height:20,fill:'#fff',stroke:'#9dafd6'},svg);T(svg,x,y+4,t.replace('-','−'),'')};
   wl(pos[0][0],pos[1][0],'w='+N.W1[0][0],0.42);wl(pos[0][0],pos[1][1],'w='+N.W1[0][1],0.3);wl(pos[0][1],pos[1][0],'w='+N.W1[1][0],0.3);wl(pos[0][1],pos[1][1],'w='+N.W1[1][1],0.42);
   wl(pos[1][0],pos[2][0],'w='+N.W2[0][0],0.5);wl(pos[1][1],pos[2][0],'w='+N.W2[1][0],0.5);
-  T(svg,pos[1][0][0]-26,pos[1][0][1]-18,'b='+N.b1[0],'','end');T(svg,pos[1][1][0]-26,pos[1][1][1]+30,'b='+N.b1[1],'','end');T(svg,pos[2][0][0]+24,pos[2][0][1]-22,'b='+N.b2[0],'','start');
+  const mn=v=>String(v).replace('-','−');T(svg,pos[1][0][0]-26,pos[1][0][1]-18,'b='+mn(N.b1[0]),'','end');T(svg,pos[1][1][0]-26,pos[1][1][1]+30,'b='+mn(N.b1[1]),'','end');T(svg,pos[2][0][0]+24,pos[2][0][1]-22,'b='+mn(N.b2[0]),'','start');
   /* values */
   const val=(p,t,c,dx)=>{const tt=T(svg,p[0]+(dx||0),p[1]+(dx?4:44),t,'lab');tt.style.fill=c||'#1f1f1f'};
   val(pos[0][0],'x₁ = '+N.x[0],'#385723',-52);val(pos[0][1],'x₂ = '+N.x[1],'#385723',-52);
@@ -66,5 +75,5 @@ function drawTiny(svg,N,F,s,o){o=o||{};const pos=drawNet(svg,[2,2,1],{x0:90,y0:7
   if(s>=3)val(pos[2][0],'z = '+f3(F.z2),'#1f3864',0);if(s>=4){const tt=T(svg,pos[2][0][0],pos[2][0][1]+60,'ŷ = '+f3(F.yh),'lab');tt.style.fill='#c00000'}
   if(s>=5){E('rect',{x:490,y:66,width:104,height:52,rx:6,fill:'#fbe5d6',stroke:'#ed7d31'},svg);T(svg,542,86,'y = '+N.y,'lab');T(svg,542,107,'loss = '+f3(F.L),'lab')}
   return pos}
-window.MLNN={drawNet,grid,cube,heat,gray,box,stepper,segs,ACT,sig,f2,f3,trainMLP,NET,tinyForward,drawTiny};
+window.MLNN={drawNet,grid,cube,heat,gray,pix,TT,box,stepper,segs,ACT,sig,f2,f3,trainMLP,NET,tinyForward,drawTiny};
 })();

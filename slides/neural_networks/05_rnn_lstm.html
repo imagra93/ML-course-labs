@@ -8,9 +8,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
-<link rel="stylesheet" href="../assets/deck.css?v=20260929">
-<link rel="stylesheet" href="assets/nn.css?v=20260929">
-<script src="../assets/mathjax-config.js?v=20260929"></script>
+<link rel="stylesheet" href="../assets/deck.css?v=20260930">
+<link rel="stylesheet" href="assets/nn.css?v=20260930">
+<script src="../assets/mathjax-config.js?v=20260930"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
 </head>
 <body data-deck="5 · Recurrent networks and LSTMs" data-prev="04_cnn.html" data-next="06_transformers.html">
@@ -47,8 +47,17 @@
   <h2>From text to vectors</h2>
   <svg class="fig" data-fig="tokens" style="max-height:290px" aria-label="A sentence split into tokens, mapped to integer ids and then to embedding vectors"></svg>
   <div class="cols">
-    <p class="small"><b>Tokenize</b>: words, sub-words or characters. Special tokens: <code>&lt;PAD&gt;</code>, <code>&lt;UNK&gt;</code> for unknown words, <code>&lt;START&gt;</code>. <b>Index</b>: one integer per token in a vocabulary of size $|V|$.</p>
-    <p class="small"><b>Embed</b>: row $k$ of a learned matrix $\bE\in\R^{|V|\times d}$. In PyTorch <code>nn.Embedding(|V|, d)</code>: input $[B,T]$ integers, output $[B,T,d]$ floats.</p>
+    <p class="small"><b>Tokenize</b>: words, sub-words or characters. Special tokens: <code>&lt;PAD&gt;</code> to fill short sequences, <code>&lt;UNK&gt;</code> for unknown words, <code>&lt;START&gt;</code>. <b>Index</b>: one integer per token in a vocabulary of size $|V|$.</p>
+    <p class="small"><b>Embed</b>: each id becomes a vector of $d$ learned numbers (next slide). A sentence of $T$ tokens becomes a $T\times d$ matrix, one row per time step: the input of an RNN.</p>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>An embedding is a lookup table</h2>
+  <svg class="fig" data-fig="lookup" style="max-height:260px" aria-label="A one-hot vector for the word movie times the embedding matrix picks out the row of movie"></svg>
+  <div class="cols">
+    <p class="small">Each token id $k$ owns one row $\mathbf e_k$ of a matrix $\bE\in\R^{|V|\times d}$. Written as a one-hot row vector $\mathbf o_k$ (a single 1 in position $k$), the lookup is a matrix product, $\ \mathbf e_k=\mathbf o_k\bE$: it picks row $k$. In code nobody multiplies: <code>E[ids]</code>.</p>
+    <p class="small">$\bE$ starts random and is <b>learned by backprop</b> like any other weight; only the rows of the tokens in the batch get a gradient. <code>nn.Embedding(|V|, d)</code>: input $[B,T]$ integers, output $[B,T,d]$ floats. Typical sizes: $|V|$ = 10,000–50,000, $d$ = 50–1,024.</p>
   </div>
 </section>
 
@@ -60,7 +69,7 @@
         <li><b>One-hot</b> $\mathbf o_w\in\{0,1\}^{|V|}$: very sparse, high-dimensional, and every pair of words is equally far apart. No similarity information.</li>
         <li><b>Embedding</b>: a dense vector $\mathbf e_w\in\R^d$, $d\ll|V|$ (e.g. 50–1,024). Similar words end up close.</li>
       </ul>
-      <div class="bluebox">$$\mathbf e_w=\bE^\top\mathbf o_w\qquad(\text{just a row lookup})$$</div>
+      <div class="bluebox">$$\mathbf e_w=\mathbf o_w\bE\qquad(\text{row }w\text{ of }\bE)$$</div>
       <p class="step small">$\bE$ is learned like any other weight: by the task itself, or beforehand with <b>target/context likelihood models</b>:</p>
       <ul class="small step"><li><b>word2vec</b>: predict the words around a word (skip-gram), or the word from its neighbours (CBOW).</li><li>Words used in similar contexts get similar vectors: <i>king − man + woman ≈ queen</i>.</li></ul>
       <p class="step small">The same idea gives embeddings for sentences and documents: the basis of semantic search and RAG (chapter 6).</p>
@@ -99,7 +108,7 @@
       <p>The cell is a <b>dense layer with two inputs</b>. Equivalently, concatenate them:</p>
       <div class="eq">$$\bh_t=\tanh\big([\bh_{t-1},\bx_t]\,\bW+\bb\big),\qquad\bW=\begin{pmatrix}\bW_h\\\bW_x\end{pmatrix}$$</div>
       <table class="t xs"><tr><th>object</th><th>shape</th></tr><tr><td>$\bx_t$ (one step, batch $B$)</td><td>$B\times d$</td></tr><tr><td>$\bh_t$</td><td>$B\times d_h$</td></tr><tr><td>$\bW_x$</td><td>$d\times d_h$</td></tr><tr><td>$\bW_h$</td><td>$d_h\times d_h$</td></tr></table>
-      <p class="small">Parameters: $d\,d_h+d_h^2+d_h$, whatever the length. With $d=100,d_h=128$: 29,312.</p>
+      <p class="small">Parameters: $d\,d_h+d_h^2+d_h$, whatever the length. With $d=100,d_h=128$: 29,312 (PyTorch keeps two bias vectors: 29,440).</p>
       <pre class="code s">rnn = nn.RNN(input_size=100, hidden_size=128, batch_first=True)
 out, h_T = rnn(x)        <span class="c"># x: [B, T, 100] → out: [B, T, 128]</span></pre>
     </div>
@@ -117,7 +126,7 @@ out, h_T = rnn(x)        <span class="c"># x: [B, T, 100] → out: [B, T, 128]</
     <div class="stack" style="gap:10px">
       <p class="small">A one-number RNN: $h_t=\tanh(1\cdot x_t+w_h\,h_{t-1})$, $h_0=0$, input sequence $1,0,0,-1,0,0$.</p>
       <p class="small">With $w_h=0.5$, each step without input <b>multiplies the memory by about 0.5</b>: after 5 quiet steps, $0.5^5\approx3\%$ of it is left.</p>
-      <p class="small">Try $w_h\gt1$: the state saturates at ±1 and never forgets, but can no longer store anything new. Only a narrow range in between works: the core problem of plain RNNs.</p>
+      <p class="small">Try $w_h\gt1$: the state saturates near ±1 and does not forget, but a new input can no longer change it. Only a narrow range in between works: the core problem of plain RNNs.</p>
       <p class="why">The same multiplication by $w_h$ happens to the <b>gradient</b> going backward in time.</p>
     </div>
   </div>
@@ -155,14 +164,20 @@ out, h_T = rnn(x)        <span class="c"># x: [B, T, 100] → out: [B, T, 128]</
 
 <section class="slide">
   <h2>Recurrent Neural Networks: vanishing gradients</h2>
-  <svg class="fig" data-fig="bptt" style="max-height:220px" aria-label="The gradient flowing back from the loss through six time steps, getting thinner at every step"></svg>
+  <svg class="fig" data-fig="bptt" style="max-height:205px" aria-label="The gradient flowing back from the loss through six time steps, getting thinner at every step"></svg>
   <div class="cols">
     <div class="stack" style="gap:6px">
-      <p class="small">With $\bh_t=\tanh(\mathbf a_t)$:</p>
-      <div class="eq s">$$\frac{\partial\bh_t}{\partial\bh_{t-1}}=\mathrm{diag}\big(1-\bh_t^2\big)\bW_h^\top\ \Rightarrow\ \frac{\partial J}{\partial\bh_k}=\frac{\partial J}{\partial\bh_T}\prod_{t=k+1}^T\mathrm{diag}\big(1-\bh_t^2\big)\bW_h^\top$$</div>
-      <div class="eq s step">$$\Big\lVert\frac{\partial J}{\partial\bh_k}\Big\rVert\le\Big\lVert\frac{\partial J}{\partial\bh_T}\Big\rVert\,\norm{\bW_h}^{\,T-k}$$</div>
+      <p class="small"><b>With one number per step</b>, $h_t=\tanh(w\,h_{t-1}+u\,x_t)$. The chain rule for one step back:</p>
+      <div class="eq s">$$\frac{\partial h_t}{\partial h_{t-1}}=\underbrace{(1-h_t^2)}_{\tanh'}\cdot w$$</div>
+      <p class="small step">Through $T-k$ steps the factors multiply:</p>
+      <div class="bluebox step" style="font-size:19px">$$\frac{\partial h_T}{\partial h_k}=\prod_{t=k+1}^{T}(1-h_t^2)\,w=w^{\,T-k}\prod_{t=k+1}^{T}(1-h_t^2)$$</div>
     </div>
-    <ul class="small step"><li>$\tanh'\le1$, so each step multiplies by at most $\norm{\bW_h}$.</li><li>$\norm{\bW_h}\lt1$: the signal from $T-k$ steps back shrinks <b>exponentially</b> (vanishing). The network cannot learn long-range dependencies: the gradient never tells it they matter.</li><li>Largest singular value $\gt1$: it can blow up (exploding) → gradient clipping.</li></ul>
+    <ul class="small step">
+      <li>$0\lt1-h_t^2\le1$, so every step back multiplies the gradient by at most $|w|$.</li>
+      <li>$|w|\lt1$: the signal from $T-k$ steps back shrinks <b>exponentially</b> (vanishing). The network cannot learn long-range dependencies: the gradient never tells it they matter.</li>
+      <li>$|w|\gt1$: it can blow up (exploding) → gradient clipping.</li>
+      <li>With vectors, $w$ becomes $\bW_h^\top$ and $1-h_t^2$ a diagonal matrix: $\ \norm{\partial J/\partial\bh_k}\le\norm{\partial J/\partial\bh_T}\,\norm{\bW_h}^{T-k}$.</li>
+    </ul>
   </div>
 </section>
 
@@ -175,7 +190,7 @@ out, h_T = rnn(x)        <span class="c"># x: [B, T, 100] → out: [B, T, 128]</
       <p class="small"><b>Exploding gradients</b> have a cheap fix: <b>clip</b> the gradient norm (below). Vanishing ones need a new architecture.</p>
       <svg class="fig" data-fig="clip" style="max-height:170px" aria-label="A long gradient vector rescaled to a maximum length"></svg>
     </div>
-    <div class="widget" data-fig="vanish" data-auto="w=0.8 :: RNN factor 0.8: 10⁻⁵ after 50 steps | w=1.1 :: factor 1.1: it explodes instead | w=0.9; f=0.99 :: LSTM with forget gate 0.99: almost no loss over 50 steps">
+    <div class="widget" data-fig="vanish" data-auto="w=0.8 :: RNN factor 0.8: 10⁻⁵ after 50 steps | w=1.1 :: factor 1.1: it explodes instead | w=0.9; f=0.99 :: LSTM with forget gate 0.99 keeps 60 % after 50 steps; the RNN with 0.9 keeps 0.5 %">
       <svg class="fig" style="max-height:300px" aria-label="Gradient size against steps back in time for an RNN and an LSTM"></svg>
       <div class="ctl"><label for="va-w">RNN: ‖Wₕ‖·tanh′</label><input type="range" id="va-w" data-k="w" min="0.5" max="1.3" step="0.01" value="0.8"><span class="v" data-v="w">0.80</span></div>
       <div class="ctl"><label for="va-f">LSTM: forget gate f</label><input type="range" id="va-f" data-k="f" min="0.8" max="1" step="0.005" value="0.98"><span class="v" data-v="f">0.98</span></div>
@@ -188,18 +203,21 @@ out, h_T = rnn(x)        <span class="c"># x: [B, T, 100] → out: [B, T, 128]</
 <section class="slide">
   <h2>GRU and LSTMs: gates</h2>
   <div class="cols">
-    <div class="stack" style="gap:12px">
-      <p>To remedy this, several versions of <b>gates</b> have been designed, each with its own purpose, but all with a similar structure:</p>
+    <div class="stack" style="gap:8px">
+      <p class="small">To remedy this, several versions of <b>gates</b> have been designed, each with its own purpose, but all with a similar structure:</p>
       <div class="bluebox">$$\Gamma=\sigma\big(\bx^{\langle t\rangle}\bW+\bh^{\langle t-1\rangle}\mathbf U+\bb\big)\in(0,1)$$</div>
       <p class="small">A gate is a sigmoid: a <b>soft switch</b> between 0 (block) and 1 (let through), applied element-wise by multiplication. Each gate has its own weights and looks at the current input and the previous state to decide.</p>
-      <p class="small">Analogy: a <b>notebook</b> (the cell state) with three rules: what to erase, what to write, what to read aloud.</p>
+      <svg class="fig" data-fig="gate-demo" style="max-height:200px" aria-label="A signal vector multiplied element by element by a gate vector of sigmoid values"></svg>
     </div>
-    <table class="t" style="font-size:18px"><tr><th>Type of gate</th><th>Role</th><th>Used in</th></tr>
-      <tr><td>Update gate $\Gamma_u$</td><td>How much should the past matter now?</td><td>GRU</td></tr>
-      <tr><td>Relevance / reset gate $\Gamma_r$</td><td>Drop previous information?</td><td>GRU</td></tr>
-      <tr><td>Forget gate $\Gamma_f$</td><td>Erase a memory cell or not?</td><td>LSTM</td></tr>
-      <tr><td>Input gate $\Gamma_i$</td><td>Write new content into memory?</td><td>LSTM</td></tr>
-      <tr><td>Output gate $\Gamma_o$</td><td>How much to reveal of a cell?</td><td>LSTM</td></tr></table>
+    <div class="stack" style="gap:10px">
+      <table class="t" style="font-size:18px"><tr><th>Type of gate</th><th>Role</th><th>Used in</th></tr>
+        <tr><td>Update gate $\Gamma_u$</td><td>How much should the past matter now?</td><td>GRU</td></tr>
+        <tr><td>Relevance / reset gate $\Gamma_r$</td><td>Drop previous information?</td><td>GRU</td></tr>
+        <tr><td>Forget gate $\Gamma_f$</td><td>Erase a memory cell or not?</td><td>LSTM</td></tr>
+        <tr><td>Input gate $\Gamma_i$</td><td>Write new content into memory?</td><td>LSTM</td></tr>
+        <tr><td>Output gate $\Gamma_o$</td><td>How much to reveal of a cell?</td><td>LSTM</td></tr></table>
+      <p class="small">Analogy: a <b>notebook</b> (the cell state) with three rules: what to erase (forget), what to write (input), what to read aloud (output).</p>
+    </div>
   </div>
 </section>
 
@@ -211,6 +229,23 @@ out, h_T = rnn(x)        <span class="c"># x: [B, T, 100] → out: [B, T, 128]</
       <p class="small">$\bff_t$ forget, $\bi_t$ input, $\bo_t$ output gates; $\tilde\bc_t$ candidate content. The memory update is a <b>sum</b>, highlighted in blue.</p><p class="small">Two states travel along time: the <b>cell</b> $\bc_t$ (long-term memory) and the <b>hidden</b> $\bh_t$ (what is shown to the next layer). Parameters: 4 blocks, $4\big(d_h(d_h+d)+d_h\big)$.</p>
     </div>
     <svg class="fig" data-fig="lstm-cell" aria-label="An LSTM cell with forget, input and output gates on the cell-state line"></svg>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The LSTM, one gate at a time</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="lstm-walk" data-auto="s=1 :: 1 · forget: what to erase from the memory | s=2 :: 2 · input: what new content to write, and how much | s=3 :: 3 · update: the new memory is a sum of the kept old and the written new | s=4 :: 4 · output: what part of the memory to show as h">
+      <svg class="fig" aria-label="The LSTM cell with the path of the current stage highlighted in red"></svg>
+      <div class="ctl"><label for="lw-s">stage</label><input type="range" id="lw-s" data-k="s" min="0" max="4" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="panels" style="min-height:330px">
+      <div data-i="0"><p>All the gates read the same input: the previous hidden state and the new token, $[\bh_{t-1},\bx_t]$. Each gate has its own weights.</p><p class="small">Two states travel along time: the <b>cell</b> $\bc$ (long-term memory, the top line) and the <b>hidden state</b> $\bh$ (the output, bottom right). Press → to follow one update.</p></div>
+      <div data-i="1"><p><b>1 · Forget gate.</b> For each entry of the memory: keep it (≈ 1) or erase it (≈ 0).</p><div class="eq">$$\bff_t=\sigma\big([\bh_{t-1},\bx_t]\bW_f+\bb_f\big)$$</div><p class="small">Example: a new subject starts a sentence, so the old subject can be forgotten.</p></div>
+      <div data-i="2"><p><b>2 · Input gate and candidate.</b> What could be written, $\tilde\bc_t\in(-1,1)$, and how much of it, $\bi_t\in(0,1)$:</p><div class="eq s">$$\bi_t=\sigma\big([\bh_{t-1},\bx_t]\bW_i+\bb_i\big)$$$$\tilde\bc_t=\tanh\big([\bh_{t-1},\bx_t]\bW_c+\bb_c\big)$$</div></div>
+      <div data-i="3"><p><b>3 · Update the memory.</b> Keep part of the old, add part of the new:</p><div class="bluebox">$$\bc_t=\bff_t\odot\bc_{t-1}+\bi_t\odot\tilde\bc_t$$</div><p class="small">A <b>sum</b>, not a product through a squashing function: with $\bff\approx1$ and $\bi\approx0$ the memory is copied unchanged, step after step. This is what lets information (and the gradient) survive.</p></div>
+      <div data-i="4"><p><b>4 · Output gate.</b> Which part of the memory to show, to the next layer and to the next step:</p><div class="eq s">$$\bo_t=\sigma\big([\bh_{t-1},\bx_t]\bW_o+\bb_o\big)$$$$\bh_t=\bo_t\odot\tanh(\bc_t)$$</div><p class="small">The memory can hold something for a long time without showing it ($\bo\approx0$) and reveal it exactly when it is needed.</p></div>
+    </div>
   </div>
 </section>
 
@@ -233,7 +268,7 @@ out, h_T = rnn(x)        <span class="c"># x: [B, T, 100] → out: [B, T, 128]</
 <section class="slide">
   <h2>The LSTM reading a sentence</h2>
   <div class="widget" data-fig="lstm-story" data-auto="s=1 | s=2 | s=3 | s=5 | s=8 | s=9 | s=10">
-    <svg class="fig" style="max-height:320px" aria-label="Forget, input and output gate values and the memory cell over the words of a sentence"></svg>
+    <svg class="fig" style="max-height:340px" aria-label="Forget, input and output gate values, the output and the memory cell over the words of a sentence"></svg>
     <div class="ctl"><label for="ls-s">words read</label><input type="range" id="ls-s" data-k="s" min="0" max="10" step="1" value="0"><span class="v" data-v="s"></span></div>
   </div>
   <p class="small">"The cat, which ate a lot, <b>was</b> sleepy": to choose <i>was</i> rather than <i>were</i>, the network must remember that the subject is singular across a whole sub-clause. The gate values are illustrative; a trained LSTM learns this kind of behaviour, spread over many cells.</p>
@@ -243,8 +278,8 @@ out, h_T = rnn(x)        <span class="c"># x: [B, T, 100] → out: [B, T, 128]</
   <h2>Why the gradient survives in an LSTM</h2>
   <div class="cols">
     <div class="stack" style="gap:10px">
-      <p>Along the memory path:</p>
-      <div class="eq big">$$\frac{\partial\bc_t}{\partial\bc_{t-1}}=\mathrm{diag}(\bff_t)\ \ \Rightarrow\ \ \frac{\partial\bc_T}{\partial\bc_k}\approx\prod_{t=k+1}^T\mathrm{diag}(\bff_t)$$</div>
+      <p>Along the memory path, $\bc_t=\bff_t\odot\bc_{t-1}+\dots$, so</p>
+      <div class="eq big">$$\frac{\partial\bc_t}{\partial\bc_{t-1}}\approx\mathrm{diag}(\bff_t)\ \ \Rightarrow\ \ \frac{\partial\bc_T}{\partial\bc_k}\approx\prod_{t=k+1}^T\mathrm{diag}(\bff_t)$$</div>
       <p class="step">No weight matrix and no squashing derivative in this product: only the forget gates. When the network has learned to remember ($\bff_t\approx1$), the gradient flows back almost unchanged over many steps.</p>
       <p class="step small">The same idea as the residual connection $\bh=\bx+F(\bx)$: an <b>additive path</b> with a near-identity Jacobian. Tip: initialize the forget-gate bias to a positive value, so the LSTM starts out remembering.</p>
     </div>
@@ -287,23 +322,28 @@ out, h_T = rnn(x)        <span class="c"># x: [B, T, 100] → out: [B, T, 128]</
     <div class="stack" style="gap:10px">
       <svg class="fig" data-fig="padding" aria-label="Three sentences of different lengths padded to the same length"></svg>
       <ul class="small">
-        <li><b>Batches</b>: pad sequences to a common length and <b>mask</b> the padding (<code>pack_padded_sequence</code>, or <code>padding_idx</code> in the embedding).</li>
-        <li><b>Many-to-one</b>: use the last real hidden state, or the mean / max over time.</li>
+        <li><b>Batches</b>: pad sequences to a common length. <code>pack_padded_sequence</code> tells the LSTM where each sequence really ends, so the padding is skipped; <code>padding_idx=0</code> keeps the <code>&lt;PAD&gt;</code> embedding at zero.</li>
+        <li><b>Many-to-one</b>: use the hidden state after the <b>last real token</b> (what packing returns), or the mean / max over time. Without packing, <code>h[-1]</code> is the state after the padding!</li>
         <li><b>Clip gradients</b> (norm 1.0) and use Adam.</li>
       </ul>
     </div>
     <pre class="code s">class SentimentLSTM(nn.Module):
-    def __init__(self, V, d=100, dh=128):
+    def __init__(self, V, d=64, dh=64):
         super().__init__()
         self.emb = nn.Embedding(V, d, padding_idx=0)
         self.lstm = nn.LSTM(d, dh, batch_first=True)
         self.head = nn.Linear(dh, 1)
-    def forward(self, tokens):        <span class="c"># [B, T] ints</span>
-        x = self.emb(tokens)          <span class="c"># [B, T, d]</span>
-        out, (h, c) = self.lstm(x)    <span class="c"># out: [B, T, dh]</span>
-        return self.head(h[-1])       <span class="c"># [B, 1] logit</span>
 
-loss_fn = nn.BCEWithLogitsLoss()</pre>
+    def forward(self, tokens, lengths):  <span class="c"># [B, T], [B]</span>
+        x = self.emb(tokens)             <span class="c"># [B, T, d]</span>
+        x = pack_padded_sequence(x, lengths.cpu(),
+                batch_first=True, enforce_sorted=False)
+        _, (h, c) = self.lstm(x)         <span class="c"># h: [1, B, dh]</span>
+        return self.head(h[-1]).squeeze(1)  <span class="c"># [B] logits</span>
+
+loss_fn = nn.BCEWithLogitsLoss()
+<span class="c"># in the loop, after loss.backward():</span>
+nn.utils.clip_grad_norm_(model.parameters(), 1.0)</pre>
   </div>
 </section>
 
@@ -321,36 +361,57 @@ loss_fn = nn.BCEWithLogitsLoss()</pre>
   <div class="cols">
     <dl class="gloss">
       <dt>token, vocabulary</dt><dd>a unit of text and the set of all of them, each with an integer id.</dd>
-      <dt>embedding</dt><dd>a learned dense vector per token: row of $\bE$.</dd>
+      <dt>embedding</dt><dd>a learned dense vector per token: row of $\bE$, a lookup table.</dd>
       <dt>hidden state $\bh_t$</dt><dd>the RNN's running summary of the sequence so far.</dd>
       <dt>unrolling</dt><dd>drawing the RNN as a deep net, one layer per time step, shared weights.</dd>
       <dt>BPTT</dt><dd>backpropagation on the unrolled graph; shared-weight gradients add up.</dd>
+      <dt>vanishing gradient</dt><dd>a product of many factors below 1: far steps get no learning signal.</dd>
     </dl>
     <dl class="gloss">
       <dt>gate</dt><dd>a sigmoid vector in (0, 1) multiplying a signal: a soft switch.</dd>
       <dt>cell state $\bc_t$</dt><dd>the LSTM's long-term memory, updated additively.</dd>
       <dt>LSTM / GRU</dt><dd>gated RNNs: 3 gates + cell / 2 gates, no cell.</dd>
       <dt>gradient clipping</dt><dd>rescale the gradient if its norm exceeds a threshold.</dd>
-      <dt>padding, mask</dt><dd>fill short sequences; tell the model to ignore the filling.</dd>
+      <dt>padding, packing</dt><dd>fill short sequences; tell the RNN where each one really ends.</dd>
     </dl>
+  </div>
+  <p class="labline">Theory notes for this chapter: <a href="https://github.com/imagra93/ML-course-labs/blob/main/notes/neural_networks/04_rnn_lstm.ipynb" target="_blank" rel="noopener">notes 04 · Embeddings, RNNs and LSTMs</a> (including the memory experiment).</p>
+</section>
+
+<section class="slide lab">
+  <div class="labtag">LAB 11</div>
+  <h2>Sentiment analysis with an LSTM (IMDB)</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:10px">
+      <p>50,000 movie reviews, each labelled positive or negative. Is word order worth modelling?</p>
+      <ol class="todo">
+        <li>A strong baseline that ignores word order: TF-IDF + logistic regression.</li>
+        <li>From text to tensors: truncation, padding and lengths; word embeddings.</li>
+        <li>An RNN and an LSTM <b>from scratch</b>; backpropagation through time and vanishing gradients, measured.</li>
+        <li>Embedding → LSTM → linear, with packing, gradient clipping and early stopping.</li>
+        <li>Compare a plain RNN, an LSTM, a GRU and a bidirectional LSTM; read a review word by word; try your own reviews.</li>
+      </ol>
+    </div>
+    <div class="labcard">
+      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/LSTM_sentiment.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <dl class="gloss">
+        <dt>notebook</dt><dd><code>LSTM_sentiment.ipynb</code></dd>
+        <dt>you need</dt><dd>this chapter: embeddings, RNN, BPTT, LSTM and GRU, padding and packing</dd>
+        <dt>results</dt><dd>validation accuracy: plain RNN 80 %, LSTM 87 %, GRU 88 %, and the order-free TF-IDF baseline 90 %. For sentiment, which words appear matters more than their order</dd>
+        <dt>runs on</dt><dd>CPU works; a GPU is faster</dd>
+      </dl>
+    </div>
   </div>
 </section>
 
-<section class="slide">
-  <h2>Demo RNN – Sentiment Analysis:</h2>
-  <div class="stack center grow" style="gap:20px">
-    <div class="note" style="max-width:840px;text-align:left"><p class="small"><b>Review sentiment analysis.</b> We build an LSTM recurrent neural network that reaches about 87–88 % accuracy on the IMDB movie-review sentiment dataset. In Colab, select Runtime → Change runtime type → GPU.</p></div>
-    <p style="font-size:28px"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/LSTM_sentiment.ipynb" target="_blank" rel="noopener">Lab LSTM</a></p>
-  </div>
-</section>
 <section class="slide cover">
   <div class="inner"><h1>Neural Networks</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Next: Attention and transformers</p></div>
   <p class="mail">imanolgranada@gmail.com</p>
 </section>
 </div></div>
-<script src="../assets/figures.js?v=20260929"></script>
-<script src="assets/nn-core.js?v=20260929"></script>
-<script src="assets/fig-nn-rnn.js?v=20260929"></script>
-<script src="../assets/deck.js?v=20260929"></script>
+<script src="../assets/figures.js?v=20260930"></script>
+<script src="assets/nn-core.js?v=20260930"></script>
+<script src="assets/fig-nn-rnn.js?v=20260930"></script>
+<script src="../assets/deck.js?v=20260930"></script>
 </body>
 </html>

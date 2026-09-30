@@ -26,7 +26,11 @@ FIG['soft-regions']=root=>{const r=rng(17);const C=[[-1.2,-0.8],[1.3,-0.6],[0.1,
     X.forEach((x,i)=>P.dot(x[1],x[2],3.6,'pt '+['fb','fo','fgr'][Y[i]]));Q.clear();Q.dot(k,Js[k],5,'fr');
     const acc=X.filter((x,i)=>{const p=probs(x,W);let c=0;for(let t=1;t<3;t++)if(p[t]>p[c])c=t;return c===Y[i]}).length/m;setR(root,'acc',fmt(acc,3));setR(root,'j',fmt(Js[k],3))}
   inp.addEventListener('input',draw);draw()};
-FIG['cm3']=root=>{const svg=initSvg(svgOf(root),380,300);const M=[[46,3,1],[4,38,8],[0,6,44]];const lab=['setosa','versicolor','virginica'];
-  M.forEach((row,i)=>row.forEach((v,j)=>{const x=100+j*90,y=40+i*80;E('rect',{x:x,y:y,width:86,height:76,fill:i===j?'#4472c4':'#ed7d31','fill-opacity':(0.12+0.8*v/50).toFixed(2)},svg);T(svg,x+43,y+46,String(v),'lab big')}));
-  lab.forEach((l,k)=>{T(svg,95,84+k*80,l,'','end');T(svg,143+k*90,32,l,'','middle')});T(svg,235,14,'predicted','lab');T(svg,4,296,'rows: actual class','','start')};
+/* Worked example: damage severity of 100 cars (70 minor, 20 moderate, 10 severe). Rows: actual, columns: predicted */
+FIG['cm3']=root=>{const svg=initSvg(svgOf(root),470,330);const M=[[65,4,1],[5,12,3],[1,3,6]];const lab=['minor','moderate','severe'];
+  M.forEach((row,i)=>row.forEach((v,j)=>{const x=110+j*90,y=44+i*80;E('rect',{x:x,y:y,width:86,height:76,fill:i===j?'#4472c4':'#ed7d31','fill-opacity':(0.12+0.8*Math.sqrt(v/65)).toFixed(2)},svg);
+    T(svg,x+43,y+47,String(v),'lab big').style.fill=i===j&&v>30?'#fff':'#000'}));
+  lab.forEach((l,k)=>{T(svg,104,88+k*80,l,'','end');T(svg,153+k*90,36,l,'','middle');T(svg,392,88+k*80,'total '+M[k].reduce((a,b)=>a+b,0),'','start');
+    T(svg,153+k*90,304,'Σ '+M.reduce((s,row)=>s+row[k],0),'','middle')});
+  T(svg,245,16,'predicted','lab');T(svg,4,324,'rows: actual class','','start')};
 })();

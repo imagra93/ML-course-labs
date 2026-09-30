@@ -32,8 +32,7 @@ FIG['logloss']=root=>{const P=Plot(svgOf(root),{w:520,h:320,x:[0,1],y:[0,6],m:{l
   P.fn(p=>-Math.log(p),'ln sb',0.002,1);P.fn(p=>-Math.log(1-p),'ln sr',0,0.998);P.text(0.08,5.5,'y = 1: −log p','', 'start');P.text(0.62,5.5,'y = 0: −log(1 − p)','', 'start')};
 FIG['ce-mse']=root=>{const P=Plot(svgOf(root),{w:500,h:300,x:[-8,8],y:[0,1.05],m:{l:40,r:14,t:14,b:36}});P.axes({xt:[-8,-4,0,4,8],yt:[0,0.5,1],xl:'θ (one weight)',yl:'cost (scaled)'});
   const xs=[-3,-2,-1,-0.5,0.5,1,2,3],ys=[0,0,0,1,0,1,1,1];const ce=t=>xs.reduce((s,x,i)=>{const p=Math.min(1-1e-12,Math.max(1e-12,sig(t*x)));return s-(ys[i]*Math.log(p)+(1-ys[i])*Math.log(1-p))},0);
-  const ms=t=>xs.reduce((s,x,i)=>s+(sig(t*x)-ys[i])**2,0);const mc=Math.max(ce(-8),ce(8)),mm=Math.max(ms(-8),ms(8));P.fn(t=>ce(t)/mc,'ln sb');P.fn(t=>ms(t)/mm,'ln sr');
-  P.text(-7.5,0.35,'MSE with sigmoid: flat plateau','', 'start');P.text(3.2,0.18,'cross-entropy: a bowl','', 'start')};
+  const ms=t=>xs.reduce((s,x,i)=>s+(sig(t*x)-ys[i])**2,0);const mc=Math.max(ce(-8),ce(8)),mm=Math.max(ms(-8),ms(8));P.fn(t=>ce(t)/mc,'ln sb');P.fn(t=>ms(t)/mm,'ln sr')};
 FIG['logit-gd']=root=>{const r=rng(15);const D=[];for(let i=0;i<60;i++){const x=r()*8;D.push([x,r()<sig(1.4*(x-4))?1:0])}const mu=4,sd=2.3;const Z=D.map(d=>[(d[0]-mu)/sd,d[1]]);
   let w0=0,w1=0;const H=[[0,0]];const J=(a,b)=>-Z.reduce((s,[x,y])=>{const p=Math.min(1-1e-12,Math.max(1e-12,sig(a+b*x)));return s+y*Math.log(p)+(1-y)*Math.log(1-p)},0)/Z.length;
   for(let k=0;k<200;k++){let g0=0,g1=0;Z.forEach(([x,y])=>{const e=sig(w0+w1*x)-y;g0+=e;g1+=e*x});w0-=0.5*g0/Z.length;w1-=0.5*g1/Z.length;H.push([w0,w1])}
@@ -79,9 +78,9 @@ FIG['roc-dist']=root=>{const svg=initSvg(svgOf(root),640,300);const P=Plot(svg,{
 /* odds and log-odds as functions of p */
 FIG['odds']=root=>{const svg=initSvg(svgOf(root),600,250);
   const P=Plot(svg,{at:[0,0],w:290,h:250,x:[0,1],y:[0,10],m:{l:40,r:10,t:26,b:36}});P.axes({xt:[0,0.25,0.5,0.75,1],yt:[0,1,3,5,9],xl:'probability p',yl:'odds  p / (1 − p)'});T(P.root,165,16,'odds: from 0 to +∞, not symmetric','lab');
-  P.fn(p=>p/(1-p),'ln sb',0.001,0.92);P.line(0,1,1,1,'ln thin sm dash');P.dot(0.5,1,5,'fr pt');P.text(0.5,1,'p = 0.5 → odds 1','', 'start',8,-10);P.dot(0.75,3,4,'fk');P.text(0.75,3,'0.75 → 3','', 'end',-8,-4);P.dot(0.9,9,4,'fk');P.text(0.9,9,'0.9 → 9','', 'end',-8,4);P.dot(0.1,1/9,4,'fk');P.text(0.1,1/9,'0.1 → 0.11','', 'start',8,-12);
+  P.fn(p=>p/(1-p),'ln sb',0.001,0.92);P.line(0,1,1,1,'ln thin sm dash');P.dot(0.5,1,5,'fr pt');P.text(0.5,1,'p = 0.5 → odds 1','', 'start',8,-10);P.dot(0.75,3,4,'fk');P.text(0.75,3,'0.75 → 3','', 'end',-8,-4);P.dot(0.9,9,4,'fk');P.text(0.9,9,'0.9 → 9','', 'end',-8,4);P.dot(0.1,1/9,4,'fk');P.text(0.1,1/9,'0.1 → 0.11','', 'start',8,-26);
   const Q=Plot(svg,{at:[305,0],w:295,h:250,x:[0,1],y:[-4.5,4.5],m:{l:40,r:10,t:26,b:36}});Q.axes({xt:[0,0.25,0.5,0.75,1],yt:[-4,-2,0,2,4],xl:'probability p',yl:'log-odds  log(p / (1 − p))'});T(Q.root,168,16,'log-odds: from −∞ to +∞, symmetric','lab');
-  Q.fn(p=>Math.log(p/(1-p)),'ln sr',0.011,0.989);Q.line(0,0,1,0,'ln thin sm dash');Q.dot(0.5,0,5,'fr pt');Q.text(0.5,0,'p = 0.5 → 0','', 'start',8,-6);Q.dot(0.9,Math.log(9),4,'fk');Q.text(0.9,Math.log(9),'0.9 → +2.2','', 'end',-8,-4);Q.dot(0.1,-Math.log(9),4,'fk');Q.text(0.1,-Math.log(9),'0.1 → −2.2','', 'start',8,10)};
+  Q.fn(p=>Math.log(p/(1-p)),'ln sr',0.011,0.989);Q.line(0,0,1,0,'ln thin sm dash');Q.dot(0.5,0,5,'fr pt');Q.text(0.5,0,'p = 0.5 → 0','', 'start',10,-12);Q.dot(0.9,Math.log(9),4,'fk');Q.text(0.9,Math.log(9),'0.9 → +2.2','', 'end',-8,-4);Q.dot(0.1,-Math.log(9),4,'fk');Q.text(0.1,-Math.log(9),'0.1 → −2.2','', 'start',8,10)};
 /* AUC as the probability that a random positive outscores a random negative */
 FIG['auc-pairs']=root=>{const r0=rng(21);const neg=[],pos=[];for(let i=0;i<14;i++)neg.push(sig(-1.3+1.1*randn(r0)));for(let i=0;i<7;i++)pos.push(sig(1.0+1.0*randn(r0)));
   let ok=0,tot=0;neg.forEach(a=>pos.forEach(b=>{tot++;if(b>a)ok++;else if(b===a)ok+=0.5}));const auc=ok/tot;const r=rng(5);let n=0,good=0,last=null;
@@ -96,13 +95,13 @@ FIG['auc-pairs']=root=>{const r0=rng(21);const neg=[],pos=[];for(let i=0;i<14;i+
 FIG['imbalance']=root=>{const svg=initSvg(svgOf(root),640,230);
   const bars=(x0,title,vals,cols)=>{T(svg,x0+85,18,title,'lab');const mx=950;vals.forEach((v,i)=>{const h=170*v/mx;E('rect',{x:x0+20+i*62,y:200-h,width:48,height:h,fill:cols[i]},svg)});E('line',{x1:x0+10,x2:x0+160,y1:200,y2:200,class:'ax'},svg)};
   bars(0,'Original: 950 vs 50',[950,50],['#4472c4','#ed7d31']);bars(215,'Undersampling',[50,50],['#4472c4','#ed7d31']);bars(430,'Oversampling',[950,950],['#4472c4','#ed7d31']);
-  T(svg,40,220,'no fraud','','start');T(svg,106,220,'fraud','','start');T(svg,265,188,'keep a sample of the majority','','start');T(svg,480,40,'copies of the minority','','start')};
-FIG['smote']=root=>{const svg=initSvg(svgOf(root),640,210);const r=rng(12);const maj=[],mino=[];for(let i=0;i<34;i++)maj.push([0.1+0.8*r(),0.1+0.8*r()]);for(let i=0;i<7;i++)mino.push([0.3+0.4*r(),0.3+0.4*r()]);
-  [['Imbalanced data',0],['Tomek links: remove close majority neighbours',1],['SMOTE: synthetic minority points',2]].forEach(([lab,k])=>{const P=Plot(svg,{at:[k*215,20],w:205,h:190,x:[0,1],y:[0,1],m:{l:6,r:6,t:6,b:6}});T(P.root,102,-6,lab,'','middle');
+  T(svg,40,220,'no fraud','','start');T(svg,106,220,'fraud','','start');T(svg,300,222,'keep 50 of the 950','','middle');T(svg,515,222,'copy the 50 up to 950','','middle')};
+FIG['smote']=root=>{const svg=initSvg(svgOf(root),640,234);const r=rng(12);const maj=[],mino=[];for(let i=0;i<34;i++)maj.push([0.1+0.8*r(),0.1+0.8*r()]);for(let i=0;i<7;i++)mino.push([0.3+0.4*r(),0.3+0.4*r()]);
+  [['Imbalanced data','',0],['Tomek links','removes close majority points',1],['SMOTE','new points between neighbours',2]].forEach(([lab,sub,k])=>{const P=Plot(svg,{at:[k*215,44],w:205,h:190,x:[0,1],y:[0,1],m:{l:6,r:6,t:6,b:6}});T(P.root,102,-26,lab,'lab','middle');if(sub)T(P.root,102,-8,sub,'','middle');
     maj.forEach(p=>P.dot(p[0],p[1],3.5,'fb'));mino.forEach(p=>P.dot(p[0],p[1],4,'fo'));
     if(k===1)mino.forEach(m=>{let b=null,bd=9;maj.forEach(p=>{const d=Math.hypot(p[0]-m[0],p[1]-m[1]);if(d<bd){bd=d;b=p}});if(bd<0.22){P.line(m[0],m[1],b[0],b[1],'ln thin sk');E('circle',{cx:P.X(b[0]),cy:P.Y(b[1]),r:7,class:'ln thin sk'},P.dyn)}});
     if(k===2)mino.forEach((m,i)=>{const o=mino[(i+2)%mino.length];for(let t=1;t<=2;t++){const a=t/3;P.line(m[0],m[1],o[0],o[1],'ln thin sm dot2');P.dot(m[0]+a*(o[0]-m[0]),m[1]+a*(o[1]-m[1]),3.5,'fr')}})})};
-FIG['calib']=root=>{const P=Plot(svgOf(root),{w:460,h:320,x:[0,1],y:[0,1],m:{l:44,r:14,t:14,b:40}});P.axes({xt:[0,0.25,0.5,0.75,1],yt:[0,0.25,0.5,0.75,1],xl:'mean predicted probability (per bin)',yl:'observed positive rate'});
+FIG['calib']=root=>{const P=Plot(svgOf(root),{w:460,h:320,x:[0,1],y:[0,1],m:{l:54,r:14,t:14,b:40}});P.axes({xt:[0,0.25,0.5,0.75,1],yt:[0,0.25,0.5,0.75,1],xl:'mean predicted probability (per bin)',yl:'observed positive rate'});
   P.line(0,0,1,1,'ln thin sm dash');const b=[0.05,0.15,0.25,0.35,0.45,0.55,0.65,0.75,0.85,0.95];P.path(b.map(x=>[x,x+0.03*Math.sin(9*x)]),'ln sb');b.forEach(x=>P.dot(x,x+0.03*Math.sin(9*x),4,'fb'));
   P.path(b.map(x=>[x,sig(1.8*(Math.log(x/(1-x))))*0+0.5+0.42*(x-0.5)*0.9]),'ln so');b.forEach(x=>P.dot(x,0.5+0.378*(x-0.5),4,'fo'));
   P.text(0.62,0.9,'calibrated','', 'start');P.text(0.62,0.5,'over-confident','', 'start')};

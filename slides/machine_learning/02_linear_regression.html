@@ -37,7 +37,63 @@
 </section>
 
 <section class="slide">
-  <h2>Linear Regression</h2>
+  <h2>Linear Regression – Start simple</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:10px">
+      <p>The simplest possible model: a line through the origin, with a single parameter, the slope $\theta$:</p>
+      <div class="eq big">$$h_\theta(x)=\theta\,x$$</div>
+      <p class="small">Three training points: $(1,1)$, $(2,3)$, $(3,7)$. Which slope fits them best?</p>
+      <p class="step">Measure the fit with a <b>cost</b>: half the average squared error,</p>
+      <div class="eq step">$$J(\theta)=\frac{1}{2m}\sum_{i=1}^m\big(\theta x^{(i)}-y^{(i)}\big)^2$$</div>
+      <p class="small step">Each orange square has side = the error of one point, so $J$ is their average area, halved (the $\frac12$ only makes the derivative cleaner). The black segment on the right is the slope $J'(\theta)$.</p>
+    </div>
+    <div class="widget" data-fig="simple" data-auto="t=0.5 :: θ = 0.5: too flat. Big squares, J = 5.75. The slope J′ = −7 is negative: increase θ|t=3 :: θ = 3: too steep. J = 2.83, and J′ = +4.67 is positive: decrease θ|t=2 :: θ = 2: the bottom of the bowl. J = 0.5 and the slope J′ = 0">
+      <svg class="fig" aria-label="Three points with the line theta times x and its squared errors, and the cost J as a function of theta"></svg>
+      <div class="ctl"><label for="sp-t">Slope θ</label><input type="range" id="sp-t" data-k="t" min="0" max="3.5" step="0.05" value="1"><span class="v" data-v="t">1.00</span></div>
+      <div class="ro"><div class="m"><span>J(θ)</span><b data-r="j">–</b></div><div class="m"><span>slope J′(θ)</span><b data-r="g">–</b></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Linear Regression – The best θ, step by step</h2>
+  <div class="cols">
+    <div class="stack" style="gap:8px">
+      <p>At the bottom of the bowl the slope is zero. Differentiate $J$ with respect to $\theta$:</p>
+      <div class="step"><div class="eq s">$$J'(\theta)=\frac{1}{2m}\sum_{i=1}^m2\big(\theta x^{(i)}-y^{(i)}\big)\cdot x^{(i)}=\frac1m\sum_{i=1}^m\big(\theta x^{(i)}-y^{(i)}\big)\,x^{(i)}$$</div><p class="why">chain rule: the derivative of $(\theta x-y)^2$ is $2(\theta x-y)\cdot x$; the 2 cancels the $\frac12$</p></div>
+      <div class="step"><div class="eq s">$$=\frac1m\Big(\theta\sum_{i=1}^m\big(x^{(i)}\big)^2-\sum_{i=1}^mx^{(i)}y^{(i)}\Big)=0$$</div><p class="why">split the sum in two; $\theta$ is the same in every term, so it comes out</p></div>
+      <div class="bluebox step">$$\theta^*=\frac{\sum_ix^{(i)}y^{(i)}}{\sum_i\big(x^{(i)}\big)^2}$$</div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="step"><b>With our three points</b> $(1,1)$, $(2,3)$, $(3,7)$:</p>
+      <div class="step"><div class="eq s">$$\sum_ix^{(i)}y^{(i)}=1\cdot1+2\cdot3+3\cdot7=28$$ $$\sum_i\big(x^{(i)}\big)^2=1+4+9=14$$</div></div>
+      <div class="step"><div class="eq s">$$\theta^*=\frac{28}{14}=2$$</div></div>
+      <div class="step"><div class="eq s">$$J(2)=\frac16\Big[(2-1)^2+(4-3)^2+(6-7)^2\Big]=\frac36=0.5$$</div><p class="why">$m=3$, so $\frac1{2m}=\frac16$; the three errors are $+1$, $+1$, $-1$</p></div>
+      <p class="small step">No iterations needed: a <b>closed-form</b> solution. On the previous slide, $\theta=2$ is exactly where the slope $J'$ is 0.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Linear Regression – Is it really the minimum? Convexity</h2>
+  <div class="cols">
+    <div class="stack" style="gap:8px">
+      <p>A zero slope could also be a maximum. Expand the square inside $J$:</p>
+      <div class="step"><div class="eq s">$$J(\theta)=\frac1{2m}\sum_i\Big(\theta^2\big(x^{(i)}\big)^2-2\theta\,x^{(i)}y^{(i)}+\big(y^{(i)}\big)^2\Big)$$</div><p class="why">$(a-b)^2=a^2-2ab+b^2$ with $a=\theta x^{(i)}$, $b=y^{(i)}$</p></div>
+      <div class="step"><div class="eq s">$$=\underbrace{\frac{\sum_i\big(x^{(i)}\big)^2}{2m}}_{a\,\ge\,0}\,\theta^2-\underbrace{\frac{\sum_ix^{(i)}y^{(i)}}{m}}_{b}\,\theta+\underbrace{\frac{\sum_i\big(y^{(i)}\big)^2}{2m}}_{c}$$</div><p class="why">a parabola $a\theta^2-b\theta+c$ with $a\ge0$: it opens upwards, a bowl</p></div>
+      <div class="step"><div class="eq s">$$J''(\theta)=2a=\frac1m\sum_i\big(x^{(i)}\big)^2\ \ge\ 0$$</div><p class="why">the second derivative is an average of squares: it is never negative</p></div>
+      <p class="step">$J''\ge0$ everywhere means $J$ is <b>convex</b>: one bowl, no other valleys. The point where $J'=0$ is <b>the</b> global minimum, and it is unique as soon as one $x^{(i)}\ne0$.</p>
+    </div>
+    <div class="stack" style="gap:10px">
+      <svg class="fig" data-fig="convex" style="max-height:170px" aria-label="A convex curve with one minimum and a non-convex curve with a local and a global minimum"></svg>
+      <p class="small step">Our example: $J(\theta)=\frac16\big(14\theta^2-56\theta+59\big)$ and $J''=\frac{14}{3}\gt0$ ✓</p>
+      <div class="note step"><p class="small"><b>Coming next, in general.</b> Many features and an intercept: $h_{\bth}(\bx)=\bth^\top\bx$. The same three steps (cost → derivative $=0$ → convexity) come back in matrix form: the <b>normal equation</b> $\bth=(\bX^\top\bX)^{-1}\bX^\top\by$ and the Hessian $\bX^\top\bX$. With one feature and no intercept they give back $\theta^*=\frac{\sum xy}{\sum x^2}$.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Linear Regression – Many features</h2>
   <div class="cols">
     <div class="widget" data-fig="fit-iter" data-auto="k=1 :: Iteration 1: the line starts to tilt towards the data|k=5 :: Iteration 5: J drops fast at first|k=20 :: Iteration 20: nearly there, the steps get smaller|k=80 :: Iteration 80: converged, θ stops changing">
       <svg class="fig" aria-label="Data and the fitted line after k iterations of gradient descent"></svg>
@@ -45,9 +101,9 @@
       <div class="ro"><div class="m"><span>θ₀</span><b data-r="t0">–</b></div><div class="m"><span>θ₁</span><b data-r="t1">–</b></div><div class="m"><span>J(θ)</span><b data-r="j">–</b></div></div>
     </div>
     <div class="stack" style="gap:16px">
-      <p>Approximate $y$ as a linear function of $\bx$:</p>
-      <div class="eq">$$h_{\bth}(\bx)=\theta_0+\theta_1x_1+\dots+\theta_nx_n=\sum_{i=0}^{n}\theta_ix_i=\bth^\top\bx$$</div>
-      <p>$\theta$'s are called the <b>parameters</b> (also called weights). For $n=1$, $\theta_0$ is often denoted as the intercept and $\theta_1$ the slope.</p>
+      <p>The general model: $n$ features and an intercept $\theta_0$. Approximate $y$ as a linear function of $\bx$:</p>
+      <div class="eq">$$h_{\bth}(\bx)=\theta_0+\theta_1x_1+\dots+\theta_nx_n=\sum_{j=0}^{n}\theta_jx_j=\bth^\top\bx$$</div>
+      <p>$\theta$'s are called the <b>parameters</b> (also called weights). For $n=1$, $\theta_0$ is the intercept and $\theta_1$ the slope.</p>
       <p>Notice that for convenience we made $x_0=1$.</p>
       <p class="step" style="font-size:28px;margin-top:10px">How do we select the $\theta$'s?</p>
     </div>
@@ -55,22 +111,20 @@
 </section>
 
 <section class="slide">
-  <h2>Linear Regression</h2>
-  <div class="cols">
-    <div class="widget" data-fig="resid" data-auto="t=0.3 :: θ = 0.3, too flat: large squares, large J|t=1.5 :: θ ≈ 1.5, close to the best: the squares shrink|t=2.6 :: θ = 2.6, too steep: J grows again on this side of the bowl">
-      <svg class="fig" aria-label="Points with residuals drawn as squares, and the cost J as a function of theta"></svg>
-      <div class="ctl"><label for="resid-t">Slope θ (model h = θx)</label><input type="range" id="resid-t" data-k="t" min="0" max="3" step="0.01" value="0.6"><span class="v" data-v="t">0.60</span></div>
-      <div class="ro"><div class="m"><span>J(θ)</span><b data-r="j">–</b></div><div class="m"><span>best θ</span><b data-r="ts">–</b></div></div>
-      <p class="why">Each orange square has side = the error of one example. J is their average area / 2.</p>
-    </div>
+  <h2>Linear Regression – The cost function</h2>
+  <div class="cols c46">
     <div class="stack" style="gap:12px">
-      <p>Define a function that measures, for each $\theta$, how "close" $h_{\bth}(\bx^{(i)})$ is to $y^{(i)}$. <b>Cost Function $J(\bth)$</b>:</p>
+      <p>Exactly as for $h=\theta x$: measure, for each $\bth$, how close $h_{\bth}(\bx^{(i)})$ is to $y^{(i)}$. The <b>cost function</b>:</p>
       <div class="eq big">$$J(\bth)=\frac{1}{2m}\sum_{i=1}^{m}\Big(h_{\bth}(\bx^{(i)})-y^{(i)}\Big)^2$$</div>
-      <p>Least-squares cost function that gives rise to the <b>ordinary least squares</b> regression model.</p>
-      <p>How do we minimize the Cost function $J$?</p>
-      <ul><li class="step">Derivate and equal to zero.</li><li class="step">Apply gradient descent.</li></ul>
-      <div class="step"><svg class="fig" data-fig="convex" style="max-height:130px" aria-label="A convex curve with one minimum and a non-convex curve with a local and a global minimum"></svg>
-      <p class="why">Linear regression: convex function (a single global minimum).</p></div>
+      <p>The least-squares cost of the <b>ordinary least squares</b> (OLS) model. Two ways to minimize it:</p>
+      <ol>
+        <li class="step"><b>Gradient descent</b>: walk downhill, step by step (next slides).</li>
+        <li class="step"><b>Set the gradient to zero</b> and solve: the normal equation, a closed form like $\theta^*=\frac{\sum xy}{\sum x^2}$.</li>
+      </ol>
+    </div>
+    <div class="stack" style="gap:8px">
+      <svg class="fig" data-fig="bowl2" aria-label="Elliptical contours of the cost as a function of intercept and slope, with the gradient-descent path to the minimum"></svg>
+      <p class="why">With two parameters $J(\theta_0,\theta_1)$ is still a bowl: its contour lines are rings (ellipses) around the minimum. In red, the 80 gradient-descent steps of the previous slide. Convexity for any $n$ is proved later, with the Hessian.</p>
     </div>
   </div>
 </section>
@@ -82,7 +136,7 @@
     <div class="stack">
       <div class="eq big">$$\theta_j:=\theta_j-\alpha\,\frac{\partial J(\bth)}{\partial\theta_j}$$</div>
       <ul>
-        <li>Initial values of $\theta_j$? Random (convex function).</li>
+        <li>Initial values of $\theta_j$? Anything, e.g. random: $J$ is convex, every start leads to the same minimum.</li>
         <li>$\alpha$ is the <b>learning rate</b>. What value?</li>
         <li>$\dfrac{\partial J(\bth)}{\partial\theta_j}$ is the gradient (direction of maximum slope). We step the opposite way: downhill.</li>
       </ul>
@@ -99,8 +153,14 @@
 <section class="slide u">
   <h2>Linear Regression – Gradient Descent</h2>
   <p>How do we select the correct $\alpha$?</p>
-  <svg class="fig" data-fig="alpha3" aria-label="Gradient descent with a too low, a good and a too high learning rate"></svg>
-  <div class="note step"><p>Each step multiplies the distance to the minimum by $(1-\alpha J'')$. It shrinks only if $|1-\alpha J''|\lt1$, i.e. $0\lt\alpha\lt 2/J''$. With many parameters: $0\lt\alpha\lt 2/\lambda_{\max}\big(\tfrac1m\bX^\top\bX\big)$.</p></div>
+  <svg class="fig" data-fig="alpha3" style="max-height:290px" aria-label="Gradient descent with a too low, a good and a too high learning rate"></svg>
+  <div class="cols">
+    <div class="stack" style="gap:4px">
+      <p class="small step">For a bowl $J(\theta)=J^*+\frac a2(\theta-\theta^*)^2$ (with $a=J''$), the slope is $J'(\theta)=a(\theta-\theta^*)$. One step:</p>
+      <div class="eq s step">$$\theta_{\text{new}}-\theta^*=\theta-\theta^*-\alpha\,a(\theta-\theta^*)=(1-\alpha a)(\theta-\theta^*)$$</div>
+    </div>
+    <div class="note step"><p class="small">Every step multiplies the distance to the minimum by $(1-\alpha J'')$. It shrinks only if $|1-\alpha J''|\lt1$, i.e. $0\lt\alpha\lt2/J''$. Our three points: $J''=\frac{14}3$, so $\alpha\lt0.43$. With many parameters: $0\lt\alpha\lt2/\lambda_{\max}\big(\tfrac1m\bX^\top\bX\big)$.</p></div>
+  </div>
 </section>
 
 <section class="slide u">
@@ -116,7 +176,7 @@
     <div class="stack step" style="gap:18px;padding-top:40px">
       <div class="bluebox" style="font-size:20px">$$\theta_j:=\theta_j-\alpha\,\frac{1}{m}\sum_{i=1}^{m}\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)\cdot x_j^{(i)}$$</div>
       <p>"<b>batch</b>" gradient descent.<br>(the $m$ training samples in each step).</p>
-      <p class="why">Each example pushes $\theta_j$ by (its error) × (its input). Examples already well predicted barely push.</p>
+      <p class="why">Each example pushes $\theta_j$ by (its error) × (its input). Examples already well predicted barely push. With one feature and no intercept it is the $J'(\theta)$ of the simple model.</p>
     </div>
   </div>
 </section>
@@ -129,7 +189,7 @@
     <li>If it decreases too slowly, $\alpha$ is too small.</li>
   </ul>
   <svg class="fig" data-fig="loss-curves" style="max-height:320px" aria-label="Loss against epoch for four learning rates, and loss against learning rate on a log scale"></svg>
-  <p>Try and select a consistent $\alpha$. Examples: 0.001, 0.003, 0.01, 0.03 <span class="muted">(right: a learning-rate sweep; pick a value just before the loss blows up).</span></p>
+  <p>Try and select a consistent $\alpha$. Examples: 0.001, 0.003, 0.01, 0.03 <span class="muted">(right: a learning-rate sweep. Pick a value where the loss is still falling fast, about 10× smaller than where it blows up).</span></p>
 </section>
 
 <section class="slide u">
@@ -141,6 +201,7 @@
       <div class="eq s">$$\hat\by=\bX\bth=\begin{pmatrix}(\bx^{(1)})^\top\bth\\\vdots\\(\bx^{(m)})^\top\bth\end{pmatrix}_{m\times1},\qquad \mathbf{E}_{m\times1}=\by-\hat\by=\by-\bX\bth$$</div></div>
     <div class="lrow step"><p>And finally:</p>
       <div class="eq s">$$J(\bth)=(\by-\bX\bth)^\top(\by-\bX\bth)=\by^\top\by-\by^\top\bX\bth-\bth^\top\bX^\top\by+\bth^\top\bX^\top\bX\bth$$</div></div>
+    <p class="small step why" style="padding-left:216px">We drop the $\frac1{2m}$ here: multiplying $J$ by a positive constant does not move its minimum.</p>
     <div class="cols step" style="align-items:center">
       <p>We can optimize by equating $\nabla_{\bth}J=\bzero$ &nbsp;$\big((n+1)\times1\big)$.</p>
       <p><b>It turns out that there is a known closed-form solution!</b></p>
@@ -156,13 +217,13 @@
       <div class="eq step">$$=0-\bX^\top\by-\bX^\top\by+2\bX^\top\bX\bth=-2\bX^\top\by+2\bX^\top\bX\bth$$</div>
       <p class="step">So we want to solve $\ \bX^\top\bX\bth=\bX^\top\by$ &nbsp;(the "normal equations").</p>
       <div class="bluebox step">$$\bth=(\bX^\top\bX)^{-1}\bX^\top\by$$</div>
-      <ul class="step"><li>Unique only if $\bX^\top\bX$ is invertible (can be replaced with the pseudo-inverse).</li><li>Slow if $n\gt10\,000$ (use gradient descent).</li></ul>
+      <ul class="step small"><li>Unique only if $\bX^\top\bX$ is invertible (can be replaced with the pseudo-inverse).</li><li>Slow if $n\gt10\,000$ (use gradient descent).</li><li><b>Check with the simple model</b> (one feature, no intercept): $\bX$ is the column of $x$'s, so $\bX^\top\bX=\sum x^2$ and $\bX^\top\by=\sum xy$: $\ \theta=\frac{\sum xy}{\sum x^2}$ ✓</li></ul>
       <p class="why step">Geometrically: $\bX^\top(\by-\bX\bth)=\bzero$ says the error is perpendicular to every column of $\bX$. $\hat\by$ is the projection of $\by$ onto the columns.</p>
     </div>
     <div class="stack">
       <div class="hint"><div class="hd">HINT 1</div><div class="bd">
         <div class="eq xs">$$\nabla_{\bth}(\ba^\top\bth)=\nabla_{\bth}(a_0\theta_0+\dots+a_n\theta_n)=\ba$$
-        $$\nabla_{\bth}(\bth^\top\ba)=\ba\quad\text{(same number)}$$</div></div></div>
+        $$\nabla_{\bth}(\bth^\top\ba)=\ba\quad\text{(same number)}$$</div><p class="why">here $\ba=\bX^\top\by$, because $\by^\top\bX\bth=(\bX^\top\by)^\top\bth$</p></div></div>
       <div class="hint"><div class="hd">HINT 2</div><div class="bd">
         <div class="eq xs">$$\nabla_{\bth}(\bth^\top\bX^\top\bX\bth)=2\bX^\top\bX\bth$$
         $$\bth^\top\bX^\top\bX\bth=\sum_{i=0}^n\sum_{j=0}^n[\bX^\top\bX]_{ij}\theta_i\theta_j$$
@@ -175,11 +236,11 @@
 <section class="slide u">
   <h2>Linear Regression – Normal Equation.</h2>
   <div class="stack" style="gap:12px;max-width:1080px">
-    <p>A critical point (where $\nabla_{\bth}J=\bzero$) is not automatically a minimum: this requires a second-order check. The Hessian is</p>
+    <p>A critical point (where $\nabla_{\bth}J=\bzero$) is not automatically a minimum: this requires a second-order check. The Hessian (the matrix of second derivatives, the multi-parameter $J''$) is</p>
     <div class="eq big">$$\nabla^2_{\bth}J(\bth)=2\bX^\top\bX.$$</div>
     <p class="step"><b>Positive semi-definiteness holds for any $\bX$.</b> For an arbitrary vector $\bv$:</p>
     <div class="eq big step">$$\bv^\top(\bX^\top\bX)\bv=(\bX\bv)^\top(\bX\bv)=\norm{\bX\bv}^2\ge0$$</div>
-    <p class="step">Since the Hessian is positive semi-definite everywhere, $J(\bth)$ is a <b>convex</b> function of $\bth$. For a convex function, every critical point is automatically a <b>global minimum</b>: there are no saddle points or local maxima to worry about.</p>
+    <p class="step">Since the Hessian is positive semi-definite everywhere, $J(\bth)$ is a <b>convex</b> function of $\bth$: the matrix version of $J''=\frac1m\sum x^2\ge0$. For a convex function, every critical point is automatically a <b>global minimum</b>: there are no saddle points or local maxima to worry about.</p>
     <p class="step"><b>If $\bX^\top\bX$ is invertible</b>, it is positive semi-definite with no zero eigenvalues, hence <b>positive definite</b>: $\norm{\bX\bv}^2\gt0$ for all $\bv\ne\bzero$. This makes $J(\bth)$ <b>strictly convex</b>, so the minimum is not merely global but <b>unique</b>, consistent with the uniqueness argument above.</p>
   </div>
 </section>
@@ -222,16 +283,16 @@
       <ul>
         <li>Make new features that represent important qualities. For example:
           <ul><li>$x_1$ is the length of a property.</li><li>$x_2$ is the width of a property.
-            <ul><li>Make the new feature $x_3=x_1\cdot x_2$: just a new column of your dataset.</li></ul></li></ul></li>
+            <ul><li>Make the new feature $x_3=x_1\cdot x_2$ (the area): just a new column of your dataset.</li></ul></li></ul></li>
         <li>Polynomial regression. Make new features $x_1^p$ for any $p$.</li>
-        <li>Logarithmic regression.</li>
+        <li>Logarithmic regression: the feature $\log x$.</li>
       </ul>
       <svg class="fig" data-fig="feat-log" style="max-height:230px" aria-label="Data following a logarithmic curve, fitted with a log feature"></svg>
     </div>
     <div class="stack" style="gap:20px">
       <svg class="fig" data-fig="lin-poly" aria-label="A straight line and a quadratic fitted to the same curved data"></svg>
       <p class="small">Still <b>linear regression</b>: linear in the parameters $\bth$, whatever the features are.</p>
-      <ul><li>Feature scaling for s.g.d.</li><li>Regularization.</li></ul>
+      <ul><li>Feature scaling for gradient descent.</li><li>Regularization.</li></ul>
     </div>
   </div>
 </section>
@@ -241,9 +302,9 @@
   <p>Data is not always numerical. You must encode the categorical data to numbers before fitting your model.</p>
   <div class="cols c64">
     <ul>
-      <li>Ordinal Variables.
-        <ul><li>The "categories" argument as a list with the rank order of all expected labels.</li><li>Ordinal Encoding: substitute names for numbers between 1 and C.
-          <ul><li>Bad → 1, Good → 2, Excellent → 3</li></ul></li></ul></li>
+      <li>Ordinal Variables (the categories have an order).
+        <ul><li>Ordinal Encoding: replace the names by numbers $0,1,\dots,C-1$ (or $1,\dots,C$) <b>in that order</b>.
+          <ul><li>Bad → 0, Good → 1, Excellent → 2</li><li>In scikit-learn, give the order explicitly: the <code>categories</code> argument, a list with the rank order of all expected labels.</li></ul></li></ul></li>
       <li>Nominal Variables (no ordered relation).
         <ul><li>One-Hot Encoding – 1 bit per category (new "features")
           <ul><li>Cow → [1,0,0], Dog → [0,1,0], Cat → [0,0,1]</li></ul></li>
@@ -263,19 +324,35 @@
 </section>
 
 <section class="slide u">
+  <h2>Linear Regression – Which encoder when?</h2>
+  <div class="cols c64">
+    <table class="t" style="font-size:17px">
+      <tr><th style="width:27%">The feature is…</th><th>Example</th><th style="width:34%">Use</th></tr>
+      <tr><td><b>ordered</b>, with roughly equal steps</td><td>size S &lt; M &lt; L &lt; XL; rating bad &lt; ok &lt; good; damage low &lt; medium &lt; high</td><td><b>ordinal</b>: 0, 1, 2, 3 in that order</td></tr>
+      <tr><td>ordered, but the steps are very unequal</td><td>"0 / 1–2 / 3–5 / 6+ previous claims"</td><td>one-hot, or meaningful numbers (0, 1.5, 4, 7)</td></tr>
+      <tr><td><b>unordered</b>, a few levels</td><td>colour, fuel type, city</td><td><b>one-hot</b> (drop one level if the model has an intercept)</td></tr>
+      <tr><td>unordered, many levels</td><td>postcode, car model, workshop (1 000+)</td><td>group the rare levels; frequency or target encoding</td></tr>
+      <tr><td>any categorical, <b>tree</b> models</td><td>(chapter 06)</td><td>ordinal codes are fine: a tree only asks "code ≤ 2?"</td></tr>
+    </table>
+    <div class="stack" style="gap:8px">
+      <p class="step small"><b>What ordinal encoding tells a linear model.</b> Size coded 0, 1, 2, 3 and price $=\theta_0+\theta_1\cdot\text{size}$: every step up adds the <b>same</b> $\theta_1$, from S to M as from L to XL.</p>
+      <p class="step small">One-hot gives every level its own coefficient: more flexible, but 3 parameters instead of 1. If the steps really are equal, ordinal is simpler and uses the data better.</p>
+      <div class="warnbox step"><p class="small"><b>Pitfalls.</b> <code>OrdinalEncoder</code> sorts the levels <b>alphabetically</b> (L, M, S, XL) unless you pass <code>categories=[["S","M","L","XL"]]</code>. Never ordinal-encode an unordered feature for a linear model: "city = 3" is not three times "city = 1". Fit the encoders on the training data only, and set <code>handle_unknown</code> for levels never seen in training.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide u">
   <h2>Linear Regression – Feature scaling</h2>
   <div class="cols">
     <div class="stack">
       <ul>
-        <li>Why? It helps with convergence.</li>
-        <li>Normalization (or Min-Max scaling):
-          <ul><li>$X'=\dfrac{X-X_{\min}}{X_{\max}-X_{\min}}$</li><li>Values between 0 and 1.</li></ul></li>
-        <li>Standardization (values are centered around the mean with a unit standard deviation):
-          <ul><li>$X'=\dfrac{X-\mu}{\sigma}$</li><li>Not restricted to a particular range.</li></ul></li>
+        <li>Why? Gradient descent converges faster, and penalties (regularization) treat all the features alike.</li>
+        <li>Normalization (min–max): $\ X'=\dfrac{X-X_{\min}}{X_{\max}-X_{\min}}\in[0,1]$</li>
+        <li>Standardization: $\ X'=\dfrac{X-\mu}{\sigma}$, mean 0 and standard deviation 1, no fixed range.</li>
       </ul>
-      <p>When to use each? Not clear.</p>
-      <ul class="small"><li>Data does not follow a Gaussian distribution (Normalization?)</li><li>Outliers do not affect standardization as much.</li></ul>
-      <p class="tiny"><a href="https://www.analyticsvidhya.com/blog/2020/04/feature-scaling-machine-learning-normalization-standardization/" target="_blank" rel="noopener">analyticsvidhya.com: feature scaling, normalization vs standardization</a></p>
+      <p><b>When to use which?</b></p>
+      <ul class="small"><li><b>Standardization</b>: the default for linear and logistic regression, SVMs, neural networks and any model with a penalty.</li><li><b>Min–max</b>: when a fixed range is needed (e.g. pixel intensities to [0, 1]). One outlier squeezes all the other values into a tiny range.</li><li><b>Outliers</b>: standardization suffers less; <code>RobustScaler</code> (median and interquartile range) the least. Trees need no scaling at all.</li><li>Compute min, max, $\mu$, $\sigma$ on the <b>training data only</b>.</li></ul>
     </div>
     <div class="widget" data-fig="gd2" data-auto="mode=raw :: Without scaling: elongated contours, a zig-zag path, many steps|mode=std :: After scaling: round contours, a straight path, a handful of steps">
       <svg class="fig" style="max-height:330px" aria-label="Contours of the cost with a gradient descent path, before and after scaling"></svg>
@@ -297,7 +374,7 @@
       <ul class="small"><li><b>Underfitting</b>: too simple, high error everywhere.</li><li><b>Just right</b>: follows the pattern, not the noise.</li><li><b>Overfitting</b>: memorises the noise, fails on new samples.</li></ul>
       <p class="small">Move the <b>degree</b> to see underfitting, "just right" and overfitting. Then, at degree 15, raise <b>λ</b>: the impact of regularization.</p>
     </div>
-    <div class="widget" data-fig="overfit" data-auto="d=1 :: Degree 1: underfitting, high error on train and test|d=3 :: Degree 3: just right, follows the pattern|d=15 :: Degree 15: overfitting, train RMSE tiny, test RMSE explodes|d=15;l=-2 :: Degree 15 with λ = 0.01: the penalty tames the wiggles|d=15;l=1 :: λ = 10: too much, back to underfitting">
+    <div class="widget" data-fig="overfit" data-auto="d=1 :: Degree 1: underfitting, high error on train and test|d=3 :: Degree 3: just right, follows the pattern|d=15 :: Degree 15: overfitting, train RMSE low, test RMSE explodes|d=15;l=-2 :: Degree 15 with λ = 0.01: the penalty tames the wiggles|d=15;l=1 :: λ = 10: too much, back to underfitting">
       <svg class="fig" style="max-height:340px" aria-label="Polynomial fit to 20 noisy points from a sine curve"></svg>
       <div class="ctl"><label for="overfit-d">Degree</label><input type="range" id="overfit-d" data-k="d" min="0" max="15" step="1" value="1"><span class="v" data-v="d">1</span></div>
       <div class="ctl"><label for="overfit-l">λ (log scale)</label><input type="range" id="overfit-l" data-k="l" min="-6" max="1" step="0.25" value="-6"><span class="v" data-v="l">0</span></div>
@@ -322,15 +399,40 @@
 
 <section class="slide u">
   <h2>Linear Regression – Metrics</h2>
-  <p>Metrics are used to monitor and measure the performance of a model (during training and testing), and don't need to be differentiable (as losses).</p>
+  <p>Metrics measure the performance of a model on validation and test data. Unlike losses, they don't need to be differentiable.</p>
   <ul style="gap:10px">
     <li>Mean Square Error (MSE): $\ \dfrac1m\displaystyle\sum_i(y_i-\hat y_i)^2$
-      <ul><li>Squaring factor → more prone to outliers.</li><li>Interpreted in square form.</li></ul></li>
+      <ul><li>Squares the errors: big errors count much more, so it is sensitive to outliers.</li><li>In squared units (€²): hard to read.</li></ul></li>
     <li>Mean Absolute Error (MAE): $\ \dfrac1m\displaystyle\sum_i|y_i-\hat y_i|$
-      <ul><li>Robust towards outliers.</li><li>Non-differentiable.</li><li>Interpretable (used only as metric).</li></ul></li>
+      <ul><li>Every unit of error counts the same: more robust to outliers.</li><li>Same units as $y$: "on average we are 12 k€ off".</li><li>Not differentiable at 0, but it can also be used as a loss.</li></ul></li>
     <li>Root Mean Square Error (RMSE): $\ \sqrt{\dfrac1m\displaystyle\sum_i(y_i-\hat y_i)^2}$
-      <ul><li>Retains the differentiable property of MSE.</li><li>Error interpretation can be done smoothly (same units as $y$).</li></ul></li>
+      <ul><li>Ranks models exactly like MSE, but in the units of $y$.</li><li>Always $\ge$ MAE; much larger when a few errors are big.</li></ul></li>
   </ul>
+</section>
+
+<section class="slide u">
+  <h2>Linear Regression – Metrics, a worked example</h2>
+  <div class="cols">
+    <div class="stack" style="gap:6px">
+      <p class="small">Five houses, prices in k€:</p>
+      <table class="t" style="font-size:16px;text-align:center">
+        <tr><th>house</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th></tr>
+        <tr><td>actual $y$</td><td>200</td><td>150</td><td>300</td><td>250</td><td>100</td></tr>
+        <tr><td>predicted $\hat y$</td><td>210</td><td>140</td><td>280</td><td>260</td><td>110</td></tr>
+        <tr><td>error $y-\hat y$</td><td>−10</td><td>+10</td><td>+20</td><td>−10</td><td>−10</td></tr>
+      </table>
+      <div class="step"><div class="eq s">$$\text{MAE}=\tfrac{10+10+20+10+10}{5}=12$$</div></div>
+      <div class="step"><div class="eq s">$$\text{MSE}=\tfrac{100+100+400+100+100}{5}=160,\quad\text{RMSE}=\sqrt{160}=12.6$$</div></div>
+      <div class="step"><div class="eq s">$$R^2=1-\tfrac{\sum(y-\hat y)^2}{\sum(y-\bar y)^2}=1-\tfrac{800}{25\,000}=0.968$$</div><p class="why">$\bar y=200$: $\ \sum(y-\bar y)^2=0+2\,500+10\,000+2\,500+10\,000=25\,000$</p></div>
+      <p class="small step"><b>Baseline</b> "always predict 200 (the mean)": RMSE $=\sqrt{25\,000/5}=70.7$ and $R^2=0$. The model is far better than the baseline.</p>
+    </div>
+    <div class="widget" data-fig="reg-errors" data-auto="o=0 :: Five good predictions: MAE 12, RMSE 12.6|o=1 :: House 5 predicted at 200 instead of 100: MAE ×2.5 (30), RMSE ×3.7 (46.3). One big error dominates RMSE">
+      <svg class="fig" style="max-height:290px" aria-label="Actual and predicted prices of five houses with the errors"></svg>
+      <div class="ctl"><span class="seg" role="group" aria-label="Predictions"><button type="button" data-o="0" aria-pressed="true">Five good predictions</button><button type="button" data-o="1" aria-pressed="false">One error of 100</button></span></div>
+      <div class="ro"><div class="m"><span>MAE (k€)</span><b data-r="mae">–</b></div><div class="m"><span>RMSE (k€)</span><b data-r="rmse">–</b></div><div class="m"><span>R²</span><b data-r="r2">–</b></div><div class="m"><span>MAPE</span><b data-r="mape">–</b></div></div>
+      <div class="legend"><span><i style="background:var(--blue)"></i>actual price</span><span><i style="background:var(--orange)"></i>predicted</span></div>
+    </div>
+  </div>
 </section>
 
 <section class="slide u">
@@ -340,13 +442,28 @@
     <div class="stack" style="gap:14px">
       <ul>
         <li>Coefficient of determination $\ R^2=1-\dfrac{\sum_i^m(y_i-\hat y_i)^2}{\sum_i^m(y_i-\bar y)^2}$
-          <ul><li>close to 1 (ideal)</li><li>close to 0: couldn't capture any variance</li><li>Vanilla $R^2$ keeps improving when the model overfits the data</li></ul></li>
+          <ul><li>1: perfect predictions.</li><li>0: no better than always predicting the mean $\bar y$.</li><li>On new data it can be <b>negative</b>: worse than the mean.</li><li>On the training data it never goes down when a feature is added, even pure noise: it cannot choose the features.</li></ul></li>
       </ul>
       <p style="padding-left:24px">Best predictor before I knew $X$ vs knowing it<br>(weight of a person vs weight after knowing their height).</p>
-      <ul><li>Adjusted $\ R_a^2=1-\Big(\dfrac{m-1}{m-n-1}\Big)(1-R^2)$, where $m$ is the number of samples and $n$ the number of independent variables.
-        <ul><li>Only increases if adding the actual feature really helps.</li></ul></li></ul>
+      <ul><li>Adjusted $\ R_a^2=1-\Big(\dfrac{m-1}{m-n-1}\Big)(1-R^2)$, where $m$ is the number of samples and $n$ the number of features.
+        <ul><li>Only increases if adding the feature really helps.</li></ul></li></ul>
     </div>
     <svg class="fig" data-fig="r2" aria-label="Total variation of a point split into explained and unexplained parts"></svg>
+  </div>
+</section>
+
+<section class="slide u">
+  <h2>Linear Regression – Which metric when?</h2>
+  <table class="t" style="font-size:18px">
+    <tr><th style="width:11%">Metric</th><th style="width:30%">Read it as</th><th style="width:31%">Use it when</th><th>Careful</th></tr>
+    <tr><td><b>MAE</b></td><td>the typical error, in units of $y$ ("12 k€")</td><td>every unit of error costs the same; outliers in $y$</td><td>—</td></tr>
+    <tr><td><b>RMSE</b></td><td>like MAE, but big errors count more</td><td>a big mistake is much worse than several small ones</td><td>one outlier can dominate it</td></tr>
+    <tr><td><b>MAPE</b></td><td>the typical error in %: $\frac1m\sum_i\big|\frac{y_i-\hat y_i}{y_i}\big|$</td><td>relative errors matter (sales of big and small shops)</td><td>explodes when some $y$ are near 0</td></tr>
+    <tr><td><b>$R^2$</b></td><td>the fraction of the variance explained</td><td>comparing across problems: it has no units</td><td>says nothing about the size of the errors in €</td></tr>
+  </table>
+  <div class="cols">
+    <div class="note"><p class="small"><b>Always compare with a baseline</b>: predict the mean (or the median) for everyone. $R^2$ does it for you: 0 means "as good as the mean", negative means worse.</p></div>
+    <div class="note"><p class="small"><b>Report on validation or test data</b>, in the units the business understands. In the worked example, MAPE went from 6.5 % to 24.5 %: the big error was on the cheapest house.</p></div>
   </div>
 </section>
 
@@ -379,6 +496,7 @@
 </section>
 </div></div>
 <script src="../assets/figures.js"></script>
+<script src="assets/fig-linear.js"></script>
 <script src="../assets/deck.js"></script>
 </body>
 </html>

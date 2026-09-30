@@ -1,15 +1,15 @@
 /* Figures for 04_cnn.html: convolutions, architectures, segmentation and detection */
 (function(){
 'use strict';
-const {FIG,lib}=window.MLFIG;const {E,T,initSvg,Plot,arrowPx,rng,randn,fmt,q,setV,setR,svgOf}=lib;const {grid,cube,heat,gray,box,stepper,segs,f2,f3}=window.MLNN;
+const {FIG,lib}=window.MLFIG;const {E,T,initSvg,Plot,arrowPx,rng,randn,fmt,q,setV,setR,svgOf}=lib;const {grid,cube,heat,gray,pix,box,stepper,segs,f2,f3,TT,drawNet}=window.MLNN;
 const IMG=[[1,1,1,0,0],[0,1,1,1,0],[0,0,1,1,1],[0,0,1,1,0],[0,1,1,0,0]];
 const KER={x:[[1,0,1],[0,1,0],[1,0,1]],edge:[[1,0,-1],[1,0,-1],[1,0,-1]],blur:[[1/9,1/9,1/9],[1/9,1/9,1/9],[1/9,1/9,1/9]]};
 const f1=v=>Math.abs(v-Math.round(v))<1e-9?String(Math.round(v)):v.toFixed(2);
 function conv2d(I,K){const F=K.length,H=I.length,W=I[0].length;const O=[];for(let i=0;i+F<=H;i++){const row=[];for(let j=0;j+F<=W;j++){let s=0;for(let u=0;u<F;u++)for(let v=0;v<F;v++)s+=I[i+u][j+v]*K[u][v];row.push(s)}O.push(row)}return O}
 /* ---------- an image is a grid of numbers ---------- */
 const DIGIT=[[0,0,0,0,0,0,0,0],[0,0.2,0.9,1,1,0.9,0.2,0],[0,0,0,0,0.3,1,0.4,0],[0,0,0,0.3,1,0.5,0,0],[0,0,0.2,1,0.6,0,0,0],[0,0,0.8,0.9,0,0,0,0],[0,0.3,1,0.3,0,0,0,0],[0,0,0,0,0,0,0,0]];
-FIG['img-num']=root=>{const svg=initSvg(svgOf(root),640,280);T(svg,110,18,'grayscale: one number per pixel','lab');grid(svg,10,30,DIGIT,26,(i,j,v)=>gray(v),(i,j,v)=>String(Math.round(v*255)),{cls:'',tcol:(i,j,v)=>v>0.5?'#fff':'#404040',dy:4});
-  T(svg,110,258,'8×8 image = 8×8 matrix, values 0–255 (or 0–1)','');
+FIG['img-num']=root=>{const svg=initSvg(svgOf(root),640,280);T(svg,110,18,'grayscale: one number per pixel','lab');grid(svg,10,30,DIGIT,26,(i,j,v)=>pix(v),(i,j,v)=>String(Math.round(v*255)),{cls:'',tcol:(i,j,v)=>v>0.5?'#000':'#d9d9d9',dy:4,stroke:'#7f7f7f'});
+  T(svg,110,258,'8×8 matrix: 0 = black, 255 = white (or scaled to 0–1)','');
   T(svg,450,18,'colour: three stacked grids (channels)','lab');const cs=18;[['B','#9dc3e6',60],['G','#a9d18e',30],['R','#f4b183',0]].forEach(([c,col,off])=>{for(let i=0;i<8;i++)for(let j=0;j<8;j++)E('rect',{x:300+off+j*cs,y:40+(60-off)*0.6+i*cs,width:cs,height:cs,fill:col,'fill-opacity':0.35+0.6*DIGIT[i][j],stroke:'#7f7f7f','stroke-width':0.6},svg);T(svg,300+off+8*cs+12,40+(60-off)*0.6+14,c,'lab')});
   T(svg,450,232,'shape [3, H, W] in PyTorch (channels first)','');T(svg,450,258,'a batch of images: [B, 3, H, W]','')};
 FIG['conv']=root=>{const svg=svgOf(root);const inp=q(root,'s');let kk='x';const btns=root.querySelectorAll('.seg button');
@@ -25,9 +25,9 @@ FIG['conv']=root=>{const svg=svgOf(root);const inp=q(root,'s');let kk='x';const 
   btns.forEach(b=>b.addEventListener('click',()=>{kk=b.dataset.k;btns.forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));draw()}));inp.addEventListener('input',draw);draw()};
 /* ---------- filters as pattern detectors ---------- */
 FIG['filters']=root=>{const svg=initSvg(svgOf(root),960,310);const N=12;const I=[];for(let i=0;i<N;i++){const row=[];for(let j=0;j<N;j++){let v=(i>=3&&i<=8&&j>=2&&j<=7)?1:0;if(i>=1&&j===i+7-1&&j<N)v=0.8;row.push(v)}I.push(row)}
-  T(svg,100,16,'input 12×12','lab');grid(svg,10,26,I,15,(i,j,v)=>gray(v),null,{sw:0.5,stroke:'#bfbfbf'});T(svg,100,222,'a bright square and a thin diagonal line','');
+  T(svg,100,16,'input 12×12','lab');grid(svg,10,26,I,15,(i,j,v)=>pix(v),null,{sw:0.5,stroke:'#595959'});T(svg,100,222,'a bright square and a thin diagonal line','');
   const KS=[['vertical edges',[[1,0,-1],[2,0,-2],[1,0,-1]]],['horizontal edges',[[1,2,1],[0,0,0],[-1,-2,-1]]],['diagonal ↘',[[2,-1,-1],[-1,2,-1],[-1,-1,2]]],['blur (average)',[[1/9,1/9,1/9],[1/9,1/9,1/9],[1/9,1/9,1/9]]]];
-  KS.forEach(([name,K],k)=>{const x0=220+k*185;T(svg,x0+75,16,name,'lab');grid(svg,x0+20,26,K,22,()=>'#dae3f3',(i,j,v)=>Math.abs(v)<0.2?'⅑':String(v),{cls:''});T(svg,x0+75,108,'kernel 3×3','');
+  KS.forEach(([name,K],k)=>{const x0=220+k*185;T(svg,x0+75,16,name,'lab');grid(svg,x0+20,26,K,22,()=>'#dae3f3',(i,j,v)=>Math.abs(v-1/9)<1e-9?'⅑':String(v).replace('-','−'),{cls:''});T(svg,x0+75,108,'kernel 3×3','');
     const O=conv2d(I,K);let mx=0;O.forEach(r=>r.forEach(v=>mx=Math.max(mx,Math.abs(v))));grid(svg,x0,118,O,15,(i,j,v)=>heat(v/(mx||1)),null,{sw:0.4,stroke:'#d0d0d0'});T(svg,x0+75,282,'feature map 10×10','')});
   T(svg,590,304,'orange = strong positive response · blue = negative · white = pattern absent','')};
 FIG['outsize']=root=>{const svg=svgOf(root);const ih=q(root,'h'),iff=q(root,'f'),ip=q(root,'p'),is=q(root,'s');
@@ -175,10 +175,10 @@ FIG['maskiou']=root=>{const svg=svgOf(root);const N=10;const ix=q(root,'x'),ir=q
 /* ---------- box formats ---------- */
 FIG['boxfmt']=root=>{const svg=initSvg(svgOf(root),720,280);const W=320,H=240;E('rect',{x:20,y:20,width:W,height:H,fill:'#e2f0d9',stroke:'#7f7f7f'},svg);T(svg,20+W/2,20+H+16,'image 640 × 480 px','');
   const x1=20+64,y1=20+48,w=128,h=120;E('rect',{x:x1,y:y1,width:w,height:h,fill:'#4472c4','fill-opacity':0.25,stroke:'#4472c4','stroke-width':2.5},svg);
-  E('circle',{cx:x1,cy:y1,r:5,fill:'#c00000'},svg);T(svg,x1+8,y1-8,'(x₁, y₁) = (128, 96)','lab','start');E('circle',{cx:x1+w,cy:y1+h,r:5,fill:'#c00000'},svg);T(svg,x1+w-8,y1+h+18,'(x₂, y₂) = (384, 336)','lab','end');
-  E('circle',{cx:x1+w/2,cy:y1+h/2,r:5,fill:'#ed7d31'},svg);T(svg,x1+w/2,y1+h/2-10,'(cₓ, c_y) = (256, 216)','lab');E('line',{x1:x1,y1:y1+h+6,x2:x1+w,y2:y1+h+6,stroke:'#404040'},svg);T(svg,x1+w/2,y1+h+32,'w = 256','');E('line',{x1:x1+w+6,y1:y1,x2:x1+w+6,y2:y1+h,stroke:'#404040'},svg);T(svg,x1+w+30,y1+h/2,'h = 240','');
-  T(svg,480,40,'three equivalent formats','lab');T(svg,370,70,'xyxy: (x₁, y₁, x₂, y₂) = (128, 96, 384, 336)','','start');T(svg,370,96,'xywh: (x₁, y₁, w, h) = (128, 96, 256, 240)','','start');T(svg,370,122,'cxcywh: (cₓ, c_y, w, h) = (256, 216, 256, 240)','','start');
-  T(svg,480,160,'normalized (YOLO labels)','lab');T(svg,370,186,'divide by image width and height:','','start');T(svg,370,212,'(0.40, 0.45, 0.40, 0.50)','lab','start');T(svg,370,240,'independent of resizing; one line per object:','','start');T(svg,370,262,'class cₓ c_y w h  →  "2 0.40 0.45 0.40 0.50"','mono','start')};
+  E('circle',{cx:x1,cy:y1,r:5,fill:'#c00000'},svg);T(svg,x1+8,y1-8,'(x₁, y₁) = (128, 96)','lab','start');E('circle',{cx:x1+w,cy:y1+h,r:5,fill:'#c00000'},svg);T(svg,x1+w-8,y1+h-10,'(x₂, y₂) = (384, 336)','lab','end');
+  E('circle',{cx:x1+w/2,cy:y1+h/2,r:5,fill:'#ed7d31'},svg);TT(svg,x1+w/2,y1+h/2-10,'(c_x, c_y) = (256, 216)','lab');E('line',{x1:x1,y1:y1+h+6,x2:x1+w,y2:y1+h+6,stroke:'#404040'},svg);T(svg,x1+w/2,y1+h+32,'w = 256','');E('line',{x1:x1+w+6,y1:y1,x2:x1+w+6,y2:y1+h,stroke:'#404040'},svg);T(svg,x1+w+30,y1+h/2,'h = 240','');
+  T(svg,480,40,'three equivalent formats','lab');T(svg,370,70,'xyxy: (x₁, y₁, x₂, y₂) = (128, 96, 384, 336)','','start');T(svg,370,96,'xywh: (x₁, y₁, w, h) = (128, 96, 256, 240)','','start');TT(svg,370,122,'cxcywh: (c_x, c_y, w, h) = (256, 216, 256, 240)','','start');
+  T(svg,480,160,'normalized (YOLO labels)','lab');T(svg,370,186,'divide by image width and height:','','start');T(svg,370,212,'(0.40, 0.45, 0.40, 0.50)','lab','start');T(svg,370,240,'independent of resizing; one line per object:','','start');T(svg,370,262,'class cx cy w h  →  "2 0.40 0.45 0.40 0.50"','mono','start')};
 /* ---------- detector families ---------- */
 FIG['det-families']=root=>{const svg=initSvg(svgOf(root),960,300);const W=250,H=150;
   [['Sliding window (2000s)','crops: every position and size goes through a classifier, 10⁴–10⁵ per image','slow'],['Two-stage: R-CNN family (2014–)','proposals: ~1000 likely regions, then classify and refine each box','accurate, slower'],['One-stage: YOLO, SSD, RetinaNet (2016–)','grid: every cell predicts boxes and classes in one forward pass','real-time']].forEach(([t,s,tag],k)=>{const x0=25+k*310;T(svg,x0+W/2,18,t,'lab');scene(svg,x0,30,W,H,'photo');
@@ -194,8 +194,8 @@ FIG['yolo-grid']=root=>{const svg=svgOf(root);const S=7;const inp=q(root,'c');co
     E('circle',{cx:10+W*0.36,cy:20+H*0.62,r:5,fill:'#c00000',stroke:'#fff'},svg);E('circle',{cx:10+W*0.78,cy:20+H*0.6,r:5,fill:'#385723',stroke:'#fff'},svg);
     E('rect',{x:10+cj*W/S,y:20+ci*H/S,width:W/S,height:H/S,fill:'#ffc000','fill-opacity':0.45,stroke:'#c00000','stroke-width':2.5},svg);
     const isCar=ci===carC[0]&&cj===carC[1],isPer=ci===perC[0]&&cj===perC[1];const vec=isCar?[0.92,0.52,0.34,0.40,0.36,0.95,0.03,0.02]:isPer?[0.88,0.46,0.20,0.19,0.58,0.04,0.93,0.03]:[0.03,0.5,0.5,0.1,0.1,0.3,0.4,0.3];
-    const names=['p(object)','cₓ','c_y','w','h','p(car)','p(person)','p(dog)'];T(svg,480,32,'prediction of this cell','lab');
-    vec.forEach((v,k)=>{const y=48+k*27;T(svg,455,y+13,names[k],'','end');E('rect',{x:462,y:y,width:Math.max(2,110*v),height:18,fill:k===0?'#c00000':k<5?'#4472c4':'#ed7d31'},svg);T(svg,578,y+13,fmt(v,2),'','start')});
+    const names=['p(object)','c_x','c_y','w','h','p(car)','p(person)','p(dog)'];T(svg,480,32,'prediction of this cell','lab');
+    vec.forEach((v,k)=>{const y=48+k*27;TT(svg,455,y+13,names[k],'','end');E('rect',{x:462,y:y,width:Math.max(2,110*v),height:18,fill:k===0?'#c00000':k<5?'#4472c4':'#ed7d31'},svg);T(svg,578,y+13,fmt(v,2),'','start')});
     T(svg,480,275,isCar?'the car\'s centre falls here: this cell owns the car':isPer?'the person\'s centre falls here: this cell owns the person':'no object centre here: p(object) ≈ 0','','middle');
     T(svg,185,290,'dots: object centres · output tensor 7 × 7 × 8 (per box)','','middle')}
   inp.addEventListener('input',draw);draw()};
@@ -232,6 +232,28 @@ FIG['pr-ap']=root=>{const svg=initSvg(svgOf(root),620,300);const preds=[[0.95,1]
   T(svg,130,262,nGT+' true objects in total','');T(svg,130,282,'each row: one more box accepted','');
   const P=Plot(svg,{at:[280,0],w:340,h:300,x:[0,1.02],y:[0,1.05],m:{l:40,r:10,t:26,b:36}});P.axes({xt:[0,0.5,1],yt:[0,0.5,1],xl:'recall',yl:'precision'});T(P.root,180,16,'precision–recall curve, AP = area','lab');
   const env=[];for(let i=0;i<pts.length;i++){let m=0;for(let j=i;j<pts.length;j++)m=Math.max(m,pts[j][1]);env.push([pts[i][0],m])}
-  const poly=[[0,env[0][1]]];let prevR=0;env.forEach(([r,p])=>{poly.push([prevR,p]);poly.push([r,p]);prevR=r});poly.push([prevR,0]);P.poly(poly,'fbs');
+  const poly=[[0,0],[0,env[0][1]]];let prevR=0;env.forEach(([r,p])=>{poly.push([prevR,p]);poly.push([r,p]);prevR=r});poly.push([prevR,0]);P.poly(poly,'fbs');
   let ap=0;prevR=0;env.forEach(([r,p])=>{ap+=(r-prevR)*p;prevR=r});pts.forEach(([r,p])=>P.dot(r,p,4,'fr'));P.path(pts,'ln thin sr');P.text(0.55,0.25,'AP = '+fmt(ap,2),'lab','start');P.text(0.55,0.15,'(interpolated precision)','', 'start')};
+/* dense layer vs convolution on a 1-D signal: connections and the weight matrix */
+FIG['dense-vs-conv']=root=>{const svg=initSvg(svgOf(root),960,300);const n=7,m=5,cols=['#4472c4','#ed7d31','#70ad47'];
+  const panel=(x0,title,conv)=>{T(svg,x0+200,18,title,'lab big');const xin=k=>x0+30+k*56,xout=k=>x0+86+k*56;
+    for(let o=0;o<m;o++)for(let i=0;i<n;i++){const on=!conv||(i>=o&&i<o+3);if(!on)continue;const c=conv?cols[i-o]:'#9dafd6';E('line',{x1:xin(i),y1:150,x2:xout(o),y2:62,stroke:c,'stroke-width':conv?2.4:1,'stroke-opacity':conv?0.95:0.7},svg)}
+    for(let i=0;i<n;i++){E('circle',{cx:xin(i),cy:158,r:11,fill:'#70ad47',stroke:'#fff'},svg);T(svg,xin(i),163,'x'+(i+1),'').style.fill='#fff'}
+    for(let o=0;o<m;o++){E('circle',{cx:xout(o),cy:54,r:11,fill:'#4472c4',stroke:'#fff'},svg);T(svg,xout(o),59,'z'+(o+1),'').style.fill='#fff'}
+    const cs=14,gx=x0+30,gy=192;T(svg,gx-8,gy+36,'W =','lab','end');
+    for(let o=0;o<m;o++)for(let i=0;i<n;i++){const on=!conv||(i>=o&&i<o+3);let f='#f2f2f2';if(on)f=conv?cols[i-o]:heat(Math.sin(1.7*o+2.3*i),false);E('rect',{x:gx+i*cs,y:gy+o*cs,width:cs-1,height:cs-1,fill:f},svg)}
+    T(svg,gx+n*cs+14,gy+22,conv?'3 weights, repeated on a band:':'every entry is its own weight:','','start');T(svg,gx+n*cs+14,gy+42,conv?'5 × 7 matrix: 20 of its 35 entries are 0':'5 × 7 = 35 parameters','','start');
+    T(svg,gx+n*cs+14,gy+62,conv?'= 3 parameters (the kernel)':'','lab','start')};
+  panel(10,'dense layer: each output sees every input',false);panel(490,'convolution: local + the same weights everywhere',true);
+  E('line',{x1:478,y1:30,x2:478,y2:290,stroke:'#d0d0d0','stroke-dasharray':'4 4'},svg)};
+/* multi-task learning: one backbone, three heads, one weighted loss (Lab 13) */
+FIG['multitask']=root=>{const svg=initSvg(svgOf(root),960,270);
+  E('rect',{x:10,y:95,width:80,height:80,rx:6,fill:'#e2f0d9',stroke:'#7f7f7f'},svg);E('circle',{cx:50,cy:128,r:22,fill:'#f4b183'},svg);E('circle',{cx:42,cy:124,r:3,fill:'#000'},svg);E('circle',{cx:58,cy:124,r:3,fill:'#000'},svg);E('rect',{x:34,y:152,width:32,height:18,rx:6,fill:'#70ad47'},svg);T(svg,50,192,'face image','','middle');
+  arrowPx(svg,92,135,118,135,'ln thin sk','fk');cube(svg,120,95,150,80,40,'#8ea9db','shared backbone (ResNet-50)','23.5 M parameters, pre-trained',{cls:'lab'});
+  arrowPx(svg,300,135,330,135,'ln thin sk','fk');E('rect',{x:332,y:70,width:26,height:130,fill:'#ffe699',stroke:'#404040'},svg);const hh=T(svg,345,138,'h ∈ ℝ²⁰⁴⁸','');hh.setAttribute('transform','rotate(-90 345 135)');
+  const heads=[['eyes: 4 coordinates','MSE',40,'#dae3f3'],['gender: 1 logit','BCE',115,'#fbe5d6'],['age: 1 number','MSE',190,'#e2f0d9']];
+  heads.forEach(([t,l,y,c],k)=>{arrowPx(svg,360,135,408,y+16,'ln thin sk','fk');box(svg,410,y,170,34,t,c,{cls:''});arrowPx(svg,582,y+17,618,y+17,'ln thin sk','fk');box(svg,620,y,84,34,'L'+(k+1)+' ('+l+')','#fff',{cls:''});arrowPx(svg,706,y+17,752,135,'ln thin sk','fk')});
+  T(svg,495,30,'small heads, a few thousand parameters each','','middle');
+  E('rect',{x:754,y:108,width:200,height:54,rx:8,fill:'#fff2cc',stroke:'#bf9000'},svg);TT(svg,854,131,'L = λ_1L_1 + λ_2L_2 + λ_3L_3','lab','middle');T(svg,854,151,'one backward pass for all','','middle');
+  T(svg,480,262,'one forward pass gives three predictions; the backbone must learn features that serve all three tasks','','middle')};
 })();

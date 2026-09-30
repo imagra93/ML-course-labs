@@ -1,7 +1,7 @@
 /* Figures for 03_training.html */
 (function(){
 'use strict';
-const {FIG,lib}=window.MLFIG;const {E,T,initSvg,Plot,arrowPx,rng,randn,fmt,equalY,q,setV,setR,svgOf}=lib;const {drawNet,box,grid,stepper,f2,f3}=window.MLNN;
+const {FIG,lib}=window.MLFIG;const {E,T,initSvg,Plot,arrowPx,rng,randn,fmt,equalY,q,setV,setR,svgOf}=lib;const {drawNet,box,grid,stepper,f2,f3,heat,trainMLP,TT}=window.MLNN;
 /* dataset → shuffled mini-batches → one epoch */
 FIG['epoch']=root=>{const svg=svgOf(root);const m=64,bs=16;const C=['#dae3f3','#fbe5d6','#e2f0d9','#fff2cc'];
   stepper(root,s=>{initSvg(svg,600,300);const r=rng(11);const perm=[...Array(m).keys()];if(s>=1)perm.sort(()=>r()-0.5);
@@ -15,27 +15,38 @@ FIG['gd-variants']=root=>{const r=rng(8);const m=200;const D=[];for(let i=0;i<m;
   const J=(a,b)=>D.reduce((s,[x,y])=>s+(a+b*x-y)**2,0)/(2*m);const grad=(a,b,idx)=>{let g0=0,g1=0;idx.forEach(i=>{const [x,y]=D[i];const e=a+b*x-y;g0+=e;g1+=e*x});return [g0/idx.length,g1/idx.length]};
   const all=[...Array(m).keys()];function run(bs,lr,epochs){let a=-2,b=-1.5;const path=[[a,b]];const rr=rng(3);for(let ep=0;ep<epochs;ep++){const perm=all.slice().sort(()=>rr()-0.5);for(let s=0;s<m;s+=bs){const g=grad(a,b,perm.slice(s,s+bs));a-=lr*g[0];b-=lr*g[1];path.push([a,b])}}return path}
   const paths={batch:run(200,0.25,30),sgd:run(1,0.02,2),mini:run(16,0.1,3)};const m2={l:34,r:10,t:10,b:30};const xr=[-3,5];
-  const P=Plot(svgOf(root),{w:560,h:400,x:xr,y:equalY(560,400,m2,xr,1.4),m:m2});P.axes({xt:[-2,0,2,4],yt:[-2,0,2,4],xl:'θ₀ (intercept)',yl:'θ₁ (slope)'});
+  const P=Plot(svgOf(root),{w:560,h:400,x:xr,y:equalY(560,400,m2,xr,1.4),m:m2});P.axes({xt:[-2,0,2,4],yt:[0,2,4],xl:'θ₀ (intercept)',yl:'θ₁ (slope)'});
   const jm=J(2,3);[0.3,1,2.5,5,9,15].forEach(f=>{const pts=[];for(let i=0;i<=160;i++){const t=2*Math.PI*i/160;let lo=0,hi=12;const u=Math.cos(t),v=Math.sin(t);for(let k=0;k<40;k++){const mid=(lo+hi)/2;if(J(2+mid*u,3+mid*v)-jm<f)lo=mid;else hi=mid}pts.push([2+lo*u,3+lo*v])}P.path(pts,'ln thin sb',P.bgc).setAttribute('opacity','0.45')});
   P.dot(2,3,5,'fk',P.bg);let k='batch';const btns=root.querySelectorAll('.seg button');const info={batch:'all 200 samples per step: smooth, slow per step',sgd:'1 sample per step: many cheap, noisy updates',mini:'16 samples per step: the practical compromise'};
   function draw(){P.clear();const p=paths[k];P.path(p,'ln thin sr');P.dot(p[0][0],p[0][1],6,'fk');setR(root,'n',p.length-1);setR(root,'i',info[k]);setR(root,'j',fmt(J(...p[p.length-1]),3))}
   btns.forEach(b=>b.addEventListener('click',()=>{k=b.dataset.k;btns.forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));draw()}));draw()};
-/* momentum: gradient descent vs momentum on a narrow valley, with β */
-FIG['momentum']=root=>{const f=(x,y)=>0.5*(0.08*x*x+2*y*y);const g=(x,y)=>[0.08*x,2*y];const m2={l:34,r:10,t:10,b:30};const xr=[-5.5,1.5];
+/* momentum (PyTorch form: v ← βv + g, θ ← θ − αv) vs plain gradient descent on a very narrow valley */
+FIG['momentum']=root=>{const L1=0.01,L2=2,lr=0.9,T=60;const f=(x,y)=>0.5*(L1*x*x+L2*y*y);const m2={l:34,r:10,t:10,b:30};const xr=[-5.6,1.6];
   const P=Plot(svgOf(root),{w:600,h:340,x:xr,y:equalY(600,340,m2,xr,0),m:m2});P.axes({xt:[-5,-4,-3,-2,-1,0,1],yt:[-1,0,1],xl:'w₁ (flat direction)',yl:'w₂ (steep)'});
-  [0.05,0.2,0.5,1,1.8,2.8].forEach(l=>{const pts=[];for(let i=0;i<=120;i++){const t=2*Math.PI*i/120;pts.push([Math.sqrt(2*l/0.08)*Math.cos(t),Math.sqrt(2*l/2)*Math.sin(t)])}P.path(pts,'ln thin sb',P.bgc).setAttribute('opacity','0.4')});P.dot(0,0,5,'fk',P.bg);
-  const ib=q(root,'b');const lr=0.9;
-  function run(beta){let x=-5,y=1.0,vx=0,vy=0;const p=[[x,y]];for(let t=0;t<40;t++){const [gx,gy]=g(x,y);vx=beta*vx+(1-beta)*gx;vy=beta*vy+(1-beta)*gy;x-=lr*vx;y-=lr*vy;if(Math.abs(x)>60)break;p.push([x,y])}return p}
-  function draw(){const beta=+ib.value;setV(root,'b',fmt(beta,2));P.clear();const p0=run(0),p1=run(beta);const a=P.path(p0,'ln thin');a.setAttribute('stroke','#7f7f7f');a.setAttribute('stroke-width','2');const b=P.path(p1,'ln thin');b.setAttribute('stroke','#c00000');b.setAttribute('stroke-width','2.4');
-    p1.forEach((pt,i)=>{if(i%2===0)P.dot(pt[0],pt[1],2.6,'fr')});const e0=p0[p0.length-1],e1=p1[p1.length-1];setR(root,'l0',fmt(f(e0[0],e0[1]),3));setR(root,'l1',fmt(f(e1[0],e1[1]),3));setR(root,'win',Math.round(1/(1-beta))+' steps')}
+  [0.002,0.01,0.03,0.08,0.2,0.5,1].forEach(l=>{const pts=[];for(let i=0;i<=160;i++){const t=2*Math.PI*i/160;pts.push([Math.sqrt(2*l/L1)*Math.cos(t),Math.sqrt(2*l/L2)*Math.sin(t)])}P.path(pts,'ln thin sb',P.bgc).setAttribute('opacity','0.4')});P.dot(0,0,5,'fk',P.bg);
+  const ib=q(root,'b');
+  function run(beta){let x=-5,y=0.4,vx=0,vy=0;const p=[[x,y]];for(let t=0;t<T;t++){vx=beta*vx+L1*x;vy=beta*vy+L2*y;x-=lr*vx;y-=lr*vy;if(Math.abs(x)>60)break;p.push([x,y])}return p}
+  function draw(){const beta=+ib.value;setV(root,'b',fmt(beta,2));P.clear();const p0=run(0),p1=run(beta);const a=P.path(p0,'ln thin');a.setAttribute('stroke','#7f7f7f');a.setAttribute('stroke-width','2');p0.forEach((pt,i)=>{if(i%3===0){const d=P.dot(pt[0],pt[1],2.2,'');d.setAttribute('fill','#7f7f7f')}});
+    const b=P.path(p1,'ln thin');b.setAttribute('stroke','#c00000');b.setAttribute('stroke-width','2.4');p1.forEach((pt,i)=>{if(i%2===0)P.dot(pt[0],pt[1],2.6,'fr')});
+    const e0=p0[p0.length-1],e1=p1[p1.length-1];setR(root,'l0',fmt(f(e0[0],e0[1]),4));setR(root,'l1',fmt(f(e1[0],e1[1]),4));setR(root,'win','×'+fmt(1/(1-beta),1))}
   ib.addEventListener('input',draw);draw()};
-/* RMSProp: two parameters with very different gradient scales */
-FIG['rms-scale']=root=>{const svg=initSvg(svgOf(root),560,250);const r=rng(2);const g1=[...Array(12)].map(()=>0.02+0.01*randn(r)),g2=[...Array(12)].map(()=>1+0.4*randn(r));
-  const rms=a=>Math.sqrt(a.reduce((s,v)=>s+v*v,0)/a.length);const s1=rms(g1),s2=rms(g2);
-  const P=Plot(svg,{at:[0,0],w:280,h:250,x:[0,13],y:[0,1.8],m:{l:40,r:8,t:26,b:34}});P.axes({xt:[1,6,12],yt:[0,1],xl:'step',yl:'|gradient|'});T(P.root,150,16,'raw gradients','lab');
-  g1.forEach((v,i)=>P.rect(i+0.6,0,i+1.4,Math.abs(v),'fb'));g2.forEach((v,i)=>{const rc=P.rect(i+0.6,0,i+1.4,Math.abs(v),'fo');rc.setAttribute('opacity','0.6')});P.text(3,1.6,'w₂: large, ≈1','', 'start');P.text(3,0.25,'w₁: tiny, ≈0.02','', 'start');
-  const Q=Plot(svg,{at:[290,0],w:270,h:250,x:[0,13],y:[0,1.8],m:{l:40,r:8,t:26,b:34}});Q.axes({xt:[1,6,12],yt:[0,1],xl:'step',yl:'|g| / √s'});T(Q.root,140,16,'divided by the running RMS','lab');
-  g1.forEach((v,i)=>Q.rect(i+0.6,0,i+1.4,Math.abs(v)/s1,'fb'));g2.forEach((v,i)=>{const rc=Q.rect(i+0.6,0,i+1.4,Math.abs(v)/s2,'fo');rc.setAttribute('opacity','0.6')});Q.text(1,1.6,'both move at a similar speed','', 'start')};
+/* exponential moving average of a noisy signal, with and without bias correction */
+FIG['ema']=root=>{const r=rng(4);const T=80;const g=[];for(let t=1;t<=T;t++){const mean=t<=45?1:-0.5;g.push(mean+0.9*randn(r))}
+  const P=Plot(svgOf(root),{w:600,h:330,x:[0,T+1],y:[-3,3.2],m:{l:40,r:12,t:14,b:36}});P.axes({xt:[0,20,40,60,80],yt:[-2,-1,0,1,2,3],xl:'step t',yl:'gradient'});P.line(0,0,T+1,0,'ax',P.bg);
+  g.forEach((v,i)=>P.dot(i+1,v,2.6,'fm',P.bg));P.path([[0,1],[45,1]],'ln thin sg dash',P.bg);P.path([[45,-0.5],[T+1,-0.5]],'ln thin sg dash',P.bg);P.text(79,-0.5,'true mean','', 'end',0,16,P.bg).style.fill='#548235';
+  const ib=q(root,'b');
+  function draw(){const beta=+ib.value;setV(root,'b',fmt(beta,2));P.clear();let m=0;const raw=[[0,0]],cor=[];g.forEach((v,i)=>{m=beta*m+(1-beta)*v;raw.push([i+1,m]);cor.push([i+1,m/(1-Math.pow(beta,i+1))])});
+    const a=P.path(raw,'ln');a.setAttribute('stroke','#c00000');const b=P.path(cor,'ln dash');b.setAttribute('stroke','#4472c4');
+    setR(root,'win','≈ '+Math.round(1/(1-beta))+' steps');setR(root,'m1',fmt(raw[1][1],2));setR(root,'c1',fmt(cor[0][1],2))}
+  ib.addEventListener('input',draw);draw()};
+/* RMSProp: two parameters with very different gradient scales, before and after dividing by the running RMS */
+FIG['rms-scale']=root=>{const svg=initSvg(svgOf(root),600,250);const r=rng(2);const n=10;const g1=[...Array(n)].map(()=>Math.abs(0.02+0.007*randn(r))),g2=[...Array(n)].map(()=>Math.abs(1+0.35*randn(r)));
+  const rms=a=>Math.sqrt(a.reduce((s,v)=>s+v*v,0)/a.length);const s1=rms(g1),s2=rms(g2);const lg=v=>Math.log10(Math.max(v,0.003));
+  const P=Plot(svg,{at:[0,0],w:295,h:250,x:[0.3,n+0.7],y:[-2.5,0.5],m:{l:44,r:6,t:26,b:34}});P.axes({xt:[1,5,10],yt:[-2,-1,0],fy:v=>v===0?'1':v===-1?'0.1':'0.01',xl:'step',yl:'|gradient| (log)'});T(P.root,160,16,'raw gradients: 50× apart','lab');
+  g1.forEach((v,i)=>P.rect(i+1-0.36,-2.5,i+1-0.02,lg(v),'fb'));g2.forEach((v,i)=>P.rect(i+1+0.02,-2.5,i+1+0.36,lg(v),'fo'));
+  const Q=Plot(svg,{at:[305,0],w:295,h:250,x:[0.3,n+0.7],y:[0,1.8],m:{l:44,r:6,t:26,b:34}});Q.axes({xt:[1,5,10],yt:[0,0.5,1,1.5],xl:'step',yl:'|g| / √s'});T(Q.root,160,16,'divided by their running RMS','lab');
+  g1.forEach((v,i)=>Q.rect(i+1-0.36,0,i+1-0.02,v/s1,'fb'));g2.forEach((v,i)=>Q.rect(i+1+0.02,0,i+1+0.36,v/s2,'fo'));Q.line(0.3,1,n+0.7,1,'ln thin sm dash');
+  const lgd=E('g',{},svg);E('rect',{x:360,y:30,width:12,height:12,fill:'#4472c4'},lgd);T(lgd,378,40,'w₁ (tiny gradients)','','start');E('rect',{x:480,y:30,width:12,height:12,fill:'#ed7d31'},lgd);T(lgd,498,40,'w₂ (large)','','start')};
 FIG['optim']=root=>{const f=(x,y)=>0.5*(0.08*x*x+2*y*y);const g=(x,y)=>[0.08*x,2*y];const m2={l:34,r:10,t:10,b:30};const xr=[-5.5,1.5];
   const P=Plot(svgOf(root),{w:600,h:380,x:xr,y:equalY(600,380,m2,xr,0),m:m2});P.axes({xt:[-5,-4,-3,-2,-1,0,1],yt:[-2,-1,0,1,2],xl:'w₁',yl:'w₂'});
   [0.05,0.2,0.5,1,1.8,2.8].forEach(l=>{const pts=[];for(let i=0;i<=120;i++){const t=2*Math.PI*i/120;pts.push([Math.sqrt(2*l/0.08)*Math.cos(t),Math.sqrt(2*l/2)*Math.sin(t)])}P.path(pts,'ln thin sb',P.bgc).setAttribute('opacity','0.4')});P.dot(0,0,5,'fk',P.bg);
@@ -52,13 +63,13 @@ FIG['sched']=root=>{const P=Plot(svgOf(root),{w:500,h:280,x:[0,100],y:[0,1.1],m:
   P.text(98,1,'constant','', 'end',0,-6);P.text(30,0.52,'step decay','', 'start',0,-6);P.text(10,1.02,'warm-up + cosine','', 'start',0,-6);P.text(72,0.12,'reduce on plateau','', 'start',0,-6)};
 FIG['curves']=root=>{const svg=initSvg(svgOf(root),960,260);const e=[...Array(41).keys()];
   [['Underfitting: both high',x=>0.62+0.2*Math.exp(-x/8),x=>0.66+0.2*Math.exp(-x/8)],['Good fit',x=>0.12+0.6*Math.exp(-x/6),x=>0.2+0.55*Math.exp(-x/6)],['Overfitting: the gap grows',x=>0.03+0.7*Math.exp(-x/5),x=>0.32+0.45*Math.exp(-x/5)+0.012*Math.max(0,x-8)]].forEach(([lab,tr,va],k)=>{
-    const P=Plot(svg,{at:[k*320,0],w:310,h:260,x:[0,40],y:[0,1],m:{l:36,r:8,t:26,b:30}});P.axes({xt:[0,20,40],yt:[0,0.5,1],xl:'epoch',yl:'loss'});T(P.root,160,16,lab,'lab');P.path(e.map(x=>[x,tr(x)]),'ln sb');P.path(e.map(x=>[x,va(x)]),'ln so');
+    const P=Plot(svg,{at:[k*320,0],w:310,h:260,x:[0,40],y:[0,1],m:{l:50,r:8,t:26,b:40}});P.axes({xt:[0,20,40],yt:[0,0.5,1],xl:'epoch',yl:'loss'});T(P.root,160,16,lab,'lab');P.path(e.map(x=>[x,tr(x)]),'ln sb');P.path(e.map(x=>[x,va(x)]),'ln so');
     if(k===0){P.text(30,0.9,'train','', 'end',0,0).style.fill='#4472c4';P.text(30,0.98,'validation','', 'start',4,0).style.fill='#ed7d31'}
     if(k===2){P.line(8,0,8,1,'ln thin sg dash');P.text(8,0.9,'early stopping','', 'start',4,0)}})};
 FIG['dropout']=root=>{const svg=svgOf(root);const inp=q(root,'p');let mode='train';const btns=root.querySelectorAll('.seg button');let seed=1;
   function draw(){const p=+inp.value;setV(root,'p',fmt(p,2));initSvg(svg,560,320);const drop=new Set();const rr=rng(seed);const sizes=[3,6,6,1];
     if(mode==='train')for(let l=1;l<=2;l++)for(let i=0;i<sizes[l];i++)if(rr()<p)drop.add(l+'-'+i);
-    drawNet(svg,sizes,{x0:50,y0:30,w:460,h:260,r:14,drop:drop});T(svg,280,312,mode==='train'?'Training: a new random set of units is switched off at every mini-batch':'Validation / prediction: all units are used','','middle');setR(root,'n',drop.size+' of 12')}
+    drawNet(svg,sizes,{x0:50,y0:30,w:460,h:260,r:14,drop:drop});T(svg,280,312,mode==='train'?'Training: a new random set of units is switched off at every mini-batch':'Validation / prediction: all units are used, and nothing is rescaled','','middle');setR(root,'n',drop.size+' of 12')}
   root.querySelector('[data-k="new"]').addEventListener('click',()=>{seed++;draw()});btns.forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.m;btns.forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));draw()}));inp.addEventListener('input',draw);draw()};
 FIG['bn']=root=>{const r=rng(12);const z=[...Array(400)].map(()=>3+2.5*randn(r));const mu=z.reduce((a,b)=>a+b,0)/z.length;const sd=Math.sqrt(z.reduce((a,b)=>a+(b-mu)**2,0)/z.length);const zh=z.map(v=>(v-mu)/Math.sqrt(sd*sd+1e-5));
   const svg=initSvg(svgOf(root),600,300);const hist=(P,vals,cls)=>{const B=30,lo=-6,hi=12,c=new Array(B).fill(0);vals.forEach(v=>{const k=Math.floor((v-lo)/(hi-lo)*B);if(k>=0&&k<B)c[k]++});c.forEach((n,k)=>P.rect(lo+(hi-lo)*k/B,0,lo+(hi-lo)*(k+1)/B-0.08,n,cls))};
@@ -73,7 +84,17 @@ FIG['norm-axes']=root=>{const svg=initSvg(svgOf(root),620,250);const cs=22;
   mat(40,'BatchNorm: one feature, over the batch','col');mat(340,'LayerNorm: one example, over its features','row');
   T(svg,310,225,'orange = the numbers whose mean and variance are computed (then γ, β per feature)','','middle')};
 /* tensor shapes through a small MLP */
-FIG['shapes-walk']=root=>{const svg=initSvg(svgOf(root),960,200);const steps=[['input','[B, 1, 28, 28]','#c5e0b4',0],['Flatten','[B, 784]','#e7e6e6',0],['Linear 784→256','[B, 256]','#8ea9db',784*256+256],['ReLU','[B, 256]','#e7e6e6',0],['Dropout 0.2','[B, 256]','#e7e6e6',0],['Linear 256→10','[B, 10]','#8ea9db',256*10+10],['CrossEntropy','scalar','#f4b183',0]];
-  steps.forEach(([name,shape,c,np],k)=>{const x=10+k*136;E('rect',{x:x,y:40,width:120,height:60,rx:6,fill:c,stroke:'#404040'},svg);T(svg,x+60,64,name,'lab');T(svg,x+60,86,shape,'mono');if(np)T(svg,x+60,124,np.toLocaleString('en-US')+' params','');if(k<steps.length-1)arrowPx(svg,x+122,70,x+134,70,'ln thin sk','fk')});
-  T(svg,480,170,'B = batch size, passes through untouched. Total: 203,530 parameters, 99.9 % of them in the first Linear.','','middle')};
+FIG['shapes-walk']=root=>{const svg=initSvg(svgOf(root),980,200);const steps=[['input','[B, 1, 28, 28]','#c5e0b4',0],['Flatten','[B, 784]','#e7e6e6',0],['Linear 784→256','[B, 256]','#8ea9db',784*256+256],['ReLU','[B, 256]','#e7e6e6',0],['Dropout 0.2','[B, 256]','#e7e6e6',0],['Linear 256→10','[B, 10]','#8ea9db',256*10+10],['CrossEntropy','scalar','#f4b183',0]];
+  steps.forEach(([name,shape,c,np],k)=>{const x=6+k*139;E('rect',{x:x,y:40,width:128,height:60,rx:6,fill:c,stroke:'#404040'},svg);T(svg,x+64,64,name,'lab');T(svg,x+64,86,shape,'mono');if(np)T(svg,x+64,124,np.toLocaleString('en-US')+' params','');if(k<steps.length-1)arrowPx(svg,x+129,70,x+138,70,'ln thin sk','fk')});
+  T(svg,490,170,'B = batch size, passes through untouched. Total: 203,530 parameters, 98.7 % of them in the first Linear.','','middle')};
+/* overfitting and weight decay: a 2-24-24-1 tanh network on 40 noisy "moons" points */
+function moons(n,seed,noise){const r=rng(seed);const X=[],y=[];for(let i=0;i<n;i++){const c=i%2;const t=Math.PI*r();let a,b;if(c===0){a=Math.cos(t);b=Math.sin(t)}else{a=1-Math.cos(t);b=0.5-Math.sin(t)}a+=noise*randn(r);b+=noise*randn(r);X.push([(a-0.5)/1.1,(b-0.25)/1.1]);y.push(c)}return {X,y}}
+FIG['overfit-l2']=root=>{const tr=moons(40,5,0.28),te=moons(600,99,0.28);const LAM=[0,0.001,0.003,0.01,0.03,0.1];const cache={};const inp=q(root,'l');
+  const P=Plot(svgOf(root),{w:420,h:360,x:[-1.25,1.45],y:[-1.05,1.25],m:{l:6,r:6,t:6,b:6}});const acc=(m,D)=>D.X.filter((x,i)=>(m.predict(x)>=0.5?1:0)===D.y[i]).length/D.X.length;
+  function draw(){const k=+inp.value;const lam=LAM[k];setV(root,'l',lam===0?'0':String(lam));if(!cache[k])cache[k]=trainMLP(tr.X,tr.y,[24,24],'tanh',1500,0.01,3,lam);const m=cache[k];P.clear();const N=40;
+    for(let a=0;a<N;a++)for(let b=0;b<N;b++){const x=[-1.25+2.7*(a+0.5)/N,-1.05+2.3*(b+0.5)/N];const p=m.predict(x);const rc=P.rect(-1.25+2.7*a/N,-1.05+2.3*b/N,-1.25+2.7*(a+1)/N,-1.05+2.3*(b+1)/N,p>=0.5?'fb':'fo');rc.setAttribute('opacity',(0.1+0.45*Math.abs(p-0.5)*2).toFixed(2))}
+    te.X.forEach((x,i)=>{const d=P.dot(x[0],x[1],1.6,te.y[i]?'fb':'fo');d.setAttribute('opacity','0.35')});tr.X.forEach((x,i)=>P.dot(x[0],x[1],5,'pt '+(tr.y[i]?'fb':'fo')));
+    const a1=acc(m,tr),a2=acc(m,te);setR(root,'tr',fmt(a1,3));setR(root,'te',fmt(a2,3));let w2=0;m.W.forEach(W=>W.forEach(rw=>rw.forEach(v=>w2+=v*v)));setR(root,'w',fmt(Math.sqrt(w2),1));
+    setR(root,'vd',k===0?'overfitting':k===2?'about right':k>=4?'underfitting':k===1?'still overfitting':'slightly too simple')}
+  inp.addEventListener('input',draw);draw()};
 })();
