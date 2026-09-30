@@ -1,0 +1,70 @@
+/* Styles for the slide figures inside the notes pages (Quarto).
+   Lines 2-9 and 60-100 of slides/assets/deck.css, copied verbatim (colour tokens, figures, controls, read-outs,
+   demo captions). If the web notes are adopted, move that block into slides/assets/figures.css, @import it at the top
+   of deck.css, and link figures.css here instead, so there is a single copy. Notes-only rules are at the end. */
+:root{
+  color-scheme:light;
+  --page:#d9d9d9; --slide:#ffffff; --ink:#000000; --text:#1f1f1f; --muted:#6b6b6b; --line:#d0d0d0; --grid:#ececec; --band:#e7e6e6;
+  --blue:#4472c4; --blue-soft:#dae3f3; --orange:#ed7d31; --orange-soft:#fbe5d6; --gold:#ffc000; --gold-soft:#fff2cc;
+  --green:#70ad47; --green-soft:#e2f0d9; --red:#c00000; --link:#0563c1; --teal:#5b9bd5;
+  --font:"Carlito","Calibri","Segoe UI",Candara,Arial,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+/* figures */
+.widget{display:flex;flex-direction:column;gap:8px;min-width:0}
+svg.fig{width:100%;height:auto;display:block;overflow:visible;max-height:440px}
+.widget>svg.fig{max-height:390px}
+.fig text{font-family:var(--font);font-size:14px;fill:var(--muted)}
+.fig text.lab{fill:var(--ink);font-size:16px}
+.fig text.big{font-size:19px}
+.fig .ax{stroke:#595959;stroke-width:1.2;fill:none}
+.fig .gr{stroke:var(--grid);stroke-width:1;fill:none}
+.fig .ln{fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.fig .thin{stroke-width:1.4}
+.fig .dash{stroke-dasharray:6 5}
+.fig .dot2{stroke-dasharray:2 4}
+.fig .sb{stroke:var(--blue)} .fig .fb{fill:var(--blue)}
+.fig .so{stroke:var(--orange)} .fig .fo{fill:var(--orange)}
+.fig .sr{stroke:var(--red)} .fig .fr{fill:var(--red)}
+.fig .sg{stroke:var(--green)} .fig .fgr{fill:var(--green)}
+.fig .sk{stroke:var(--ink)} .fig .fk{fill:var(--ink)}
+.fig .sm{stroke:var(--muted)} .fig .fm{fill:var(--muted)}
+.fig .sy{stroke:#bf9000} .fig .fy{fill:var(--gold)}
+.fig .fw{fill:#fff}
+.fig .fbs{fill:var(--blue);fill-opacity:.15} .fig .fos{fill:var(--orange);fill-opacity:.2} .fig .fgs{fill:var(--green);fill-opacity:.2}
+.fig .pt{stroke:#fff;stroke-width:1}
+.fig .nof{fill:none}
+.ctl{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:18px}
+.ctl label{font-size:18px;color:var(--muted)}
+.ctl input[type=range]{flex:1;min-width:140px;accent-color:var(--blue);height:22px}
+.ctl .v{font-size:19px;color:var(--ink);min-width:60px;font-variant-numeric:tabular-nums;font-weight:700}
+.seg{display:inline-flex;border:1px solid var(--blue);overflow:hidden}
+.seg button{font:700 16px var(--font);color:var(--blue);background:#fff;border:0;padding:5px 14px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--blue);color:#fff}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.ro{display:flex;gap:10px;flex-wrap:wrap}
+.ro .m{border:1px solid var(--line);padding:4px 12px;display:flex;flex-direction:column;min-width:96px}
+.ro .m span{font-size:14px;color:var(--muted)}
+.ro .m b{font-size:21px;font-variant-numeric:tabular-nums}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:16px;color:var(--muted)}
+.legend i{display:inline-block;width:16px;height:4px;margin-right:6px;vertical-align:middle}
+/* scripted demo steps (data-auto): caption shown under the widget as → advances */
+.demo-cap{font-size:17px;color:var(--ink);background:var(--gold-soft);border-left:4px solid var(--gold);padding:4px 10px;line-height:1.3}
+.widget.demo-on .ctl input[type=range]{accent-color:var(--orange)}
+
+/* ---- notes only: a widget is a framed panel in the text column, with smaller type than on a 1280 px slide ---- */
+.widget{border:1px solid var(--line);border-radius:4px;padding:12px 14px 10px;margin:1.25rem 0 1.5rem;max-width:720px;background:#fff}
+.widget .ctl,.widget .ctl label{font-size:15px}
+.widget .ctl .v{font-size:16px}
+.widget .ro .m{min-width:84px;padding:3px 10px}
+.widget .ro .m span{font-size:12.5px}
+.widget .ro .m b{font-size:17px}
+.widget .seg button{font-size:14px}
+.widget p{margin:0}
+.widget .why,.widget .from{font-size:13.5px;color:var(--muted);line-height:1.35}
+.widget .from a{color:var(--link)}
+.demo-bar{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+.demo-bar button{font:700 14px var(--font);color:var(--blue);background:#fff;border:1px solid var(--blue);border-radius:3px;min-width:34px;height:28px;padding:0 8px;cursor:pointer}
+.demo-bar button:disabled{opacity:.35;cursor:default}
+.demo-bar .reset{margin-left:auto;font-weight:400}
+.demo-cap{font-size:15px}
