@@ -378,7 +378,7 @@ A score means nothing without a reference. The **baseline** is the best model th
 - regression: predict the training mean $\bar y$ for everybody. Its MSE is the variance of $y$, which is why $R^2 = 1 - \mathrm{MSE}/\mathrm{Var}(y)$ compares a model with it ([note 01](01_linear_regression.qmd));
 - classification: predict the most frequent class. Its accuracy is the proportion of that class.
 
-With rare events the baseline is deceptively strong. A made-up portfolio of 4,000 claims with about 5 % frauds:
+With rare events the baseline is deceptively strong. A made-up portfolio of 4,000 claims with about 5–6 % frauds:
 
 ```{python}
 from sklearn.datasets import make_classification
@@ -418,10 +418,11 @@ print(f"P(fold without positives) = {p0:.3f}   (scipy: {stats.hypergeom.pmf(0, 2
 print("positives per fold, KFold          :", [int(y_rare[v].sum()) for _, v in KFold(5, shuffle=True, random_state=0).split(y_rare)])
 print("positives per fold, StratifiedKFold:", [int(y_rare[v].sum()) for _, v in StratifiedKFold(5, shuffle=True, random_state=0).split(y_rare, y_rare)])
 counts = np.array([int(y_rare[v].sum()) for s in range(1000) for _, v in KFold(5, shuffle=True, random_state=s).split(y_rare)])
-print(f"over 1000 random KFold splits: {np.mean(counts == 0):.3f} of the folds have no positive")
+print(f"over 1000 random KFold splits: {np.mean(counts == 0):.3f} of the folds have no positive; "
+      f"positives per fold range from {counts.min()} to {counts.max()}")
 ```
 
-About one fold in ten has no fraud at all, and the others hold anything from 1 to 5 of the 10 positives; stratification gives exactly 2 per fold. Stratify every classification split; it costs nothing. For regression with a skewed target (claim costs), the same idea works by stratifying on quantile bins of $y$.
+About one fold in ten has no fraud at all, and some folds receive up to 7 of the 10 positives; stratification gives exactly 2 per fold. Stratify every classification split; it costs nothing. For regression with a skewed target (claim costs), the same idea works by stratifying on quantile bins of $y$.
 
 ## 9. Learning curves and validation curves
 
@@ -464,7 +465,7 @@ plt.tight_layout(); plt.show()
 | both errors near the level you need | done: stop tuning | | |
 | validation error *below* training error | usually luck with a small validation set, or a validation set easier than the training set (check the split, section 13.2) | a bigger validation set, CV | |
 
-On the left, degree 1 has a validation error around 0.26 whatever the size: collecting more data would be wasted money. On the right, degree 9 is hopeless with 15 points but excellent with 200: its problem was variance, and data cures variance. In practice both curves are computed by cross-validation (`sklearn.model_selection.learning_curve` and `validation_curve` do exactly this).
+On the left, degree 1 has a validation error between 0.26 and 0.29 whatever the size: collecting more data would be wasted money. On the right, degree 9 is hopeless with 15 points but excellent with 200: its problem was variance, and data cures variance. In practice both curves are computed by cross-validation (`sklearn.model_selection.learning_curve` and `validation_curve` do exactly this).
 
 ## 10. How precise is a test metric?
 
@@ -1066,7 +1067,7 @@ print(f"R² with GroupKFold         : {r2_gkf:.3f}")
 print(f"R² on 2,000 new customers  : {1 - np.mean((p_new - y_gn) ** 2) / y_gn.var():.3f}")
 ```
 
-The random split promises an $R^2$ of about 0.73; new customers get about 0.58; `GroupKFold` says about 0.49, slightly pessimistic because each of its models is trained on 64 customers instead of 80, but on the right side and much closer. **Duplicates** are the extreme case of a group: the same row twice. Here half of 400 made-up claims are entered twice, and a fully grown tree (which memorises its training rows) is evaluated.
+The random split promises an $R^2$ of about 0.73; new customers get about 0.58; `GroupKFold` says about 0.49, slightly pessimistic because each of its models is trained on 64 customers instead of 80, but closer to the truth and on the safe side. **Duplicates** are the extreme case of a group: the same row twice. Here half of 400 made-up claims are entered twice, and a fully grown tree (which memorises its training rows) is evaluated.
 
 ```{python}
 from sklearn.model_selection import StratifiedGroupKFold
@@ -1120,7 +1121,7 @@ ax.set_title("Forward chaining: thin = training months, thick = validation block
 plt.tight_layout(); plt.show()
 ```
 
-Shuffled CV promises an error less than half of what the future delivers; forward chaining is much closer (the future is still a little worse, because its horizon of 60 months is longer than the validation blocks of 30). The tree forecast is a flat line: a tree cannot extrapolate a trend (note 06), which shuffled CV completely hid.
+Shuffled CV promises an error less than half of what the future delivers; forward chaining is much closer, though the future is still worse, because its horizon of 60 months is longer than the validation blocks of 30 and the level keeps wandering further from the last training month. The tree forecast is a flat line: a tree cannot extrapolate a trend (note 06), which shuffled CV completely hid.
 
 ## 15. Practical rules
 

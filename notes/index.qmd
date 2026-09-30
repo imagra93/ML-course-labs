@@ -18,27 +18,27 @@ The interactive figures are the same ones used in the [slides](../slides/index.h
 
 | # | Note | Contents |
 |---|---|---|
-| 00 | [Supervised learning, splits and CV](machine_learning/00_supervised_learning.qmd) | problem setup, notation, empirical risk, bias–variance, train/val/test, k-fold CV, leakage |
-| 01 | [Linear regression](machine_learning/01_linear_regression.qmd) | MSE loss, gradient, gradient descent, learning rate, normal equation, convexity, MLE, metrics |
-| 02 | [Logistic regression](machine_learning/02_logistic_regression.qmd) | sigmoid, log-odds, cross-entropy = MLE, gradient, convexity, separability, classification metrics, calibration |
-| 02b | [Generalised linear models](machine_learning/02b_generalized_linear_models.qmd) | distribution + linear score + link, one gradient and one convexity proof for all GLMs, Poisson regression |
-| 03 | [Regularisation, inputs, assumptions](machine_learning/03_regularization_inputs_assumptions.qmd) | Ridge, Lasso, Elastic Net, MAP view; scaling, encoding, collinearity; model assumptions |
-| 04 | [Softmax regression](machine_learning/04_softmax_regression.qmd) | softmax, categorical cross-entropy, gradient, convexity, multiclass metrics |
-| 05 | [Support vector classifier](machine_learning/05_support_vector_classifier.qmd) | margin, the dual, soft margin, kernel trick, hinge loss, sub-gradient descent |
-| 06 | [Decision trees and CART](machine_learning/06_decision_trees_cart.qmd) | impurity, split search, CART from scratch, regression trees, pruning |
-| 07 | [Bagging, random forests, boosting](machine_learning/07_bagging_random_forest_boosting.qmd) | variance of an average, bootstrap and OOB, random forests, AdaBoost, gradient boosting |
+| 00 | [Supervised learning, splits and CV](machine_learning/00_supervised_learning.qmd) | problem setup and notation, empirical risk, bias–variance (proof), train/validation/test, K-fold and nested CV, how precise a test metric is, learning curves; assumptions: i.i.d. data, no distribution shift (adversarial validation), grouped and time-ordered data, leakage |
+| 01 | [Linear regression](machine_learning/01_linear_regression.qmd) | loss, gradient, gradient descent and the learning rate, normal equation, convexity, Newton's method, MLE, features and scaling, metrics; OLS statistics (standard errors, intervals, Gauss–Markov); assumptions: linearity, independence, homoscedasticity, normality, collinearity and VIF, exogeneity, leverage and influence |
+| 02 | [Logistic regression](machine_learning/02_logistic_regression.qmd) | sigmoid and odds, cross-entropy = MLE, gradient, convexity, Newton/IRLS, separable data, standard errors and odds ratios, metrics, ROC/AUC, thresholds from costs, calibration; assumptions: linearity in the log-odds, events per variable, influential points; class imbalance |
+| 02b | [Generalised linear models](machine_learning/02b_generalized_linear_models.qmd) | distribution + linear score + link, the exponential family, one gradient and one convexity proof for all GLMs, IRLS, deviance; Poisson regression for claim counts, overdispersion (quasi-Poisson, negative binomial), exposure and offsets, Gamma severity, Tweedie pure premium |
+| 03 | [Regularisation, inputs, assumptions](machine_learning/03_regularization_inputs_assumptions.qmd) | Ridge (SVD view, bias–variance), Lasso (coordinate descent), Elastic Net, MAP view, choosing λ; input variables: scaling, encodings (dummy trap, target encoding), missing values, skewed features, outliers, interactions, pipelines and leakage |
+| 04 | [Softmax regression](machine_learning/04_softmax_regression.qmd) | softmax, identifiability, log-sum-exp, cross-entropy, gradient, convexity, multiclass metrics and confusion matrices; assumptions (IIA, exclusive classes), class imbalance, temperature scaling, one-vs-rest vs softmax |
+| 05 | [Support vector classifier](machine_learning/05_support_vector_classifier.qmd) | margin, Lagrangian, duality and KKT, the dual, SMO, soft margin, kernels and Mercer, hinge loss, sub-gradient descent, multiclass; assumptions and practice: scaling, choosing C and γ, imbalance, Platt probabilities, cost |
+| 06 | [Decision trees and CART](machine_learning/06_decision_trees_cart.qmd) | entropy and Gini, split search, CART from scratch, regression trees, pruning, instability; what trees assume (no extrapolation, axis-aligned splits, greedy search), categorical and missing values, biased feature importance |
+| 07 | [Bagging, random forests and boosting](machine_learning/07_bagging_random_forest_boosting.qmd) | variance of an average, bootstrap and OOB, random forests, feature importance, AdaBoost as exponential-loss minimisation, gradient boosting, XGBoost's second-order derivation, boosting in practice, assumptions |
 
 ## Neural networks
 
 | # | Note | Contents |
 |---|---|---|
-| 00 | [Neural networks and the MLP](neural_networks/00_neural_networks_mlp.qmd) | neuron = logistic regression, XOR, forward pass, activations, losses as MLE, universal approximation |
-| 01 | [Backpropagation](neural_networks/01_backpropagation.qmd) | chain rule on graphs, backprop derivation, gradient checking, initialisation, vanishing gradients |
-| 02 | [Training: optimisation and regularisation](neural_networks/02_training_optimization_regularization.qmd) | SGD, momentum, Adam, schedules, learning curves, weight decay, dropout, normalisation |
-| 03 | [CNNs, transfer and multi-task learning](neural_networks/03_cnn_transfer_multitask.qmd) | convolution, equivariance, pooling, receptive field, ResNet, transfer and multi-task learning |
-| 04 | [Embeddings, RNNs and LSTMs](neural_networks/04_rnn_lstm.qmd) | embeddings, RNN, BPTT, vanishing gradients, LSTM and GRU |
-| 05 | [Attention and transformers](neural_networks/05_attention_transformers.qmd) | BPE, attention, √d scaling, causal mask, multi-head, a tiny GPT, decoding |
-| 06 | [Embeddings, retrieval and RAG](neural_networks/06_embeddings_rag.qmd) | similarity, TF-IDF, LSA, neural embeddings, nearest-neighbour search, retrieval metrics, RAG |
+| 00 | [Neural networks and the MLP](neural_networks/00_neural_networks_mlp.qmd) | neuron = logistic regression, XOR, the MLP, forward pass with numbers, activations and their derivatives, losses as MLE, softmax gradient, universal approximation, non-convexity; practical checks before training |
+| 01 | [Backpropagation](neural_networks/01_backpropagation.qmd) | chain rule on graphs, backpropagation derived and worked with numbers, NumPy code, gradient checking, automatic differentiation, initialisation, vanishing and exploding gradients |
+| 02 | [Training: optimisation and regularisation](neural_networks/02_training_optimization_regularization.qmd) | mini-batches, the learning rate, momentum, RMSProp, Adam, schedules, learning curves, weight decay and AdamW, dropout, BatchNorm (backward pass derived); a debugging guide and the assumptions of training |
+| 03 | [CNNs, transfer and multi-task learning](neural_networks/03_cnn_transfer_multitask.qmd) | convolution and its backward pass, receptive field, pooling, inductive biases, ResNet, transfer and multi-task learning, segmentation (U-Net, Dice), detection (IoU, NMS, AP) |
+| 04 | [Embeddings, RNNs and LSTMs](neural_networks/04_rnn_lstm.qmd) | embeddings, RNN, backpropagation through time, vanishing and exploding gradients, clipping, LSTM and GRU, padding and masking; assumptions of sequence models and look-ahead leakage |
+| 05 | [Attention and transformers](neural_networks/05_attention_transformers.qmd) | attention, √d scaling, multi-head attention, positional encodings (sinusoidal, RoPE), causal mask, cost and KV cache, GPT parameter count, a tiny GPT, decoding, perplexity |
+| 06 | [Embeddings, retrieval and RAG](neural_networks/06_embeddings_rag.qmd) | similarity, TF-IDF, BM25, LSA, neural embeddings, approximate search, retrieval metrics (MRR, nDCG), hybrid retrieval, chunking, RAG and its failure modes |
 
 The hands-on labs are the notebooks in
 [`notebooks/`](https://github.com/imagra93/ML-course-labs/tree/main/notebooks), each with an *Open in Colab* button.

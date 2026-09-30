@@ -58,7 +58,7 @@ and then a class, by thresholding that probability.
 </div>
 ```
 
-The example below shows the same problem on a larger sample: 30 negatives around 1, 30 positives around 4, and 10 more positives far away around 12.
+The example below shows the same problem on a larger sample: 30 negatives around 1, 30 positives around 4, and 10 more positives far away around 12. The far positives drag the line's 0.5 crossing (printed below) to the right of the gap between the two groups, into the lower tail of the positives; the logistic boundary stays in the gap.
 
 ```{python}
 x1 = np.r_[rng.normal(1, 0.6, 30), rng.normal(4, 0.6, 30), rng.normal(12, 0.6, 10)]
@@ -269,7 +269,7 @@ $$
 
 For $\tau = 0.5$ the right-hand side is $\log 1 = 0$: $h_{\boldsymbol{\theta}}(\mathbf{x}) \ge 0.5 \iff \boldsymbol{\theta}^\top\mathbf{x} \ge 0$. The **decision boundary** $\{\mathbf{x} : \boldsymbol{\theta}^\top\mathbf{x} = \operatorname{logit}(\tau)\}$ is a hyperplane (a line in 2D), so logistic regression is a **linear classifier**. Changing $\tau$ changes only the constant on the right: the boundaries for different thresholds are **parallel** hyperplanes with the same normal vector $(\theta_1,\dots,\theta_n)$. The sigmoid only turns the score, which is proportional to the signed distance to the $\tau=0.5$ hyperplane, into a probability. Curved boundaries need non-linear features ([note 03](03_regularization_inputs_assumptions.qmd)).
 
-**Try it.** Two classes of 150 points each and a fitted logistic regression. At $\tau = 0.5$ the boundary is the line $\boldsymbol{\theta}^\top\mathbf{x} = 0$ and 150 points are predicted positive; at $\tau = 0.9$ the line moves parallel towards the positive class (145 predicted positive); at $\tau = 0.1$ it moves the other way (157).
+**Try it.** Two classes of 150 points each and a fitted logistic regression, $\hat{\boldsymbol{\theta}} = (-6.2, 2.5, 5.4)$. At $\tau = 0.5$ the boundary is the line $\boldsymbol{\theta}^\top\mathbf{x} = 0$ and 153 points are predicted positive; at $\tau = 0.9$ the line moves parallel towards the positive class (127 predicted positive); at $\tau = 0.1$ it moves the other way (191 of the 300 points predicted positive: many more, though not "almost everything" as the last caption says).
 
 ```{=html}
 <div class="widget" data-fig="boundary" data-auto="t=0.5 :: Threshold 0.5: the boundary is the line θᵀx = 0|t=0.9 :: Threshold 0.9: a parallel line, fewer points predicted positive|t=0.1 :: Threshold 0.1: the line moves the other way, almost everything is positive">
@@ -449,7 +449,7 @@ $$
 
 It looks exactly like linear regression, with its own non-linear hypothesis. Everything from [note 01](01_linear_regression.qmd) applies: standardise the features, choose $\alpha$ by watching $J$ decrease (too large → oscillation; too small → slow). **A safe step size.** Since $s_i = \sigma'(z^{(i)}) \le \tfrac14$, the Hessian (section 7) satisfies $\mathbf{v}^\top\mathbf{H}\mathbf{v} \le \frac{1}{4}\,\mathbf{v}^\top\big(\frac1m\mathbf{X}^\top\mathbf{X}\big)\mathbf{v}$, so its largest eigenvalue is at most $\frac14\lambda_{\max}(\frac1m\mathbf{X}^\top\mathbf{X})$. Gradient descent on a function whose Hessian eigenvalues never exceed $L$ decreases $J$ for any $\alpha < 2/L$ (the bound of note 01), so any $\alpha < 8/\lambda_{\max}(\frac1m\mathbf{X}^\top\mathbf{X})$ is stable.
 
-**Try it.** Sixty points in one dimension, gradient descent with $\alpha = 0.5$ on the standardised feature, starting at $\boldsymbol{\theta} = \mathbf{0}$. At iteration 0 the model says $p = 0.5$ for everyone, so $J = \log 2 = 0.693$. The S-curve forms within a few iterations; $J$ is still falling at iteration 30 and has flattened out by 200.
+**Try it.** Sixty points in one dimension, gradient descent with $\alpha = 0.5$ on the standardised feature, starting at $\boldsymbol{\theta} = \mathbf{0}$. At iteration 0 the model says $p = 0.5$ for everyone, so $J = \log 2 = 0.693$. The S-curve forms within a few iterations ($J = 0.434$ at iteration 5); $J$ is still falling at iteration 30 ($0.276$) and has flattened out by 200 ($0.247$).
 
 ```{=html}
 <div class="widget" data-fig="logit-gd" data-auto="k=0 :: Iteration 0: θ = 0, the model says 0.5 for everyone|k=5 :: Iteration 5: the S starts to form|k=30 :: Iteration 30: J still falling|k=200 :: Iteration 200: J has flattened out">
@@ -460,7 +460,7 @@ It looks exactly like linear regression, with its own non-linear hypothesis. Eve
 </div>
 ```
 
-Now the same in code on a two-feature problem, with three learning rates.
+Now the same in code on a two-feature problem, with three learning rates, all below the stability bound that the code prints.
 
 ```{python}
 from sklearn.datasets import make_classification
@@ -558,7 +558,7 @@ plt.xlabel("iteration"); plt.ylabel(r"$\max_j |\partial J/\partial\theta_j|$"); 
 plt.title("Newton converges in a handful of steps"); plt.tight_layout(); plt.show()
 ```
 
-Gradient descent shrinks the gradient by a roughly constant factor per iteration (a straight line on the log scale); Newton's gradient norms fall faster and faster, the signature of quadratic convergence.
+Gradient descent shrinks the gradient by a roughly constant factor per iteration (a straight line on the log scale) and needs about two thousand iterations to reach $10^{-6}$; Newton's gradient norms fall faster and faster (the exponent roughly doubles in the last steps), the signature of quadratic convergence, and it reaches $10^{-10}$ in a handful of steps. The first Newton step and the weighted least-squares fit of the working response coincide, as derived.
 
 ## 10. Separable data: when the maximum likelihood does not exist
 
@@ -589,7 +589,7 @@ The infimum 0 is never attained: **the maximum likelihood estimate does not exis
 
 ## 11. Standard errors, confidence intervals and odds ratios
 
-A fitted coefficient is an estimate from one sample. To say "night-time reporting multiplies the odds of fraud by 2.8, 95 % CI [2.0, 3.7]" we need its sampling distribution.
+A fitted coefficient is an estimate from one sample. To say "night-time reporting multiplies the odds of fraud by 2.8, 95 % CI [2.1, 3.7]" (the example below) we need its sampling distribution.
 
 **Fisher information.** Work with the log-likelihood $\ell(\boldsymbol{\theta}) = -mJ(\boldsymbol{\theta})$ (a sum, not a mean). From sections 6 and 7:
 
@@ -655,7 +655,7 @@ print(f"fraud rate: {yf.mean():.3f}")
 print(tab.round(3).to_string())
 ```
 
-Reading the table: every extra k€ multiplies the odds of fraud by $e^{\hat\theta_{\text{amount}}}$; every month since the start of the policy multiplies them by a factor below 1 (fraud concentrates early in the policy); a night-time report multiplies them by the odds ratio in the last row, and the 95 % interval says which multipliers are compatible with the data. (The odds ratio of the intercept is the odds of fraud when every feature is 0, which is not a meaningful claim here.)
+Reading the table: every extra k€ multiplies the odds of fraud by $e^{\hat\theta_{\text{amount}}} = 1.30$ (95 % CI 1.21 to 1.39); every month since the start of the policy multiplies them by a factor below 1 (fraud concentrates early in the policy); a night-time report multiplies them by the odds ratio in the last row, and the 95 % interval says which multipliers are compatible with the data. (The odds ratio of the intercept is the odds of fraud when every feature is 0, which is not a meaningful claim here.)
 
 **Does the formula work?** Generate 300 new label vectors from the true model with the same features, refit each, and compare the empirical standard deviation of the estimates with the average Wald SE:
 
@@ -667,7 +667,7 @@ print("coverage of the 95% CI (fraction of the 300 intervals containing the trut
       np.mean(np.abs(sims - theta_f_true) <= 1.96 * se_f, axis=0).round(2))
 ```
 
-(The coverage line uses the SE of the first sample for all 300 intervals, a small shortcut; the SEs barely change between samples.)
+The empirical standard deviations and the Wald SEs agree to within about 10 %, and about 95 % of the intervals contain the true value, as they should. (The coverage line uses the SE of the first sample for all 300 intervals, a small shortcut; the SEs barely change between samples.)
 
 **Likelihood-ratio test.** An alternative to the Wald test compares the maximised log-likelihoods of the model with and without the feature: $\mathrm{LR} = 2\big(\ell(\hat{\boldsymbol{\theta}}_{\text{full}}) - \ell(\hat{\boldsymbol{\theta}}_{\text{reduced}})\big)$, approximately $\chi^2$ with as many degrees of freedom as parameters removed. It is more reliable than Wald in small samples and near separation (section 14.4), where the Wald SE blows up.
 
@@ -765,7 +765,7 @@ plt.tight_layout(); plt.show()
 Lowering $\tau$ flags more examples: recall goes up (never down), precision usually goes down. By varying the threshold you can improve precision or recall, but not both. So one of the two alone can be gamed: flag everything and recall is 1; flag only the surest case and precision is (usually) 1. Report both, or combine them with $F_1 = \frac{2}{1/\text{Rec} + 1/\text{Prec}}$: widely used and good for comparing, reasonable on imbalanced problems, but a low $F_1$ alone does not say which kind of error the model makes.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="pr" aria-label="Precision-recall curve"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/03_logistic_regression.html#25">slide 25</a> of the Logistic Regression deck: 900 legit and 100 fraudulent claims (the data of the next widget); the dashed line is a random classifier, whose precision is the positive rate, 10 %.</p></div>
+<div class="widget"><svg class="fig" data-fig="pr" aria-label="Precision-recall curve"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/03_logistic_regression.html#25">slide 25</a> of the Logistic Regression deck: 900 legit and 100 fraudulent claims (the data of the next widget); the dashed line is a random classifier, whose precision is the positive rate, 10 %; the average precision is 0.691.</p></div>
 ```
 
 ```{python}
@@ -783,7 +783,7 @@ print(f"best F1 = {max(f1):.3f} at threshold {taus[int(np.argmax(f1))]:.2f}")
 
 ### 12.4 Moving the threshold
 
-**Try it.** 900 legit claims and 100 frauds with their predicted probabilities (histogram), the confusion matrix and the ROC curve with the current threshold as a red dot. At $\tau = 0.5$: 38 false alarms, recall 0.68, precision 0.64. Lower it to 0.2: recall rises to 0.91 but precision falls to 0.33 (185 false alarms). Raise it to 0.8: precision 0.92, recall only 0.34, frauds slip through. At 0.05 almost every claim is flagged and the FPR is close to 1.
+**Try it.** 900 legit claims and 100 frauds with their predicted probabilities (histogram), the confusion matrix and the ROC curve (AUC 0.948) with the current threshold as a red dot. At $\tau = 0.5$: recall 0.84, precision 0.459, 99 false alarms (FPR 0.110), accuracy 0.885. Lower it to 0.2: every fraud is caught (recall 1.000) but precision falls to 0.195, with 413 false alarms (FPR 0.459). Raise it to 0.8: precision 0.829, recall only 0.340, frauds slip through. At 0.05 almost every claim is flagged: FPR 0.900, and precision 0.110 is barely above the 10 % positive rate.
 
 ```{=html}
 <div class="widget" data-fig="thr" data-auto="t=0.5 :: Threshold 0.5: the default|t=0.2 :: Lower it to 0.2: recall goes up, precision goes down, more false alarms|t=0.8 :: Raise it to 0.8: precision up, recall down, frauds slip through|t=0.05 :: 0.05: almost every claim is flagged, FPR close to 1">
@@ -795,7 +795,7 @@ print(f"best F1 = {max(f1):.3f} at threshold {taus[int(np.argmax(f1))]:.2f}")
         <div class="ro"><div class="m"><span>accuracy</span><b data-r="acc">–</b></div><div class="m"><span>precision</span><b data-r="pr">–</b></div><div class="m"><span>recall</span><b data-r="rc">–</b></div><div class="m"><span>F1</span><b data-r="f1">–</b></div><div class="m"><span>FPR</span><b data-r="fpr">–</b></div></div>
       </div>
       <div class="stack" style="gap:8px">
-        <table class="t num" style="font-size:19px"><tr><th></th><th>pred 0</th><th>pred 1</th></tr><tr><td>y = 0</td><td>TN <b data-r="tn">–</b></td><td>FP <b data-r="fp">–</b></td></tr><tr><td>y = 1</td><td>FN <b data-r="fn">–</b></td><td>TP <b data-r="tp">–</b></td></tr></table>
+        <table class="t num" style="font-size:19px" data-quarto-disable-processing="true"><tr><th></th><th>pred 0</th><th>pred 1</th></tr><tr><td>y = 0</td><td>TN <b data-r="tn">–</b></td><td>FP <b data-r="fp">–</b></td></tr><tr><td>y = 1</td><td>FN <b data-r="fn">–</b></td><td>TP <b data-r="tp">–</b></td></tr></table>
         <svg class="fig" data-k="roc" aria-label="ROC curve with the current threshold marked"></svg>
       </div>
     </div>
@@ -901,13 +901,13 @@ Picking the positive and the negative uniformly at random, the double sum is exa
 
 The double sum is the **Mann–Whitney $U$ statistic** divided by $N_+N_-$, so AUC is also the effect size of the rank-sum test.
 
-**Try it.** Seven fraud claims and 14 legit claims, so $7\times 14 = 98$ pairs, of which the fraud scores higher in 88: AUC $= 88/98 = 0.90$. Draw random pairs: each one is ranked correctly (green) or wrongly (red), and after 200 draws the fraction of correct pairs is close to the AUC.
+**Try it.** Seven fraud claims and 14 legit claims, so $7\times 14 = 98$ pairs, of which the fraud scores higher in 94: AUC $= 94/98 = 0.96$. Draw random pairs: each one is ranked correctly (green) or wrongly (red). After the three single pairs and one batch of 200, the fraud scored higher in 194 of the 203 draws, a fraction of $194/203 = 0.96$: the AUC, up to sampling noise.
 
 ```{=html}
 <div class="widget" data-fig="auc-pairs" data-auto="one=click :: Pick one fraud and one legit claim at random. Which one got the higher score?|one=click :: Another pair|one=click :: And another|many=click :: 200 pairs: the fraction of correctly ordered pairs is the AUC">
   <svg class="fig" aria-label="Scores of fraud and legit claims on a line; a random pair is highlighted"></svg>
   <div class="ctl"><button type="button" class="bluebox" data-k="one" style="border:0;cursor:pointer;font:700 17px var(--font);padding:6px 16px">Draw a random pair</button><button type="button" data-k="many" style="border:1px solid var(--blue);background:#fff;color:var(--blue);cursor:pointer;font:700 17px var(--font);padding:6px 16px">Draw 200 pairs</button></div>
-  <div class="ro"><div class="m"><span>pairs drawn</span><b data-r="n">–</b></div><div class="m"><span>fraud scored higher</span><b data-r="ok">–</b></div><div class="m"><span>fraction</span><b data-r="frac">–</b></div><div class="m"><span>AUC (all 98 pairs)</span><b data-r="auc">–</b></div></div>
+  <div class="ro"><div class="m"><span>pairs drawn</span><b data-r="n">–</b></div><div class="m"><span>fraud scored higher</span><b data-r="ok">–</b></div><div class="m"><span>AUC (all 98 pairs)</span><b data-r="auc">–</b></div></div>
   <p class="from">Same figure as <a href="../../slides/machine_learning/03_logistic_regression.html#28">slide 28</a> of the Logistic Regression deck.</p>
 </div>
 ```
@@ -954,6 +954,7 @@ Xfit, Xval, yfit, yval = train_test_split(Xtr, ytr, test_size=0.33, stratify=ytr
 clf_v = LogisticRegression().fit(Xfit, yfit)
 p_val, p_tst = clf_v.predict_proba(Xval)[:, 1], clf_v.predict_proba(Xte)[:, 1]
 fpr_v, tpr_v, thr_v = roc_curve(yval, p_val)
+print(f"validation set: {len(yval)} claims, {yval.sum()} frauds")
 rules = {"budget: top 5 %": np.quantile(p_val, 0.95),
          "recall >= 0.9": thr_v[np.argmax(tpr_v >= 0.9)],              # first (highest) threshold reaching recall 0.9
          "FPR <= 0.02": thr_v[np.where(fpr_v <= 0.02)[0][-1]],          # lowest threshold keeping FPR <= 0.02
@@ -964,7 +965,7 @@ for name, tau in rules.items():
     print(f"{name:>28} | {tau:.3f} |    {tp_ / yte.sum():.2f}     |      {tp_ / max(fl.sum(), 1):.2f}      |   {np.sum(fl & (yte == 0)) / np.sum(yte == 0):.3f}  | {fl.mean():.3f}")
 ```
 
-The rules give very different thresholds, and each one delivers on the test set roughly what was asked for on the validation set (recall near 0.9, FPR near 0.02, about 5 % flagged): choosing $\tau$ is a business decision, not a statistical one.
+The rules give very different thresholds: choosing $\tau$ is a business decision, not a statistical one. On the test set each rule delivers roughly, not exactly, what was asked on the validation set (test recall 0.96 for the requirement 0.9, test FPR 0.036 for 0.02, 6.6 % flagged for a budget of 5 %): a threshold tuned on a validation set with about 70 frauds is itself uncertain, so leave a margin or use more validation data. The table also shows the price of each requirement: to catch 90 % of the frauds this model must flag about two thirds of all claims.
 
 ### 12.9 The threshold from costs, slowly
 
@@ -993,7 +994,7 @@ $$
 
 Only the **ratio** of the costs matters (multiply both by any constant and $\tau^*$ does not change). If correct decisions also have costs or gains ($c_{TP}$ for a caught fraud, e.g. the investigation cost minus the money recovered; $c_{TN}$ for a legit claim let through), the same algebra with $p\,c_{TP} + (1-p)\,c_{FP} < p\,c_{FN} + (1-p)\,c_{TN}$ gives $\tau^* = \frac{c_{FP} - c_{TN}}{(c_{FP}-c_{TN}) + (c_{FN}-c_{TP})}$.
 
-**This needs $p$ to be a real probability** (calibrated, section 14.7). The check below computes the average cost per claim as a function of $\tau$, on the validation and on the test set:
+**This needs $p$ to be a real probability** (calibrated, section 14.7). The check below computes the average cost per claim as a function of $\tau$, on the validation and on the test set. The empirical minimum on validation (printed) lies in a flat valley that contains $\tau^* = 0.1$; on the test set, $\tau^*$ costs about 34 € per claim against 45 € at $\tau = 0.5$ and 80 € for flagging nothing.
 
 ```{python}
 c_FP, c_FN = 100, 900
@@ -1168,8 +1169,10 @@ for label, sd_u in [("independent", 0.0), ("clustered", 1.5)]:
     p_c = sigmoid(Xc_ @ th_c_); r_p = (yc_ - p_c) / np.sqrt(p_c * (1 - p_c))
     deff = n_c * np.var([r_p[grp == c].mean() for c in range(G)])
     res_c[label] = (se_naive, se_rob, np.std(boot, axis=0))
-    print(f"{label:>11}: SE of x_g  naive {se_naive[1]:.3f} | cluster-robust {se_rob[1]:.3f} | cluster bootstrap {np.std(boot, axis=0)[1]:.3f}"
-          f"   design effect {deff:.2f} -> rho_hat = {(deff - 1) / (n_c - 1):.2f}")
+    sd_b = np.std(boot, axis=0)
+    print(f"{label:>11}: theta = {th_c_.round(2)}; design effect {deff:.2f} -> rho_hat = {(deff - 1) / (n_c - 1):.2f}\n"
+          f"{'':>13}SE of x_g: naive {se_naive[1]:.3f} | cluster-robust {se_rob[1]:.3f} | cluster bootstrap {sd_b[1]:.3f};"
+          f"  SE of w: naive {se_naive[2]:.3f} | robust {se_rob[2]:.3f} | bootstrap {sd_b[2]:.3f}")
 
 fig, axes = plt.subplots(1, 2, figsize=(10, 3.2), sharey=True)
 for ax, (label, ses) in zip(axes, res_c.items()):
@@ -1179,7 +1182,7 @@ for ax, (label, ses) in zip(axes, res_c.items()):
 axes[0].set_ylabel("standard error"); axes[1].legend(fontsize=8); plt.tight_layout(); plt.show()
 ```
 
-With independent data the three SEs agree and the design effect is close to 1. With the shared policyholder effect, the naive SE of the policyholder-level feature is far too small; the robust and bootstrap SEs agree with each other. The claim-level feature $w$ varies within each policyholder and is hurt much less: the damage is largest for features that are constant within clusters. (The coefficients themselves also shrink with clustering: the fitted model describes the population-averaged effect, which is smaller than the effect for a given policyholder.)
+With independent data the three SEs agree (up to their own sampling noise) and the design effect is close to 1. With the shared policyholder effect (estimated within-policyholder correlation about 0.26), the naive SE of the policyholder-level feature is about a third too small; the robust and bootstrap SEs agree with each other. The claim-level feature $w$ varies within each policyholder and is hurt much less: the damage is largest for features that are constant within clusters. (The coefficients themselves also shrink with clustering: the fitted model describes the population-averaged effect, which is smaller than the effect for a given policyholder.)
 
 **What to do.**
 
@@ -1244,7 +1247,7 @@ axes[0, 0].set_ylabel("log-odds"); axes[1, 0].set_ylabel("partial residual")
 plt.tight_layout(); plt.show()
 ```
 
-Left: points on the line, Box–Tidwell not significant. Right: both plots bend (the effect flattens for large claims), the line misses the low and the high bins, the Box–Tidwell test rejects linearity decisively, and $\hat\lambda$ is close to 0: a log transform. **Caveat:** with large $m$ the test rejects departures too small to matter. Always look at the plots and at how much the fix improves held-out performance, not only at the p-value.
+Left: points on the line, Box–Tidwell not significant ($z = 0.62$). Right: both plots bend (the effect flattens for large claims), the line misses the low and the high bins, the Box–Tidwell test rejects linearity decisively ($z = -5.4$), and $\hat\lambda = 0.23$ is much closer to 0 (a log transform) than to 1. **Caveat:** with large $m$ the test rejects departures too small to matter. Always look at the plots and at how much the fix improves held-out performance, not only at the p-value.
 
 **What to do.**
 
@@ -1253,7 +1256,7 @@ Left: points on the line, Box–Tidwell not significant. Right: both plots bend 
 3. **Binning** (`KBinsDiscretizer`, or business bands such as age groups): a step function. Simple and robust, but it throws information away and creates jumps at the cut points.
 4. **Interactions** when the effect of one feature depends on another ($x_1 x_2$ terms, [note 03](03_regularization_inputs_assumptions.qmd)).
 
-The fix, applied to the right-hand data: refit with $\log x$ and with a cubic spline in $x$, compare log-loss on a held-out half, and repeat the Box–Tidwell check on the transformed feature.
+The fix, applied to the right-hand data: refit with $\log x$ and with a cubic spline in $x$, compare log-loss on a held-out half, and repeat the Box–Tidwell check on the transformed feature. Both fixes lower the held-out log-loss (the log, which matches the truth, slightly more than the spline), and the Box–Tidwell test no longer objects.
 
 ```{python}
 from sklearn.preprocessing import SplineTransformer
@@ -1289,7 +1292,7 @@ def vif(F):
     return np.array(out)
 
 rng_v = np.random.default_rng(2)
-m_v = 800
+m_v = 800; se_v = {}
 for rho in [0.0, 0.95]:
     a1 = rng_v.normal(0, 1, m_v); a2 = rho * a1 + np.sqrt(1 - rho ** 2) * rng_v.normal(0, 1, m_v)   # standardised amount, estimate
     yv = rng_v.binomial(1, sigmoid(-1.5 + 0.5 * a1 + 0.5 * a2))
@@ -1299,14 +1302,14 @@ for rho in [0.0, 0.95]:
     x_new = np.array([1, 1.0, 1.0])
     print(f"rho = {rho:4.2f}: VIF = {vif(Xv[:, 1:]).round(1)}  theta = {th_v[1:].round(2)}  Wald SE = {np.sqrt(np.diag(I_v))[1:].round(3)}"
           f"  bootstrap SD of theta = {boot[:, 1:].std(0).round(3)}  SD of p(x_new) = {sigmoid(boot @ x_new).std():.3f}")
-th_1, I_1, _ = fit_logit(Xv[:, :2], yv)
-print(f"rho = 0.95, amount alone: SE = {np.sqrt(I_1[1, 1]):.3f};  (SE with both / SE alone)^2 = {(np.sqrt(I_v[1, 1]) / np.sqrt(I_1[1, 1])) ** 2:.1f}  ~ VIF")
+    se_v[rho] = np.sqrt(np.diag(I_v))[1]
+print(f"(SE of theta_1 at rho = 0.95 / SE at rho = 0)^2 = {(se_v[0.95] / se_v[0.0]) ** 2:.1f}   vs VIF = {vif(Xv[:, 1:])[0]:.1f}")
 combo = (a1 + a2) / 2
 th_cb, I_cb, _ = fit_logit(np.c_[np.ones(m_v), combo], yv)
 print(f"combined feature (a1 + a2)/2: theta = {th_cb[1]:.2f}, SE = {np.sqrt(I_cb[1, 1]):.3f}")
 ```
 
-With correlation 0.95 the VIFs are about 10, the SEs of the two coefficients are about three times larger, the bootstrap coefficients swing widely, and yet the predicted probability for a new claim is as stable as before. The squared ratio of the SEs is close to the VIF, which is what the VIF promises.
+With correlation 0.95 the VIFs are about 10, the SEs of the two coefficients are about three times larger, the bootstrap coefficients swing widely, and yet the predicted probability for a new claim is as stable as before. The squared ratio of the SEs with and without correlation matches the VIF, which is exactly what the VIF promises.
 
 **What to do** (only if you need the individual coefficients):
 
@@ -1340,7 +1343,7 @@ x_ov = np.r_[rng_s.normal(-1, 1, 20), rng_s.normal(1, 1, 20)]; x_sp = np.r_[rng_
 y_s = np.r_[np.zeros(20), np.ones(20)]
 fig, axes = plt.subplots(1, 3, figsize=(15, 3.4))
 for name, xs_ in [("overlapping", x_ov), ("separable", x_sp)]:
-    Xs_ = np.c_[np.ones(40), xs_]; th_s = np.zeros(2); marks = set(np.unique(np.logspace(0, 5, 60).astype(int)))
+    Xs_ = np.c_[np.ones(40), xs_]; th_s = np.zeros(2); marks = set(np.round(np.logspace(0, 5, 61)).astype(int))
     its, norms, costs = [], [], []
     for it in range(1, 100001):
         th_s -= 1.0 * Xs_.T @ (sigmoid(Xs_ @ th_s) - y_s) / 40
@@ -1350,14 +1353,14 @@ for name, xs_ in [("overlapping", x_ov), ("separable", x_sp)]:
     print(f"{name:>11}: LP says separable = {is_separable(Xs_, y_s)};  after 1e2, 1e3, 1e4, 1e5 GD steps: ||theta|| = "
           + ", ".join(f"{norms[its.index(k)]:.2f}" for k in [100, 1000, 10000, 100000]) + f";  J = {costs[-1]:.2e}")
 axes[0].set_xlabel("$x$"); axes[0].set_ylabel("$y$"); axes[0].legend(); axes[0].set_title("two one-feature data sets")
-axes[1].set_xlabel("GD iteration"); axes[1].set_ylabel(r"$\|\theta\|$"); axes[1].legend(); axes[1].set_title(r"separable: $\|\theta\|$ grows like $\log t$")
+axes[1].set_xlabel("GD iteration"); axes[1].set_ylabel(r"$\|\theta\|$"); axes[1].legend(); axes[1].set_title(r"separable: $\|\theta\|$ grows without bound")
 axes[2].set_xlabel("GD iteration"); axes[2].set_ylabel(r"training $J$"); axes[2].legend(); axes[2].set_title(r"separable: $J\to 0$, never reaching it")
 plt.tight_layout(); plt.show()
 ```
 
-On overlapping data $\lVert\boldsymbol{\theta}\rVert$ and $J$ settle. On separable data $\lVert\boldsymbol{\theta}\rVert$ grows by a roughly constant amount every time the number of iterations is multiplied by 10 (logarithmic growth), and $J$ falls towards 0 like a power of $1/t$.
+On overlapping data $\lVert\boldsymbol{\theta}\rVert$ and $J$ settle after a few hundred iterations. On separable data $\lVert\boldsymbol{\theta}\rVert$ keeps growing, slowly (a few units per tenfold increase in the number of iterations; asymptotically like $\log t$), and $J$ keeps falling towards 0 (about $2.5\times10^{-5}$ after $10^5$ steps) without ever reaching it.
 
-**Quasi-complete separation, the common case.** 300 synthetic claims with a claim-size feature and two broker indicators. Broker B handled 12 claims, all fraudulent; broker C handled 40, with an elevated but not total fraud rate. Newton's method on the unpenalised likelihood:
+**Quasi-complete separation, the common case.** 300 synthetic claims with a claim-size feature and two broker indicators. Broker B handled 12 claims, all fraudulent; broker C handled 40, of which only some are fraudulent. Newton's method on the unpenalised likelihood:
 
 ```{python}
 rng_q = np.random.default_rng(5)
@@ -1445,7 +1448,7 @@ axes[1].set_xlabel("events per variable"); axes[1].set_ylabel("median calibratio
 plt.tight_layout(); plt.show()
 ```
 
-At EPV 2 the MLE of a coefficient whose true value is 0.5 averages well above 0.5 with a huge spread, a few training sets are separated, and the calibration slope is far below 1 (the predictions must be shrunk a lot). The estimates settle around 0.5 and the slope approaches 1 as EPV grows. Firth removes most of the **bias of the coefficients** (better for inference) but still over-fits; the L2 penalty **shrinks** the coefficients (biased towards 0, worse for inference) and brings the calibration slope near 1 (better for prediction). Same symptom, different remedies for the two goals.
+At EPV 2 the MLE of a coefficient whose true value is 0.5 averages 0.72 with a standard deviation of 0.70, 2 of the 200 training sets are separated, and the median calibration slope is 0.44 (the predictions must be shrunk a lot). The estimates settle around 0.5 and the slope approaches 1 as EPV grows (0.94 at EPV 50). Firth removes most of the **bias of the coefficients** (better for inference) but still over-fits; the L2 penalty **shrinks** the coefficients (biased towards 0, worse for inference) and brings the calibration slope near 1 (better for prediction). Same symptom, different remedies for the two goals.
 
 **What to do.**
 
@@ -1507,7 +1510,7 @@ for row, (name, xv, yv) in enumerate([("clean data", x_i, y_i), ("one bad point"
     Xv = np.c_[np.ones(m_i), xv]; th, I_inv, p_, h, r_p, r_d, cook = influence(Xv, yv)
     th_wo = fit_logit(Xv[1:], yv[1:])[0]; approx = th - (yv[0] - p_[0]) * I_inv @ Xv[0] / (1 - h[0])
     k = int(np.argmax(cook))
-    print(f"{name:>13}: theta = {th.round(2)}; max Cook's D = {cook.max():.3f} at point {k} (4/m = {4 / m_i:.2f}); "
+    print(f"{name:>13}: theta = {th.round(2)}; max Cook's D = {cook.max():.3f} at point {k} (4/m = {4 / m_i:.2f}); point 0: h = {h[0]:.3f} (2q/m = {4 / m_i:.2f}), r_D = {r_d[0]:+.2f}; "
           f"sum of leverages = {h.sum():.2f}; sum r_D^2 = {np.sum(r_d ** 2):.2f} = 2 m J = {-2 * loglik(th, Xv, yv):.2f}")
     print(f"{'':>15}refit without point 0: theta = {th_wo.round(2)};  one-step approximation = {approx.round(2)}")
     gx = np.linspace(-3, 4.5, 200)
@@ -1522,7 +1525,7 @@ for c in range(1, 4): axes[1, c].set_xlabel("observation")
 axes[1, 0].set_xlabel("$x$"); plt.tight_layout(); plt.show()
 ```
 
-In the clean data nothing stands out. With the bad point, it has by far the largest deviance residual and Cook's distance, and removing it changes the slope visibly; the one-step formula predicts the refit closely. Note its leverage: moderate, not extreme, because the fit reacts to it (its $p_i$ is pulled away from 0, which raises $s_i$).
+In the clean data nothing stands out: the largest Cook's distance is above the $4/m$ convention (with 100 points a few always are) but not separated from the rest. With the bad point, it has by far the largest deviance residual and a Cook's distance about nine times the clean maximum, and removing it changes the slope from about $-1.0$ to $-1.3$; the one-step formula predicts the refit closely. Its leverage is small ($h = 0.013$, below the average $q/m = 0.02$), although its amount is the most extreme: leverage depends on $s_i = p_i(1-p_i)$, and the fit gives this point a small $p_i$ (it predicts "legit" for such a large amount), which keeps $s_i$ small. Its huge residual ($r_D = 3.0$) makes it influential anyway: in logistic regression, look at Cook's distance, not at leverage alone.
 
 **What to do.**
 
@@ -1597,7 +1600,7 @@ for ax, tt in zip(axes, ["Holds (MLE) vs violated (class weights)", "Fixes: Plat
 plt.tight_layout(); plt.show()
 ```
 
-The class-weighted model predicts probabilities far above the observed rates (the curve lies well below the diagonal) with a large ECE and a large reliability term, yet its AUC is essentially the same as the MLE's: the weights moved the probabilities, not the ranking. Platt scaling and isotonic regression bring the ECE back to the level of the MLE model and keep the AUC. The resolution term hardly changes between models (same ranking, same information); calibration lives in the reliability term.
+(Most predictions are below 0.2, so the upper bins hold few claims and their points are noisy; the ECE weights each bin by its size.) The class-weighted model predicts probabilities far above the observed rates (the curve lies well below the diagonal) with a large ECE and a large reliability term, yet its AUC is essentially the same as the MLE's: the weights moved the probabilities, not the ranking. Platt scaling and isotonic regression bring the ECE back to the level of the MLE model and keep the AUC. The resolution term hardly changes between models (same ranking, same information); calibration lives in the reliability term.
 
 **What to do.**
 
@@ -1645,7 +1648,7 @@ $$
 \boxed{\operatorname{logit} P_t(y=1\mid\mathbf{x}) = \operatorname{logit} P_s(y=1\mid\mathbf{x}) + \log\frac{\pi_t}{1-\pi_t} - \log\frac{\pi_s}{1-\pi_s}}
 $$
 
-For a logistic regression, the log-odds are $\boldsymbol{\theta}^\top\mathbf{x}$, so **only the intercept changes**: $\theta_{0,t} = \theta_{0,s} + \log\frac{\pi_t(1-\pi_s)}{\pi_s(1-\pi_t)}$, and the slopes are the same. Worked number: undersampling to $\pi_s = 0.5$ when $\pi_t = 0.089$ requires adding $\log\frac{0.089}{0.911} - \log 1 = -2.33$ to the intercept. The same formula corrects a model trained in one period or region and deployed where the base rate differs (if $p(\mathbf{x}\mid y)$ is stable).
+For a logistic regression, the log-odds are $\boldsymbol{\theta}^\top\mathbf{x}$, so **only the intercept changes**: $\theta_{0,t} = \theta_{0,s} + \log\frac{\pi_t(1-\pi_s)}{\pi_s(1-\pi_t)}$, and the slopes are the same. Worked number: with the training positive rate of the data of section 12, $\pi_t = 0.0892$, undersampling to $\pi_s = 0.5$ requires adding $\log\frac{0.0892}{0.9108} - \log 1 = -2.32$ to the intercept. The same formula corrects a model trained in one period or region and deployed where the base rate differs (if $p(\mathbf{x}\mid y)$ is stable).
 
 ```{python}
 pi_t = ytr.mean()
@@ -1662,7 +1665,7 @@ for name, pp in [("undersampled, raw", p_u), ("undersampled, corrected", p_uc), 
     print(f"{name:>24}: mean p on test = {pp.mean():.3f} (observed {yte.mean():.3f}),  ECE = {ece(yte, pp):.3f},  log-loss = {log_loss(yte, pp):.3f},  AUC = {roc_auc_score(yte, pp):.3f}")
 ```
 
-The raw undersampled model predicts a mean probability near 0.4 on a population with 9 % fraud; one line of correction restores the calibration. The slopes are close to those of the full-data model (not identical: undersampling threw away most negatives, so they are noisier), and the AUC is slightly lower for the same reason. **Undersampling saves computation, not information.**
+The raw undersampled model predicts a mean probability of 0.37 on a population with 9 % fraud; one line of correction restores the calibration. The slopes are close to those of the full-data model (not identical: undersampling threw away most negatives, so they are noisier), and the AUC is slightly lower for the same reason. **Undersampling saves computation, not information.**
 
 ### 15.2 Class weights are a weighted likelihood
 
@@ -1731,7 +1734,7 @@ for name, make in [("logistic", lambda: LogisticRegression()), ("3-NN", lambda: 
         print(f"{name:>10} | {proc:>32} |  " + "  | ".join(f"{v:.3f}" for v in np.mean(sc, 0)))
 ```
 
-For logistic regression the wrong procedure barely moves the ROC-AUC (a stable model with a threshold-free, class-ratio-free metric) but inflates AP and precision enormously: they were computed on a population with 50 % positives instead of 8 %. For the 3-NN classifier even the ROC-AUC is inflated, because each validation point has synthetic neighbours in the training folds that were built from it. **Resample (and do every other data-dependent step: scaling, feature selection, target encoding) inside the training folds only**: in scikit-learn, put it in a pipeline that is refitted per fold (the `imbalanced-learn` package provides a pipeline that accepts samplers).
+For logistic regression the wrong procedure barely moves the ROC-AUC (0.861 against 0.852: a stable model and a class-ratio-free metric) but inflates AP (0.884 against 0.623) and precision (0.796 against 0.274) enormously: they were computed on a population with 50 % positives instead of 8 %. For the 3-NN classifier even the ROC-AUC is inflated (0.972 against 0.806), because each validation point has synthetic neighbours in the training folds that were built from it. **Resample (and do every other data-dependent step: scaling, feature selection, target encoding) inside the training folds only**: in scikit-learn, put it in a pipeline that is refitted per fold (the `imbalanced-learn` package provides a pipeline that accepts samplers).
 
 When does resampling help at all? For logistic regression, rarely: it changes the intercept (which you then have to undo) and throws away (undersampling) or invents (SMOTE) data. For flexible models trained with losses or algorithms that ignore rare classes, weights or resampling can change *what* is learned. In all cases, **choose the threshold on untouched validation data**.
 

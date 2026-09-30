@@ -120,12 +120,12 @@ FIG['gru-cell']=root=>{const svg=initSvg(svgOf(root),560,280);E('rect',{x:50,y:3
   arrowPx(svg,275,148,388,84,'ln thin sk','fk');arrowPx(svg,400,148,400,90,'ln thin sk','fk');E('path',{d:'M170,167 C230,120 300,120 348,160',fill:'none',stroke:'#7f7f7f','stroke-width':1.5,'stroke-dasharray':'5 4'},svg);
   T(svg,262,128,'Γ_r ⊙ h⟨t−1⟩','');T(svg,470,114,'Γ_u·h̃ + (1−Γ_u)·h⟨t−1⟩','','end');
   E('line',{x1:30,y1:272,x2:30,y2:225,stroke:'#404040','stroke-width':1.5},svg);E('line',{x1:30,y1:225,x2:400,y2:225,stroke:'#404040','stroke-width':1.5},svg);[130,260,400].forEach(x=>arrowPx(svg,x,225,x,187,'ln thin sk','fk'));T(svg,40,270,'x⟨t⟩','lab','start')};
-/* ---------- the memory experiment (notes 04, section 8) ---------- */
+/* ---------- the memory experiment (notes 04, section 9.4) ---------- */
 FIG['memory-exp']=root=>{const svg=initSvg(svgOf(root),600,320);const P=Plot(svg,{at:[0,0],w:600,h:300,x:[0,105],y:[0.4,1.02],m:{l:48,r:14,t:30,b:40}});P.axes({xt:[5,25,50,75,100],yt:[0.5,0.75,1],fy:v=>Math.round(v*100)+'%',xl:'distance to the relevant token (steps)',yl:'accuracy'});
   T(P.root,300,18,'Remember the first token of a random sequence (chance = 50 %)','lab');P.line(0,0.5,105,0.5,'ln thin sm dash',P.bg);
   const L=[5,10,25,50,100];const R={rnn:[1,1,0.5,0.52,0.51],lstm:[1,1,0.5,0.52,0.53],lstmf:[1,1,1,1,1]};
   [['rnn','#7f7f7f','vanilla RNN'],['lstm','#4472c4','LSTM, default init'],['lstmf','#c00000','LSTM, forget bias = 5 (gate starts open)']].forEach(([k,c,lab],j)=>{const pa=P.path(L.map((l,i)=>[l,R[k][i]]),'ln');pa.setAttribute('stroke',c);L.forEach((l,i)=>{const d=P.dot(l,R[k][i],4,'');d.setAttribute('fill',c)});P.text(32,0.9-j*0.055,'● '+lab,'', 'start').style.fill=c});
-  T(svg,300,316,'800 Adam steps each, test on 2,000 fresh sequences (results of notes/neural_networks/04, section 8)','','middle')};
+  T(svg,300,316,'800 Adam steps each, test on 2,000 fresh sequences (results of notes/neural_networks/04, section 9.4)','','middle')};
 FIG['birnn']=root=>{const svg=initSvg(svgOf(root),880,260);const cell=(x,y,c)=>E('rect',{x:x-16,y:y-14,width:32,height:28,rx:5,fill:c,stroke:'#404040'},svg);
   T(svg,200,18,'Bidirectional RNN','lab');for(let i=0;i<4;i++){const x=70+i*90;cell(x,70,'#f8cbad');cell(x,120,'#bdd7ee');cell(x,165,'#bdd7ee');cell(x,225,'#c5e0b4');arrowPx(svg,x,211,x,183,'ln thin sk','fk');arrowPx(svg,x,106,x,86,'ln thin sk','fk');
     if(i<3){arrowPx(svg,x+16,165,x+74,165,'ln thin sb','fb');arrowPx(svg,x+74,120,x+16,120,'ln thin sr','fr')}}

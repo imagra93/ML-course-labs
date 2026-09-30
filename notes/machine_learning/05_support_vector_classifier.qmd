@@ -332,6 +332,7 @@ f_deck = X_deck @ svm_deck.coef_[0] + svm_deck.intercept_[0]
 print(f"theta = {svm_deck.coef_[0].round(4)}, theta0 = {svm_deck.intercept_[0]:.4f}, "
       f"margin 2/‖θ‖ = {2 / np.linalg.norm(svm_deck.coef_[0]):.4f}")
 print("points with y·f = 1 (on the dashed lines):", X_deck[np.isclose(y_deck * f_deck, 1, atol=1e-4)].tolist())
+print("support vectors (α > 0):", X_deck[svm_deck.support_].tolist())
 ```
 
 ```{python}
@@ -490,12 +491,12 @@ for ax, c in zip(axes, [1, -1]):
     al = np.linspace(0, 2.2, 200)                          # dual variable α ≥ 0
     D = al * c - 0.5 * al ** 2                             # D(α) = min_θ ½θ² − α(θ − c) = cα − ½α²
     a_star = max(c, 0); p_star = 0.5 * max(c, 0) ** 2
-    ax.plot(th_feas, 0.5 * th_feas ** 2, lw=2.5, label=r"primal $\frac12\theta^2$ on $\theta\geq c$")
+    ax.plot(th_feas, 0.5 * th_feas ** 2, lw=2.5, label=r"primal $\frac{1}{2}\theta^2$ on $\theta\geq c$")
     ax.plot(al, D, lw=2.5, label=r"dual $D(\alpha)$ on $\alpha\geq 0$")
     ax.axhline(p_star, color="k", ls=":", lw=1)
     ax.scatter([max(c, 0)], [p_star], s=80, c="k", zorder=4)
     ax.set_xlabel(r"$\theta$ (primal curve) or $\alpha$ (dual curve)"); ax.set_ylim(-2.5, 2.6); ax.legend(loc="lower left")
-    ax.set_title(f"constraint θ ≥ {c}: p* = {p_star:.2f}, α* = {a_star}, d* = {D.max():.2f}")
+    ax.set_title(f"constraint θ ≥ {c}: p* = {p_star:.2f}, α* = {a_star}, d* = {D.max() + 0:.2f}")
 plt.tight_layout(); plt.show()
 ```
 
@@ -873,7 +874,7 @@ $\sum_i\xi^{(i)}$ is an upper bound on the number of training mistakes (a miscla
 - **Large $C$**: violations are expensive → narrow margin, fits the training data tightly (low bias, high variance). $C\to\infty$ recovers the hard margin.
 - **Small $C$**: wide margin, many violations tolerated (more regularisation).
 
-**Try it.** 50 overlapping points (the slide's data). Slide $C$ on a log scale: the circled points are the support vectors ($\alpha_i > 0$). At $C = 0.01$ the margin is wide (5.60) and 42 of the 50 points are support vectors; at $C = 100$ the margin shrinks to 0.66 and only 10 are left. The widget treats $\theta_0$ as the weight of a constant feature (as `LinearSVC` does), so $\theta_0$ is lightly penalised too; its numbers are therefore close to, but not exactly, those of `SVC`.
+**Try it.** 50 overlapping points (the slide's data). Slide $C$ on a log scale: the circled points are the support vectors ($\alpha_i > 0$). At $C = 0.01$ the margin is wide (4.55), 39 points lie inside it and 40 of the 50 points are support vectors; at $C = 1$ the margin is 1.39 with 8 support vectors; at $C = 100$ it shrinks to 0.33 with 6. In all three, one point stays misclassified: no straight line separates these data. The widget treats $\theta_0$ as the weight of a constant feature (as `LinearSVC` does), so $\theta_0$ is lightly penalised too; its numbers are therefore close to, but not exactly, those of `SVC`.
 
 ```{=html}
 <div class="widget" data-fig="softc" data-auto="c=-2 :: C = 0.01: wide margin, many violations tolerated|c=0 :: C = 1|c=2 :: C = 100: narrow margin, few violations, fits the training data tightly">
@@ -979,11 +980,11 @@ print(f"primal = {primal(th_k, th0_k):.6f},  dual = {dual(a_k):.6f},  gap = {pri
 rng_d = np.random.default_rng(0)
 D_rand, P_rand = [], []
 for _ in range(500):
-    a = np.clip(a_k + rng_d.normal(0, 0.2, len(yo)), 0, C)      # a random point of the box …
+    a = np.clip(a_k + rng_d.normal(0, 0.02, len(yo)), 0, C)     # a random point of the box …
     sp, sn = a[yo > 0].sum(), a[yo < 0].sum()                   # … rescaled so that Σ α y = 0
     a[yo > 0 if sp > sn else yo < 0] *= min(sp, sn) / max(sp, sn)
     D_rand.append(dual(a))
-    P_rand.append(primal(th_k + rng_d.normal(0, 0.3, 2), th0_k + rng_d.normal(0, 0.3)))
+    P_rand.append(primal(th_k + rng_d.normal(0, 0.05, 2), th0_k + rng_d.normal(0, 0.05)))
 print(f"500 random dual-feasible α: max D = {max(D_rand):.3f}  ≤  500 random θ: min primal = {min(P_rand):.3f}")
 ```
 
@@ -1143,7 +1144,7 @@ So $K(x, z) = \sum_{k\ge0}\phi_k(x)\phi_k(z)$: a dot product with one coordinate
 
 **Reading the prediction.** It is easier from the prediction formula: $K(\mathbf{x}^{(i)}, \mathbf{x})$ is a bump centred on $\mathbf{x}^{(i)}$, so $f(\mathbf{x})$ is a **sum of Gaussian bumps**, one centred on each support vector, pointing up for $+1$ and down for $-1$, with height $\alpha_i$. $\gamma$ sets their width.
 
-**Try it** (slide 20). Eight support vectors with all $\alpha_i = 1$ and $\theta_0 = 0$, to show the shape only. At small $\gamma$ (the left end of the slider, $\gamma = 0.03$) the bumps are wide and merge into a smooth $f$; at large $\gamma$ ($\gamma = 20$) each support vector has its own narrow bump, and between them $f$ falls back to $0$: the model has memorised the training points.
+**Try it** (slide 20). Eight support vectors with all $\alpha_i = 1$ and $\theta_0 = 0$, to show the shape only. At small $\gamma$ (the left end of the slider, $\gamma = 0.03$) the bumps are wide and merge into a smooth $f$; at large $\gamma$ ($\gamma = 10^{1.3} \approx 20$) each support vector has its own narrow bump, and between them $f$ falls back to $0$: the model has memorised the training points.
 
 ```{=html}
 <div class="widget" data-fig="rbf" data-auto="g=-1.5 :: Small γ: wide bumps, a smooth boundary (may underfit)|g=0 :: γ = 1|g=1.3 :: Large γ: narrow bumps around each support vector: it memorizes the training set">
@@ -1553,6 +1554,8 @@ for ax in axes:
 plt.tight_layout(); plt.show()
 ```
 
+On digits both schemes reach similar accuracy with 10 and 45 classifiers, and only one test digit gets a tied vote. On the iris grid about half of the plane (51 %) is claimed by none of the three linear classifiers (light grey): there every score is negative, and the argmax still assigns the class whose score is least negative. That is why winner-takes-all, and not the raw signs, defines the OvR prediction.
+
 # Part VII · Using SVMs in practice
 
 ## 22. Assumptions: what they mean, how to check them, what to do
@@ -1716,7 +1719,7 @@ for ax, (name, (s, XX, yy)) in zip(axes, fits.items()):
 plt.tight_layout(); plt.show()
 ```
 
-With 95/5 data the unweighted SVM keeps a high overall accuracy but finds only a minority of the fraudulent claims, and the number of majority points at the bound $C$ is capped by the 10 minority points of the training half, as derived. With `class_weight="balanced"` the boxes become $C_+ = 400\cdot... $ per the formula (printed as the largest $\alpha$ of each class), the total pull of each class rises to $Cm/2 = 100$, and the minority recall recovers at a small cost in overall accuracy.
+With 95/5 data the unweighted SVM keeps a high overall accuracy (0.955) but finds only 30 % of the fraudulent claims, and only 5 majority points sit at the bound $C$, within the cap of $m_+ = 10$ minority points in the training half, as derived. With `class_weight="balanced"` the training half has $m = 200$ points, $m_+ = 10$ and $m_- = 190$, so the boxes become $C_+ = \frac{1\cdot200}{2\cdot10} = 10$ and $C_- = \frac{1\cdot200}{2\cdot190} = 0.53$ (the printed largest $\alpha$ of each class). The cap on each class's total pull rises from $m_+C = 10$ to $Cm/2 = 100$, the actual pull rises from 6.11 to 20.00, 37 majority points now sit at their bound, and the minority recall rises to 0.900 at a small cost in overall accuracy (0.945).
 
 **What to do**, in order of preference: (1) **`class_weight`**: `"balanced"`, or explicit business costs (if missing a fraudulent claim costs 20 times a false alarm, $C_+/C_- = 20$). (2) **Move the threshold**: keep the fit and predict $+1$ when $f(\mathbf{x}) > t$, with $t$ chosen on validation data from a precision–recall curve ([note 02](02_logistic_regression.qmd)); this is cheap and often equivalent in practice. (3) **Resampling** (undersample the majority or oversample the minority), which has a similar effect to weights at a higher cost. Whatever you do, evaluate with per-class recall, precision, balanced accuracy or PR-AUC, not accuracy.
 
@@ -1726,32 +1729,39 @@ With 95/5 data the unweighted SVM keeps a high overall accuracy but finds only a
 
 **Why it matters.** Each point's pull on the boundary is its $\alpha_i \le C$. That bound is a robustness property: the hinge loss grows only linearly, so its gradient is bounded, unlike the squared loss where one far point can pull without limit. But with a **large $C$** a single wrong point is allowed a large pull, and if the data stay separable with it, the (nearly) hard margin must accommodate it: the margin collapses and the boundary tilts. That is **variance**: the fit follows accidents of the sample, and test accuracy drops.
 
-**How to check.** From scratch: the slacks $\xi^{(i)} = \max(0, 1 - \mu^{(i)})$ and the multipliers $\alpha_i$ of the training points; look at the points with the largest $\alpha_i$ (with a large $C$) or the largest $\xi^{(i)}$ (with a moderate $C$) and ask whether their labels are right; refit with $C/10$ or $C\times10$ and measure how much the direction of $\boldsymbol{\theta}$ changes. Below, the separable data of Part I (holds), and the same data plus one point in the middle of class $-1$'s side wrongly labelled $+1$ (violated), with a clean test set to measure the damage.
+**How to check.** Two from-scratch diagnostics. (a) The **slacks** $\xi^{(i)} = \max(0, 1 - \mu^{(i)})$ with a moderate $C$: the points with the largest slack are the first ones whose labels to question. (b) The **influence** of each support vector: refit without it and measure how far the direction of $\boldsymbol{\theta}$ turns. Only support vectors need testing, since removing any other point changes nothing (section 20), so this costs a handful of refits. Below, the separable data of Part I (holds), and the same data plus one point on class $-1$'s side wrongly labelled $+1$ (violated), with a clean test set of 1,000 points to measure the damage.
 
 ```{python}
 x_bad = np.array([0.3, 0.0])                                   # a point on the class −1 side, labelled +1
 X_bad, y_bad = np.r_[X, [x_bad]], np.r_[y, 1.0]
+i_bad = len(y_bad) - 1
 rng_t = np.random.default_rng(10)
 X_test = np.r_[rng_t.normal([2, 2], 0.7, (500, 2)), rng_t.normal([-1, -0.5], 0.7, (500, 2))]
 y_test = np.r_[np.ones(500), -np.ones(500)]
 clean = SVC(kernel="linear", C=1e4).fit(X, y)
-angle = lambda t1, t2: np.degrees(np.arccos(t1 @ t2 / np.linalg.norm(t1) / np.linalg.norm(t2)))
+angle = lambda t1, t2: np.degrees(np.arccos(np.clip(t1 @ t2 / np.linalg.norm(t1) / np.linalg.norm(t2), -1, 1)))
+print(f"clean data, C = 1e4: margin {2 / np.linalg.norm(clean.coef_[0]):.3f}, test accuracy {clean.score(X_test, y_test):.3f}")
 
 fig, axes = plt.subplots(1, 3, figsize=(17, 5.6))
 plot_svm(axes[0], clean.coef_[0], clean.intercept_[0], X, y, f"clean data, C = 1e4 (test acc {clean.score(X_test, y_test):.3f})")
 for ax, C_ in zip(axes[1:], [1e4, 1.0]):
     s = SVC(kernel="linear", C=C_).fit(X_bad, y_bad)
-    a_b = np.zeros(len(y_bad)); a_b[s.support_] = np.abs(s.dual_coef_[0])
     xi_b = np.maximum(0, 1 - y_bad * s.decision_function(X_bad))
+    turn = {}                                                  # leave-one-out: refit without each support vector
+    for i in s.support_:
+        keep = np.arange(len(y_bad)) != i
+        turn[i] = angle(SVC(kernel="linear", C=C_).fit(X_bad[keep], y_bad[keep]).coef_[0], s.coef_[0])
+    i_max = max(turn, key=turn.get)
     plot_svm(ax, s.coef_[0], s.intercept_[0], X_bad, y_bad, f"one wrong label, C = {C_:g} (test acc {s.score(X_test, y_test):.3f})")
     ax.scatter(*x_bad, marker="x", s=150, c="k", zorder=6)
-    print(f"C = {C_:g}: margin {2 / np.linalg.norm(s.coef_[0]):.3f} (clean {2 / np.linalg.norm(clean.coef_[0]):.3f}), "
-          f"θ turned {angle(s.coef_[0], clean.coef_[0]):.1f}° from the clean fit; largest α is point {a_b.argmax()} "
-          f"(the wrong one is {len(y_bad) - 1}), largest ξ is point {xi_b.argmax()} (ξ = {xi_b.max():.2f})")
+    print(f"one wrong label (point {i_bad}), C = {C_:g}: margin {2 / np.linalg.norm(s.coef_[0]):.3f}, "
+          f"θ turned {angle(s.coef_[0], clean.coef_[0]):.1f}° from the clean fit, test accuracy {s.score(X_test, y_test):.3f}")
+    print(f"    largest slack: point {xi_b.argmax()} (ξ = {xi_b.max():.2f});  most influential support vector: "
+          f"point {i_max} (removing it turns θ by {turn[i_max]:.1f}°, the next one by {sorted(turn.values())[-2]:.1f}°)")
 plt.tight_layout(); plt.show()
 ```
 
-With $C = 10^4$ the wrong point is fitted: the margin shrinks to a fraction of the clean one, the boundary turns, and the clean test accuracy drops. The diagnostic that exposes it is the multiplier: the wrong point has the largest $\alpha$. With $C = 1$ it is simply a violator (the largest slack, so it is the first point to inspect), the boundary stays put and the test accuracy is back to the clean level.
+With $C = 10^4$ the wrong point is fitted: the margin shrinks from 1.562 to 0.312, the boundary turns by 30.6°, and the clean test accuracy drops from 0.996 to 0.967. All slacks are then 0 (the data are still separable), so the slacks cannot expose the culprit, but the leave-one-out influence does: removing the wrong point turns $\boldsymbol{\theta}$ the most (30.6°, straight back to the clean fit). Another support vector also moves it a lot (24.7°): with such a narrow margin the whole fit is fragile, and large leave-one-out turns are themselves the warning sign. With $C = 1$ the wrong point is simply a violator with the largest slack ($\xi = 1.48$, so it is the first point to inspect), no single support vector turns $\boldsymbol{\theta}$ by more than 3.9°, the boundary keeps the clean direction and the test accuracy (0.994) is almost back to the clean level.
 
 **What to do.** (1) **Choose $C$ by cross-validation** (section 23.1): on noisy data it will usually come out moderate, which bounds the influence of any single point. (2) **Inspect the highest-slack (or highest-$\alpha$) points**: in real projects many of them are data errors (a claim coded with the wrong outcome, a unit mix-up), and fixing them helps every model. (3) Points far away on their *correct* side are harmless (section 20), so there is no need to remove "outliers" that are not near the boundary.
 
@@ -1789,7 +1799,7 @@ fig.colorbar(im, ax=axes, shrink=0.8)
 plt.show()
 ```
 
-The training accuracy keeps rising towards the top-right corner (large $C$ and $\gamma$), where it reaches 1, while the cross-validated accuracy peaks in the middle and falls in that corner: overfitting. The bottom-left corner (small $C$ and $\gamma$) is underfitting: both accuracies are low and close to each other.
+The training accuracy keeps rising towards the top-right corner (large $C$ and $\gamma$), where it reaches 1, while the cross-validated accuracy peaks at $C = 0.1$, $\gamma = 10$ (0.940) and falls to 0.677 in that corner: overfitting. The bottom-left corner (small $C$ and $\gamma$) is underfitting: both accuracies are low and close to each other.
 
 ### 23.2 …you need probabilities
 
@@ -1864,7 +1874,7 @@ The sigmoid fitted on training scores is steeper (larger $a$) and has the worst 
 
 **Why it happens.** The kernel matrix has $m^2$ entries: at 8 bytes each, $8m^2$ bytes. libsvm never stores it whole; it computes rows on demand and caches them (section 12), so the cost moves to time: the number of SMO steps grows with $m$ and each step is $O(m)$, which gives roughly $O(m^2)$ to $O(m^3)$ training. Prediction costs one kernel evaluation per support vector, and with overlapping classes every margin violator is a support vector, so the number of support vectors grows in proportion to $m$ too.
 
-**How to detect it.** Time the fit on growing subsamples and look at the growth rate: doubling $m$ should roughly double the time of a linear method and at least quadruple it for a kernel SVM. The code times `SVC` (RBF), `LinearSVC` (liblinear: coordinate descent on the dual of the linear SVM, linear cost per pass) and `SGDClassifier(loss="hinge")` (sub-gradient steps as in section 20) and fits the exponent $p$ in time $\propto m^p$ between the smallest and the largest size. Timings vary from run to run; the exponents are the point.
+**How to detect it.** Time the fit on growing subsamples and look at the growth rate: doubling $m$ roughly doubles the time of a linear method (exponent near 1) and multiplies that of a kernel SVM by 3 or more (exponent well above 1). The code times `SVC` (RBF), `LinearSVC` (liblinear: coordinate descent on the dual of the linear SVM, linear cost per pass) and `SGDClassifier(loss="hinge")` (sub-gradient steps as in section 20) and fits the exponent $p$ in time $\propto m^p$ between the smallest and the largest size. Timings vary from run to run; the exponents are the point.
 
 ```{python}
 import time

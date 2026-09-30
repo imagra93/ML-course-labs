@@ -170,7 +170,7 @@ $IG_B = 0.311 > IG_A = 0.189$: ask about the mileage first. B wins even though i
 ```{python}
 def entropy_c(c):                        # entropy (bits) of a node given its class counts
     p = np.array(c, float) / sum(c); p = p[p > 0]
-    return -np.sum(p * np.log2(p))
+    return -np.sum(p * np.log2(p)) + 0.0             # + 0.0 turns -0.0 into 0.0
 
 def gini_c(c):                           # Gini impurity of a node given its class counts
     p = np.array(c, float) / sum(c)
@@ -341,7 +341,7 @@ for name, imp in [("misclassification", mis_c), ("Gini", gini_c), ("entropy", en
     print(f"(8,4) -> (5,1) + (3,3): {name:17s} parent {imp((8, 4)):.3f}, gain {gain((8, 4), D, imp):.3f}")
 ```
 
-A greedy grower using misclassification would stop at $(8,4)$ although a useful split exists. The same holds at any scale: the textbook version of the tie (Hastie et al., *Elements of Statistical Learning*, §9.2) uses 400 examples of each class and the splits (300, 100) | (100, 300) and (200, 400) | (200, 0), which are the splits A and B multiplied by 50; all the fractions, and so all the impurities and gains above, are the same. The misclassification error is still fine for **measuring** the final tree, and it is the $R(T)$ of the original CART pruning (section 13).
+A greedy grower using misclassification would stop at $(8,4)$ although a useful split exists. The same holds at any scale: the textbook version of the tie (Hastie et al., *Elements of Statistical Learning*, §9.2) uses 400 examples of each class and the splits (300, 100) | (100, 300) and (200, 400) | (200, 0), which are the splits A and B multiplied by 50 (with the two classes swapped in the second one, which changes no impurity); all the fractions, and so all the impurities and gains above, are the same. The misclassification error is still fine for **measuring** the final tree, and it is the $R(T)$ of the original CART pruning (section 13).
 
 ## 9. Searching the threshold
 
@@ -547,7 +547,7 @@ print(f"SSE parent {sse(yr4):.1f}, children {sse(L4) + sse(R4):.1f}, reduction {
       f"closed form {len(L4) * len(R4) / 4 * (L4.mean() - R4.mean()) ** 2:.1f}")
 ```
 
-The prediction is a **step function**. Each extra level can double the number of steps. **Try it.** 50 noisy points from the dashed curve and a regression tree read at increasing depth: depth 3 has 8 leaves and the lowest test MSE; depth 10 has one leaf per training point (50 leaves), a training MSE of 0 and a test MSE worse than depth 1.
+The prediction is a **step function**. Each extra level can double the number of steps. **Try it.** 50 noisy points from the dashed curve and a regression tree read at increasing depth: depth 3 has 8 leaves and the lowest test MSE of all depths (0.118); depth 10 has one leaf per training point (50 leaves), a training MSE of 0 and a test MSE of 0.202, worse than depth 1 (0.194).
 
 ```{=html}
 <div class="widget" data-fig="regtree" data-auto="d=1 :: Depth 1: one split, 2 steps|d=2 :: Depth 2: 4 steps|d=3 :: Depth 3: 8 steps. It follows the curve: the best test MSE|d=10 :: Depth 10: one leaf per training point. Train MSE 0, test MSE worse than depth 1">
@@ -575,7 +575,7 @@ With squared error, a single extreme $y$ pulls the mean of its leaf; `criterion=
 
 ## 12. Depth and overfitting
 
-**Try it.** CART (Gini) on 160 points; the true boundary is the dashed wave, and 12 % of the labels are flipped. Test accuracy on 1000 new points. Depth 1 underfits; depth 3 (7 leaves) has the best test accuracy; from depth 6 small boxes appear around single noisy points, and at depth 10 every leaf is pure: training accuracy 1, test accuracy lower.
+**Try it.** CART (Gini) on 160 points; the true boundary is the dashed wave, and 12 % of the labels are flipped. Test accuracy on 1000 new points. Depth 1 underfits (test accuracy 0.738); depth 3 (7 leaves) has the best test accuracy of all depths, 0.833; from depth 6 small boxes appear around single noisy points, and at depth 10 every leaf is pure: training accuracy 1, test accuracy 0.720.
 
 ```{=html}
 <div class="widget" data-fig="tree-depth" data-auto="d=1 :: Depth 1: a single split. It underfits the wave|d=3 :: Depth 3: 7 leaves that follow the wave: the best test accuracy|d=6 :: Depth 6: small boxes appear around single noisy points|d=10 :: Depth 10: every leaf is pure. Train accuracy 1, and test accuracy drops: it memorised the noise">
@@ -692,16 +692,16 @@ axes[1].plot(alphas, leaves, "o-", ms=3); axes[1].set_xlabel(r"$\alpha$"); axes[
 plt.tight_layout(); plt.show()
 
 full = DecisionTreeClassifier(random_state=0).fit(Xtr, ytr)
-for name, a in [("full tree  ", 0.0), ("best CV α  ", best_a), ("one-SE rule", alphas[one_se])]:
+for name, a in [("full tree  ", 0.0), ("best CV    ", best_a), ("one-SE rule", alphas[one_se])]:
     t = DecisionTreeClassifier(ccp_alpha=a, random_state=0).fit(Xtr, ytr)
     print(f"{name} α = {a:.4f}: {t.get_n_leaves():3d} leaves, train acc {t.score(Xtr, ytr):.3f}, test acc {t.score(Xte, yte):.3f}")
 ```
 
-The full tree fits the training set perfectly; pruning to the best CV $\alpha$ removes most of its leaves and does not lose test accuracy. The test set has only 171 examples, so differences of one or two points are within its standard error ($\sqrt{0.9\cdot 0.1/171} \approx 0.023$, note 00): the gain of pruning here is mostly a much smaller, more readable tree.
+The full tree fits the training set perfectly; pruning to the best CV $\alpha$ keeps 6 of its 16 leaves and does not lose test accuracy (0.918 against 0.906). The one-standard-error rule goes down to 2 leaves and loses about 3 points (0.889): on this problem it is too conservative. The test set has only 171 examples, so differences of one or two points are within its standard error ($\sqrt{0.9\cdot 0.1/171} \approx 0.023$, note 00): the clear gain of pruning here is a much smaller, more readable tree.
 
 ## 14. Instability: high variance
 
-**Try it.** Split the same 160 points at random into two halves, and grow a full tree on each half. Same algorithm, same kind of data. Thick line: the root question; dashed: the true boundary. Each click draws new halves; the read-out says on which fraction of the plane the two trees disagree (about a quarter of it in the first draw, 26 %).
+**Try it.** Split the same 160 points at random into two halves, and grow a full tree on each half. Same algorithm, same kind of data. Thick line: the root question; dashed: the true boundary. Each click draws new halves; the read-out says on which fraction of the plane the two trees disagree: about a quarter of it (25 % in the first draw, then 29 % and 25 % in the two guided steps).
 
 ```{=html}
 <div class="widget" data-fig="unstable" data-auto="go=click :: Another random split of the same data: the root threshold moves, and the boxes below it change|go=click :: And another one: every sample of the data gives a quite different tree">
@@ -779,7 +779,7 @@ gm = lambda X: np.c_[np.log(X[:, 0]), X[:, 1] ** 3]                     # two st
 ta = DecisionTreeClassifier(max_depth=4, random_state=0).fit(Xm, ym)
 tb = DecisionTreeClassifier(max_depth=4, random_state=0).fit(gm(Xm), ym)
 print(f"same leaf for every training example: {np.all(ta.apply(Xm) == tb.apply(gm(Xm)))}")
-print(f"root threshold: {ta.tree_.threshold[0]:.4f} vs back-transformed {np.exp(tb.tree_.threshold[0]):.4f}")
+print(f"root threshold: {ta.tree_.threshold[0]:.9f} vs back-transformed {np.exp(tb.tree_.threshold[0]):.9f}")
 print(f"new points predicted differently: {np.mean(ta.predict(Xm_new) != tb.predict(gm(Xm_new))):.2%}")
 ```
 
@@ -823,7 +823,6 @@ axes[0].set_ylabel("$x_2$"); plt.tight_layout(); plt.show()
 re_ = np.random.default_rng(2)
 x_in = re_.uniform(0, 5, 200); y_in = 2 * x_in + re_.normal(0, 1, 200)
 x_out = re_.uniform(5, 10, 200); y_out = 2 * x_out + re_.normal(0, 1, 200)
-tree_x = DecisionTreeRegressor(min_samples_leaf=5, random_state=0).fit(x_in[:, None], y_in) if False else None
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.linear_model import LinearRegression
 tree_x = DecisionTreeRegressor(min_samples_leaf=5, random_state=0).fit(x_in[:, None], y_in)
@@ -840,6 +839,8 @@ plt.plot(gx, tree_x.predict(gx[:, None]), "k", lw=2, label="tree"); plt.plot(gx,
 plt.axvline(5, color="k", ls=":"); plt.xlabel("$x$"); plt.ylabel("$y$"); plt.legend(fontsize=8); plt.title("Trees do not extrapolate")
 plt.tight_layout(); plt.show()
 ```
+
+The tree is the best of the three inside the range and useless beyond it (MSE around 38 against about 1.1): every new input receives the constant of the right-most leaf. The hybrid keeps the tree's fit inside and the line's trend outside.
 
 **What to do.** (1) Remove the trend before the tree and add it back after: model $y$ relative to a quantity that carries the trend (cost per insured euro, claims per exposure year, inflation-adjusted amounts), or fit a linear model and grow the tree on its residuals, as in the code; (2) linear models in the leaves ("model trees") or gradient boosting starting from a linear base; (3) if extrapolation is unavoidable, at least detect it (range checks at prediction time) and route those cases to a human or a simpler model.
 
@@ -861,13 +862,14 @@ print(f"best first-split Gini gain: x1 {all_gains(Xx[:, 0], yx, g2).max():.4f}, 
 for name, kw in [("max_depth=2", dict(max_depth=2)), ("min_impurity_decrease=0.01", dict(min_impurity_decrease=0.01)),
                  ("fully grown", {}), ("fully grown, then ccp_alpha=0.01", dict(ccp_alpha=0.01))]:
     t = DecisionTreeClassifier(random_state=0, **kw).fit(Xx, yx)
-    print(f"{name:33s}: {t.get_n_leaves():3d} leaves, root threshold {t.tree_.threshold[0]:6.3f}, test acc {t.score(Xx_te, yx_te):.3f}")
+    thr = f"{t.tree_.threshold[0]:6.3f}" if t.tree_.node_count > 1 else "  none"
+    print(f"{name:33s}: {t.get_n_leaves():3d} leaves, root threshold {thr}, test acc {t.score(Xx_te, yx_te):.3f}")
 prod = lambda X: np.c_[X, X[:, 0] * X[:, 1]]
 t = DecisionTreeClassifier(max_depth=1).fit(prod(Xx), yx)
 print(f"{'with the feature x1*x2, depth 1':33s}: {t.get_n_leaves():3d} leaves, test acc {t.score(prod(Xx_te), yx_te):.3f}")
 ```
 
-A tree limited to depth 2 has exactly the right number of leaves for XOR (4) and still scores about 0.5, because its root threshold is not at 0: the greedy first step chose it on noise. Grown fully, the tree eventually carves out the four quadrants; pruning it afterwards keeps the useful structure, because pruning looks at whole branches, not single splits.
+Both first-split gains are below 1 % of the root impurity. A tree limited to depth 2 has exactly the right number of leaves for XOR (4) and still scores about 0.5, because its root threshold, $-0.993$, is nowhere near 0: the greedy first step chose it on noise. With `min_impurity_decrease=0.01` the tree does not split at all. Grown fully, the tree eventually carves out the four quadrants; pruning it afterwards keeps the useful structure, because pruning looks at whole branches, not single splits.
 
 **What to do**, in order: (1) **grow deep, then prune** (section 13) instead of stopping early; (2) add the interaction as a feature when the domain suggests it (here $x_1 x_2$ makes a single split perfect); (3) ensembles, especially boosting (note 07), which build interactions over many small trees; (4) lookahead or optimal-tree algorithms exist but are expensive.
 
@@ -912,7 +914,7 @@ For binary classification with Gini, note that the squared error of 0/1 labels a
 ```{python}
 import itertools
 def sse_(v): return np.sum((v - v.mean()) ** 2) if len(v) else 0.0
-rcat = np.random.default_rng(1); k_cat = 6
+rcat = np.random.default_rng(2); k_cat = 6
 cat = rcat.integers(0, k_cat, 300); effect = rcat.normal(0, 1, k_cat); ycat = effect[cat] + rcat.normal(0, 1, 300)
 brute = min(((sse_(ycat[np.isin(cat, Ls)]) + sse_(ycat[~np.isin(cat, Ls)]), set(Ls))
              for size in range(1, k_cat) for Ls in itertools.combinations(range(k_cat), size) if 0 in Ls), key=lambda z: z[0])
@@ -925,9 +927,10 @@ print(f"{n_part} partitions (2^(k-1)-1 = {2 ** (k_cat - 1) - 1}); SSE before the
 print(f"brute force : SSE {brute[0]:.1f}, one side = {sorted(brute[1])}")
 print(f"ordering    : SSE {trick[0]:.1f}, one side = {sorted(trick[1])}   ({k_cat - 1} candidates)")
 print(f"best one-vs-rest split (what one split on one-hot columns can do): SSE {one_hot[0]:.1f}, category {one_hot[1]}")
+print(f"error removed by the one-hot split = {(sse_(ycat) - one_hot[0]) / (sse_(ycat) - brute[0]):.0%} of what the best partition removes")
 ```
 
-**One-hot vs native categorical splits.** On one-hot columns a single split can only isolate *one* category from the rest; grouping several categories takes several splits, each on a smaller subset of the data, so the tree gets deeper and noisier (the last line: one-hot's best single split removes much less error). **Native** categorical splits use the ordering trick at every node: the original CART, LightGBM, XGBoost's categorical mode and scikit-learn's `HistGradientBoostingClassifier/Regressor(categorical_features=...)` support them. scikit-learn's `DecisionTreeClassifier` (version 1.8) does not: it needs numbers. A practical substitute is to encode each category by its mean target (**target encoding**) and let the tree split that number, which is the ordering trick done once at the root; but the encoding uses $y$, so it must be computed inside each CV training fold (or cross-fitted), or it leaks ([note 00](00_supervised_learning.qmd), section 14.1). With few categories, one-hot is fine.
+**One-hot vs native categorical splits.** On one-hot columns a single split can only isolate *one* category from the rest; grouping several categories takes several splits, each on a smaller subset of the data, so the tree gets deeper and noisier (the last two lines: the best partition groups three categories against three, and one-hot's best single split removes less than half as much error). **Native** categorical splits use the ordering trick at every node: the original CART, LightGBM, XGBoost's categorical mode and scikit-learn's `HistGradientBoostingClassifier/Regressor(categorical_features=...)` support them. scikit-learn's `DecisionTreeClassifier` (version 1.8) does not: it needs numbers. A practical substitute is to encode each category by its mean target (**target encoding**) and let the tree split that number, which is the ordering trick done once at the root; but the encoding uses $y$, so it must be computed inside each CV training fold (or cross-fitted), or it leaks ([note 00](00_supervised_learning.qmd), section 14.1). With few categories, one-hot is fine.
 
 **High-cardinality features overfit.** With many categories and few examples per category, the ordering trick sorts categories by *noisy* means, and the best prefix separates noise very well on the training data. A made-up example: 1,000 claims, a real binary feature ("third party involved": fraud rate 0.35 vs 0.20) and a repair-shop ID with 200 levels and **no** effect. Training on 700 claims, testing the chosen split on 300:
 
@@ -989,7 +992,7 @@ Mean imputation hides the information "the report is missing" inside an ordinary
 
 ### 16.3 …classes are imbalanced
 
-**Symptom.** With 3 % fraud, the tree's leaves almost all predict "no fraud"; accuracy is high and recall is low.
+**Symptom.** With 3.5 % fraud (the example below), the tree's leaves almost all predict "no fraud"; accuracy is high and recall is low.
 
 **What `class_weight` does.** Each example of class $k$ gets a weight $w_k$, and every count in the tree becomes a weighted count. The class fractions in a node become
 
@@ -1096,7 +1099,7 @@ print(export_text(DecisionTreeClassifier(max_depth=2, random_state=0).fit(Xtr, y
 
 **The limits.**
 
-- **Instability**: the rules describe one sample (section 14, T5). The breast-cancer tree above starts with one feature; the code below shows which root feature 30 bootstrap trees of the same data choose. Present rules together with their stability.
+- **Instability**: the rules describe one sample (section 14, T5). The breast-cancer tree above starts with "worst perimeter"; the code below shows which root feature 30 bootstrap trees of the same data choose: five different ones, "worst perimeter" in 19 of the 30. Present rules together with their stability.
 - **Size**: beyond depth 3–4 the rule set is no longer readable, and a readable tree is usually less accurate than an ensemble: the trade-off between interpretability and accuracy is real.
 - **Correlated features**: the tree picks one of several interchangeable features; the one not chosen is not "unimportant".
 - **Association, not causation**: a rule says what the model does, not what would happen if you changed the feature (a rule on "number of previous claims" does not mean that preventing claims changes the risk of that customer).
