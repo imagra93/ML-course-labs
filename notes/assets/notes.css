@@ -68,3 +68,12 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(-
 .demo-bar button:disabled{opacity:.35;cursor:default}
 .demo-bar .reset{margin-left:auto;font-weight:400}
 .demo-cap{font-size:15px}
+
+/* ---- notes only: top bar and previous / next links (notes-nav.js) ---- */
+.notes-top{display:flex;gap:18px;align-items:center;flex-wrap:wrap;padding:8px 16px;border-bottom:1px solid var(--line);background:#fafafa;font-size:14px}
+.notes-top a{color:var(--muted);text-decoration:none}
+.notes-top a.home{color:var(--ink);font-weight:700}
+.notes-top a:hover,.notes-top a:focus-visible{color:var(--link)}
+.notes-pager{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:3rem 0 1rem;padding-top:1rem;border-top:1px solid var(--line);font-size:15px}
+.notes-pager a{text-decoration:none}
+.notes-pager a.next{margin-left:auto;text-align:right}

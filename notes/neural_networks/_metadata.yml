@@ -1,0 +1,16 @@
+# Shared by every note in this folder: the slide figure engine, the notes styles and the navigation bar.
+# Paths are relative to the rendered page (notes/neural_networks/<note>.html). Each note adds its own topic file,
+# fig-<topic>.js, in its header; it must come after these scripts, which Quarto's merge order guarantees.
+format:
+  html:
+    include-in-header:
+      - text: |
+          <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
+          <link rel="stylesheet" href="../assets/notes.css">
+          <link rel="stylesheet" href="../assets/notes-nn.css">
+    include-after-body:
+      - text: |
+          <script src="../assets/notes-nav.js"></script>
+          <script src="../../slides/assets/figures.js"></script>
+          <script src="../../slides/neural_networks/assets/nn-core.js"></script>
+          <script src="../assets/notes-widgets.js"></script>

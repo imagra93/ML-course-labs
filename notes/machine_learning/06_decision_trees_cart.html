@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>06 · Decision Trees and CART</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="06_decision_trees_cart_files/libs/clipboard/clipboard.min.js"></script>
+<script src="06_decision_trees_cart_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="06_decision_trees_cart_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="06_decision_trees_cart_files/libs/quarto-html/popper.min.js"></script>
+<script src="06_decision_trees_cart_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="06_decision_trees_cart_files/libs/quarto-html/anchor.min.js"></script>
+<link href="06_decision_trees_cart_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="06_decision_trees_cart_files/libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="06_decision_trees_cart_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="06_decision_trees_cart_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="06_decision_trees_cart_files/libs/bootstrap/bootstrap-f6084e8f51ea63a515d0251813187206.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&amp;display=swap">
+<link rel="stylesheet" href="../assets/notes.css">
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-chtml.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body class="quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#the-model" id="toc-the-model" class="nav-link active" data-scroll-target="#the-model">1. The model</a></li>
+  <li><a href="#what-a-leaf-predicts" id="toc-what-a-leaf-predicts" class="nav-link" data-scroll-target="#what-a-leaf-predicts">2. What a leaf predicts</a></li>
+  <li><a href="#impurity-measures" id="toc-impurity-measures" class="nav-link" data-scroll-target="#impurity-measures">3. Impurity measures</a></li>
+  <li><a href="#choosing-a-split-impurity-decrease" id="toc-choosing-a-split-impurity-decrease" class="nav-link" data-scroll-target="#choosing-a-split-impurity-decrease">4. Choosing a split: impurity decrease</a></li>
+  <li><a href="#the-cart-algorithm" id="toc-the-cart-algorithm" class="nav-link" data-scroll-target="#the-cart-algorithm">5. The CART algorithm</a></li>
+  <li><a href="#a-worked-example-by-hand" id="toc-a-worked-example-by-hand" class="nav-link" data-scroll-target="#a-worked-example-by-hand">6. A worked example by hand</a></li>
+  <li><a href="#implementation-from-scratch" id="toc-implementation-from-scratch" class="nav-link" data-scroll-target="#implementation-from-scratch">7. Implementation from scratch</a></li>
+  <li><a href="#regression-trees" id="toc-regression-trees" class="nav-link" data-scroll-target="#regression-trees">8. Regression trees</a></li>
+  <li><a href="#overfitting-stopping-rules-and-pruning" id="toc-overfitting-stopping-rules-and-pruning" class="nav-link" data-scroll-target="#overfitting-stopping-rules-and-pruning">9. Overfitting, stopping rules and pruning</a></li>
+  <li><a href="#properties" id="toc-properties" class="nav-link" data-scroll-target="#properties">10. Properties</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary">Summary</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">06 · Decision Trees and CART</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>A decision tree predicts by asking a sequence of yes/no questions about single features (“is <span class="math inline">\(x_3 \le 2.5\)</span>?”) until it reaches a leaf that holds a prediction. <strong>CART</strong> (Classification And Regression Trees, Breiman et al.&nbsp;1984) is the standard algorithm to grow them, and it is what scikit-learn implements.</p>
+<div id="40e9c61b" class="cell" data-execution_count="1">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>plt.rcParams.update({<span class="st">"figure.dpi"</span>: <span class="dv">90</span>, <span class="st">"axes.grid"</span>: <span class="va">True</span>, <span class="st">"grid.alpha"</span>: <span class="fl">0.3</span>,</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>                     <span class="st">"axes.spines.top"</span>: <span class="va">False</span>, <span class="st">"axes.spines.right"</span>: <span class="va">False</span>})</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>rng <span class="op">=</span> np.random.default_rng(<span class="dv">0</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<section id="the-model" class="level2">
+<h2 class="anchored" data-anchor-id="the-model">1. The model</h2>
+<p>A (binary) tree splits the input space recursively. Each <strong>internal node</strong> <span class="math inline">\(t\)</span> stores a split <span class="math inline">\((j, s)\)</span>: feature index <span class="math inline">\(j\)</span> and threshold <span class="math inline">\(s\)</span>. Samples with <span class="math inline">\(x_j\le s\)</span> go left, the rest go right. Each <strong>leaf</strong> <span class="math inline">\(\ell\)</span> stores a constant prediction <span class="math inline">\(c_\ell\)</span>. The tree therefore divides the space into axis-aligned boxes <span class="math inline">\(R_1,\dots,R_L\)</span> (the leaves) and predicts</p>
+<p><span class="math display">\[
+h(\mathbf{x}) = \sum_{\ell=1}^L c_\ell\,\mathbb{1}[\mathbf{x}\in R_\ell],
+\]</span></p>
+<p>a <strong>piecewise-constant</strong> function. Its “parameters” are the tree structure, the splits <span class="math inline">\((j,s)\)</span> and the leaf values <span class="math inline">\(c_\ell\)</span>. Unlike the previous models there is no smooth loss in continuous parameters, so no gradient descent: the structure is found by a <strong>greedy search</strong>.</p>
+<p>Notation for this notebook: <span class="math inline">\(S_t\)</span> is the set of training examples reaching node <span class="math inline">\(t\)</span>, <span class="math inline">\(N_t = |S_t|\)</span>, and a split sends them to <span class="math inline">\(S_L = \{i\in S_t: x^{(i)}_j\le s\}\)</span> and <span class="math inline">\(S_R = S_t\setminus S_L\)</span>.</p>
+</section>
+<section id="what-a-leaf-predicts" class="level2">
+<h2 class="anchored" data-anchor-id="what-a-leaf-predicts">2. What a leaf predicts</h2>
+<p>Given the examples in a leaf, the constant <span class="math inline">\(c\)</span> that minimises the loss on them is:</p>
+<ul>
+<li><strong>Squared error (regression)</strong>: <span class="math inline">\(c = \bar{y}\)</span>, the mean. <em>Proof:</em> <span class="math inline">\(\frac{d}{dc}\sum_i(y^{(i)}-c)^2 = -2\sum_i(y^{(i)}-c) = 0 \Rightarrow c = \frac{1}{N}\sum_i y^{(i)}\)</span>.</li>
+<li><strong>Absolute error</strong>: the median.</li>
+<li><strong>0–1 loss (classification)</strong>: the <strong>majority class</strong> (predicting class <span class="math inline">\(k\)</span> is wrong for a fraction <span class="math inline">\(1-p_k\)</span> of the leaf, smallest when <span class="math inline">\(p_k\)</span> is largest).</li>
+<li><strong>Log-loss</strong>: the <strong>class proportions</strong> <span class="math inline">\(\hat p_k = N_k/N\)</span> as probabilities (the MLE of a categorical distribution). This is what <code>predict_proba</code> returns.</li>
+</ul>
+</section>
+<section id="impurity-measures" class="level2">
+<h2 class="anchored" data-anchor-id="impurity-measures">3. Impurity measures</h2>
+<p>A good split produces children that are “pure” (mostly one class, or targets close to their mean). With <span class="math inline">\(p_k\)</span> the fraction of class <span class="math inline">\(k\)</span> in node <span class="math inline">\(t\)</span>:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Measure</th>
+<th>Formula</th>
+<th>Binary case (<span class="math inline">\(p\)</span> = fraction of class 1)</th>
+<th>Max (binary)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Gini</strong></td>
+<td><span class="math inline">\(I_G = \sum_k p_k(1-p_k) = 1 - \sum_k p_k^2\)</span></td>
+<td><span class="math inline">\(2p(1-p)\)</span></td>
+<td>0.5</td>
+</tr>
+<tr class="even">
+<td><strong>Entropy</strong></td>
+<td><span class="math inline">\(I_H = -\sum_k p_k\log_2 p_k\)</span></td>
+<td><span class="math inline">\(-p\log_2p - (1-p)\log_2(1-p)\)</span></td>
+<td>1 bit</td>
+</tr>
+<tr class="odd">
+<td>Misclassification</td>
+<td><span class="math inline">\(I_E = 1 - \max_k p_k\)</span></td>
+<td><span class="math inline">\(1-\max(p,1-p)\)</span></td>
+<td>0.5</td>
+</tr>
+<tr class="even">
+<td><strong>Variance</strong> (regression)</td>
+<td><span class="math inline">\(I_V = \frac{1}{N_t}\sum_{i\in S_t}(y^{(i)} - \bar y_t)^2\)</span></td>
+<td>–</td>
+<td>–</td>
+</tr>
+</tbody>
+</table>
+<p>All are 0 for a pure node and maximal for a uniform mix.</p>
+<p><strong>Interpretations.</strong> - <em>Gini</em> = probability that two examples drawn at random (with replacement) from the node have <strong>different</strong> labels: <span class="math inline">\(P(\text{same}) = \sum_k p_k^2\)</span>. Also the expected error of a classifier that predicts at random with the node’s class proportions. - <em>Entropy</em> = expected number of bits to encode the label; the resulting decrease is called <strong>information gain</strong>. - In practice Gini and entropy give almost the same trees. Gini is the CART default (a bit cheaper, no logarithm).</p>
+<p><strong>Why not use misclassification error to grow the tree?</strong> It is piecewise linear in <span class="math inline">\(p\)</span>, so many useful splits don’t change it at all. Example: a node with 400 of class A and 400 of class B. - Split 1: (300 A, 100 B) | (100 A, 300 B). Split 2: (200 A, 400 B) | (200 A, 0 B). - Misclassification: split 1 gives <span class="math inline">\(\frac12\cdot\frac14 + \frac12\cdot\frac14 = 0.25\)</span>; split 2 gives <span class="math inline">\(\frac{600}{800}\cdot\frac13 + \frac{200}{800}\cdot 0 = 0.25\)</span>. A tie. - Gini: in split 1 each child has <span class="math inline">\(2\cdot\tfrac34\cdot\tfrac14 = 0.375\)</span>, so the weighted impurity is <span class="math inline">\(0.375\)</span>; split 2 gives <span class="math inline">\(\tfrac{600}{800}\cdot2\cdot\tfrac13\cdot\tfrac23 + \tfrac{200}{800}\cdot 0 = 0.333\)</span>. Gini prefers split 2, which creates a <strong>pure</strong> node that needs no further splitting.</p>
+<p>Gini and entropy are <strong>strictly concave</strong> in <span class="math inline">\(p\)</span>, which is what guarantees that any split that changes the class proportions strictly decreases the weighted impurity (by Jensen’s inequality, the parent’s impurity is the concave function evaluated at the weighted average of the children’s proportions).</p>
+<div id="1b35dc4c" class="cell" data-execution_count="2">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>p <span class="op">=</span> np.linspace(<span class="fl">1e-6</span>, <span class="dv">1</span> <span class="op">-</span> <span class="fl">1e-6</span>, <span class="dv">400</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>gini <span class="op">=</span> <span class="dv">2</span> <span class="op">*</span> p <span class="op">*</span> (<span class="dv">1</span> <span class="op">-</span> p)<span class="op">;</span> ent <span class="op">=</span> <span class="op">-</span>(p <span class="op">*</span> np.log2(p) <span class="op">+</span> (<span class="dv">1</span> <span class="op">-</span> p) <span class="op">*</span> np.log2(<span class="dv">1</span> <span class="op">-</span> p))<span class="op">;</span> mis <span class="op">=</span> <span class="dv">1</span> <span class="op">-</span> np.maximum(p, <span class="dv">1</span> <span class="op">-</span> p)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">6</span>, <span class="fl">3.6</span>))</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>plt.plot(p, gini, label<span class="op">=</span><span class="st">"Gini $2p(1-p)$"</span>)<span class="op">;</span> plt.plot(p, ent <span class="op">/</span> <span class="dv">2</span>, label<span class="op">=</span><span class="st">"entropy / 2 (rescaled)"</span>)<span class="op">;</span> plt.plot(p, mis, label<span class="op">=</span><span class="st">"misclassification"</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"$p$ = fraction of class 1 in the node"</span>)<span class="op">;</span> plt.ylabel(<span class="st">"impurity"</span>)<span class="op">;</span> plt.legend()<span class="op">;</span> plt.title(<span class="st">"Impurity of a binary node"</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="06_decision_trees_cart_files/figure-html/cell-3-output-1.png" width="529" height="310" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="choosing-a-split-impurity-decrease" class="level2">
+<h2 class="anchored" data-anchor-id="choosing-a-split-impurity-decrease">4. Choosing a split: impurity decrease</h2>
+<p>For a candidate split <span class="math inline">\((j,s)\)</span> of node <span class="math inline">\(t\)</span>:</p>
+<p><span class="math display">\[
+\Delta I(j,s) = I(S_t) - \Big(\frac{N_L}{N_t}I(S_L) + \frac{N_R}{N_t}I(S_R)\Big)
+\]</span></p>
+<p>(parent impurity minus the <strong>size-weighted</strong> average impurity of the children). CART picks the <span class="math inline">\((j,s)\)</span> with the largest <span class="math inline">\(\Delta I\)</span>.</p>
+<p><strong>Regression: variance reduction = squared-error reduction.</strong> Since <span class="math inline">\(N\cdot I_V(S) = \sum_{i\in S}(y^{(i)}-\bar y_S)^2 = \mathrm{SSE}(S)\)</span> (the squared error of predicting the mean, which is the optimal leaf value),</p>
+<p><span class="math display">\[
+N_t\,\Delta I_V = \mathrm{SSE}(S_t) - \big[\mathrm{SSE}(S_L) + \mathrm{SSE}(S_R)\big].
+\]</span></p>
+<p>So maximising the variance decrease is <strong>exactly</strong> choosing the split that most reduces the training squared error of the tree. Similarly, the entropy criterion is the decrease of the training log-loss (times <span class="math inline">\(\log 2\)</span>) with leaves predicting class proportions.</p>
+<p><strong>Which thresholds to try?</strong> Only values between consecutive distinct sorted values of <span class="math inline">\(x_j\)</span> change the partition, so we try the midpoints. With the feature sorted once, all candidate splits of that feature can be scored in one pass by updating class counts incrementally: <span class="math inline">\(O(N_t\log N_t)\)</span> per feature per node.</p>
+</section>
+<section id="the-cart-algorithm" class="level2">
+<h2 class="anchored" data-anchor-id="the-cart-algorithm">5. The CART algorithm</h2>
+<pre><code>grow(S, depth):
+    if stopping rule holds (node pure, N &lt; min_samples_split, depth = max_depth, ...):
+        return Leaf(value = mean / majority class / class proportions of S)
+    for each feature j, for each candidate threshold s:
+        compute ΔI(j, s)
+    pick (j*, s*) with the largest ΔI    (if ΔI &lt; min_impurity_decrease: return Leaf)
+    return Node(j*, s*, left = grow(S_L, depth+1), right = grow(S_R, depth+1))</code></pre>
+<ul>
+<li><strong>Greedy</strong>: each split is the best <em>one-step</em> choice. It never looks ahead and never revisits a split, so it does not find the optimal tree (which is an NP-hard problem), but it is fast and works well in practice.</li>
+<li><strong>Recursive</strong>: the same procedure runs independently on each child.</li>
+<li>Prediction: drop <span class="math inline">\(\mathbf{x}\)</span> down the tree, cost <span class="math inline">\(O(\text{depth})\)</span>.</li>
+</ul>
+</section>
+<section id="a-worked-example-by-hand" class="level2">
+<h2 class="anchored" data-anchor-id="a-worked-example-by-hand">6. A worked example by hand</h2>
+<p>Eight examples, one feature:</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th><span class="math inline">\(x\)</span></th>
+<th>1</th>
+<th>2</th>
+<th>3</th>
+<th>4</th>
+<th>5</th>
+<th>6</th>
+<th>7</th>
+<th>8</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\(y\)</span></td>
+<td>A</td>
+<td>A</td>
+<td>A</td>
+<td>B</td>
+<td>A</td>
+<td>B</td>
+<td>B</td>
+<td>B</td>
+</tr>
+</tbody>
+</table>
+<p>Root: 4 A, 4 B → <span class="math inline">\(I_G = 1 - (0.5^2 + 0.5^2) = 0.5\)</span>.</p>
+<ul>
+<li><strong>Split <span class="math inline">\(x\le3.5\)</span></strong>: left (A,A,A) has <span class="math inline">\(I_G=0\)</span>. Right (B,A,B,B,B) has <span class="math inline">\(p_A = 1/5\)</span>, so <span class="math inline">\(I_G = 1 - (0.2^2 + 0.8^2) = 0.32\)</span>. Weighted: <span class="math inline">\(\frac38\cdot0 + \frac58\cdot0.32 = 0.20\)</span> → <span class="math inline">\(\Delta I = 0.30\)</span>.</li>
+<li><strong>Split <span class="math inline">\(x\le4.5\)</span></strong>: left (A,A,A,B) has <span class="math inline">\(I_G = 1-(0.75^2+0.25^2) = 0.375\)</span>; right (A,B,B,B) likewise 0.375. Weighted: 0.375 → <span class="math inline">\(\Delta I = 0.125\)</span>.</li>
+<li><strong>Split <span class="math inline">\(x\le5.5\)</span></strong>: left (A,A,A,B,A) has <span class="math inline">\(I_G=0.32\)</span>, right (B,B,B) has 0. Weighted: <span class="math inline">\(\frac58\cdot0.32 = 0.20\)</span> → <span class="math inline">\(\Delta I = 0.30\)</span> (tie with 3.5).</li>
+</ul>
+<p>The best first split is <span class="math inline">\(x\le3.5\)</span> (or the tied <span class="math inline">\(x\le5.5\)</span>). The code below checks this.</p>
+<div id="d794a1c3" class="cell" data-execution_count="3">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> gini(y):</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">len</span>(y) <span class="op">==</span> <span class="dv">0</span>: <span class="cf">return</span> <span class="fl">0.0</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    _, counts <span class="op">=</span> np.unique(y, return_counts<span class="op">=</span><span class="va">True</span>)<span class="op">;</span> p <span class="op">=</span> counts <span class="op">/</span> <span class="bu">len</span>(y)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="dv">1</span> <span class="op">-</span> np.<span class="bu">sum</span>(p <span class="op">**</span> <span class="dv">2</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> entropy(y):</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    _, counts <span class="op">=</span> np.unique(y, return_counts<span class="op">=</span><span class="va">True</span>)<span class="op">;</span> p <span class="op">=</span> counts <span class="op">/</span> <span class="bu">len</span>(y)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">-</span>np.<span class="bu">sum</span>(p <span class="op">*</span> np.log2(p))</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> variance(y):</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.var(y) <span class="cf">if</span> <span class="bu">len</span>(y) <span class="cf">else</span> <span class="fl">0.0</span></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>xw <span class="op">=</span> np.arange(<span class="dv">1</span>, <span class="dv">9</span>)<span class="op">;</span> yw <span class="op">=</span> np.array(<span class="bu">list</span>(<span class="st">"AAABABBB"</span>))</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> s <span class="kw">in</span> np.arange(<span class="fl">1.5</span>, <span class="dv">8</span>, <span class="fl">1.0</span>):</span>
+<span id="cb4-15"><a href="#cb4-15" aria-hidden="true" tabindex="-1"></a>    L, R <span class="op">=</span> yw[xw <span class="op">&lt;=</span> s], yw[xw <span class="op">&gt;</span> s]</span>
+<span id="cb4-16"><a href="#cb4-16" aria-hidden="true" tabindex="-1"></a>    dI <span class="op">=</span> gini(yw) <span class="op">-</span> (<span class="bu">len</span>(L) <span class="op">*</span> gini(L) <span class="op">+</span> <span class="bu">len</span>(R) <span class="op">*</span> gini(R)) <span class="op">/</span> <span class="bu">len</span>(yw)</span>
+<span id="cb4-17"><a href="#cb4-17" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"split x &lt;= </span><span class="sc">{</span>s<span class="sc">}</span><span class="ss">:  Gini decrease = </span><span class="sc">{</span>dI<span class="sc">:.3f}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>split x &lt;= 1.5:  Gini decrease = 0.071
+split x &lt;= 2.5:  Gini decrease = 0.167
+split x &lt;= 3.5:  Gini decrease = 0.300
+split x &lt;= 4.5:  Gini decrease = 0.125
+split x &lt;= 5.5:  Gini decrease = 0.300
+split x &lt;= 6.5:  Gini decrease = 0.167
+split x &lt;= 7.5:  Gini decrease = 0.071</code></pre>
+</div>
+</div>
+</section>
+<section id="implementation-from-scratch" class="level2">
+<h2 class="anchored" data-anchor-id="implementation-from-scratch">7. Implementation from scratch</h2>
+<p>A compact CART that handles classification (Gini/entropy, majority leaf) and regression (variance, mean leaf).</p>
+<div id="53090e74" class="cell" data-execution_count="4">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Node:</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, value, j<span class="op">=</span><span class="va">None</span>, s<span class="op">=</span><span class="va">None</span>, left<span class="op">=</span><span class="va">None</span>, right<span class="op">=</span><span class="va">None</span>, n<span class="op">=</span><span class="dv">0</span>, gain<span class="op">=</span><span class="fl">0.0</span>):</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.value, <span class="va">self</span>.j, <span class="va">self</span>.s, <span class="va">self</span>.left, <span class="va">self</span>.right, <span class="va">self</span>.n, <span class="va">self</span>.gain <span class="op">=</span> value, j, s, left, right, n, gain</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> is_leaf(<span class="va">self</span>): <span class="cf">return</span> <span class="va">self</span>.left <span class="kw">is</span> <span class="va">None</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> best_split(X, y, impurity):</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    best <span class="op">=</span> (<span class="va">None</span>, <span class="va">None</span>, <span class="fl">0.0</span>)                       <span class="co"># (j, s, gain)</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    parent <span class="op">=</span> impurity(y)<span class="op">;</span> N <span class="op">=</span> <span class="bu">len</span>(y)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> j <span class="kw">in</span> <span class="bu">range</span>(X.shape[<span class="dv">1</span>]):</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>        values <span class="op">=</span> np.unique(X[:, j])</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> s <span class="kw">in</span> (values[:<span class="op">-</span><span class="dv">1</span>] <span class="op">+</span> values[<span class="dv">1</span>:]) <span class="op">/</span> <span class="dv">2</span>:     <span class="co"># midpoints between distinct values</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>            mask <span class="op">=</span> X[:, j] <span class="op">&lt;=</span> s</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>            gain <span class="op">=</span> parent <span class="op">-</span> (mask.<span class="bu">sum</span>() <span class="op">*</span> impurity(y[mask]) <span class="op">+</span> (<span class="op">~</span>mask).<span class="bu">sum</span>() <span class="op">*</span> impurity(y[<span class="op">~</span>mask])) <span class="op">/</span> N</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> gain <span class="op">&gt;</span> best[<span class="dv">2</span>]:</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>                best <span class="op">=</span> (j, s, gain)</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> best</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> grow(X, y, impurity, leaf_value, depth<span class="op">=</span><span class="dv">0</span>, max_depth<span class="op">=</span><span class="dv">5</span>, min_samples_split<span class="op">=</span><span class="dv">2</span>):</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>    node <span class="op">=</span> Node(leaf_value(y), n<span class="op">=</span><span class="bu">len</span>(y))</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> depth <span class="op">&gt;=</span> max_depth <span class="kw">or</span> <span class="bu">len</span>(y) <span class="op">&lt;</span> min_samples_split <span class="kw">or</span> impurity(y) <span class="op">==</span> <span class="dv">0</span>:</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> node</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>    j, s, gain <span class="op">=</span> best_split(X, y, impurity)</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> j <span class="kw">is</span> <span class="va">None</span>:</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> node</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>    mask <span class="op">=</span> X[:, j] <span class="op">&lt;=</span> s</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>    node.j, node.s, node.gain <span class="op">=</span> j, s, gain</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>    node.left <span class="op">=</span> grow(X[mask], y[mask], impurity, leaf_value, depth <span class="op">+</span> <span class="dv">1</span>, max_depth, min_samples_split)</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>    node.right <span class="op">=</span> grow(X[<span class="op">~</span>mask], y[<span class="op">~</span>mask], impurity, leaf_value, depth <span class="op">+</span> <span class="dv">1</span>, max_depth, min_samples_split)</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> node</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> predict_one(node, x):</span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>    <span class="cf">while</span> <span class="kw">not</span> node.is_leaf():</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>        node <span class="op">=</span> node.left <span class="cf">if</span> x[node.j] <span class="op">&lt;=</span> node.s <span class="cf">else</span> node.right</span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> node.value</span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>majority <span class="op">=</span> <span class="kw">lambda</span> y: np.bincount(y).argmax()</span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>predict <span class="op">=</span> <span class="kw">lambda</span> tree, X: np.array([predict_one(tree, x) <span class="cf">for</span> x <span class="kw">in</span> X])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<div id="8ebaa9de" class="cell" data-execution_count="5">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.datasets <span class="im">import</span> make_blobs</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.tree <span class="im">import</span> DecisionTreeClassifier</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>Xb, yb <span class="op">=</span> make_blobs(n_samples<span class="op">=</span><span class="dv">300</span>, centers<span class="op">=</span><span class="dv">4</span>, cluster_std<span class="op">=</span><span class="fl">1.3</span>, random_state<span class="op">=</span><span class="dv">4</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>g1, g2 <span class="op">=</span> np.meshgrid(np.linspace(Xb[:, <span class="dv">0</span>].<span class="bu">min</span>() <span class="op">-</span> <span class="dv">1</span>, Xb[:, <span class="dv">0</span>].<span class="bu">max</span>() <span class="op">+</span> <span class="dv">1</span>, <span class="dv">250</span>), np.linspace(Xb[:, <span class="dv">1</span>].<span class="bu">min</span>() <span class="op">-</span> <span class="dv">1</span>, Xb[:, <span class="dv">1</span>].<span class="bu">max</span>() <span class="op">+</span> <span class="dv">1</span>, <span class="dv">250</span>))</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>G <span class="op">=</span> np.c_[g1.ravel(), g2.ravel()]</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">16</span>, <span class="fl">4.4</span>))</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax, depth <span class="kw">in</span> <span class="bu">zip</span>(axes[:<span class="dv">2</span>], [<span class="dv">2</span>, <span class="dv">4</span>]):</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    tree <span class="op">=</span> grow(Xb, yb, gini, majority, max_depth<span class="op">=</span>depth)</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    Z <span class="op">=</span> predict(tree, G).reshape(g1.shape)</span>
+<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a>    ax.contourf(g1, g2, Z, alpha<span class="op">=</span><span class="fl">0.25</span>, levels<span class="op">=</span>[<span class="op">-</span><span class="fl">0.5</span>, <span class="fl">0.5</span>, <span class="fl">1.5</span>, <span class="fl">2.5</span>, <span class="fl">3.5</span>], cmap<span class="op">=</span><span class="st">"tab10"</span>, vmin<span class="op">=</span><span class="dv">0</span>, vmax<span class="op">=</span><span class="dv">9</span>)</span>
+<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a>    ax.scatter(Xb[:, <span class="dv">0</span>], Xb[:, <span class="dv">1</span>], c<span class="op">=</span>yb, cmap<span class="op">=</span><span class="st">"tab10"</span>, vmin<span class="op">=</span><span class="dv">0</span>, vmax<span class="op">=</span><span class="dv">9</span>, edgecolor<span class="op">=</span><span class="st">"k"</span>, s<span class="op">=</span><span class="dv">15</span>)</span>
+<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>    ax.set_title(<span class="ss">f"from scratch, max_depth=</span><span class="sc">{</span>depth<span class="sc">}</span><span class="ss">: train acc </span><span class="sc">{</span>np<span class="sc">.</span>mean(predict(tree, Xb) <span class="op">==</span> yb)<span class="sc">:.2f}</span><span class="ss">"</span>)</span>
+<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>sk <span class="op">=</span> DecisionTreeClassifier(max_depth<span class="op">=</span><span class="dv">4</span>, random_state<span class="op">=</span><span class="dv">0</span>).fit(Xb, yb)</span>
+<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>Z <span class="op">=</span> sk.predict(G).reshape(g1.shape)</span>
+<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">2</span>].contourf(g1, g2, Z, alpha<span class="op">=</span><span class="fl">0.25</span>, levels<span class="op">=</span>[<span class="op">-</span><span class="fl">0.5</span>, <span class="fl">0.5</span>, <span class="fl">1.5</span>, <span class="fl">2.5</span>, <span class="fl">3.5</span>], cmap<span class="op">=</span><span class="st">"tab10"</span>, vmin<span class="op">=</span><span class="dv">0</span>, vmax<span class="op">=</span><span class="dv">9</span>)</span>
+<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">2</span>].scatter(Xb[:, <span class="dv">0</span>], Xb[:, <span class="dv">1</span>], c<span class="op">=</span>yb, cmap<span class="op">=</span><span class="st">"tab10"</span>, vmin<span class="op">=</span><span class="dv">0</span>, vmax<span class="op">=</span><span class="dv">9</span>, edgecolor<span class="op">=</span><span class="st">"k"</span>, s<span class="op">=</span><span class="dv">15</span>)</span>
+<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">2</span>].set_title(<span class="ss">f"scikit-learn, max_depth=4: train acc </span><span class="sc">{</span>sk<span class="sc">.</span>score(Xb, yb)<span class="sc">:.2f}</span><span class="ss">"</span>)</span>
+<span id="cb7-20"><a href="#cb7-20" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="06_decision_trees_cart_files/figure-html/cell-6-output-1.png" width="1430" height="385" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<div id="4ed08525" class="cell" data-execution_count="6">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> print_tree(node, names, indent<span class="op">=</span><span class="st">""</span>):</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> node.is_leaf():</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>indent<span class="sc">}</span><span class="ss">predict </span><span class="sc">{</span>node<span class="sc">.</span>value<span class="sc">}</span><span class="ss">   (n=</span><span class="sc">{</span>node<span class="sc">.</span>n<span class="sc">}</span><span class="ss">)"</span>)<span class="op">;</span> <span class="cf">return</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>indent<span class="sc">}</span><span class="ss">if </span><span class="sc">{</span>names[node.j]<span class="sc">}</span><span class="ss"> &lt;= </span><span class="sc">{</span>node<span class="sc">.</span>s<span class="sc">:.2f}</span><span class="ss">:   (n=</span><span class="sc">{</span>node<span class="sc">.</span>n<span class="sc">}</span><span class="ss">, Gini decrease=</span><span class="sc">{</span>node<span class="sc">.</span>gain<span class="sc">:.3f}</span><span class="ss">)"</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    print_tree(node.left, names, indent <span class="op">+</span> <span class="st">"    "</span>)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>indent<span class="sc">}</span><span class="ss">else:"</span>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    print_tree(node.right, names, indent <span class="op">+</span> <span class="st">"    "</span>)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>print_tree(grow(Xb, yb, gini, majority, max_depth<span class="op">=</span><span class="dv">2</span>), [<span class="st">"x1"</span>, <span class="st">"x2"</span>])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>if x2 &lt;= -2.45:   (n=300, Gini decrease=0.250)
+    if x1 &lt;= 6.78:   (n=150, Gini decrease=0.487)
+        predict 2   (n=74)
+    else:
+        predict 3   (n=76)
+else:
+    if x2 &lt;= 2.30:   (n=150, Gini decrease=0.376)
+        predict 0   (n=73)
+    else:
+        predict 1   (n=77)</code></pre>
+</div>
+</div>
+<p>The boundaries are made of <strong>axis-aligned</strong> segments: each split is a line perpendicular to one axis. A diagonal boundary has to be approximated by a staircase.</p>
+</section>
+<section id="regression-trees" class="level2">
+<h2 class="anchored" data-anchor-id="regression-trees">8. Regression trees</h2>
+<p>Same algorithm with <span class="math inline">\(I_V\)</span> as impurity and the mean as leaf value. The prediction is a step function; each extra level can double the number of steps.</p>
+<div id="2c9526e7" class="cell" data-execution_count="7">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>xr <span class="op">=</span> np.sort(rng.uniform(<span class="dv">0</span>, <span class="dv">5</span>, <span class="dv">150</span>))<span class="op">;</span> yr <span class="op">=</span> np.sin(xr) <span class="op">+</span> <span class="fl">0.3</span> <span class="op">*</span> xr <span class="op">+</span> rng.normal(<span class="dv">0</span>, <span class="fl">0.25</span>, <span class="dv">150</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>gr <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">5</span>, <span class="dv">500</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">9</span>, <span class="fl">3.8</span>))<span class="op">;</span> plt.scatter(xr, yr, s<span class="op">=</span><span class="dv">10</span>, color<span class="op">=</span><span class="st">"k"</span>, alpha<span class="op">=</span><span class="fl">0.6</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> depth <span class="kw">in</span> [<span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">8</span>]:</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    t <span class="op">=</span> grow(xr[:, <span class="va">None</span>], yr, variance, np.mean, max_depth<span class="op">=</span>depth)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    plt.plot(gr, predict(t, gr[:, <span class="va">None</span>]), lw<span class="op">=</span><span class="dv">2</span>, label<span class="op">=</span><span class="ss">f"max_depth=</span><span class="sc">{</span>depth<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>plt.legend()<span class="op">;</span> plt.title(<span class="st">"Regression tree: piecewise-constant fit (depth 8 starts following the noise)"</span>)</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="06_decision_trees_cart_files/figure-html/cell-8-output-1.png" width="800" height="331" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="overfitting-stopping-rules-and-pruning" class="level2">
+<h2 class="anchored" data-anchor-id="overfitting-stopping-rules-and-pruning">9. Overfitting, stopping rules and pruning</h2>
+<p>Grown until every leaf is pure, a tree reaches <strong>zero training error</strong> and memorises the noise (one leaf per example in the worst case). It has <strong>low bias and very high variance</strong>. Two ways to control it:</p>
+<p><strong>(a) Pre-pruning (stopping rules)</strong>, the scikit-learn hyperparameters: <code>max_depth</code>, <code>min_samples_split</code>, <code>min_samples_leaf</code>, <code>max_leaf_nodes</code>, <code>min_impurity_decrease</code>. Simple, but short-sighted: a split that looks useless may enable very good splits below it (XOR is the classic example).</p>
+<p><strong>(b) Cost-complexity pruning (post-pruning, CART’s own method).</strong> Grow a large tree <span class="math inline">\(T_0\)</span>, then for a penalty <span class="math inline">\(\alpha\ge0\)</span> find the subtree <span class="math inline">\(T\subseteq T_0\)</span> minimising</p>
+<p><span class="math display">\[
+R_\alpha(T) = R(T) + \alpha\,|T|,
+\]</span></p>
+<p>where <span class="math inline">\(R(T)\)</span> is the training error (total impurity, weighted by node size) and <span class="math inline">\(|T|\)</span> the number of leaves. This is regularisation again: fit + <span class="math inline">\(\alpha\times\)</span> complexity.</p>
+<ul>
+<li><span class="math inline">\(\alpha=0\)</span> keeps the full tree; as <span class="math inline">\(\alpha\)</span> grows, whole branches are collapsed into leaves.</li>
+<li><strong>Weakest-link pruning</strong>: for an internal node <span class="math inline">\(t\)</span> with subtree <span class="math inline">\(T_t\)</span>, collapsing it changes the cost by <span class="math inline">\(R(t) - R(T_t) - \alpha(|T_t|-1)\)</span>. It becomes worth collapsing when <span class="math inline">\(\alpha \ge g(t) = \frac{R(t) - R(T_t)}{|T_t| - 1}\)</span>. Repeatedly collapsing the node with the smallest <span class="math inline">\(g(t)\)</span> gives a nested sequence of subtrees, one per range of <span class="math inline">\(\alpha\)</span> (<code>cost_complexity_pruning_path</code> in scikit-learn).</li>
+<li>Choose <span class="math inline">\(\alpha\)</span> by cross-validation (<code>ccp_alpha</code>).</li>
+</ul>
+<div id="6ee069ca" class="cell" data-execution_count="8">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.datasets <span class="im">import</span> load_breast_cancer</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> train_test_split, cross_val_score</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>Xc, yc <span class="op">=</span> load_breast_cancer(return_X_y<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>Xtr, Xte, ytr, yte <span class="op">=</span> train_test_split(Xc, yc, test_size<span class="op">=</span><span class="fl">0.3</span>, stratify<span class="op">=</span>yc, random_state<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>path <span class="op">=</span> DecisionTreeClassifier(random_state<span class="op">=</span><span class="dv">0</span>).cost_complexity_pruning_path(Xtr, ytr)</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>alphas <span class="op">=</span> path.ccp_alphas[:<span class="op">-</span><span class="dv">1</span>]</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>tr_acc, cv_acc, leaves <span class="op">=</span> [], [], []</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a <span class="kw">in</span> alphas:</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>    t <span class="op">=</span> DecisionTreeClassifier(ccp_alpha<span class="op">=</span>a, random_state<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>    cv_acc.append(cross_val_score(t, Xtr, ytr, cv<span class="op">=</span><span class="dv">5</span>).mean())</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>    t.fit(Xtr, ytr)<span class="op">;</span> tr_acc.append(t.score(Xtr, ytr))<span class="op">;</span> leaves.append(t.get_n_leaves())</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>best_a <span class="op">=</span> alphas[<span class="bu">int</span>(np.argmax(cv_acc))]</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="fl">3.8</span>))</span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].plot(alphas, tr_acc, <span class="st">"o-"</span>, ms<span class="op">=</span><span class="dv">3</span>, label<span class="op">=</span><span class="st">"training accuracy"</span>)<span class="op">;</span> axes[<span class="dv">0</span>].plot(alphas, cv_acc, <span class="st">"s-"</span>, ms<span class="op">=</span><span class="dv">3</span>, label<span class="op">=</span><span class="st">"5-fold CV accuracy"</span>)</span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">0</span>].axvline(best_a, color<span class="op">=</span><span class="st">"k"</span>, ls<span class="op">=</span><span class="st">":"</span>)<span class="op">;</span> axes[<span class="dv">0</span>].set_xlabel(<span class="vs">r"</span><span class="dv">$</span><span class="ch">\a</span><span class="vs">lpha</span><span class="dv">$</span><span class="vs"> </span><span class="kw">(</span><span class="vs">ccp_alpha</span><span class="kw">)</span><span class="vs">"</span>)<span class="op">;</span> axes[<span class="dv">0</span>].legend()<span class="op">;</span> axes[<span class="dv">0</span>].set_title(<span class="st">"Pruning: choose α by CV"</span>)</span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>axes[<span class="dv">1</span>].plot(alphas, leaves, <span class="st">"o-"</span>, ms<span class="op">=</span><span class="dv">3</span>)<span class="op">;</span> axes[<span class="dv">1</span>].set_xlabel(<span class="vs">r"</span><span class="dv">$</span><span class="ch">\a</span><span class="vs">lpha</span><span class="dv">$</span><span class="vs">"</span>)<span class="op">;</span> axes[<span class="dv">1</span>].set_ylabel(<span class="st">"number of leaves |T|"</span>)<span class="op">;</span> axes[<span class="dv">1</span>].set_title(<span class="st">"Larger α → smaller tree"</span>)</span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>full <span class="op">=</span> DecisionTreeClassifier(random_state<span class="op">=</span><span class="dv">0</span>).fit(Xtr, ytr)</span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>pruned <span class="op">=</span> DecisionTreeClassifier(ccp_alpha<span class="op">=</span>best_a, random_state<span class="op">=</span><span class="dv">0</span>).fit(Xtr, ytr)</span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"full tree  : </span><span class="sc">{</span>full<span class="sc">.</span>get_n_leaves()<span class="sc">:3d}</span><span class="ss"> leaves, train acc </span><span class="sc">{</span>full<span class="sc">.</span>score(Xtr, ytr)<span class="sc">:.3f}</span><span class="ss">, test acc </span><span class="sc">{</span>full<span class="sc">.</span>score(Xte, yte)<span class="sc">:.3f}</span><span class="ss">"</span>)</span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"pruned tree: </span><span class="sc">{</span>pruned<span class="sc">.</span>get_n_leaves()<span class="sc">:3d}</span><span class="ss"> leaves, train acc </span><span class="sc">{</span>pruned<span class="sc">.</span>score(Xtr, ytr)<span class="sc">:.3f}</span><span class="ss">, test acc </span><span class="sc">{</span>pruned<span class="sc">.</span>score(Xte, yte)<span class="sc">:.3f}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="06_decision_trees_cart_files/figure-html/cell-9-output-1.png" width="1070" height="329" class="figure-img"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>full tree  :  16 leaves, train acc 1.000, test acc 0.906
+pruned tree:   6 leaves, train acc 0.977, test acc 0.918</code></pre>
+</div>
+</div>
+</section>
+<section id="properties" class="level2">
+<h2 class="anchored" data-anchor-id="properties">10. Properties</h2>
+<p><strong>Strengths</strong> - Easy to read and explain (a small tree is a set of if/else rules). - <strong>No feature scaling needed</strong>, and invariant to any monotone transformation of a feature (only the order of values matters). - Handle mixed numeric/categorical features, and capture non-linear effects and interactions automatically. - Fast to train and predict.</p>
+<p><strong>Weaknesses</strong> - <strong>High variance / instability</strong>: a small change in the data can change the top split and therefore the whole tree (see below). - Axis-aligned, piecewise-constant: staircase boundaries, can’t extrapolate (the prediction outside the training range is the last leaf’s constant). - Greedy, so not globally optimal.</p>
+<p>The fix for the variance is to <strong>average many trees</strong> (notebook 07).</p>
+<p><strong>Feature importance (MDI).</strong> For each feature, add up the (size-weighted) impurity decreases <span class="math inline">\(N_t\Delta I\)</span> of all nodes that split on it, then normalise to sum to 1 (<code>feature_importances_</code>). Cheap, but biased towards features with many possible thresholds; permutation importance on validation data is more reliable.</p>
+<div id="a5d36daa" class="cell" data-execution_count="9">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Instability: trees grown on two random halves of the same data</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">3</span>, figsize<span class="op">=</span>(<span class="dv">16</span>, <span class="fl">4.2</span>))</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> ax, seed <span class="kw">in</span> <span class="bu">zip</span>(axes, [<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">3</span>]):</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>    idx <span class="op">=</span> np.random.default_rng(seed).choice(<span class="bu">len</span>(yb), <span class="bu">len</span>(yb) <span class="op">//</span> <span class="dv">2</span>, replace<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    t <span class="op">=</span> DecisionTreeClassifier(random_state<span class="op">=</span><span class="dv">0</span>).fit(Xb[idx], yb[idx])</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    Z <span class="op">=</span> t.predict(G).reshape(g1.shape)</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    ax.contourf(g1, g2, Z, alpha<span class="op">=</span><span class="fl">0.25</span>, levels<span class="op">=</span>[<span class="op">-</span><span class="fl">0.5</span>, <span class="fl">0.5</span>, <span class="fl">1.5</span>, <span class="fl">2.5</span>, <span class="fl">3.5</span>], cmap<span class="op">=</span><span class="st">"tab10"</span>, vmin<span class="op">=</span><span class="dv">0</span>, vmax<span class="op">=</span><span class="dv">9</span>)</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    ax.scatter(Xb[idx, <span class="dv">0</span>], Xb[idx, <span class="dv">1</span>], c<span class="op">=</span>yb[idx], cmap<span class="op">=</span><span class="st">"tab10"</span>, vmin<span class="op">=</span><span class="dv">0</span>, vmax<span class="op">=</span><span class="dv">9</span>, edgecolor<span class="op">=</span><span class="st">"k"</span>, s<span class="op">=</span><span class="dv">15</span>)</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>    ax.set_title(<span class="ss">f"fully grown tree on random half #</span><span class="sc">{</span>seed<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>plt.suptitle(<span class="st">"Same distribution, different samples → very different trees (high variance)"</span>, y<span class="op">=</span><span class="fl">1.02</span>)</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()<span class="op">;</span> plt.show()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="06_decision_trees_cart_files/figure-html/cell-10-output-1.png" width="1430" height="389" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="summary" class="level2">
+<h2 class="anchored" data-anchor-id="summary">Summary</h2>
+<ul>
+<li>A tree partitions the space into axis-aligned boxes and predicts a constant per box (mean, majority class, or class proportions).</li>
+<li>CART grows it greedily: at each node, pick the feature/threshold with the largest size-weighted impurity decrease (Gini/entropy for classification, variance = SSE for regression).</li>
+<li>Unrestricted trees overfit; control them with stopping rules or cost-complexity pruning <span class="math inline">\(R(T)+\alpha|T|\)</span>, with <span class="math inline">\(\alpha\)</span> chosen by CV.</li>
+<li>Interpretable, scale-free and fast, but high-variance, which motivates bagging and random forests.</li>
+</ul>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<script src="../assets/notes-nav.js"></script>
+<script src="../../slides/assets/figures.js"></script>
+<script src="../assets/notes-widgets.js"></script>
+<script src="../../slides/machine_learning/assets/fig-trees.js"></script>
+
+
+
+
+</body></html>
