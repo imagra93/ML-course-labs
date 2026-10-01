@@ -33,7 +33,7 @@ FIG['qkv']=root=>{const svg=initSvg(svgOf(root),960,250);const blk=(x,y,w,h,c,t,
 FIG['attn-matrix']=root=>{const svg=initSvg(svgOf(root),560,400);const toks=TOK.slice();const S=scores('tired');const A=S.map(r=>softmax(r.map(v=>v*1.3)));const cs=36;
   toks.forEach((w,j)=>{const t=T(svg,120+j*cs+cs/2,70,w,'');t.setAttribute('transform','rotate(-45 '+(120+j*cs+cs/2)+' 70)');t.setAttribute('text-anchor','start')});toks.forEach((w,i)=>T(svg,112,80+i*cs+cs/2+5,w,i===7?'lab':'','end'));
   grid(svg,120,80,A,cs,(i,j,v)=>heat(Math.min(1,v*1.6),true),null,{stroke:'#fff'});E('rect',{x:120,y:80+7*cs,width:10*cs,height:cs,fill:'none',stroke:'#c00000','stroke-width':2.5},svg);
-  T(svg,300,30,'keys (what each word offers) →','lab');T(svg,20,260,'queries ↓','lab','start')};
+  T(svg,300,14,'keys (what each word offers) →','lab');T(svg,8,250,'queries ↓','lab','start')};
 /* ---------- heads learn different patterns ---------- */
 FIG['heads']=root=>{const svg=initSvg(svgOf(root),960,290);const n=8;const cs=26;const toks=['the','cat','sat','on','the','mat','.','it'];
   const pats=[['head 1: previous token',(i,j)=>j===i-1?1:(i===0&&j===0?1:0)],['head 2: same word / itself',(i,j)=>toks[i]===toks[j]?1:0.05],['head 3: "it" → noun',(i,j)=>i===7?(j===1?0.7:j===5?0.3:0):(j===i?0.6:0.05)],['head 4: broad average',(i,j)=>j<=i?1:0]];
@@ -93,7 +93,7 @@ FIG['posenc']=root=>{const svg=initSvg(svgOf(root),600,300);const P=50,D=32;cons
   for(let p=0;p<P;p++)for(let i=0;i<D;i++){const k=Math.floor(i/2);const ang=p/Math.pow(10000,2*k/D);const v=i%2===0?Math.sin(ang):Math.cos(ang);E('rect',{x:50+p*cw,y:30+i*ch,width:cw+0.3,height:ch+0.3,fill:v>=0?'#4472c4':'#ed7d31','fill-opacity':Math.abs(v).toFixed(2)},svg)}
   T(svg,310,20,'PE(pos, i) for 50 positions × 32 dimensions','lab');T(svg,310,250,'position →','','middle');T(svg,40,130,'dim','','end');T(svg,310,285,'Low dimensions oscillate fast, high dimensions slowly: every position gets a unique pattern.','','middle')};
 FIG['mha']=root=>{const svg=initSvg(svgOf(root),560,330);const box=(x,y,w,t,c)=>{E('rect',{x:x,y:y,width:w,height:30,rx:5,fill:c,stroke:'#404040'},svg);T(svg,x+w/2,y+20,t,'lab')};
-  ['Q','K','V'].forEach((t,k)=>{const x=80+k*150;T(svg,x+50,318,t,'lab big');for(let h=2;h>=0;h--)box(x+h*6,262-h*6,100,'Linear','#f8cbad');arrowPx(svg,x+50,300,x+50,294,'ln thin sk','fk');arrowPx(svg,x+50,250,250+k*30,212,'ln thin sk','fk')});
+  ['Q','K','V'].forEach((t,k)=>{const x=80+k*150;T(svg,x+50,326,t,'lab big');for(let h=2;h>=0;h--)box(x+h*6,262-h*6,100,'Linear','#f8cbad');arrowPx(svg,x+50,300,x+50,294,'ln thin sk','fk');arrowPx(svg,x+50,250,250+k*30,212,'ln thin sk','fk')});
   for(let h=2;h>=0;h--)box(170+h*6,176-h*6,220,'Scaled dot-product attention','#b4c7e7');T(svg,470,170,'h heads','lab','start');arrowPx(svg,280,164,280,128,'ln thin sk','fk');
   box(210,96,140,'Concatenate','#ffe699');arrowPx(svg,280,94,280,70,'ln thin sk','fk');box(230,38,100,'Linear W_O','#f8cbad');T(svg,280,22,'output','lab')};
 FIG['block']=root=>{const svg=initSvg(svgOf(root),620,400);const box=(x,y,w,h,t,c)=>{E('rect',{x:x,y:y,width:w,height:h,rx:5,fill:c,stroke:'#404040'},svg);T(svg,x+w/2,y+h/2+5,t,'')};

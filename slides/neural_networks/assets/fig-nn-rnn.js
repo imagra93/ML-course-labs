@@ -57,14 +57,14 @@ FIG['bptt']=root=>{const svg=initSvg(svgOf(root),940,250);const n=6;
   node(svg,80+(n-1)*150,30,'L','#fbe5d6',50,30);arrowPx(svg,80+(n-1)*150,88,80+(n-1)*150,47,'ln thin sk','fk');
   for(let k=n-1;k>0;k--){const x=80+k*150;const w=Math.max(0.6,7*Math.pow(0.6,n-1-k));E('path',{d:'M'+(x-30)+',95 C'+(x-60)+',70 '+(x-90)+',70 '+(x-120)+',95',fill:'none',stroke:'#c00000','stroke-width':w},svg);T(svg,x-75,62,'× Wₕᵀ·tanh′','').style.fill='#c00000'}
   T(svg,470,240,'the gradient from the loss is multiplied by the same factor at every step back: after k steps, ~(‖Wₕ‖·tanh′)ᵏ','','middle')};
-FIG['vanish']=root=>{const P=Plot(svgOf(root),{w:560,h:340,x:[0,60],y:[-8,4],m:{l:44,r:14,t:14,b:36}});P.axes({xt:[0,10,20,30,40,50,60],yt:[-8,-6,-4,-2,0,2,4],fy:v=>'1e'+v,xl:'steps back in time (T − k)',yl:'gradient size'});P.line(0,0,60,0,'ln thin sm dash',P.bg);
+FIG['vanish']=root=>{const P=Plot(svgOf(root),{w:560,h:340,x:[0,60],y:[-8,4],m:{l:54,r:14,t:14,b:36}});P.axes({xt:[0,10,20,30,40,50,60],yt:[-8,-6,-4,-2,0,2,4],fy:v=>'1e'+v,xl:'steps back in time (T − k)',yl:'gradient size'});P.line(0,0,60,0,'ln thin sm dash',P.bg);
   const iw=q(root,'w'),iff=q(root,'f');function draw(){const w=+iw.value,f=+iff.value;setV(root,'w',fmt(w,2));setV(root,'f',fmt(f,2));P.clear();
     P.fn(k=>Math.max(-8,Math.min(4,k*Math.log10(w))),'ln sr',0,60,120);P.fn(k=>Math.max(-8,k*Math.log10(f)),'ln sb',0,60,120);setR(root,'r',(Math.pow(w,50)).toExponential(1));setR(root,'l',(Math.pow(f,50)).toExponential(1))}
   iw.addEventListener('input',draw);iff.addEventListener('input',draw);draw()};
 /* ---------- gradient clipping ---------- */
 FIG['clip']=root=>{const svg=initSvg(svgOf(root),420,260);const P=Plot(svg,{w:420,h:260,x:[-1,6],y:[-1,5],m:{l:20,r:10,t:20,b:20}});P.axes({grid:false,noaxes:true});
   const c=[0,0];const t=Array.from({length:61},(_,i)=>2*Math.PI*i/60);P.path(t.map(a=>[1.5*Math.cos(a),1.5*Math.sin(a)]),'ln thin sm dash');P.text(-1,1.6,'‖g‖ = τ','', 'start');
-  lib.arrow(P,0,0,5,4,'ln sr','fr');P.text(5,4,'raw gradient (exploding)','', 'end',-6,-8);const n=Math.hypot(5,4);lib.arrow(P,0,0,1.5*5/n,1.5*4/n,'ln sb','fb');P.text(1.2,0.6,'clipped: same direction, length τ','', 'start',6,8)};
+  lib.arrow(P,0,0,5,4,'ln sr','fr');P.text(5,4,'raw gradient (exploding)','', 'end',-6,-8);const n=Math.hypot(5,4);lib.arrow(P,0,0,1.5*5/n,1.5*4/n,'ln sb','fb');P.text(1.6,-0.1,'clipped: same direction, length τ','', 'start',0,14)};
 /* ---------- LSTM ---------- */
 function lstmDraw(svg,hi){const on=t=>!hi||hi.includes(t);const G=t=>{const g=E('g',{},svg);if(!on(t))g.setAttribute('opacity','0.18');return g};
   const col=t=>hi&&on(t)?'#c00000':'#404040',sw=t=>hi&&on(t)?2.6:1.2;

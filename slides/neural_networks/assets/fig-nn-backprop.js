@@ -42,7 +42,7 @@ FIG['neuron-bp']=root=>{const svg=svgOf(root);const x=2,w=-0.5,b=0.3,y=1,al=0.5;
     arrowPx(svg,74,80,166,112,'ln thin sk','fk');arrowPx(svg,74,170,166,138,'ln thin sk','fk');arrowPx(svg,214,125,286,158,'ln thin sk','fk');arrowPx(svg,74,260,286,182,'ln thin sk','fk');arrowPx(svg,334,170,406,170,'ln thin sk','fk');arrowPx(svg,454,170,526,170,'ln thin sk','fk');
     T(svg,250,128,'w·x','');T(svg,370,152,'z','');T(svg,490,152,'a','');T(svg,550,215,'y = 1','');T(svg,550,232,'L = −log a','');
     fw(50,44,'x = 2');fw(50,134,N?'w = '+f3(w2):'w = −0.5');fw(50,224,N?'b = '+f3(b2):'b = 0.3');fw(190,88,N?f3(w2*x):'−1.0');fw(310,133,N?'z = '+f3(z2):'z = −0.7');fw(430,133,N?'a = '+f3(a2):'a = 0.332');fw(550,133,N?'L = '+f3(L2):'L = 1.103');
-    if(s>=1&&!N)bw(490,196,'∂L/∂a = −1/a = '+f3(dLda));if(s>=2&&!N){bw(370,196,'∂L/∂z = '+f3(dLda)+' · '+f3(dadz)+' = '+f3(dLdz));T(svg,430,215,'σ′ = a(1−a) = '+f3(dadz),'')}
+    if(s>=1&&!N)bw(530,196,'∂L/∂a = −1/a = '+f3(dLda));if(s>=2&&!N){bw(350,196,'∂L/∂z = '+f3(dLda)+' · '+f3(dadz)+' = '+f3(dLdz));T(svg,430,215,'σ′ = a(1−a) = '+f3(dadz),'')}
     if(s>=3&&!N){bw(120,205,'∂L/∂w = ∂L/∂z · x = '+f3(dLdw));bw(150,290,'∂L/∂b = ∂L/∂z · 1 = '+f3(dLdb))}
     if(s>=4&&!N){box(svg,318,240,292,44,'w ← w − 0.5·(−1.336) = 0.168\nb ← b − 0.5·(−0.668) = 0.634','#fff2cc',{lh:18,cls:''})}
     if(N)box(svg,262,240,348,44,'after one step the loss fell from 1.103 to 0.321\nand a rose from 0.332 to 0.725','#e2f0d9',{lh:18,cls:''})})};
