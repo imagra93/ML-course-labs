@@ -1309,7 +1309,7 @@ With a new mask at every call the "numerical gradient" is noise: relative error 
 | residual connection | $\mathbf{h} + F(\mathbf{h})$: a skip path whose Jacobian contains the identity |
 | gradient clipping | rescaling the gradient to a maximum norm before the update |
 
-**Lab 7 · An MLP from scratch with NumPy** ([open in Colab](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/MLP_Numpy.ipynb); CPU only). Build and train the network of these two notes with nothing but NumPy; every formula becomes a line of code:
+**Lab 7 · An MLP from scratch with NumPy** ([open in Colab](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 7 - MLP from scratch.ipynb); CPU only). Build and train the network of these two notes with nothing but NumPy; every formula becomes a line of code:
 
 1. XOR: see logistic regression fail, fix it with a hand-made feature.
 2. Write the forward pass, the activations and the binary cross-entropy.

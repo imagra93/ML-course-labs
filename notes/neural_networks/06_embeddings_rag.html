@@ -649,7 +649,7 @@ nDCG@5 of (3, 0, 2, 1, 0) = 0.930;  of (0, 3, 2, 1, 0) = 0.698
 scikit-learn ndcg_score for the first ranking: 0.930</code></pre>
 </div>
 </div>
-<p>In <a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/rag_embeddings_demo.ipynb">Lab 15</a>, on 16 questions about a fictional guide, word TF-IDF reaches hit@1 = 0.56, while character <span class="math inline">\(n\)</span>-grams and a neural sentence encoder both reach 0.81.</p>
+<p>In <a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 15 - RAG embeddings and similarity search.ipynb">Lab 15</a>, on 16 questions about a fictional guide, word TF-IDF reaches hit@1 = 0.56, while character <span class="math inline">\(n\)</span>-grams and a neural sentence encoder both reach 0.81.</p>
 </section>
 <section id="evaluating-our-retrievers" class="level3">
 <h3 class="anchored" data-anchor-id="evaluating-our-retrievers">8.2 Evaluating our retrievers</h3>
@@ -802,7 +802,7 @@ online  (answering):  question  → embed → retrieve top-k chunks (→ re-rank
 <li><strong>Metadata filters and access control</strong>: only retrieve documents the user is allowed to see (section 13.7).</li>
 <li><strong>Evaluate the retrieval first</strong> (hit rate@k, MRR on real questions), then the generated answers (faithfulness, correctness).</li>
 </ul>
-<p>A prompt is just text. The function below assembles one from retrieved chunks: instructions, numbered chunks with their IDs, and the question. No LLM is called in this note; <a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/rag_embeddings_demo.ipynb">Lab 15</a> runs a small local model with and without the retrieved context.</p>
+<p>A prompt is just text. The function below assembles one from retrieved chunks: instructions, numbered chunks with their IDs, and the question. No LLM is called in this note; <a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 15 - RAG embeddings and similarity search.ipynb">Lab 15</a> runs a small local model with and without the retrieved context.</p>
 <div id="33daec2d" class="cell" data-execution_count="13">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>book_chunks <span class="op">=</span> [(<span class="ss">f"book</span><span class="sc">{</span>b<span class="sc">}</span><span class="ss">-c</span><span class="sc">{</span>i<span class="sc">}</span><span class="ss">"</span>, <span class="st">" "</span>.join(c)) <span class="cf">for</span> b, w <span class="kw">in</span> <span class="bu">enumerate</span>(book_words) <span class="cf">for</span> i, c <span class="kw">in</span> <span class="bu">enumerate</span>(chunk(w, <span class="dv">48</span>, <span class="fl">0.5</span>))]</span>
 <span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>book_index <span class="op">=</span> BM25([t <span class="cf">for</span> _, t <span class="kw">in</span> book_chunks])</span>
@@ -1117,7 +1117,7 @@ invented answer: numbers not found in the cited chunks: ['113']</code></pre>
 <li>Chunking has an optimum: too small splits facts, too large wastes the context budget; overlap and structure-aware splits help. Measure it.</li>
 <li>RAG = retrieve relevant chunks, then generate from them, with citations. Its assumptions: similarity ≈ relevance, shared vocabulary, chunks within the encoder and context limits, a current index, trustworthy text. Its failure modes: retrieval misses (measure recall first), chunk boundaries, hubness, stale indexes, ungrounded answers, prompt injection, and access control and privacy (filter before ranking; no personal data in prompts or logs).</li>
 </ul>
-<p><strong>Lab.</strong> <a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/rag_embeddings_demo.ipynb">RAG: embeddings, search and grounded answers</a>: four ways to embed text compared with hit rate@k and MRR, exact vs approximate search, chunking, and an LLM answering with and without the retrieved context.</p>
+<p><strong>Lab.</strong> <a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 15 - RAG embeddings and similarity search.ipynb">RAG: embeddings, search and grounded answers</a>: four ways to embed text compared with hit rate@k and MRR, exact vs approximate search, chunking, and an LLM answering with and without the retrieved context.</p>
 </section>
 
 </main>

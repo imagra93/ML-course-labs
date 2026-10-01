@@ -18,7 +18,7 @@ Logistic regression is the classification counterpart of linear regression: the 
 
 **Notation.** $m$ examples $(\mathbf{x}^{(i)}, y^{(i)})$ with labels $y^{(i)}\in\{0,1\}$; each $\mathbf{x}^{(i)}\in\mathbb{R}^{n+1}$ has $n$ features plus $x_0 = 1$; the design matrix $\mathbf{X}\in\mathbb{R}^{m\times(n+1)}$ has the $\mathbf{x}^{(i)\top}$ as rows (first column of ones); $\boldsymbol{\theta}\in\mathbb{R}^{n+1}$ are the parameters, $\theta_0$ the intercept. The slides write $g(z)$ for the sigmoid; this note writes $\sigma(z)$.
 
-Related notes: [note 02b](02b_generalized_linear_models.html) (logistic regression as one member of the family of generalised linear models), [note 03](03_regularization_inputs_assumptions.html) (regularisation, input variables), [note 04](04_softmax_regression.html) (more than two classes). Lab: [logistic regression from scratch](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%20-%20Logistic%20Regression.ipynb).
+Related notes: [note 02b](02b_generalized_linear_models.html) (logistic regression as one member of the family of generalised linear models), [note 03](03_regularization_inputs_assumptions.html) (regularisation, input variables), [note 04](04_softmax_regression.html) (more than two classes). Lab: [logistic regression from scratch](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%203%20-%20Logistic%20Regression.ipynb).
 
 ```{python}
 import numpy as np
@@ -1778,7 +1778,7 @@ Both views are correct; they answer different questions. ROC-AUC: "how well does
 
 **Cons.** Overly simplistic when the true boundary is not linear in the features (linearity assumption, section 14.2; fixed with features, or with other models); affected by influential points (section 14.6); correlated features (multicollinearity) make the coefficients unstable and hard to interpret, while the predictions can still be fine (drop or combine features, PCA, or regularisation, section 14.3). (The slides also list homoscedasticity: that is an assumption of linear regression's standard errors, not of logistic regression.)
 
-**Labs.** [Lab 2: logistic regression from scratch](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%20-%20Logistic%20Regression.ipynb): sigmoid, cross-entropy, gradient descent, decision boundary and metrics, then the same with scikit-learn. [Lab 3: polynomial regression](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%20-%20Polynomial%20Regression%20and%20Regularisation.ipynb): underfitting, overfitting, train vs test error, Ridge and Lasso with cross-validation.
+**Labs.** [Lab 2: logistic regression from scratch](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%203%20-%20Logistic%20Regression.ipynb): sigmoid, cross-entropy, gradient descent, decision boundary and metrics, then the same with scikit-learn. [Lab 3: polynomial regression](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%202%20-%20Polynomial%20Regression%20and%20Regularisation.ipynb): underfitting, overfitting, train vs test error, Ridge and Lasso with cross-validation.
 
 ## Summary
 

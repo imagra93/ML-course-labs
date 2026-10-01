@@ -15,7 +15,7 @@ jupyterlab>=4.0
 ipykernel>=6.29
 ipywidgets>=8.1
 
-# Tree visualisation in "lab - XGBoost and Gradient Boosting"
+# Tree visualisation in "lab 6 - XGBoost and Gradient Boosting"
 # NOTE: the Python binding needs the Graphviz system package too:
 #   Ubuntu/Debian: sudo apt install graphviz
 #   macOS:         brew install graphviz

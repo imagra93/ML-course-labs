@@ -464,7 +464,7 @@ The partial dependence recovers the linear effect of $x_1$ closely and the U sha
 
 *Cons:* less interpretable than one tree; bigger and slower to predict ($B$ trees); cannot extrapolate beyond the training range (section 16.6); less suited to very sparse, high-dimensional data (e.g. text), where linear models do well.
 
-**Lab:** [Decision Trees and Random Forests](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%20-%20Decision%20Trees%20and%20Random%20Forests.ipynb) · [Decision Trees from scratch](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%20-%20Decision%20Trees%20from%20scratch.ipynb).
+**Lab:** [Decision Trees and Random Forests](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%204b%20-%20Decision%20Trees%20and%20Random%20Forests.ipynb) · [Decision Trees from scratch](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%204%20-%20Decision%20Trees%20from%20scratch.ipynb).
 
 # Part II · Boosting
 
@@ -853,7 +853,7 @@ for mcw in [0, 1.2, 2]:
 
 With `min_child_weight = 0` both find the same split and leaf weights. The best split has a left child of 4 points ($H_L = 1.0$), so `min_child_weight = 1.2` forbids it and both implementations fall back to the best split with at least 5 points on each side ($H \ge 1.25$). With `min_child_weight = 2` no split can give both children $H \ge 2$ (the total is $H = 2.5$), and the tree stays a single leaf.
 
-**Lab:** [XGBoost and Gradient Boosting](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%20-%20XGBoost%20and%20Gradient%20Boosting.ipynb): gradient boosting from scratch on a toy problem, then XGBoost for regression, binary and multiclass classification, cross-validation, learning rate, number of trees, early stopping and feature importance. See also the [XGBoost parameters](https://xgboost.readthedocs.io/en/latest/parameter.html).
+**Lab:** [XGBoost and Gradient Boosting](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%206%20-%20XGBoost%20and%20Gradient%20Boosting.ipynb): gradient boosting from scratch on a toy problem, then XGBoost for regression, binary and multiclass classification, cross-validation, learning rate, number of trees, early stopping and feature importance. See also the [XGBoost parameters](https://xgboost.readthedocs.io/en/latest/parameter.html).
 
 ## 15. Boosting in practice: what to do when…
 

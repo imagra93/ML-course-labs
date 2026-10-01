@@ -555,7 +555,7 @@ RoPE scores for (m, n) = (2, 5), (10, 13), (40, 43): [-0.0352, -0.0352, -0.0352]
 <pre><code>Z: (10, 64)   same as F.scaled_dot_product_attention: True</code></pre>
 </div>
 </div>
-<p>With a batch, the same code works on tensors <span class="math inline">\([B,n,d]\)</span> (write <code>K.transpose(-2, -1)</code> for <span class="math inline">\(\mathbf{K}^\top\)</span>). Multi-head: reshape to <span class="math inline">\([B,h,n,d_k]\)</span> and run all heads at once. In practice use <code>nn.MultiheadAttention</code>, or <code>F.scaled_dot_product_attention(Q, K, V, is_causal=True)</code>, which uses fused kernels (FlashAttention) that never store the <span class="math inline">\(n\times n\)</span> matrix. <a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/Text_Generation_with_Transformers.ipynb">Lab 14</a> plots the real attention matrices of GPT-2.</p>
+<p>With a batch, the same code works on tensors <span class="math inline">\([B,n,d]\)</span> (write <code>K.transpose(-2, -1)</code> for <span class="math inline">\(\mathbf{K}^\top\)</span>). Multi-head: reshape to <span class="math inline">\([B,h,n,d_k]\)</span> and run all heads at once. In practice use <code>nn.MultiheadAttention</code>, or <code>F.scaled_dot_product_attention(Q, K, V, is_causal=True)</code>, which uses fused kernels (FlashAttention) that never store the <span class="math inline">\(n\times n\)</span> matrix. <a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 14 - Text generation with Transformers.ipynb">Lab 14</a> plots the real attention matrices of GPT-2.</p>
 </section>
 </section>
 <section id="why-transformers-won-and-what-they-cost" class="level2">
@@ -1178,7 +1178,7 @@ J = -\frac1T\sum_{t=1}^{T}\log p(x_t\mid x_{&lt;t}), \qquad \text{perplexity} = 
 \]</span></p>
 <p>(The second form: <span class="math inline">\(e^{J} = \exp\big(-\frac1T\sum\log p_t\big) = \big(\prod p_t\big)^{-1/T}\)</span>, the inverse geometric mean of the probabilities.) <strong>Meaning</strong>: if the model gave every true next token probability <span class="math inline">\(\frac14\)</span>, then <span class="math inline">\(J = \log4\)</span> and the perplexity is 4: the model is as uncertain as if it had to pick among <strong>4 equally likely tokens</strong> at every step. Uniform guessing over GPT-2’s 50,257 tokens gives perplexity 50,257. Lower is better.</p>
 <p><strong>Bits.</strong> With base-2 logarithms the same loss is measured in bits: <span class="math inline">\(J_{\text{bits}} = J/\log 2\)</span> bits per token, and perplexity <span class="math inline">\(= 2^{J_{\text{bits}}}\)</span>. A perplexity of 4 is 2 bits per token: the average number of yes/no questions an optimal code needs to identify the next token.</p>
-<p><strong>GPT-2 small, measured in <a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/Text_Generation_with_Transformers.ipynb">Lab 14</a>:</strong></p>
+<p><strong>GPT-2 small, measured in <a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 14 - Text generation with Transformers.ipynb">Lab 14</a>:</strong></p>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -1549,7 +1549,7 @@ generation without the mask: 'the modeleeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
 <li>Decoding: greedy and beam (likely, repetitive), temperature (diversity vs errors), top-<span class="math inline">\(k\)</span> and top-<span class="math inline">\(p\)</span> (cut the tail).</li>
 <li>Diagnose: a loss that is too low (mask leakage), train/validation divergence (overfitting), the initial loss vs <span class="math inline">\(\log|V|\)</span>, overlapping splits, tokens per character.</li>
 </ul>
-<p><strong>Lab.</strong> <a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/Text_Generation_with_Transformers.ipynb">Text generation with transformers (GPT-2)</a>: BPE, the <span class="math inline">\(12d^2\)</span> count, perplexity and surprisal, causal attention patterns, decoding from scratch with the KV cache and beam search, prompting a base model.</p>
+<p><strong>Lab.</strong> <a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 14 - Text generation with Transformers.ipynb">Text generation with transformers (GPT-2)</a>: BPE, the <span class="math inline">\(12d^2\)</span> count, perplexity and surprisal, causal attention patterns, decoding from scratch with the KV cache and beam search, prompting a base model.</p>
 </section>
 
 </main>

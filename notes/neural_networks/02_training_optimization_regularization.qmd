@@ -730,7 +730,7 @@ Frameworks like **PyTorch Lightning** ([NN note 03](03_cnn_transfer_multitask.ht
 
 **Averaging metrics over an epoch.** Weight each batch by its size (the last batch is usually smaller). For non-linear metrics, don't average per-batch values: with $N$ batches of equal size, $\frac1N\sum_b\sqrt{\mathrm{MSE}_b}\le\sqrt{\frac1N\sum_b\mathrm{MSE}_b}$ by Jensen's inequality ($\sqrt{\cdot}$ is concave), so the average of per-batch RMSEs underestimates the true RMSE. Accumulate sums and take the root at the end.
 
-**Lab 8 · The MLP again, now with PyTorch** ([open in Colab](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/MLP_pytorch.ipynb)). The network of Lab 7 rebuilt with the tools used from now on: tensors and autograd (check that `loss.backward()` gives the gradients derived by hand in NN note 01), `nn.Linear` and `nn.Module`, why `BCEWithLogitsLoss` takes logits, a training loop by hand and then with SGD, momentum and Adam, `Dataset` and `DataLoader` with a validation set, saving and loading a model. Runs on a CPU.
+**Lab 8 · The MLP again, now with PyTorch** ([open in Colab](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 8 - MLP with PyTorch.ipynb)). The network of Lab 7 rebuilt with the tools used from now on: tensors and autograd (check that `loss.backward()` gives the gradients derived by hand in NN note 01), `nn.Linear` and `nn.Module`, why `BCEWithLogitsLoss` takes logits, a training loop by hand and then with SGD, momentum and Adam, `Dataset` and `DataLoader` with a validation set, saving and loading a model. Runs on a CPU.
 
 ## 7. Overfitting and underfitting: reading learning curves
 
@@ -1796,8 +1796,8 @@ These get you most of the way on most problems. Tune the learning rate first, th
 
 ## 15. Labs
 
-- **Lab 8 · The MLP again, now with PyTorch** ([open in Colab](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/MLP_pytorch.ipynb)): see section 6.
-- **Lab 9 · Multiclass images with an MLP (Fashion-MNIST)** ([open in Colab](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/Demo_Multiclass.ipynb)). 70,000 greyscale images of clothes, 10 classes: train / validation / test splits and preprocessing (scale, standardise, flatten); from sigmoid to softmax and the categorical cross-entropy; softmax regression against an MLP, with a training loop and early stopping; accuracy, confusion matrix, per-class metrics and the errors; experiments with width, depth and dropout; and the limit of MLPs: shift the pictures a few pixels and watch the accuracy fall, which motivates CNNs ([NN note 03](03_cnn_transfer_multitask.html)). Expected result: MLP ≈ 88 % test accuracy, softmax regression ≈ 84 %. A CPU is fine.
+- **Lab 8 · The MLP again, now with PyTorch** ([open in Colab](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 8 - MLP with PyTorch.ipynb)): see section 6.
+- **Lab 9 · Multiclass images with an MLP (Fashion-MNIST)** ([open in Colab](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 9 - Multiclass classification.ipynb)). 70,000 greyscale images of clothes, 10 classes: train / validation / test splits and preprocessing (scale, standardise, flatten); from sigmoid to softmax and the categorical cross-entropy; softmax regression against an MLP, with a training loop and early stopping; accuracy, confusion matrix, per-class metrics and the errors; experiments with width, depth and dropout; and the limit of MLPs: shift the pictures a few pixels and watch the accuracy fall, which motivates CNNs ([NN note 03](03_cnn_transfer_multitask.html)). Expected result: MLP ≈ 88 % test accuracy, softmax regression ≈ 84 %. A CPU is fine.
 
 ## Summary
 
