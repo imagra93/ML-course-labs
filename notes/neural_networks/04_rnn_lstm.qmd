@@ -212,7 +212,7 @@ print(f"stable fixed point of h -> tanh(1.5 h): {h:.2f}")
 | Pattern | Example | How |
 |---|---|---|
 | one-to-many | music or text generation, image captioning | feed each output back as the next input |
-| many-to-one | sentiment of a review ([LSTM lab](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/LSTM_sentiment.ipynb)) | a head on the last state $\mathbf{h}_T$ (or on a pooled summary) |
+| many-to-one | sentiment of a review ([LSTM lab](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 11 - LSTM sentiment analysis.ipynb)) | a head on the last state $\mathbf{h}_T$ (or on a pooled summary) |
 | many-to-many, same length | named-entity recognition, part-of-speech tagging, per-step forecasting | a head on every $\mathbf{h}_t$ |
 | many-to-many, different length | machine translation, speech-to-text | an encoder RNN reads everything, a decoder RNN writes (section 13) |
 | language model | next-token prediction | softmax over $|V|$ at every step, trained with cross-entropy |
@@ -1184,4 +1184,4 @@ With raw inputs 63 % of the gate pre-activations are saturated, and the model fa
 - Assumptions: a fixed-size state, stationary dynamics, no look-ahead, teacher forcing ≈ inference, a closed vocabulary, scaled inputs. Check them with memory probes, rolling errors, walk-forward validation, free-running errors by horizon, OOV rates and saturation fractions.
 - Recurrence is sequential and has a state bottleneck; attention ([NN note 05](05_attention_transformers.html)) removes both.
 
-**Lab.** [Sentiment analysis with an LSTM (IMDB)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/LSTM_sentiment.ipynb): a TF-IDF baseline, an RNN and an LSTM from scratch, packing, clipping and early stopping, and a comparison of RNN, LSTM, GRU and bidirectional LSTM.
+**Lab.** [Sentiment analysis with an LSTM (IMDB)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 11 - LSTM sentiment analysis.ipynb): a TF-IDF baseline, an RNN and an LSTM from scratch, packing, clipping and early stopping, and a comparison of RNN, LSTM, GRU and bidirectional LSTM.

@@ -658,7 +658,7 @@ The random split of section 6 is right only if the rows are independent and the 
 - **Data leakage**: information from the validation or test data (or from the future) sneaks into training. The scores look great, and the model fails in production. Two classic forms: *preprocessing fitted on all the data* (the mean and standard deviation used for scaling, a feature selection) and *features known only after the outcome* ("claim paid amount" to predict fraud when the claim is opened). Fix: fit every data-dependent step on the training part only, which a scikit-learn `Pipeline` does fold by fold. Section 14.1.
 - **Classification**: stratify (section 8.2).
 - **Groups**: several rows of the same customer, policy, patient or car must all go to the same part (`GroupKFold`). Otherwise we validate on near-copies of the training data. Section 14.2.
-- **Time**: never shuffle. Train on the past, validate on the future (`TimeSeriesSplit`). Section 14.3, and the [time-series lab](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%20-%20Linear%20Regression%20for%20Time%20Series.ipynb).
+- **Time**: never shuffle. Train on the past, validate on the future (`TimeSeriesSplit`). Section 14.3, and the [time-series lab](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%2016%20-%20Linear%20Regression%20for%20Time%20Series.ipynb).
 
 The general principle: **the validation split must imitate the deployment split.** If the model will score new customers, validate on customers it has not seen; if it will forecast next month, validate on months after the training months.
 

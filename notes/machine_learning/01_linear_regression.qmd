@@ -14,7 +14,7 @@ Linear regression predicts a number (a claim cost, a premium, a house price) as 
 
 **What you need.** Derivatives and the chain rule; vectors and matrices (products, transpose, inverse, trace, eigenvalues); basic probability (expectation, variance, covariance, the normal distribution). The notation ($m$ examples, $n$ features, $\mathbf{x}^{(i)}$, $y^{(i)}$) and the train/validation/test split come from [note 00](00_supervised_learning.html).
 
-**After this note you can** fit a linear regression from scratch and with scikit-learn, explain why the solution exists and is unique, attach honest uncertainty to its coefficients and predictions, and diagnose and fix the usual problems: curvature, dependent errors, non-constant variance, non-normal noise, collinearity, confounding, influential points and extrapolation. Regularisation (Ridge, Lasso) and the full treatment of input variables are in [note 03](03_regularization_inputs_assumptions.html). The lab is [OLS from scratch](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%20-%20Ordinary%20Least%20Squares%20Regression.ipynb).
+**After this note you can** fit a linear regression from scratch and with scikit-learn, explain why the solution exists and is unique, attach honest uncertainty to its coefficients and predictions, and diagnose and fix the usual problems: curvature, dependent errors, non-constant variance, non-normal noise, collinearity, confounding, influential points and extrapolation. Regularisation (Ridge, Lasso) and the full treatment of input variables are in [note 03](03_regularization_inputs_assumptions.html). The lab is [OLS from scratch](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%201%20-%20Ordinary%20Least%20Squares%20Regression.ipynb).
 
 ```{python}
 import numpy as np
@@ -1261,7 +1261,7 @@ The naive intervals are about three times too narrow and cover the truth only ab
 
 **What to do.**
 
-1. **Model the dependence away.** Often it comes from something missing: add a time trend, seasonality (month dummies, $\sin/\cos$), lagged values $y_{t-1}$, or group-level features (region, policyholder history). If the cause is in the model, the errors become independent. See the [time-series lab](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%20-%20Linear%20Regression%20for%20Time%20Series.ipynb).
+1. **Model the dependence away.** Often it comes from something missing: add a time trend, seasonality (month dummies, $\sin/\cos$), lagged values $y_{t-1}$, or group-level features (region, policyholder history). If the cause is in the model, the errors become independent. See the [time-series lab](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%2016%20-%20Linear%20Regression%20for%20Time%20Series.ipynb).
 2. **Generalised least squares for AR(1) errors: quasi-differencing** (Cochrane–Orcutt). If $\varepsilon_t = \rho\varepsilon_{t-1} + u_t$ with i.i.d. $u_t$, subtract $\rho$ times the previous equation:
 $$
 y_t - \rho y_{t-1} = (\mathbf{x}_t - \rho\mathbf{x}_{t-1})^\top\boldsymbol{\theta} + (\varepsilon_t - \rho\varepsilon_{t-1}) = (\mathbf{x}_t - \rho\mathbf{x}_{t-1})^\top\boldsymbol{\theta} + u_t .

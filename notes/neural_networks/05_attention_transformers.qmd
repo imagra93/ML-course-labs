@@ -369,7 +369,7 @@ fused = F.scaled_dot_product_attention(X @ Wq, X @ Wk, X @ Wv, is_causal=True)
 print("Z:", tuple(Z.shape), "  same as F.scaled_dot_product_attention:", torch.allclose(Z, fused, atol=1e-5))
 ```
 
-With a batch, the same code works on tensors $[B,n,d]$ (write `K.transpose(-2, -1)` for $\mathbf{K}^\top$). Multi-head: reshape to $[B,h,n,d_k]$ and run all heads at once. In practice use `nn.MultiheadAttention`, or `F.scaled_dot_product_attention(Q, K, V, is_causal=True)`, which uses fused kernels (FlashAttention) that never store the $n\times n$ matrix. [Lab 14](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/Text_Generation_with_Transformers.ipynb) plots the real attention matrices of GPT-2.
+With a batch, the same code works on tensors $[B,n,d]$ (write `K.transpose(-2, -1)` for $\mathbf{K}^\top$). Multi-head: reshape to $[B,h,n,d_k]$ and run all heads at once. In practice use `nn.MultiheadAttention`, or `F.scaled_dot_product_attention(Q, K, V, is_causal=True)`, which uses fused kernels (FlashAttention) that never store the $n\times n$ matrix. [Lab 14](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 14 - Text generation with Transformers.ipynb) plots the real attention matrices of GPT-2.
 
 ## 8. Why transformers won, and what they cost
 
@@ -859,7 +859,7 @@ $$
 
 **Bits.** With base-2 logarithms the same loss is measured in bits: $J_{\text{bits}} = J/\log 2$ bits per token, and perplexity $= 2^{J_{\text{bits}}}$. A perplexity of 4 is 2 bits per token: the average number of yes/no questions an optimal code needs to identify the next token.
 
-**GPT-2 small, measured in [Lab 14](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/Text_Generation_with_Transformers.ipynb):**
+**GPT-2 small, measured in [Lab 14](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 14 - Text generation with Transformers.ipynb):**
 
 | text | perplexity |
 |---|---|
@@ -1127,4 +1127,4 @@ On text from its own source the tokeniser needs 0.48 tokens per character: the 4
 - Decoding: greedy and beam (likely, repetitive), temperature (diversity vs errors), top-$k$ and top-$p$ (cut the tail).
 - Diagnose: a loss that is too low (mask leakage), train/validation divergence (overfitting), the initial loss vs $\log|V|$, overlapping splits, tokens per character.
 
-**Lab.** [Text generation with transformers (GPT-2)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/Text_Generation_with_Transformers.ipynb): BPE, the $12d^2$ count, perplexity and surprisal, causal attention patterns, decoding from scratch with the KV cache and beam search, prompting a base model.
+**Lab.** [Text generation with transformers (GPT-2)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 14 - Text generation with Transformers.ipynb): BPE, the $12d^2$ count, perplexity and surprisal, causal attention patterns, decoding from scratch with the KV cache and beam search, prompting a base model.

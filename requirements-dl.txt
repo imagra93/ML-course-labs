@@ -8,13 +8,13 @@
 torch>=2.2
 torchvision>=0.17
 
-lightning>=2.2             # multitask_face_lightning
-torchmetrics>=1.3          # multitask_face_lightning
+lightning>=2.2             # lab 13 (multitask face, Lightning)
+torchmetrics>=1.3          # lab 13 (multitask face, Lightning)
 
 pillow>=10.0               # face labs
 gdown>=5.1                 # downloads the face dataset from Google Drive
 
-transformers>=4.40         # Text_Generation_with_Transformers, rag_embeddings_demo
+transformers>=4.40         # lab 14 (text generation), lab 15 (RAG)
 
-ultralytics>=8.3           # notebooks/neural_networks/object_detection_yolo (YOLO11)
+ultralytics>=8.3           # lab 10b, Object detection with YOLO (YOLO11)
 gradio>=4.0                # notebooks/neural_networks/yolo_app.py

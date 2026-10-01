@@ -14,7 +14,7 @@ checkpoints/
 *.pth
 *.zip
 
-# YOLO weights, exports and training runs (notebooks/neural_networks/object_detection_yolo)
+# YOLO weights, exports and training runs (lab 10b, Object detection with YOLO)
 *.pt
 *.onnx
 runs/

@@ -1134,7 +1134,7 @@ for f_, c_ in zip(*np.unique(root_feats, return_counts=True)):
 
 The fix for the variance is to **average many trees** ([note 07](07_bagging_random_forest_boosting.html)).
 
-**Labs:** [Decision Trees from scratch](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%20-%20Decision%20Trees%20from%20scratch.ipynb) (impurity measures, a `Node` class, best-split search, recursive growth, prediction and a scikit-learn-style wrapper; then Iris, regression trees, `max_depth` and feature importance) and [Decision Trees and Random Forests](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%20-%20Decision%20Trees%20and%20Random%20Forests.ipynb) (how a tree decides, depth and overfitting, why one tree is unstable, bagging, random forests, OOB score, forest regression and feature importance).
+**Labs:** [Decision Trees from scratch](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%204%20-%20Decision%20Trees%20from%20scratch.ipynb) (impurity measures, a `Node` class, best-split search, recursive growth, prediction and a scikit-learn-style wrapper; then Iris, regression trees, `max_depth` and feature importance) and [Decision Trees and Random Forests](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%204b%20-%20Decision%20Trees%20and%20Random%20Forests.ipynb) (how a tree decides, depth and overfitting, why one tree is unstable, bagging, random forests, OOB score, forest regression and feature importance).
 
 ## Summary
 

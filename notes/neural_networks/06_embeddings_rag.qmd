@@ -402,7 +402,7 @@ from sklearn.metrics import ndcg_score
 print(f"scikit-learn ndcg_score for the first ranking: {ndcg_score([[3, 0, 2, 1, 0]], [[5, 4, 3, 2, 1]], k=5):.3f}")
 ```
 
-In [Lab 15](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/rag_embeddings_demo.ipynb), on 16 questions about a fictional guide, word TF-IDF reaches hit@1 = 0.56, while character $n$-grams and a neural sentence encoder both reach 0.81.
+In [Lab 15](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 15 - RAG embeddings and similarity search.ipynb), on 16 questions about a fictional guide, word TF-IDF reaches hit@1 = 0.56, while character $n$-grams and a neural sentence encoder both reach 0.81.
 
 ### 8.2 Evaluating our retrievers
 
@@ -542,7 +542,7 @@ online  (answering):  question  → embed → retrieve top-k chunks (→ re-rank
 - **Metadata filters and access control**: only retrieve documents the user is allowed to see (section 13.7).
 - **Evaluate the retrieval first** (hit rate@k, MRR on real questions), then the generated answers (faithfulness, correctness).
 
-A prompt is just text. The function below assembles one from retrieved chunks: instructions, numbered chunks with their IDs, and the question. No LLM is called in this note; [Lab 15](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/rag_embeddings_demo.ipynb) runs a small local model with and without the retrieved context.
+A prompt is just text. The function below assembles one from retrieved chunks: instructions, numbered chunks with their IDs, and the question. No LLM is called in this note; [Lab 15](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 15 - RAG embeddings and similarity search.ipynb) runs a small local model with and without the retrieved context.
 
 ```{python}
 book_chunks = [(f"book{b}-c{i}", " ".join(c)) for b, w in enumerate(book_words) for i, c in enumerate(chunk(w, 48, 0.5))]
@@ -795,4 +795,4 @@ logger.debug("retrieval_done", extra={"request_id": request_id, "chunk_ids": [c.
 - Chunking has an optimum: too small splits facts, too large wastes the context budget; overlap and structure-aware splits help. Measure it.
 - RAG = retrieve relevant chunks, then generate from them, with citations. Its assumptions: similarity ≈ relevance, shared vocabulary, chunks within the encoder and context limits, a current index, trustworthy text. Its failure modes: retrieval misses (measure recall first), chunk boundaries, hubness, stale indexes, ungrounded answers, prompt injection, and access control and privacy (filter before ranking; no personal data in prompts or logs).
 
-**Lab.** [RAG: embeddings, search and grounded answers](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/rag_embeddings_demo.ipynb): four ways to embed text compared with hit rate@k and MRR, exact vs approximate search, chunking, and an LLM answering with and without the retrieved context.
+**Lab.** [RAG: embeddings, search and grounded answers](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 15 - RAG embeddings and similarity search.ipynb): four ways to embed text compared with hit rate@k and MRR, exact vs approximate search, chunking, and an LLM answering with and without the retrieved context.
