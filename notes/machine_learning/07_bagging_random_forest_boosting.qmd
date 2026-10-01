@@ -747,8 +747,10 @@ $$
 **Step 1 · Second-order Taylor expansion** of each loss term around $F_{t-1}(\mathbf{x}^{(i)})$, in the small change $f_t(\mathbf{x}^{(i)})$:
 
 $$
-\ell\big(y^{(i)}, F_{t-1}^{(i)} + f_t^{(i)}\big) \approx \ell\big(y^{(i)}, F_{t-1}^{(i)}\big) + g_i\,f_t^{(i)} + \frac12h_i\,\big(f_t^{(i)}\big)^2,
-\qquad g_i = \frac{\partial\ell}{\partial F}\Big|_{F_{t-1}^{(i)}},\quad h_i = \frac{\partial^2\ell}{\partial F^2}\Big|_{F_{t-1}^{(i)}} .
+\begin{gathered}
+\ell\big(y^{(i)}, F_{t-1}^{(i)} + f_t^{(i)}\big) \approx \ell\big(y^{(i)}, F_{t-1}^{(i)}\big) + g_i\,f_t^{(i)} + \frac12h_i\,\big(f_t^{(i)}\big)^2, \\
+g_i = \frac{\partial\ell}{\partial F}\Big|_{F_{t-1}^{(i)}},\quad h_i = \frac{\partial^2\ell}{\partial F^2}\Big|_{F_{t-1}^{(i)}} .
+\end{gathered}
 $$
 
 The first term does not depend on $f_t$, so it can be dropped.
@@ -756,7 +758,10 @@ The first term does not depend on $f_t$, so it can be dropped.
 **Step 2 · Group by leaf.** Every example in leaf $j$ gets the same value $w_j$. With $I_j = \{i : q(\mathbf{x}^{(i)}) = j\}$, $G_j = \sum_{i\in I_j}g_i$ and $H_j = \sum_{i\in I_j}h_i$:
 
 $$
-\mathrm{Obj}_t \approx \sum_{j=1}^T\Big[\sum_{i\in I_j}g_iw_j + \frac12\sum_{i\in I_j}h_iw_j^2\Big] + \gamma T + \frac12\lambda\sum_jw_j^2 = \sum_{j=1}^T\Big[G_jw_j + \frac12(H_j + \lambda)w_j^2\Big] + \gamma T .
+\begin{aligned}
+\mathrm{Obj}_t &\approx \sum_{j=1}^T\Big[\sum_{i\in I_j}g_iw_j + \frac12\sum_{i\in I_j}h_iw_j^2\Big] + \gamma T + \frac12\lambda\sum_jw_j^2 \\
+&= \sum_{j=1}^T\Big[G_jw_j + \frac12(H_j + \lambda)w_j^2\Big] + \gamma T .
+\end{aligned}
 $$
 
 **Step 3 · Optimal leaf weight.** Each leaf is a separate parabola in $w_j$ (convex if $H_j + \lambda > 0$). Derivative zero:
@@ -776,8 +781,10 @@ The lower, the better; it scores a tree's shape without fitting it.
 **Step 5 · The gain of a split.** Split a leaf with sums $(G, H)$ into a left child $(G_L, H_L)$ and a right child $(G_R, H_R)$, with $G = G_L + G_R$, $H = H_L + H_R$. The objective before minus after (one leaf becomes two, so $T$ grows by 1):
 
 $$
-\mathrm{Gain} = \Big[-\frac12\frac{G^2}{H+\lambda} + \gamma\Big] - \Big[-\frac12\frac{G_L^2}{H_L+\lambda} - \frac12\frac{G_R^2}{H_R+\lambda} + 2\gamma\Big]
-= \boxed{\frac12\Big[\frac{G_L^2}{H_L+\lambda} + \frac{G_R^2}{H_R+\lambda} - \frac{(G_L+G_R)^2}{H_L+H_R+\lambda}\Big] - \gamma}
+\begin{aligned}
+\mathrm{Gain} &= \Big[-\frac12\frac{G^2}{H+\lambda} + \gamma\Big] - \Big[-\frac12\frac{G_L^2}{H_L+\lambda} - \frac12\frac{G_R^2}{H_R+\lambda} + 2\gamma\Big] \\
+&= \boxed{\frac12\Big[\frac{G_L^2}{H_L+\lambda} + \frac{G_R^2}{H_R+\lambda} - \frac{(G_L+G_R)^2}{H_L+H_R+\lambda}\Big] - \gamma}
+\end{aligned}
 $$
 
 The tree is grown greedily with the split of largest gain, and a split is kept only if its gain is positive: $\gamma$ is the **minimum gain needed to split**.

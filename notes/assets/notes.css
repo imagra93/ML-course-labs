@@ -80,3 +80,6 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(-
 
 /* ---- notes only: slide classes some widgets use for their action buttons (notes 02, 06, 07) ---- */
 .widget .bluebox{background:var(--blue);color:#fff}
+
+/* ---- notes only: code-cell figures (matplotlib PNGs) are wider than the text column; scale them down, keep the ratio ---- */
+img.figure-img,.cell-output-display img{max-width:100%;height:auto}

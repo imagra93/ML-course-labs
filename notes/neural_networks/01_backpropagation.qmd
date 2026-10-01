@@ -33,7 +33,10 @@ rng = np.random.default_rng(0)
 Training a network is a loop of five steps:
 
 $$
-\text{data } (\mathbf{x}, y)\ \longrightarrow\ \textbf{forward: } \hat y = h(\mathbf{x})\ \longrightarrow\ \textbf{loss } L(\hat y, y)\ \longrightarrow\ \textbf{backward: } \frac{\partial L}{\partial\theta} \text{ for every } \theta\ \longrightarrow\ \textbf{update: } \theta\leftarrow\theta - \alpha\frac{\partial L}{\partial\theta} .
+\begin{gathered}
+\text{data } (\mathbf{x}, y)\ \longrightarrow\ \textbf{forward: } \hat y = h(\mathbf{x})\ \longrightarrow\ \textbf{loss } L(\hat y, y)\ \longrightarrow \\
+\textbf{backward: } \frac{\partial L}{\partial\theta} \text{ for every } \theta\ \longrightarrow\ \textbf{update: } \theta\leftarrow\theta - \alpha\frac{\partial L}{\partial\theta} .
+\end{gathered}
 $$
 
 [NN note 00](00_neural_networks_mlp.html) gave us the forward pass and the loss. Gradient descent needs one more thing: the derivative of the loss with respect to **every** weight and bias. A small MLP has thousands of parameters; GPT-2 (small) has 124 million. We need a method that gets all the gradients cheaply and mechanically. **Backpropagation** is the chain rule, applied from the loss backwards, reusing what the forward pass already computed.
@@ -227,7 +230,10 @@ $$
 **Counting the cost.** The expensive operations are the matrix products. For a batch of $m$ examples, layer $l$'s forward product $\mathbf{A}^{[l-1]}\mathbf{W}^{[l]}$ costs $m\,n_{l-1}n_l$ multiply–adds. Its backward pass (section 10) needs two products of the same size: $\mathbf{A}^{[l-1]\top}\boldsymbol{\delta}^{[l]}$ (for $\partial J/\partial\mathbf{W}^{[l]}$) and $\boldsymbol{\delta}^{[l]}\mathbf{W}^{[l]\top}$ (to send the error to layer $l-1$; not needed for $l = 1$). The element-wise parts ($\odot g'$, the bias sums) cost $O(m\,n_l)$, negligible next to the products. So
 
 $$
-\text{cost(backward)}\approx 2\times\text{cost(forward)}, \qquad \text{cost(gradient by finite differences)} = 2P\times\text{cost(forward)} .
+\begin{gathered}
+\text{cost(backward)}\approx 2\times\text{cost(forward)}, \\
+\text{cost(gradient by finite differences)} = 2P\times\text{cost(forward)} .
+\end{gathered}
 $$
 
 Section 11 counts and times both on a small network.
@@ -293,13 +299,20 @@ The stored forward values are $\mathbf{z}^{[1]} = (1.0, 0.4)$, $\mathbf{a}^{[1]}
 
 $$
 \begin{aligned}
-\delta^{[2]} &= \hat y - y = 0.633 - 1 = -0.367 && \text{sigmoid + cross-entropy: prediction − target}\\
-\partial\mathbf{W}^{[2]} &= \mathbf{a}^{[1]\top}\delta^{[2]} = (0.762, 0.380)^\top\cdot(-0.367) = (-0.280, -0.140)^\top && \text{multiply gate: times the other input}\\
-\partial b^{[2]} &= \delta^{[2]} = -0.367 && \text{add gate: copied}\\
-\partial\mathbf{a}^{[1]} &= \delta^{[2]}\mathbf{W}^{[2]\top} = \big(-0.367\cdot0.7,\ -0.367\cdot(-0.5)\big) = (-0.257,\ 0.184) && \text{back through } \mathbf{W}^{[2]}\\
-1 - (\mathbf{a}^{[1]})^2 &= (1 - 0.762^2,\ 1 - 0.380^2) = (0.420,\ 0.856) && \tanh' \text{ from the stored outputs}\\
-\boldsymbol{\delta}^{[1]} &= \partial\mathbf{a}^{[1]}\odot\big(1 - (\mathbf{a}^{[1]})^2\big) = (-0.257\cdot0.420,\ 0.184\cdot0.856) = (-0.108,\ 0.157) && \text{element-wise gate}\\
-\partial\mathbf{W}^{[1]} &= \mathbf{x}^\top\boldsymbol{\delta}^{[1]} = \begin{pmatrix}1\\2\end{pmatrix}(-0.108,\ 0.157) = \begin{pmatrix}-0.108 & 0.157\\ -0.216 & 0.314\end{pmatrix} && \text{outer product}\\
+\delta^{[2]} &= \hat y - y = 0.633 - 1 = -0.367 \\
+&\quad\small \text{sigmoid + cross-entropy: prediction − target}\\
+\partial\mathbf{W}^{[2]} &= \mathbf{a}^{[1]\top}\delta^{[2]} = (0.762, 0.380)^\top\cdot(-0.367) = (-0.280, -0.140)^\top \\
+&\quad\small \text{multiply gate: times the other input}\\
+\partial b^{[2]} &= \delta^{[2]} = -0.367 \\
+&\quad\small \text{add gate: copied}\\
+\partial\mathbf{a}^{[1]} &= \delta^{[2]}\mathbf{W}^{[2]\top} = \big(-0.367\cdot0.7,\ -0.367\cdot(-0.5)\big) = (-0.257,\ 0.184) \\
+&\quad\small \text{back through } \mathbf{W}^{[2]}\\
+1 - (\mathbf{a}^{[1]})^2 &= (1 - 0.762^2,\ 1 - 0.380^2) = (0.420,\ 0.856) \\
+&\quad\small \tanh' \text{ from the stored outputs}\\
+\boldsymbol{\delta}^{[1]} &= \partial\mathbf{a}^{[1]}\odot\big(1 - (\mathbf{a}^{[1]})^2\big) = (-0.257\cdot0.420,\ 0.184\cdot0.856) = (-0.108,\ 0.157) \\
+&\quad\small \text{element-wise gate}\\
+\partial\mathbf{W}^{[1]} &= \mathbf{x}^\top\boldsymbol{\delta}^{[1]} = \begin{pmatrix}1\\2\end{pmatrix}(-0.108,\ 0.157) = \begin{pmatrix}-0.108 & 0.157\\ -0.216 & 0.314\end{pmatrix} \\
+&\quad\small \text{outer product}\\
 \partial\mathbf{b}^{[1]} &= \boldsymbol{\delta}^{[1]} = (-0.108,\ 0.157) .
 \end{aligned}
 $$
@@ -425,8 +438,11 @@ where $\odot$ is element-wise multiplication. $\blacksquare$
 
 $$
 \begin{aligned}
-&\textbf{Forward: } \mathbf{A}^{[0]} = \mathbf{X};\quad \text{for } l = 1,\dots,L:\ \ \mathbf{Z}^{[l]} = \mathbf{A}^{[l-1]}\mathbf{W}^{[l]}+\mathbf{b}^{[l]},\ \ \mathbf{A}^{[l]} = g^{[l]}(\mathbf{Z}^{[l]});\quad J = J(\mathbf{A}^{[L]}, \mathbf{Y}) \text{ (keep every } \mathbf{Z}^{[l]}, \mathbf{A}^{[l]})\\
-&\textbf{Backward: } \boldsymbol{\delta}^{[L]} = \tfrac1m(\mathbf{A}^{[L]} - \mathbf{Y});\quad \text{for } l = L,\dots,1:\ \ \frac{\partial J}{\partial\mathbf{W}^{[l]}} = \mathbf{A}^{[l-1]\top}\boldsymbol{\delta}^{[l]},\ \ \frac{\partial J}{\partial\mathbf{b}^{[l]}} = \textstyle\sum_i\boldsymbol{\delta}^{[l]}_{i,:},\ \ \boldsymbol{\delta}^{[l-1]} = \big(\boldsymbol{\delta}^{[l]}\mathbf{W}^{[l]\top}\big)\odot g^{[l-1]\prime}(\mathbf{Z}^{[l-1]})\\
+&\textbf{Forward: } \mathbf{A}^{[0]} = \mathbf{X};\quad \text{for } l = 1,\dots,L:\ \ \mathbf{Z}^{[l]} = \mathbf{A}^{[l-1]}\mathbf{W}^{[l]}+\mathbf{b}^{[l]},\ \ \mathbf{A}^{[l]} = g^{[l]}(\mathbf{Z}^{[l]}); \\
+&\qquad J = J(\mathbf{A}^{[L]}, \mathbf{Y}) \text{ (keep every } \mathbf{Z}^{[l]}, \mathbf{A}^{[l]}) \\
+&\textbf{Backward: } \boldsymbol{\delta}^{[L]} = \tfrac1m(\mathbf{A}^{[L]} - \mathbf{Y});\quad \text{for } l = L,\dots,1: \\
+&\qquad \frac{\partial J}{\partial\mathbf{W}^{[l]}} = \mathbf{A}^{[l-1]\top}\boldsymbol{\delta}^{[l]},\ \ \frac{\partial J}{\partial\mathbf{b}^{[l]}} = \textstyle\sum_i\boldsymbol{\delta}^{[l]}_{i,:}, \\
+&\qquad \boldsymbol{\delta}^{[l-1]} = \big(\boldsymbol{\delta}^{[l]}\mathbf{W}^{[l]\top}\big)\odot g^{[l-1]\prime}(\mathbf{Z}^{[l-1]}) \\
 &\textbf{Update: } \mathbf{W}^{[l]} := \mathbf{W}^{[l]} - \alpha\frac{\partial J}{\partial\mathbf{W}^{[l]}}, \qquad \mathbf{b}^{[l]} := \mathbf{b}^{[l]} - \alpha\frac{\partial J}{\partial\mathbf{b}^{[l]}}
 \end{aligned}
 $$
@@ -542,10 +558,14 @@ Taylor-expand $J$ around $\theta$ in one coordinate (writing $J', J'', J'''$ for
 
 $$
 \begin{aligned}
-J(\theta+\varepsilon) &= J + \varepsilon J' + \tfrac{\varepsilon^2}{2}J'' + \tfrac{\varepsilon^3}{6}J''' + O(\varepsilon^4) && \text{Taylor}\\
-J(\theta-\varepsilon) &= J - \varepsilon J' + \tfrac{\varepsilon^2}{2}J'' - \tfrac{\varepsilon^3}{6}J''' + O(\varepsilon^4) && \text{Taylor, } \varepsilon\to-\varepsilon\\
-\frac{J(\theta+\varepsilon) - J(\theta-\varepsilon)}{2\varepsilon} &= J' + \tfrac{\varepsilon^2}{6}J''' + O(\varepsilon^4) && \text{subtract: the even terms cancel; divide by } 2\varepsilon\\
-\frac{J(\theta+\varepsilon) - J(\theta)}{\varepsilon} &= J' + \tfrac{\varepsilon}{2}J'' + O(\varepsilon^2) && \text{one-sided, from the first line}
+J(\theta+\varepsilon) &= J + \varepsilon J' + \tfrac{\varepsilon^2}{2}J'' + \tfrac{\varepsilon^3}{6}J''' + O(\varepsilon^4) \\
+&\quad\small \text{Taylor}\\
+J(\theta-\varepsilon) &= J - \varepsilon J' + \tfrac{\varepsilon^2}{2}J'' - \tfrac{\varepsilon^3}{6}J''' + O(\varepsilon^4) \\
+&\quad\small \text{Taylor, } \varepsilon\to-\varepsilon\\
+\frac{J(\theta+\varepsilon) - J(\theta-\varepsilon)}{2\varepsilon} &= J' + \tfrac{\varepsilon^2}{6}J''' + O(\varepsilon^4) \\
+&\quad\small \text{subtract: the even terms cancel; divide by } 2\varepsilon\\
+\frac{J(\theta+\varepsilon) - J(\theta)}{\varepsilon} &= J' + \tfrac{\varepsilon}{2}J'' + O(\varepsilon^2) \\
+&\quad\small \text{one-sided, from the first line}
 \end{aligned}
 $$
 
@@ -935,9 +955,12 @@ The wrong loss is off by 20 and, worse, gives a zero gradient for a confidently 
 
 $$
 \begin{aligned}
-\mathrm{Var}(z_k) &= \mathrm{Var}\Big(\sum_{j=1}^{n_{\text{in}}}w_{jk}a_j\Big) = \sum_j\mathrm{Var}(w_{jk}a_j) && \text{independent terms: variances add}\\
-&= \sum_j\Big(\mathbb{E}[w_{jk}^2]\,\mathbb{E}[a_j^2] - \big(\mathbb{E}[w_{jk}]\,\mathbb{E}[a_j]\big)^2\Big) && \mathrm{Var}(XY) = \mathbb{E}[X^2]\mathbb{E}[Y^2] - (\mathbb{E}X\,\mathbb{E}Y)^2 \text{ for independent } X, Y\\
-&= n_{\text{in}}\,\mathrm{Var}(w)\,\mathbb{E}[a^2] . && \mathbb{E}[w] = 0, \text{ same distribution for every } j
+\mathrm{Var}(z_k) &= \mathrm{Var}\Big(\sum_{j=1}^{n_{\text{in}}}w_{jk}a_j\Big) = \sum_j\mathrm{Var}(w_{jk}a_j) \\
+&\quad\small \text{independent terms: variances add}\\
+&= \sum_j\Big(\mathbb{E}[w_{jk}^2]\,\mathbb{E}[a_j^2] - \big(\mathbb{E}[w_{jk}]\,\mathbb{E}[a_j]\big)^2\Big) \\
+&\quad\small \mathrm{Var}(XY) = \mathbb{E}[X^2]\mathbb{E}[Y^2] - (\mathbb{E}X\,\mathbb{E}Y)^2 \text{ for independent } X, Y\\
+&= n_{\text{in}}\,\mathrm{Var}(w)\,\mathbb{E}[a^2] . \\
+&\quad\small \mathbb{E}[w] = 0, \text{ same distribution for every } j
 \end{aligned}
 $$
 

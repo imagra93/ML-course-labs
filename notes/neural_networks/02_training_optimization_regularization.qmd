@@ -926,7 +926,10 @@ The two sets of paths have the same shape: coefficients enter in the same order 
 
 During training, each hidden activation is independently set to 0 with probability $p$ (the dropout rate), and the survivors are scaled by $\frac{1}{1-p}$ (**inverted dropout**):
 $$
-\tilde{a}_j=\frac{r_j}{1-p}\,a_j,\qquad r_j\sim\mathrm{Bernoulli}(1-p)\ \text{ independently, a new draw for every example and every mini-batch.}
+\begin{gathered}
+\tilde{a}_j=\frac{r_j}{1-p}\,a_j,\qquad r_j\sim\mathrm{Bernoulli}(1-p), \\
+\text{independently, a new draw for every example and every mini-batch.}
+\end{gathered}
 $$
 
 **Try it.** Each click on "new mini-batch" draws a new random subset of silenced units; in prediction mode every unit is on and nothing is rescaled.
@@ -1079,9 +1082,12 @@ $$
 **Simplify.** Substitute steps 2 and 3, and use $(z_k-\mu_{\mathcal{B}})/s=\hat z_k$:
 $$
 \begin{aligned}
-\frac{\partial L}{\partial\sigma^2_{\mathcal{B}}}\,\frac{2(z_i-\mu_{\mathcal{B}})}{B} &= -\frac{1}{B\,s}\,\hat z_i\sum_{k}\frac{\partial L}{\partial\hat z_k}\hat z_k && (z_k-\mu)(z_i-\mu)(\sigma^2+\varepsilon)^{-3/2}=\hat z_k\hat z_i/s\\
-\frac{\partial L}{\partial\mu_{\mathcal{B}}}\,\frac1B &= -\frac{1}{B\,s}\sum_{k}\frac{\partial L}{\partial\hat z_k} && \text{step 3}\\
-\frac{\partial L}{\partial z_i} &= \frac{\gamma}{B\,s}\Big[B\,\frac{\partial L}{\partial y_i}-\sum_{k=1}^B\frac{\partial L}{\partial y_k}-\hat z_i\sum_{k=1}^B\frac{\partial L}{\partial y_k}\,\hat z_k\Big]. && \text{add the three; step 1}
+\frac{\partial L}{\partial\sigma^2_{\mathcal{B}}}\,\frac{2(z_i-\mu_{\mathcal{B}})}{B} &= -\frac{1}{B\,s}\,\hat z_i\sum_{k}\frac{\partial L}{\partial\hat z_k}\hat z_k \\
+&\quad\small (z_k-\mu)(z_i-\mu)(\sigma^2+\varepsilon)^{-3/2}=\hat z_k\hat z_i/s\\
+\frac{\partial L}{\partial\mu_{\mathcal{B}}}\,\frac1B &= -\frac{1}{B\,s}\sum_{k}\frac{\partial L}{\partial\hat z_k} \\
+&\quad\small \text{step 3}\\
+\frac{\partial L}{\partial z_i} &= \frac{\gamma}{B\,s}\Big[B\,\frac{\partial L}{\partial y_i}-\sum_{k=1}^B\frac{\partial L}{\partial y_k}-\hat z_i\sum_{k=1}^B\frac{\partial L}{\partial y_k}\,\hat z_k\Big]. \\
+&\quad\small \text{add the three; step 1}
 \end{aligned}
 $$
 

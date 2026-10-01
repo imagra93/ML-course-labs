@@ -154,9 +154,12 @@ The penalty is written with the same $\frac{1}{2m}$ as the data term only so tha
 
 $$
 \begin{aligned}
-\frac{\partial}{\partial\theta_j}\Big(\frac{\lambda}{2m}\sum_{k=1}^n\theta_k^2\Big) &= \frac{\lambda}{2m}\cdot2\theta_j = \frac{\lambda}{m}\,\theta_j && \text{only the } k=j \text{ term contains } \theta_j\\
-\frac{\partial J_{\text{reg}}}{\partial\theta_j} &= \frac{\partial J}{\partial\theta_j} + \frac{\lambda}{m}\,\theta_j\quad(j\ge1;\ \text{nothing changes for } \theta_0) && \text{add the data gradient (least squares or cross-entropy)}\\
-\theta_j &\leftarrow \theta_j - \alpha\Big(\frac{\partial J}{\partial\theta_j} + \frac{\lambda}{m}\theta_j\Big) = \theta_j\Big(1 - \frac{\alpha\lambda}{m}\Big) - \alpha\frac{\partial J}{\partial\theta_j} && \text{gradient descent; regroup the } \theta_j \text{ terms}
+\frac{\partial}{\partial\theta_j}\Big(\frac{\lambda}{2m}\sum_{k=1}^n\theta_k^2\Big) &= \frac{\lambda}{2m}\cdot2\theta_j = \frac{\lambda}{m}\,\theta_j \\
+&\quad\small \text{only the } k=j \text{ term contains } \theta_j\\
+\frac{\partial J_{\text{reg}}}{\partial\theta_j} &= \frac{\partial J}{\partial\theta_j} + \frac{\lambda}{m}\,\theta_j\quad(j\ge1;\ \text{nothing changes for } \theta_0) \\
+&\quad\small \text{add the data gradient (least squares or cross-entropy)}\\
+\theta_j &\leftarrow \theta_j - \alpha\Big(\frac{\partial J}{\partial\theta_j} + \frac{\lambda}{m}\theta_j\Big) = \theta_j\Big(1 - \frac{\alpha\lambda}{m}\Big) - \alpha\frac{\partial J}{\partial\theta_j} \\
+&\quad\small \text{gradient descent; regroup the } \theta_j \text{ terms}
 \end{aligned}
 $$
 
@@ -198,11 +201,16 @@ Ridge divides the coefficient by a constant factor. It gets smaller but **never 
 
 $$
 \begin{aligned}
-\mathbf{X}_c^\top\mathbf{X}_c &= \mathbf{V}\mathbf{D}\mathbf{U}^\top\mathbf{U}\mathbf{D}\mathbf{V}^\top = \mathbf{V}\mathbf{D}^2\mathbf{V}^\top && \mathbf{U}^\top\mathbf{U} = \mathbf{I}\\
-\mathbf{X}_c^\top\mathbf{X}_c + \lambda\mathbf{I} &= \mathbf{V}(\mathbf{D}^2 + \lambda\mathbf{I})\mathbf{V}^\top && \mathbf{I} = \mathbf{V}\mathbf{V}^\top\\
-(\mathbf{X}_c^\top\mathbf{X}_c + \lambda\mathbf{I})^{-1} &= \mathbf{V}(\mathbf{D}^2 + \lambda\mathbf{I})^{-1}\mathbf{V}^\top && \text{invert each factor; } \mathbf{V}^{-1} = \mathbf{V}^\top\\
-\boldsymbol{\theta}_{\text{ridge}} &= \mathbf{V}(\mathbf{D}^2 + \lambda\mathbf{I})^{-1}\mathbf{V}^\top\,\mathbf{V}\mathbf{D}\mathbf{U}^\top\mathbf{y}_c && \mathbf{X}_c^\top = \mathbf{V}\mathbf{D}\mathbf{U}^\top\\
-&= \mathbf{V}\,\mathrm{diag}\Big(\frac{d_j}{d_j^2 + \lambda}\Big)\,\mathbf{U}^\top\mathbf{y}_c . && \mathbf{V}^\top\mathbf{V} = \mathbf{I}\text{; diagonal matrices multiply entrywise}
+\mathbf{X}_c^\top\mathbf{X}_c &= \mathbf{V}\mathbf{D}\mathbf{U}^\top\mathbf{U}\mathbf{D}\mathbf{V}^\top = \mathbf{V}\mathbf{D}^2\mathbf{V}^\top \\
+&\quad\small \mathbf{U}^\top\mathbf{U} = \mathbf{I}\\
+\mathbf{X}_c^\top\mathbf{X}_c + \lambda\mathbf{I} &= \mathbf{V}(\mathbf{D}^2 + \lambda\mathbf{I})\mathbf{V}^\top \\
+&\quad\small \mathbf{I} = \mathbf{V}\mathbf{V}^\top\\
+(\mathbf{X}_c^\top\mathbf{X}_c + \lambda\mathbf{I})^{-1} &= \mathbf{V}(\mathbf{D}^2 + \lambda\mathbf{I})^{-1}\mathbf{V}^\top \\
+&\quad\small \text{invert each factor; } \mathbf{V}^{-1} = \mathbf{V}^\top\\
+\boldsymbol{\theta}_{\text{ridge}} &= \mathbf{V}(\mathbf{D}^2 + \lambda\mathbf{I})^{-1}\mathbf{V}^\top\,\mathbf{V}\mathbf{D}\mathbf{U}^\top\mathbf{y}_c \\
+&\quad\small \mathbf{X}_c^\top = \mathbf{V}\mathbf{D}\mathbf{U}^\top\\
+&= \mathbf{V}\,\mathrm{diag}\Big(\frac{d_j}{d_j^2 + \lambda}\Big)\,\mathbf{U}^\top\mathbf{y}_c . \\
+&\quad\small \mathbf{V}^\top\mathbf{V} = \mathbf{I}\text{; diagonal matrices multiply entrywise}
 \end{aligned}
 $$
 
@@ -260,10 +268,14 @@ Assume the linear model $\mathbf{y}_c = \mathbf{X}_c\boldsymbol{\theta} + \bolds
 
 $$
 \begin{aligned}
-\mathbb{E}[\boldsymbol{\theta}_{\text{ridge}}] &= \mathbf{M}_\lambda\mathbf{X}_c^\top\mathbf{X}_c\,\boldsymbol{\theta} = \mathbf{V}\,\mathrm{diag}\Big(\frac{d_j^2}{d_j^2+\lambda}\Big)\mathbf{V}^\top\boldsymbol{\theta} && \mathbb{E}[\mathbf{y}_c] = \mathbf{X}_c\boldsymbol{\theta}\\
-\text{bias} = \mathbb{E}[\boldsymbol{\theta}_{\text{ridge}}] - \boldsymbol{\theta} &= -\mathbf{V}\,\mathrm{diag}\Big(\frac{\lambda}{d_j^2+\lambda}\Big)\,\boldsymbol{\gamma} && \frac{d^2}{d^2+\lambda} - 1 = -\frac{\lambda}{d^2+\lambda}\\
-\mathrm{Cov}(\boldsymbol{\theta}_{\text{ridge}}) &= \sigma^2\mathbf{M}_\lambda\mathbf{X}_c^\top\mathbf{X}_c\mathbf{M}_\lambda = \sigma^2\,\mathbf{V}\,\mathrm{diag}\Big(\frac{d_j^2}{(d_j^2+\lambda)^2}\Big)\mathbf{V}^\top && \mathrm{Cov}(\mathbf{A}\mathbf{y}) = \mathbf{A}\,\sigma^2\mathbf{I}\,\mathbf{A}^\top\\
-\mathrm{MSE}(\lambda) = \mathbb{E}\lVert\boldsymbol{\theta}_{\text{ridge}} - \boldsymbol{\theta}\rVert^2 &= \lVert\text{bias}\rVert^2 + \mathrm{tr}\,\mathrm{Cov} = \sum_{j=1}^n\frac{\lambda^2\gamma_j^2 + \sigma^2d_j^2}{(d_j^2+\lambda)^2} && \mathbf{V}\text{ preserves lengths}
+\mathbb{E}[\boldsymbol{\theta}_{\text{ridge}}] &= \mathbf{M}_\lambda\mathbf{X}_c^\top\mathbf{X}_c\,\boldsymbol{\theta} = \mathbf{V}\,\mathrm{diag}\Big(\frac{d_j^2}{d_j^2+\lambda}\Big)\mathbf{V}^\top\boldsymbol{\theta} \\
+&\quad\small \mathbb{E}[\mathbf{y}_c] = \mathbf{X}_c\boldsymbol{\theta} \\
+\text{bias} = \mathbb{E}[\boldsymbol{\theta}_{\text{ridge}}] - \boldsymbol{\theta} &= -\mathbf{V}\,\mathrm{diag}\Big(\frac{\lambda}{d_j^2+\lambda}\Big)\,\boldsymbol{\gamma} \\
+&\quad\small \frac{d^2}{d^2+\lambda} - 1 = -\frac{\lambda}{d^2+\lambda} \\
+\mathrm{Cov}(\boldsymbol{\theta}_{\text{ridge}}) &= \sigma^2\mathbf{M}_\lambda\mathbf{X}_c^\top\mathbf{X}_c\mathbf{M}_\lambda = \sigma^2\,\mathbf{V}\,\mathrm{diag}\Big(\frac{d_j^2}{(d_j^2+\lambda)^2}\Big)\mathbf{V}^\top \\
+&\quad\small \mathrm{Cov}(\mathbf{A}\mathbf{y}) = \mathbf{A}\,\sigma^2\mathbf{I}\,\mathbf{A}^\top \\
+\mathrm{MSE}(\lambda) = \mathbb{E}\lVert\boldsymbol{\theta}_{\text{ridge}} - \boldsymbol{\theta}\rVert^2 &= \lVert\text{bias}\rVert^2 + \mathrm{tr}\,\mathrm{Cov} = \sum_{j=1}^n\frac{\lambda^2\gamma_j^2 + \sigma^2d_j^2}{(d_j^2+\lambda)^2} \\
+&\quad\small \mathbf{V}\text{ preserves lengths}
 \end{aligned}
 $$
 
@@ -482,8 +494,10 @@ $$
 
 $$
 \begin{aligned}
-|\theta_i| + |\theta_k| &\ge |s| && \text{triangle inequality; equality iff } \theta_i, \theta_k \text{ have the same sign (or are 0)}\\
-\theta_i^2 + \theta_k^2 &= \tfrac12 s^2 + \tfrac12(\theta_i - \theta_k)^2 \ge \tfrac12 s^2 && \text{expand; equality iff } \theta_i = \theta_k
+|\theta_i| + |\theta_k| &\ge |s| \\
+&\quad\small \text{triangle inequality; equality iff } \theta_i, \theta_k \text{ have the same sign (or are 0)}\\
+\theta_i^2 + \theta_k^2 &= \tfrac12 s^2 + \tfrac12(\theta_i - \theta_k)^2 \ge \tfrac12 s^2 \\
+&\quad\small \text{expand; equality iff } \theta_i = \theta_k
 \end{aligned}
 $$
 
@@ -700,9 +714,12 @@ A categorical variable with $K$ levels (e.g. vehicle type ∈ {car, van, motorbi
 
 $$
 \begin{aligned}
-\mathbf{d}_1 + \dots + \mathbf{d}_K &= \mathbf{1} && \text{every row has exactly one level}\\
-\mathbf{X}\mathbf{v} &= \mathbf{1} - \mathbf{d}_1 - \dots - \mathbf{d}_K = \mathbf{0}\quad\text{for } \mathbf{v} = (1, -1, \dots, -1, 0, \dots, 0)^\top \neq \mathbf{0} && \text{the columns are linearly dependent}\\
-\mathbf{v}^\top\mathbf{X}^\top\mathbf{X}\mathbf{v} &= \lVert\mathbf{X}\mathbf{v}\rVert^2 = 0 && \text{so } \mathbf{X}^\top\mathbf{X}\mathbf{v} = \mathbf{0}\text{ (PSD matrix): singular}
+\mathbf{d}_1 + \dots + \mathbf{d}_K &= \mathbf{1} \\
+&\quad\small \text{every row has exactly one level}\\
+\mathbf{X}\mathbf{v} &= \mathbf{1} - \mathbf{d}_1 - \dots - \mathbf{d}_K = \mathbf{0}\quad\text{for } \mathbf{v} = (1, -1, \dots, -1, 0, \dots, 0)^\top \neq \mathbf{0} \\
+&\quad\small \text{the columns are linearly dependent}\\
+\mathbf{v}^\top\mathbf{X}^\top\mathbf{X}\mathbf{v} &= \lVert\mathbf{X}\mathbf{v}\rVert^2 = 0 \\
+&\quad\small \text{so } \mathbf{X}^\top\mathbf{X}\mathbf{v} = \mathbf{0}\text{ (PSD matrix): singular}
 \end{aligned}
 $$
 

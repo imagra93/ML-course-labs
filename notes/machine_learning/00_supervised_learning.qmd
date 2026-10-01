@@ -132,11 +132,16 @@ Let $\hat{\boldsymbol{\theta}}$ be the minimiser of $J$ (it depends on the rando
 
 $$
 \begin{aligned}
-J(\hat{\boldsymbol{\theta}}) &\le J(\boldsymbol{\theta}^\star) && \text{$\hat{\boldsymbol{\theta}}$ minimises $J$, so it beats any other $\boldsymbol{\theta}$ on the training set}\\
-\mathbb{E}_{\mathcal{D}}\big[J(\hat{\boldsymbol{\theta}})\big] &\le \mathbb{E}_{\mathcal{D}}\big[J(\boldsymbol{\theta}^\star)\big] && \text{take expectations of both sides}\\
-\mathbb{E}_{\mathcal{D}}\big[J(\boldsymbol{\theta}^\star)\big] &= \frac1m\sum_{i=1}^m \mathbb{E}\big[\ell(h_{\boldsymbol{\theta}^\star}(\mathbf{x}^{(i)}),y^{(i)})\big] = R(h_{\boldsymbol{\theta}^\star}) && \text{$\boldsymbol{\theta}^\star$ is fixed and each pair is drawn from $P$}\\
-R(h_{\boldsymbol{\theta}^\star}) &\le R(h_{\hat{\boldsymbol{\theta}}}) \ \text{ for every } \mathcal{D} && \text{$\boldsymbol{\theta}^\star$ minimises $R$}\\
-R(h_{\boldsymbol{\theta}^\star}) &\le \mathbb{E}_{\mathcal{D}}\big[R(h_{\hat{\boldsymbol{\theta}}})\big] && \text{take expectations} \qquad\blacksquare
+J(\hat{\boldsymbol{\theta}}) &\le J(\boldsymbol{\theta}^\star) \\
+&\quad\small \text{$\hat{\boldsymbol{\theta}}$ minimises $J$, so it beats any other $\boldsymbol{\theta}$ on the training set}\\
+\mathbb{E}_{\mathcal{D}}\big[J(\hat{\boldsymbol{\theta}})\big] &\le \mathbb{E}_{\mathcal{D}}\big[J(\boldsymbol{\theta}^\star)\big] \\
+&\quad\small \text{take expectations of both sides}\\
+\mathbb{E}_{\mathcal{D}}\big[J(\boldsymbol{\theta}^\star)\big] &= \frac1m\sum_{i=1}^m \mathbb{E}\big[\ell(h_{\boldsymbol{\theta}^\star}(\mathbf{x}^{(i)}),y^{(i)})\big] = R(h_{\boldsymbol{\theta}^\star}) \\
+&\quad\small \text{$\boldsymbol{\theta}^\star$ is fixed and each pair is drawn from $P$}\\
+R(h_{\boldsymbol{\theta}^\star}) &\le R(h_{\hat{\boldsymbol{\theta}}}) \ \text{ for every } \mathcal{D} \\
+&\quad\small \text{$\boldsymbol{\theta}^\star$ minimises $R$}\\
+R(h_{\boldsymbol{\theta}^\star}) &\le \mathbb{E}_{\mathcal{D}}\big[R(h_{\hat{\boldsymbol{\theta}}})\big] \\
+&\quad\small \text{take expectations} \qquad\blacksquare
 \end{aligned}
 $$
 
@@ -148,10 +153,14 @@ Now take a model $h$ that is **already fixed**, and $m_{\text{test}}$ new pairs 
 
 $$
 \begin{aligned}
-\mathbb{E}\big[\hat R_{\text{test}}(h)\big] &= \frac{1}{m_{\text{test}}}\sum_{i=1}^{m_{\text{test}}}\mathbb{E}\big[\ell(h(\mathbf{x}^{(i)}),y^{(i)})\big] && \text{linearity of expectation}\\
-&= \frac{1}{m_{\text{test}}}\cdot m_{\text{test}}\cdot R(h) = R(h) && \text{each pair has distribution $P$ and $h$ does not depend on it}\\
-\mathrm{Var}\big[\hat R_{\text{test}}(h)\big] &= \frac{1}{m_{\text{test}}^2}\sum_{i=1}^{m_{\text{test}}}\mathrm{Var}\big[\ell(h(\mathbf{x}^{(i)}),y^{(i)})\big] && \text{independent terms: variances add}\\
-&= \frac{\sigma_\ell^2}{m_{\text{test}}} && \sigma_\ell^2 = \text{variance of the loss of one example}
+\mathbb{E}\big[\hat R_{\text{test}}(h)\big] &= \frac{1}{m_{\text{test}}}\sum_{i=1}^{m_{\text{test}}}\mathbb{E}\big[\ell(h(\mathbf{x}^{(i)}),y^{(i)})\big] \\
+&\quad\small \text{linearity of expectation}\\
+&= \frac{1}{m_{\text{test}}}\cdot m_{\text{test}}\cdot R(h) = R(h) \\
+&\quad\small \text{each pair has distribution $P$ and $h$ does not depend on it}\\
+\mathrm{Var}\big[\hat R_{\text{test}}(h)\big] &= \frac{1}{m_{\text{test}}^2}\sum_{i=1}^{m_{\text{test}}}\mathrm{Var}\big[\ell(h(\mathbf{x}^{(i)}),y^{(i)})\big] \\
+&\quad\small \text{independent terms: variances add}\\
+&= \frac{\sigma_\ell^2}{m_{\text{test}}} \\
+&\quad\small \sigma_\ell^2 = \text{variance of the loss of one example}
 \end{aligned}
 $$
 
@@ -231,12 +240,18 @@ where the expectation is over both the training set $\mathcal{D}$ and the new no
 
 $$
 \begin{aligned}
-y - \hat f &= (y - f) + (f - \bar f) + (\bar f - \hat f) = a + b + c && \text{add and subtract $f$ and $\bar f$}\\
-(y - \hat f)^2 &= a^2 + b^2 + c^2 + 2ab + 2ac + 2bc && \text{square of a sum of three terms}\\
-\mathbb{E}[ab] &= b\,\mathbb{E}[\varepsilon] = 0 && \text{$b$ is a constant and $\mathbb{E}[\varepsilon]=0$}\\
-\mathbb{E}[ac] &= \mathbb{E}[\varepsilon]\,\mathbb{E}[c] = 0 && \text{the new noise is independent of $\mathcal{D}$, hence of $\hat f$}\\
-\mathbb{E}[bc] &= b\,\big(\bar f - \mathbb{E}[\hat f]\big) = b\,(\bar f - \bar f) = 0 && \text{definition of $\bar f$}\\
-\mathbb{E}\big[(y - \hat f)^2\big] &= \mathbb{E}[\varepsilon^2] + b^2 + \mathbb{E}[c^2] = \sigma^2 + \big(f - \bar f\big)^2 + \mathbb{E}\big[(\hat f - \bar f)^2\big] && \text{only the squares survive} \qquad\blacksquare
+y - \hat f &= (y - f) + (f - \bar f) + (\bar f - \hat f) = a + b + c \\
+&\quad\small \text{add and subtract $f$ and $\bar f$}\\
+(y - \hat f)^2 &= a^2 + b^2 + c^2 + 2ab + 2ac + 2bc \\
+&\quad\small \text{square of a sum of three terms}\\
+\mathbb{E}[ab] &= b\,\mathbb{E}[\varepsilon] = 0 \\
+&\quad\small \text{$b$ is a constant and $\mathbb{E}[\varepsilon]=0$}\\
+\mathbb{E}[ac] &= \mathbb{E}[\varepsilon]\,\mathbb{E}[c] = 0 \\
+&\quad\small \text{the new noise is independent of $\mathcal{D}$, hence of $\hat f$}\\
+\mathbb{E}[bc] &= b\,\big(\bar f - \mathbb{E}[\hat f]\big) = b\,(\bar f - \bar f) = 0 \\
+&\quad\small \text{definition of $\bar f$}\\
+\mathbb{E}\big[(y - \hat f)^2\big] &= \mathbb{E}[\varepsilon^2] + b^2 + \mathbb{E}[c^2] = \sigma^2 + \big(f - \bar f\big)^2 + \mathbb{E}\big[(\hat f - \bar f)^2\big] \\
+&\quad\small \text{only the squares survive} \qquad\blacksquare
 \end{aligned}
 $$
 
@@ -477,11 +492,16 @@ Let $Z_i = \mathbb{1}[h(\mathbf{x}^{(i)}) = y^{(i)}]$ be 1 if test example $i$ i
 
 $$
 \begin{aligned}
-\widehat{\mathrm{acc}} &= \frac{1}{m_{\text{test}}}\sum_{i=1}^{m_{\text{test}}} Z_i && \text{the test accuracy is an average of 0/1 variables}\\
-\mathbb{E}[\widehat{\mathrm{acc}}] &= \frac{1}{m_{\text{test}}}\cdot m_{\text{test}}\, p = p && \mathbb{E}[Z_i] = 1\cdot p + 0\cdot(1-p)\\
-\mathrm{Var}(Z_i) &= \mathbb{E}[Z_i^2] - \mathbb{E}[Z_i]^2 = p - p^2 = p(1-p) && Z_i^2 = Z_i \text{ for a 0/1 variable}\\
-\mathrm{Var}(\widehat{\mathrm{acc}}) &= \frac{1}{m_{\text{test}}^2}\cdot m_{\text{test}}\,p(1-p) = \frac{p(1-p)}{m_{\text{test}}} && \text{independent terms: variances add; constants come out squared}\\
-\mathrm{SE}(\widehat{\mathrm{acc}}) &= \sqrt{\frac{\widehat{\mathrm{acc}}\,(1-\widehat{\mathrm{acc}})}{m_{\text{test}}}} && \text{square root, with the unknown $p$ replaced by its estimate}
+\widehat{\mathrm{acc}} &= \frac{1}{m_{\text{test}}}\sum_{i=1}^{m_{\text{test}}} Z_i \\
+&\quad\small \text{the test accuracy is an average of 0/1 variables}\\
+\mathbb{E}[\widehat{\mathrm{acc}}] &= \frac{1}{m_{\text{test}}}\cdot m_{\text{test}}\, p = p \\
+&\quad\small \mathbb{E}[Z_i] = 1\cdot p + 0\cdot(1-p)\\
+\mathrm{Var}(Z_i) &= \mathbb{E}[Z_i^2] - \mathbb{E}[Z_i]^2 = p - p^2 = p(1-p) \\
+&\quad\small Z_i^2 = Z_i \text{ for a 0/1 variable}\\
+\mathrm{Var}(\widehat{\mathrm{acc}}) &= \frac{1}{m_{\text{test}}^2}\cdot m_{\text{test}}\,p(1-p) = \frac{p(1-p)}{m_{\text{test}}} \\
+&\quad\small \text{independent terms: variances add; constants come out squared}\\
+\mathrm{SE}(\widehat{\mathrm{acc}}) &= \sqrt{\frac{\widehat{\mathrm{acc}}\,(1-\widehat{\mathrm{acc}})}{m_{\text{test}}}} \\
+&\quad\small \text{square root, with the unknown $p$ replaced by its estimate}
 \end{aligned}
 $$
 
@@ -557,8 +577,10 @@ Compare the two models **on the same test examples**. Let $a_i, b_i \in\{0,1\}$ 
 
 $$
 \begin{aligned}
-\widehat{\mathrm{acc}}_A - \widehat{\mathrm{acc}}_B &= \frac{1}{m_{\text{test}}}\sum_i d_i = \bar d && \text{difference of two averages = average of differences}\\
-\mathrm{Var}(\bar d) &= \frac{\mathrm{Var}(a_i - b_i)}{m_{\text{test}}} = \frac{\mathrm{Var}(a_i) + \mathrm{Var}(b_i) - 2\,\mathrm{Cov}(a_i,b_i)}{m_{\text{test}}} && \text{variance of a difference}
+\widehat{\mathrm{acc}}_A - \widehat{\mathrm{acc}}_B &= \frac{1}{m_{\text{test}}}\sum_i d_i = \bar d \\
+&\quad\small \text{difference of two averages = average of differences}\\
+\mathrm{Var}(\bar d) &= \frac{\mathrm{Var}(a_i - b_i)}{m_{\text{test}}} = \frac{\mathrm{Var}(a_i) + \mathrm{Var}(b_i) - 2\,\mathrm{Cov}(a_i,b_i)}{m_{\text{test}}} \\
+&\quad\small \text{variance of a difference}
 \end{aligned}
 $$
 
@@ -825,9 +847,12 @@ where $p(\mathbf{x})$ is the distribution of the inputs, $p(y\mid\mathbf{x})$ th
 
 $$
 \begin{aligned}
-R_{\text{te}}(h) &= \mathbb{E}_{\text{te}}\big[\ell(h(\mathbf{x}),y)\big] = \iint \ell(h(\mathbf{x}),y)\,p_{\text{te}}(\mathbf{x})\,p(y\mid\mathbf{x})\,dy\,d\mathbf{x} && \text{definition; } P_{\text{te}}(\mathbf{x},y) = p_{\text{te}}(\mathbf{x})\,p(y\mid\mathbf{x})\\
-&= \iint \ell(h(\mathbf{x}),y)\,\frac{p_{\text{te}}(\mathbf{x})}{p_{\text{tr}}(\mathbf{x})}\,p_{\text{tr}}(\mathbf{x})\,p(y\mid\mathbf{x})\,dy\,d\mathbf{x} && \text{multiply and divide by $p_{\text{tr}}(\mathbf{x})$ (needs $p_{\text{tr}}>0$ wherever $p_{\text{te}}>0$)}\\
-&= \mathbb{E}_{\text{tr}}\big[w(\mathbf{x})\,\ell(h(\mathbf{x}),y)\big], \qquad w(\mathbf{x}) = \frac{p_{\text{te}}(\mathbf{x})}{p_{\text{tr}}(\mathbf{x})} && \text{the rest is the training joint density}
+R_{\text{te}}(h) &= \mathbb{E}_{\text{te}}\big[\ell(h(\mathbf{x}),y)\big] = \iint \ell(h(\mathbf{x}),y)\,p_{\text{te}}(\mathbf{x})\,p(y\mid\mathbf{x})\,dy\,d\mathbf{x} \\
+&\quad\small \text{definition; } P_{\text{te}}(\mathbf{x},y) = p_{\text{te}}(\mathbf{x})\,p(y\mid\mathbf{x})\\
+&= \iint \ell(h(\mathbf{x}),y)\,\frac{p_{\text{te}}(\mathbf{x})}{p_{\text{tr}}(\mathbf{x})}\,p_{\text{tr}}(\mathbf{x})\,p(y\mid\mathbf{x})\,dy\,d\mathbf{x} \\
+&\quad\small \text{multiply and divide by $p_{\text{tr}}(\mathbf{x})$ (needs $p_{\text{tr}}>0$ wherever $p_{\text{te}}>0$)}\\
+&= \mathbb{E}_{\text{tr}}\big[w(\mathbf{x})\,\ell(h(\mathbf{x}),y)\big], \qquad w(\mathbf{x}) = \frac{p_{\text{te}}(\mathbf{x})}{p_{\text{tr}}(\mathbf{x})} \\
+&\quad\small \text{the rest is the training joint density}
 \end{aligned}
 $$
 
@@ -894,9 +919,12 @@ The other remedies: collect labelled data from the new region (the best, when po
 
 $$
 \begin{aligned}
-p_{\text{te}}(y\mid\mathbf{x}) &= \frac{p(\mathbf{x}\mid y)\,\pi_{\text{te}}(y)}{p_{\text{te}}(\mathbf{x})} && \text{Bayes' rule in deployment; $p(\mathbf{x}\mid y)$ is shared}\\
-p(\mathbf{x}\mid y) &= \frac{p_{\text{tr}}(y\mid\mathbf{x})\,p_{\text{tr}}(\mathbf{x})}{\pi_{\text{tr}}(y)} && \text{Bayes' rule in training, solved for $p(\mathbf{x}\mid y)$}\\
-p_{\text{te}}(y\mid\mathbf{x}) &= \frac{p_{\text{tr}}(y\mid\mathbf{x})\,\pi_{\text{te}}(y)/\pi_{\text{tr}}(y)}{\sum_{y'} p_{\text{tr}}(y'\mid\mathbf{x})\,\pi_{\text{te}}(y')/\pi_{\text{tr}}(y')} && \text{substitute; the factor $p_{\text{tr}}(\mathbf{x})/p_{\text{te}}(\mathbf{x})$ cancels after normalising over $y$}
+p_{\text{te}}(y\mid\mathbf{x}) &= \frac{p(\mathbf{x}\mid y)\,\pi_{\text{te}}(y)}{p_{\text{te}}(\mathbf{x})} \\
+&\quad\small \text{Bayes' rule in deployment; $p(\mathbf{x}\mid y)$ is shared}\\
+p(\mathbf{x}\mid y) &= \frac{p_{\text{tr}}(y\mid\mathbf{x})\,p_{\text{tr}}(\mathbf{x})}{\pi_{\text{tr}}(y)} \\
+&\quad\small \text{Bayes' rule in training, solved for $p(\mathbf{x}\mid y)$}\\
+p_{\text{te}}(y\mid\mathbf{x}) &= \frac{p_{\text{tr}}(y\mid\mathbf{x})\,\pi_{\text{te}}(y)/\pi_{\text{tr}}(y)}{\sum_{y'} p_{\text{tr}}(y'\mid\mathbf{x})\,\pi_{\text{te}}(y')/\pi_{\text{tr}}(y')} \\
+&\quad\small \text{substitute; the factor $p_{\text{tr}}(\mathbf{x})/p_{\text{te}}(\mathbf{x})$ cancels after normalising over $y$}
 \end{aligned}
 $$
 

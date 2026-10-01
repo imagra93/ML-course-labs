@@ -94,11 +94,16 @@ We compute the new vector for "pizza", whose query is $\mathbf{q} = (2, 1)$.
 
 $$
 \begin{aligned}
-\mathbf{q}\cdot\mathbf{k}_{\text{I}} &= 2\cdot1 + 1\cdot0 = 2,\quad \mathbf{q}\cdot\mathbf{k}_{\text{love}} = 2\cdot0 + 1\cdot1 = 1,\quad \mathbf{q}\cdot\mathbf{k}_{\text{pizza}} = 2 + 1 = 3 && \text{dot products}\\
-\mathbf{s} &= \tfrac{1}{\sqrt2}(2,\,1,\,3) = (1.41,\ 0.71,\ 2.12) && \text{divide by }\sqrt{d_k} = \sqrt2\\
-e^{\mathbf{s}} &= (4.11,\ 2.03,\ 8.34),\quad \textstyle\sum = 14.48 && \text{exponentiate}\\
-\boldsymbol{\alpha} &= (4.11,\ 2.03,\ 8.34)/14.48 = (0.28,\ 0.14,\ 0.58) && \text{normalise: softmax}\\
-\text{out} &= 0.28\binom{1}{0} + 0.14\binom{0}{1} + 0.58\binom{0.5}{0.5} = \binom{0.28 + 0.29}{0.14 + 0.29} = \binom{0.57}{0.43} && \text{weighted average of the values}
+\mathbf{q}\cdot\mathbf{k}_{\text{I}} &= 2\cdot1 + 1\cdot0 = 2,\quad \mathbf{q}\cdot\mathbf{k}_{\text{love}} = 2\cdot0 + 1\cdot1 = 1,\quad \mathbf{q}\cdot\mathbf{k}_{\text{pizza}} = 2 + 1 = 3 \\
+&\quad\small \text{dot products}\\
+\mathbf{s} &= \tfrac{1}{\sqrt2}(2,\,1,\,3) = (1.41,\ 0.71,\ 2.12) \\
+&\quad\small \text{divide by }\sqrt{d_k} = \sqrt2\\
+e^{\mathbf{s}} &= (4.11,\ 2.03,\ 8.34),\quad \textstyle\sum = 14.48 \\
+&\quad\small \text{exponentiate}\\
+\boldsymbol{\alpha} &= (4.11,\ 2.03,\ 8.34)/14.48 = (0.28,\ 0.14,\ 0.58) \\
+&\quad\small \text{normalise: softmax}\\
+\text{out} &= 0.28\binom{1}{0} + 0.14\binom{0}{1} + 0.58\binom{0.5}{0.5} = \binom{0.28 + 0.29}{0.14 + 0.29} = \binom{0.57}{0.43} \\
+&\quad\small \text{weighted average of the values}
 \end{aligned}
 $$
 
@@ -232,8 +237,10 @@ The raw standard deviation is $\sqrt{d_k}$ (2, 8, 22.6), and the largest weight 
 One head gives one weighted average per token: it cannot look at the previous word **and** at the subject at the same time. So we train several attentions **in parallel** and let each focus on different things (syntax, coreference, position…):
 
 $$
-\mathrm{head}_i = \mathrm{Attention}\big(\mathbf{X}\mathbf{W}_Q^{(i)},\ \mathbf{X}\mathbf{W}_K^{(i)},\ \mathbf{X}\mathbf{W}_V^{(i)}\big),\quad i = 1,\dots,h, \qquad
+\begin{gathered}
+\mathrm{head}_i = \mathrm{Attention}\big(\mathbf{X}\mathbf{W}_Q^{(i)},\ \mathbf{X}\mathbf{W}_K^{(i)},\ \mathbf{X}\mathbf{W}_V^{(i)}\big),\quad i = 1,\dots,h, \\
 \mathrm{MultiHead}(\mathbf{X}) = \mathrm{Concat}(\mathrm{head}_1,\dots,\mathrm{head}_h)\,\mathbf{W}_O,
+\end{gathered}
 $$
 
 with $\mathbf{W}_Q^{(i)},\mathbf{W}_K^{(i)},\mathbf{W}_V^{(i)}\in\mathbb{R}^{d\times d_k}$, $d_k = d/h$, and $\mathbf{W}_O\in\mathbb{R}^{d\times d}$ mixing the heads' results. Example: $d = 768$, $h = 12$, $d_k = 64$ (GPT-2 small).
@@ -290,12 +297,14 @@ Each pair of dimensions is a clock at its own angular speed $\omega_i = 10000^{-
 **Relative positions are a rotation (sinusoidal).** Take one pair, with $a = pos\,\omega_i$ and $b = k\,\omega_i$. By the angle-addition formulas,
 
 $$
+\begin{gathered}
 \begin{aligned}
 \sin(a + b) &= \cos b\,\sin a + \sin b\,\cos a,\\
 \cos(a + b) &= -\sin b\,\sin a + \cos b\,\cos a,
-\end{aligned}
-\qquad\text{so}\qquad
+\end{aligned} \\
+\text{so} \\
 \begin{pmatrix}PE_{(pos+k,\,2i)}\\ PE_{(pos+k,\,2i+1)}\end{pmatrix} = \underbrace{\begin{pmatrix}\cos k\omega_i & \sin k\omega_i\\ -\sin k\omega_i & \cos k\omega_i\end{pmatrix}}_{\text{depends only on }k}\begin{pmatrix}PE_{(pos,\,2i)}\\ PE_{(pos,\,2i+1)}\end{pmatrix}.
+\end{gathered}
 $$
 
 $PE(pos + k)$ is a fixed rotation of $PE(pos)$, the same for every $pos$: a linear map that the attention projections can learn, which makes "$k$ tokens back" easy to express.
@@ -436,9 +445,11 @@ For GPT-2 small in 16-bit precision ($N = 12$, $d = 768$, $b = 2$): $2\cdot12\cd
 Each block (pre-norm version, used by GPT-2 and most modern models):
 
 $$
+\begin{gathered}
 \mathbf{X}\leftarrow\mathbf{X} + \mathrm{MHA}\big(\mathrm{LN}(\mathbf{X})\big), \qquad
-\mathbf{X}\leftarrow\mathbf{X} + \mathrm{MLP}\big(\mathrm{LN}(\mathbf{X})\big), \qquad
+\mathbf{X}\leftarrow\mathbf{X} + \mathrm{MLP}\big(\mathrm{LN}(\mathbf{X})\big), \\
 \mathrm{MLP}(\mathbf{x}) = \mathrm{GELU}(\mathbf{x}\mathbf{W}_1 + \mathbf{b}_1)\mathbf{W}_2 + \mathbf{b}_2,
+\end{gathered}
 $$
 
 with $\mathbf{W}_1\in\mathbb{R}^{d\times4d}$ and $\mathbf{W}_2\in\mathbb{R}^{4d\times d}$.

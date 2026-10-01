@@ -725,8 +725,11 @@ The smallest possible example (slide 15): $\mathbf{x}^{(1)} = (1, 1)$ with $y^{(
 **2 · The dot products.** $\mathbf{x}^{(1)\top}\mathbf{x}^{(1)} = 1 + 1 = 2$, $\;\mathbf{x}^{(2)\top}\mathbf{x}^{(2)} = 2$, $\;\mathbf{x}^{(1)\top}\mathbf{x}^{(2)} = -1 - 1 = -2$. The double sum has four terms ($i, j \in \{1, 2\}$):
 
 $$
+\begin{aligned}
 \sum_{i,j}\alpha_i\alpha_jy^{(i)}y^{(j)}\,\mathbf{x}^{(i)\top}\mathbf{x}^{(j)}
-= \alpha^2\big(\underbrace{(+1)(+1)\,2}_{i=j=1} + \underbrace{(-1)(-1)\,2}_{i=j=2} + \underbrace{2\cdot(+1)(-1)(-2)}_{i\ne j\text{, twice}}\big) = \alpha^2(2 + 2 + 4) = 8\alpha^2 .
+&= \alpha^2\big(\underbrace{(+1)(+1)\,2}_{i=j=1} + \underbrace{(-1)(-1)\,2}_{i=j=2} + \underbrace{2\cdot(+1)(-1)(-2)}_{i\ne j\text{, twice}}\big) \\
+&= \alpha^2(2 + 2 + 4) = 8\alpha^2 .
+\end{aligned}
 $$
 
 **3 · Maximise the dual.** $D = \sum_i\alpha_i - \frac12\cdot 8\alpha^2 = 2\alpha - 4\alpha^2$. Its derivative $2 - 8\alpha = 0$ gives $\alpha = \frac14$ (positive, so allowed), and $D(\frac14) = \frac12 - \frac14 = \frac14$. Then
@@ -1079,10 +1082,11 @@ $$
 we just replace every $\mathbf{x}^{(i)\top}\mathbf{x}^{(j)}$ by $K(\mathbf{x}^{(i)}, \mathbf{x}^{(j)})$:
 
 $$
+\begin{gathered}
 \max_{\boldsymbol{\alpha}}\ \sum_i\alpha_i - \frac12\sum_{i,j}\alpha_i\alpha_jy^{(i)}y^{(j)}K(\mathbf{x}^{(i)},\mathbf{x}^{(j)})
-\quad\text{s.t. } 0\le\alpha_i\le C,\ \sum_i\alpha_iy^{(i)}=0,
-\qquad
+\quad\text{s.t. } 0\le\alpha_i\le C,\ \sum_i\alpha_iy^{(i)}=0, \\
 f(\mathbf{x}) = \sum_{i\in\text{SV}}\alpha_iy^{(i)}K(\mathbf{x}^{(i)},\mathbf{x}) + \theta_0 .
+\end{gathered}
 $$
 
 This is a linear SVM in $\phi$-space, at the cost of the original space: we compute $K$, never $\phi(\mathbf{x})$ (and never $\boldsymbol{\theta}$, which lives in $\phi$-space; the prediction formula does not need it). The intercept is computed as before with $K$ in place of the dot product.
@@ -1266,8 +1270,10 @@ With these rules:
 
 - **The sigmoid "kernel"** $\tanh(a\,\mathbf{x}^\top\mathbf{z} + c)$ (scikit-learn's `kernel="sigmoid"`, inspired by neural networks) is PSD only for some $a, c$ and some data. A counterexample by hand in 1-D: $x = 1$, $z = 10$, $a = 1$, $c = 0$. The Gram matrix is
 $$
-\mathbf{K} = \begin{pmatrix}\tanh(1\cdot1) & \tanh(1\cdot10)\\ \tanh(10\cdot1) & \tanh(10\cdot10)\end{pmatrix} = \begin{pmatrix}0.7616 & 1.0000\\ 1.0000 & 1.0000\end{pmatrix},
-\qquad \det\mathbf{K} = 0.7616 - 1.0000 = -0.2384 < 0 .
+\begin{gathered}
+\mathbf{K} = \begin{pmatrix}\tanh(1\cdot1) & \tanh(1\cdot10)\\ \tanh(10\cdot1) & \tanh(10\cdot10)\end{pmatrix} = \begin{pmatrix}0.7616 & 1.0000\\ 1.0000 & 1.0000\end{pmatrix}, \\
+\det\mathbf{K} = 0.7616 - 1.0000 = -0.2384 < 0 .
+\end{gathered}
 $$
 The determinant of a $2\times2$ symmetric matrix is the product of its two eigenvalues, so a negative determinant means one eigenvalue is negative: $\mathbf{K}$ is not PSD.
 - **A distance** $\lVert\mathbf{x} - \mathbf{z}\rVert$ used as a similarity: its diagonal is $0$, so the trace (the sum of the eigenvalues) is $0$; unless every entry is $0$, some eigenvalue must be negative.
@@ -1378,13 +1384,15 @@ plt.title("Losses as a function of the margin"); plt.tight_layout(); plt.show()
 **Sub-gradient.** For a convex function with a kink, a sub-gradient at a point is the slope of any line that touches the function there and stays below it. Away from kinks it is the ordinary gradient. For one hinge term with respect to $\boldsymbol{\theta}$ (the derivative of $1 - \mu^{(i)} = 1 - y^{(i)}(\boldsymbol{\theta}^\top\mathbf{x}^{(i)} + \theta_0)$ is $-y^{(i)}\mathbf{x}^{(i)}$):
 
 $$
+\begin{gathered}
 \partial_{\boldsymbol{\theta}}\max\big(0, 1-\mu^{(i)}\big) \ni
 \begin{cases}
 -y^{(i)}\mathbf{x}^{(i)} & \mu^{(i)} < 1\\
 \mathbf{0} & \mu^{(i)} > 1\\
 \text{anything in between; we take } \mathbf{0} & \mu^{(i)} = 1
-\end{cases}
-\qquad(\text{same with } \mathbf{x}^{(i)} \text{ replaced by } 1 \text{ for } \theta_0).
+\end{cases} \\
+(\text{same with } \mathbf{x}^{(i)} \text{ replaced by } 1 \text{ for } \theta_0).
+\end{gathered}
 $$
 
 Let $V = \{i : \mu^{(i)} < 1\}$ be the set of **margin violators**. A sub-gradient of $J$ is
@@ -1396,8 +1404,10 @@ $$
 
 **Update rule** (slide 25), with step size $\eta_t$:
 $$
-\boldsymbol{\theta} \leftarrow \boldsymbol{\theta} - \eta_t\,\mathbf{g}_{\boldsymbol{\theta}} = \underbrace{(1 - \eta_t\lambda)\,\boldsymbol{\theta}}_{\text{weight decay: widens the margin}} + \underbrace{\frac{\eta_t}{m}\sum_{i\in V}y^{(i)}\mathbf{x}^{(i)}}_{\text{each violator pulls the boundary away from itself}}, \qquad
+\begin{gathered}
+\boldsymbol{\theta} \leftarrow \boldsymbol{\theta} - \eta_t\,\mathbf{g}_{\boldsymbol{\theta}} = \underbrace{(1 - \eta_t\lambda)\,\boldsymbol{\theta}}_{\text{weight decay: widens the margin}} + \underbrace{\frac{\eta_t}{m}\sum_{i\in V}y^{(i)}\mathbf{x}^{(i)}}_{\text{each violator pulls the boundary away from itself}}, \\
 \theta_0 \leftarrow \theta_0 + \frac{\eta_t}{m}\sum_{i\in V}y^{(i)} .
+\end{gathered}
 $$
 
 At the optimum the two forces balance. Points outside the margin exert no force at all.

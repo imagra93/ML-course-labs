@@ -285,9 +285,10 @@ For $\tau = 0.5$ the right-hand side is $\log 1 = 0$: $h_{\boldsymbol{\theta}}(\
 **The cost of one example.** Squared error with a sigmoid gives a non-convex cost (section 7). Instead we use the **binary cross-entropy**:
 
 $$
-L\big(h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)}), y^{(i)}\big) = \begin{cases} -\log h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)}) & \text{if } y^{(i)} = 1\\ -\log\big(1-h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)})\big) & \text{if } y^{(i)} = 0\end{cases}
-\qquad\text{or in one line}\qquad
-L = -y^{(i)}\log h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)}) - (1-y^{(i)})\log\big(1-h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)})\big).
+\begin{gathered}
+L\big(h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)}), y^{(i)}\big) = \begin{cases} -\log h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)}) & \text{if } y^{(i)} = 1\\ -\log\big(1-h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)})\big) & \text{if } y^{(i)} = 0\end{cases} \\
+\text{or in one line:}\quad L = -y^{(i)}\log h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)}) - (1-y^{(i)})\log\big(1-h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)})\big).
+\end{gathered}
 $$
 
 If $y^{(i)}=1$, low probabilities are penalised very hard; if $y^{(i)}=0$, high probabilities are. Near the wrong end, a small change in $p$ makes a large change in the loss: confident mistakes cost a fortune. Where does this loss come from?
@@ -343,10 +344,14 @@ We minimise $J$ with gradient descent, so we need $\partial J/\partial\theta_j$.
 $$
 \begin{aligned}
 \frac{\partial J}{\partial\theta_j}
-&= \frac{\partial}{\partial\theta_j}\,\frac1m\sum_{i=1}^m\Big(-y^{(i)}\log h^{(i)}-(1-y^{(i)})\log\big(1-h^{(i)}\big)\Big) && \text{(definition of } J\text{)}\\
-&= \frac1m\sum_{i=1}^m\Big(-\frac{y^{(i)}}{h^{(i)}}+\frac{1-y^{(i)}}{1-h^{(i)}}\Big)\,\frac{\partial h^{(i)}}{\partial\theta_j} && ((\log u)' = u'/u\text{; the minus sign inside } \log(1-h) \text{ flips the second sign)}\\
-&= \frac1m\sum_{i=1}^m\frac{h^{(i)}-y^{(i)}}{h^{(i)}\big(1-h^{(i)}\big)}\cdot h^{(i)}\big(1-h^{(i)}\big)\cdot\frac{\partial z^{(i)}}{\partial\theta_j} && \text{(common denominator: } -y(1-h)+(1-y)h = h-y\text{; chain rule with } \sigma' = \sigma(1-\sigma)\text{)}\\
-&= \frac1m\sum_{i=1}^m\big(h^{(i)}-y^{(i)}\big)\,x_j^{(i)} && \text{(the factors } h(1-h) \text{ cancel; } z=\textstyle\sum_k\theta_k x_k \text{ so } \partial z/\partial\theta_j = x_j\text{)}
+&= \frac{\partial}{\partial\theta_j}\,\frac1m\sum_{i=1}^m\Big(-y^{(i)}\log h^{(i)}-(1-y^{(i)})\log\big(1-h^{(i)}\big)\Big) \\
+&\quad\small \text{(definition of } J\text{)}\\
+&= \frac1m\sum_{i=1}^m\Big(-\frac{y^{(i)}}{h^{(i)}}+\frac{1-y^{(i)}}{1-h^{(i)}}\Big)\,\frac{\partial h^{(i)}}{\partial\theta_j} \\
+&\quad\small ((\log u)' = u'/u\text{; the minus sign inside } \log(1-h) \text{ flips the second sign)}\\
+&= \frac1m\sum_{i=1}^m\frac{h^{(i)}-y^{(i)}}{h^{(i)}\big(1-h^{(i)}\big)}\cdot h^{(i)}\big(1-h^{(i)}\big)\cdot\frac{\partial z^{(i)}}{\partial\theta_j} \\
+&\quad\small \text{(common denominator: } -y(1-h)+(1-y)h = h-y\text{; chain rule with } \sigma' = \sigma(1-\sigma)\text{)}\\
+&= \frac1m\sum_{i=1}^m\big(h^{(i)}-y^{(i)}\big)\,x_j^{(i)} \\
+&\quad\small \text{(the factors } h(1-h) \text{ cancel; } z=\textstyle\sum_k\theta_k x_k \text{ so } \partial z/\partial\theta_j = x_j\text{)}
 \end{aligned}
 $$
 
@@ -390,9 +395,10 @@ $$
 **Step 4 · put it together.** Write $s_i = h^{(i)}(1-h^{(i)})$:
 
 $$
-H_{jk} = \frac1m\sum_{i=1}^m s_i\,x_j^{(i)}x_k^{(i)}
-\qquad\Longrightarrow\qquad
-\mathbf{H} = \nabla^2 J(\boldsymbol{\theta}) = \frac1m\sum_{i=1}^m s_i\,\mathbf{x}^{(i)}\mathbf{x}^{(i)\top} = \frac1m\mathbf{X}^\top\mathbf{S}\mathbf{X}, \qquad \mathbf{S} = \mathrm{diag}(s_1,\dots,s_m).
+\begin{gathered}
+H_{jk} = \frac1m\sum_{i=1}^m s_i\,x_j^{(i)}x_k^{(i)} \\
+\Longrightarrow\quad \mathbf{H} = \nabla^2 J(\boldsymbol{\theta}) = \frac1m\sum_{i=1}^m s_i\,\mathbf{x}^{(i)}\mathbf{x}^{(i)\top} = \frac1m\mathbf{X}^\top\mathbf{S}\mathbf{X}, \qquad \mathbf{S} = \mathrm{diag}(s_1,\dots,s_m).
+\end{gathered}
 $$
 
 Unlike linear regression, $\mathbf{H}$ depends on $\boldsymbol{\theta}$ (through the $s_i$), so there is no closed form. But we only need its sign.
@@ -442,9 +448,10 @@ plt.tight_layout(); plt.show()
 Repeat until convergence, updating all parameters **simultaneously** ($j = 0,\dots,n$):
 
 $$
-\theta_j := \theta_j - \alpha\,\frac{\partial J}{\partial\theta_j} = \theta_j - \alpha\,\frac1m\sum_{i=1}^m\big(h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)}) - y^{(i)}\big)x_j^{(i)},
-\qquad\text{vectorised:}\qquad
-\boldsymbol{\theta} \leftarrow \boldsymbol{\theta} - \frac{\alpha}{m}\mathbf{X}^\top\big(\sigma(\mathbf{X}\boldsymbol{\theta}) - \mathbf{y}\big).
+\begin{gathered}
+\theta_j := \theta_j - \alpha\,\frac{\partial J}{\partial\theta_j} = \theta_j - \alpha\,\frac1m\sum_{i=1}^m\big(h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)}) - y^{(i)}\big)x_j^{(i)}, \\
+\text{vectorised:}\quad \boldsymbol{\theta} \leftarrow \boldsymbol{\theta} - \frac{\alpha}{m}\mathbf{X}^\top\big(\sigma(\mathbf{X}\boldsymbol{\theta}) - \mathbf{y}\big).
+\end{gathered}
 $$
 
 It looks exactly like linear regression, with its own non-linear hypothesis. Everything from [note 01](01_linear_regression.html) applies: standardise the features, choose $\alpha$ by watching $J$ decrease (too large → oscillation; too small → slow). **A safe step size.** Since $s_i = \sigma'(z^{(i)}) \le \tfrac14$, the Hessian (section 7) satisfies $\mathbf{v}^\top\mathbf{H}\mathbf{v} \le \frac{1}{4}\,\mathbf{v}^\top\big(\frac1m\mathbf{X}^\top\mathbf{X}\big)\mathbf{v}$, so its largest eigenvalue is at most $\frac14\lambda_{\max}(\frac1m\mathbf{X}^\top\mathbf{X})$. Gradient descent on a function whose Hessian eigenvalues never exceed $L$ decreases $J$ for any $\alpha < 2/L$ (the bound of note 01), so any $\alpha < 8/\lambda_{\max}(\frac1m\mathbf{X}^\top\mathbf{X})$ is stable.
@@ -503,10 +510,14 @@ Setting the gradient to zero gives $\mathbf{X}^\top\sigma(\mathbf{X}\boldsymbol{
 
 $$
 \begin{aligned}
-J(\boldsymbol{\theta}+\boldsymbol{\delta}) &\approx J(\boldsymbol{\theta}) + \nabla J^\top\boldsymbol{\delta} + \tfrac12\,\boldsymbol{\delta}^\top\mathbf{H}\,\boldsymbol{\delta} && \text{(Taylor expansion to second order)}\\
-\nabla J + \mathbf{H}\boldsymbol{\delta} &= \mathbf{0} && \text{(set the derivative with respect to } \boldsymbol{\delta} \text{ to zero; } \mathbf{H} \text{ is symmetric)}\\
-\boldsymbol{\delta} &= -\mathbf{H}^{-1}\nabla J && \text{(solve; } \mathbf{H} \text{ invertible when } \mathbf{X} \text{ has independent columns)}\\
-\boldsymbol{\theta}_{\text{new}} &= \boldsymbol{\theta} - \big(\mathbf{X}^\top\mathbf{S}\mathbf{X}\big)^{-1}\mathbf{X}^\top\big(\mathbf{p}-\mathbf{y}\big) && (\nabla J = \tfrac1m\mathbf{X}^\top(\mathbf{p}-\mathbf{y}),\ \mathbf{H} = \tfrac1m\mathbf{X}^\top\mathbf{S}\mathbf{X}\text{; the } \tfrac1m \text{ cancel)}
+J(\boldsymbol{\theta}+\boldsymbol{\delta}) &\approx J(\boldsymbol{\theta}) + \nabla J^\top\boldsymbol{\delta} + \tfrac12\,\boldsymbol{\delta}^\top\mathbf{H}\,\boldsymbol{\delta} \\
+&\quad\small \text{(Taylor expansion to second order)}\\
+\nabla J + \mathbf{H}\boldsymbol{\delta} &= \mathbf{0} \\
+&\quad\small \text{(set the derivative with respect to } \boldsymbol{\delta} \text{ to zero; } \mathbf{H} \text{ is symmetric)}\\
+\boldsymbol{\delta} &= -\mathbf{H}^{-1}\nabla J \\
+&\quad\small \text{(solve; } \mathbf{H} \text{ invertible when } \mathbf{X} \text{ has independent columns)}\\
+\boldsymbol{\theta}_{\text{new}} &= \boldsymbol{\theta} - \big(\mathbf{X}^\top\mathbf{S}\mathbf{X}\big)^{-1}\mathbf{X}^\top\big(\mathbf{p}-\mathbf{y}\big) \\
+&\quad\small (\nabla J = \tfrac1m\mathbf{X}^\top(\mathbf{p}-\mathbf{y}),\ \mathbf{H} = \tfrac1m\mathbf{X}^\top\mathbf{S}\mathbf{X}\text{; the } \tfrac1m \text{ cancel)}
 \end{aligned}
 $$
 
@@ -516,9 +527,12 @@ where $\mathbf{p} = \sigma(\mathbf{X}\boldsymbol{\theta})$ and $\mathbf{S} = \ma
 
 $$
 \begin{aligned}
-\boldsymbol{\theta}_{\text{new}} &= \big(\mathbf{X}^\top\mathbf{S}\mathbf{X}\big)^{-1}\Big[\mathbf{X}^\top\mathbf{S}\mathbf{X}\boldsymbol{\theta} + \mathbf{X}^\top(\mathbf{y}-\mathbf{p})\Big] && \text{(common factor } (\mathbf{X}^\top\mathbf{S}\mathbf{X})^{-1}\text{)}\\
-&= \big(\mathbf{X}^\top\mathbf{S}\mathbf{X}\big)^{-1}\mathbf{X}^\top\mathbf{S}\Big[\mathbf{X}\boldsymbol{\theta} + \mathbf{S}^{-1}(\mathbf{y}-\mathbf{p})\Big] && \text{(factor out } \mathbf{X}^\top\mathbf{S}\text{; } \mathbf{S} \text{ is diagonal with positive entries)}\\
-&= \big(\mathbf{X}^\top\mathbf{S}\mathbf{X}\big)^{-1}\mathbf{X}^\top\mathbf{S}\,\mathbf{z}_w, \qquad z_{w,i} = \boldsymbol{\theta}^\top\mathbf{x}^{(i)} + \frac{y^{(i)} - p_i}{p_i(1-p_i)} && \text{(define the working response)}
+\boldsymbol{\theta}_{\text{new}} &= \big(\mathbf{X}^\top\mathbf{S}\mathbf{X}\big)^{-1}\Big[\mathbf{X}^\top\mathbf{S}\mathbf{X}\boldsymbol{\theta} + \mathbf{X}^\top(\mathbf{y}-\mathbf{p})\Big] \\
+&\quad\small \text{(common factor } (\mathbf{X}^\top\mathbf{S}\mathbf{X})^{-1}\text{)}\\
+&= \big(\mathbf{X}^\top\mathbf{S}\mathbf{X}\big)^{-1}\mathbf{X}^\top\mathbf{S}\Big[\mathbf{X}\boldsymbol{\theta} + \mathbf{S}^{-1}(\mathbf{y}-\mathbf{p})\Big] \\
+&\quad\small \text{(factor out } \mathbf{X}^\top\mathbf{S}\text{; } \mathbf{S} \text{ is diagonal with positive entries)}\\
+&= \big(\mathbf{X}^\top\mathbf{S}\mathbf{X}\big)^{-1}\mathbf{X}^\top\mathbf{S}\,\mathbf{z}_w, \qquad z_{w,i} = \boldsymbol{\theta}^\top\mathbf{x}^{(i)} + \frac{y^{(i)} - p_i}{p_i(1-p_i)} \\
+&\quad\small \text{(define the working response)}
 \end{aligned}
 $$
 
@@ -824,9 +838,12 @@ and, anticipating section 12.6 (AUC = probability that a random positive outscor
 
 $$
 \begin{aligned}
-\text{AUC} &= P(S^+ > S^-) = P(S^+ - S^- > 0) && \text{(rearrange)}\\
-&= P\big(\mathcal{N}(d, 2) > 0\big) && \text{(difference of independent normals: means subtract, variances add)}\\
-&= P\Big(Z > -\tfrac{d}{\sqrt2}\Big) = \Phi\Big(\frac{d}{\sqrt2}\Big) && \text{(standardise; symmetry of } \mathcal{N}(0,1)\text{)}
+\text{AUC} &= P(S^+ > S^-) = P(S^+ - S^- > 0) \\
+&\quad\small \text{(rearrange)}\\
+&= P\big(\mathcal{N}(d, 2) > 0\big) \\
+&\quad\small \text{(difference of independent normals: means subtract, variances add)}\\
+&= P\Big(Z > -\tfrac{d}{\sqrt2}\Big) = \Phi\Big(\frac{d}{\sqrt2}\Big) \\
+&\quad\small \text{(standardise; symmetry of } \mathcal{N}(0,1)\text{)}
 \end{aligned}
 $$
 
@@ -1203,7 +1220,10 @@ With independent data the three SEs agree (up to their own sampling noise) and t
 2. **Partial residuals.** The IRLS working response of section 9, minus the fitted contributions of the other features, is $r_i^{(x)} = \hat\theta_x x_i + \frac{y_i - p_i}{p_i(1-p_i)}$: the part of the linearised log-odds attributed to $x$ plus what is left unexplained. Averaged per bin (with the IRLS weights $p_i(1-p_i)$), it traces the shape of the effect of $x$ *adjusted* for the other features; the fitted straight line $\hat\theta_x x$ should run through it.
 3. **Box–Tidwell test.** Suppose the true term is $\theta_x x^\lambda$ instead of $\theta_x x$ ($x > 0$). Expand around $\lambda = 1$:
    $$
-   x^\lambda = x\,e^{(\lambda-1)\log x} \approx x\,\big(1 + (\lambda - 1)\log x\big) = x + (\lambda-1)\,x\log x \qquad \text{(first-order Taylor expansion of } e^{u}\text{)},
+   \begin{gathered}
+x^\lambda = x\,e^{(\lambda-1)\log x} \approx x\,\big(1 + (\lambda - 1)\log x\big) = x + (\lambda-1)\,x\log x , \\
+\text{(first-order Taylor expansion of } e^{u}\text{)},
+\end{gathered}
    $$
    so $\theta_x x^\lambda \approx \theta_x x + \gamma\, x\log x$ with $\gamma = \theta_x(\lambda - 1)$. Add the feature $x\log x$ to the model and test $\gamma = 0$ with its Wald $z$: a significant $\gamma$ means the linear shape is wrong, and $\hat\lambda = 1 + \hat\gamma/\hat\theta_x$ (with $\hat\theta_x$ from the linear fit) suggests a power transform ($\lambda\approx 0$ means $\log x$).
 
@@ -1471,10 +1491,14 @@ At EPV 2 the MLE of a coefficient whose true value is 0.5 averages 0.72 with a s
 
 $$
 \begin{aligned}
-\nabla\ell_{(-i)}(\hat{\boldsymbol{\theta}}) &= \nabla\ell(\hat{\boldsymbol{\theta}}) - (y_i - p_i)\mathbf{x}^{(i)} = -(y_i - p_i)\mathbf{x}^{(i)} && \text{(the full gradient is } \mathbf{0} \text{ at } \hat{\boldsymbol{\theta}}\text{)}\\
-\mathcal{I}_{(-i)} &= \mathcal{I} - s_i\mathbf{x}^{(i)}\mathbf{x}^{(i)\top} && \text{(remove the point's term from } \mathbf{X}^\top\mathbf{S}\mathbf{X}\text{)}\\
-\mathcal{I}_{(-i)}^{-1}\mathbf{x}^{(i)} &= \frac{\mathcal{I}^{-1}\mathbf{x}^{(i)}}{1 - s_i\mathbf{x}^{(i)\top}\mathcal{I}^{-1}\mathbf{x}^{(i)}} = \frac{\mathcal{I}^{-1}\mathbf{x}^{(i)}}{1-h_{ii}} && \text{(Sherman–Morrison formula for a rank-one update)}\\
-\hat{\boldsymbol{\theta}}_{(-i)} - \hat{\boldsymbol{\theta}} &\approx \mathcal{I}_{(-i)}^{-1}\nabla\ell_{(-i)}(\hat{\boldsymbol{\theta}}) = -\frac{(y_i - p_i)\,\mathcal{I}^{-1}\mathbf{x}^{(i)}}{1-h_{ii}} && \text{(one Newton step)}
+\nabla\ell_{(-i)}(\hat{\boldsymbol{\theta}}) &= \nabla\ell(\hat{\boldsymbol{\theta}}) - (y_i - p_i)\mathbf{x}^{(i)} = -(y_i - p_i)\mathbf{x}^{(i)} \\
+&\quad\small \text{(the full gradient is } \mathbf{0} \text{ at } \hat{\boldsymbol{\theta}}\text{)}\\
+\mathcal{I}_{(-i)} &= \mathcal{I} - s_i\mathbf{x}^{(i)}\mathbf{x}^{(i)\top} \\
+&\quad\small \text{(remove the point's term from } \mathbf{X}^\top\mathbf{S}\mathbf{X}\text{)}\\
+\mathcal{I}_{(-i)}^{-1}\mathbf{x}^{(i)} &= \frac{\mathcal{I}^{-1}\mathbf{x}^{(i)}}{1 - s_i\mathbf{x}^{(i)\top}\mathcal{I}^{-1}\mathbf{x}^{(i)}} = \frac{\mathcal{I}^{-1}\mathbf{x}^{(i)}}{1-h_{ii}} \\
+&\quad\small \text{(Sherman–Morrison formula for a rank-one update)}\\
+\hat{\boldsymbol{\theta}}_{(-i)} - \hat{\boldsymbol{\theta}} &\approx \mathcal{I}_{(-i)}^{-1}\nabla\ell_{(-i)}(\hat{\boldsymbol{\theta}}) = -\frac{(y_i - p_i)\,\mathcal{I}^{-1}\mathbf{x}^{(i)}}{1-h_{ii}} \\
+&\quad\small \text{(one Newton step)}
 \end{aligned}
 $$
 
@@ -1548,9 +1572,12 @@ In the clean data nothing stands out: the largest Cook's distance is above the $
 
 $$
 \begin{aligned}
-\sum_{i\in b}(f_b - y_i)^2 &= \sum_{i\in b}\big((f_b - \bar y_b) + (\bar y_b - y_i)\big)^2 && \text{(add and subtract } \bar y_b\text{)}\\
-&= n_b(f_b - \bar y_b)^2 + 2(f_b - \bar y_b)\sum_{i\in b}(\bar y_b - y_i) + \sum_{i\in b}(\bar y_b - y_i)^2 && \text{(expand the square)}\\
-&= n_b(f_b - \bar y_b)^2 + 0 + n_b\,\bar y_b(1-\bar y_b) && (\textstyle\sum_{i\in b}(\bar y_b - y_i) = 0\text{; for 0/1 labels } \sum(y_i-\bar y_b)^2 = n_b\bar y_b - n_b\bar y_b^2)
+\sum_{i\in b}(f_b - y_i)^2 &= \sum_{i\in b}\big((f_b - \bar y_b) + (\bar y_b - y_i)\big)^2 \\
+&\quad\small \text{(add and subtract } \bar y_b\text{)}\\
+&= n_b(f_b - \bar y_b)^2 + 2(f_b - \bar y_b)\sum_{i\in b}(\bar y_b - y_i) + \sum_{i\in b}(\bar y_b - y_i)^2 \\
+&\quad\small \text{(expand the square)}\\
+&= n_b(f_b - \bar y_b)^2 + 0 + n_b\,\bar y_b(1-\bar y_b) \\
+&\quad\small (\textstyle\sum_{i\in b}(\bar y_b - y_i) = 0\text{; for 0/1 labels } \sum(y_i-\bar y_b)^2 = n_b\bar y_b - n_b\bar y_b^2)
 \end{aligned}
 $$
 
@@ -1636,9 +1663,12 @@ Resampling changes the proportion of positives in the training data from the pop
 
 $$
 \begin{aligned}
-\operatorname{logit} P(y=1\mid\mathbf{x}) &= \log\frac{P(y=1\mid\mathbf{x})}{P(y=0\mid\mathbf{x})} && \text{(definition of the logit)}\\
-&= \log\frac{p(\mathbf{x}\mid y=1)\,\pi}{p(\mathbf{x}\mid y=0)\,(1-\pi)} && \text{(Bayes: } P(y\mid\mathbf{x}) = p(\mathbf{x}\mid y)P(y)/p(\mathbf{x})\text{; } p(\mathbf{x}) \text{ cancels)}\\
-&= \underbrace{\log\frac{p(\mathbf{x}\mid y=1)}{p(\mathbf{x}\mid y=0)}}_{\text{same in sample and population}} + \log\frac{\pi}{1-\pi} && \text{(log of a product)}
+\operatorname{logit} P(y=1\mid\mathbf{x}) &= \log\frac{P(y=1\mid\mathbf{x})}{P(y=0\mid\mathbf{x})} \\
+&\quad\small \text{(definition of the logit)}\\
+&= \log\frac{p(\mathbf{x}\mid y=1)\,\pi}{p(\mathbf{x}\mid y=0)\,(1-\pi)} \\
+&\quad\small \text{(Bayes: } P(y\mid\mathbf{x}) = p(\mathbf{x}\mid y)P(y)/p(\mathbf{x})\text{; } p(\mathbf{x}) \text{ cancels)}\\
+&= \underbrace{\log\frac{p(\mathbf{x}\mid y=1)}{p(\mathbf{x}\mid y=0)}}_{\text{same in sample and population}} + \log\frac{\pi}{1-\pi} \\
+&\quad\small \text{(log of a product)}
 \end{aligned}
 $$
 

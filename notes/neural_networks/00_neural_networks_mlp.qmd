@@ -143,10 +143,14 @@ Inputs $\mathbf{x} = (2,\,-1,\,0.5)$, weights $\mathbf{w} = (0.4,\,-0.3,\,1.0)$,
 
 $$
 \begin{aligned}
-w_1x_1 &= 0.4\cdot 2 = 0.8, \qquad w_2x_2 = (-0.3)\cdot(-1) = 0.3, \qquad w_3x_3 = 1.0\cdot 0.5 = 0.5 && \text{multiply}\\
-z &= 0.8 + 0.3 + 0.5 + 0.1 = 1.7 && \text{add, bias included}\\
-e^{-1.7} &= 0.1827 && \text{exponential}\\
-\hat y &= \sigma(1.7) = \frac{1}{1+0.1827} = \frac{1}{1.1827} = 0.846 && \text{activate}
+w_1x_1 &= 0.4\cdot 2 = 0.8, \qquad w_2x_2 = (-0.3)\cdot(-1) = 0.3, \qquad w_3x_3 = 1.0\cdot 0.5 = 0.5 \\
+&\quad\small \text{multiply}\\
+z &= 0.8 + 0.3 + 0.5 + 0.1 = 1.7 \\
+&\quad\small \text{add, bias included}\\
+e^{-1.7} &= 0.1827 \\
+&\quad\small \text{exponential}\\
+\hat y &= \sigma(1.7) = \frac{1}{1+0.1827} = \frac{1}{1.1827} = 0.846 \\
+&\quad\small \text{activate}
 \end{aligned}
 $$
 
@@ -690,10 +694,14 @@ Each pair is "minus the log-likelihood" of a distribution. Restating the derivat
 
 $$
 \begin{aligned}
-&\text{Gaussian, } y\sim\mathcal{N}(\hat y, s^2): && -\log p(y) = \tfrac{1}{2s^2}(y-\hat y)^2 + \tfrac12\log(2\pi s^2) && \Rightarrow\ \text{MSE (the constant and } s^2 \text{ do not move the minimiser)}\\
-&\text{Bernoulli, } p(y) = \hat y^{\,y}(1-\hat y)^{1-y}: && -\log p(y) = -\big[y\log\hat y + (1-y)\log(1-\hat y)\big] && \Rightarrow\ \text{binary cross-entropy}\\
-&\text{categorical, } p(\mathbf{y}) = \textstyle\prod_k \hat y_k^{\,y_k}: && -\log p(\mathbf{y}) = -\textstyle\sum_k y_k\log\hat y_k && \Rightarrow\ \text{cross-entropy}\\
-&\text{Poisson, } p(y) = \hat y^{\,y}e^{-\hat y}/y!: && -\log p(y) = \hat y - y\log\hat y + \log y! && \Rightarrow\ \text{Poisson NLL } (\log y! \text{ is a constant})
+&\text{Gaussian, } y\sim\mathcal{N}(\hat y, s^2):\quad -\log p(y) = \tfrac{1}{2s^2}(y-\hat y)^2 + \tfrac12\log(2\pi s^2) \\
+&\qquad\Rightarrow\ \text{MSE (the constant and } s^2 \text{ do not move the minimiser)} \\
+&\text{Bernoulli, } p(y) = \hat y^{\,y}(1-\hat y)^{1-y}:\quad -\log p(y) = -\big[y\log\hat y + (1-y)\log(1-\hat y)\big] \\
+&\qquad\Rightarrow\ \text{binary cross-entropy} \\
+&\text{categorical, } p(\mathbf{y}) = \textstyle\prod_k \hat y_k^{\,y_k}:\quad -\log p(\mathbf{y}) = -\textstyle\sum_k y_k\log\hat y_k \\
+&\qquad\Rightarrow\ \text{cross-entropy} \\
+&\text{Poisson, } p(y) = \hat y^{\,y}e^{-\hat y}/y!:\quad -\log p(y) = \hat y - y\log\hat y + \log y! \\
+&\qquad\Rightarrow\ \text{Poisson NLL } (\log y! \text{ is a constant})
 \end{aligned}
 $$
 
@@ -779,11 +787,16 @@ so taking $c = \max_k z_k$ changes nothing mathematically, but makes every expon
 
 $$
 \begin{aligned}
-L &= -\sum_j y_j\log\frac{e^{z_j}}{\sum_k e^{z_k}} = -\sum_j y_j\Big(z_j - \log\sum_k e^{z_k}\Big) && \log\tfrac{a}{b} = \log a - \log b\\
-&= -\Big(z_i - \log\sum_k e^{z_k}\Big) && \mathbf{y} \text{ one-hot: } \textstyle\sum_j y_j = 1,\ y_i = 1\\
-\frac{\partial}{\partial z_j}\log\sum_k e^{z_k} &= \frac{e^{z_j}}{\sum_k e^{z_k}} = \hat y_j && \text{chain rule}\\
-\text{case } j = i:\quad \frac{\partial L}{\partial z_i} &= -\big(1 - \hat y_i\big) = \hat y_i - 1 && \tfrac{\partial z_i}{\partial z_i} = 1\\
-\text{case } j\ne i:\quad \frac{\partial L}{\partial z_j} &= -\big(0 - \hat y_j\big) = \hat y_j && \tfrac{\partial z_i}{\partial z_j} = 0\\
+L &= -\sum_j y_j\log\frac{e^{z_j}}{\sum_k e^{z_k}} = -\sum_j y_j\Big(z_j - \log\sum_k e^{z_k}\Big) \\
+&\quad\small \log\tfrac{a}{b} = \log a - \log b\\
+&= -\Big(z_i - \log\sum_k e^{z_k}\Big) \\
+&\quad\small \mathbf{y} \text{ one-hot: } \textstyle\sum_j y_j = 1,\ y_i = 1\\
+\frac{\partial}{\partial z_j}\log\sum_k e^{z_k} &= \frac{e^{z_j}}{\sum_k e^{z_k}} = \hat y_j \\
+&\quad\small \text{chain rule}\\
+\text{case } j = i:\quad \frac{\partial L}{\partial z_i} &= -\big(1 - \hat y_i\big) = \hat y_i - 1 \\
+&\quad\small \tfrac{\partial z_i}{\partial z_i} = 1\\
+\text{case } j\ne i:\quad \frac{\partial L}{\partial z_j} &= -\big(0 - \hat y_j\big) = \hat y_j \\
+&\quad\small \tfrac{\partial z_i}{\partial z_j} = 0\\
 \text{both cases:}\quad \frac{\partial L}{\partial z_j} &= \boxed{\hat y_j - y_j} .
 \end{aligned}
 $$
@@ -1374,9 +1387,12 @@ The hand-set deep narrow network is exact, yet the same architecture trained fro
 
 $$
 \begin{aligned}
-\mathbf{Z}' &= \mathbf{A}^{[l-1]}\mathbf{W}^{[l]}\mathbf{P} + \mathbf{b}^{[l]}\mathbf{P} = \mathbf{Z}^{[l]}\mathbf{P} && \text{the columns of } \mathbf{Z}^{[l]} \text{ are permuted}\\
-\mathbf{A}' &= g(\mathbf{Z}^{[l]}\mathbf{P}) = g(\mathbf{Z}^{[l]})\mathbf{P} = \mathbf{A}^{[l]}\mathbf{P} && g \text{ acts element-wise, so it commutes with moving columns}\\
-\mathbf{A}'\,\mathbf{P}^\top\mathbf{W}^{[l+1]} + \mathbf{b}^{[l+1]} &= \mathbf{A}^{[l]}\mathbf{P}\mathbf{P}^\top\mathbf{W}^{[l+1]} + \mathbf{b}^{[l+1]} = \mathbf{Z}^{[l+1]} && \mathbf{P}\mathbf{P}^\top = \mathbf{I}
+\mathbf{Z}' &= \mathbf{A}^{[l-1]}\mathbf{W}^{[l]}\mathbf{P} + \mathbf{b}^{[l]}\mathbf{P} = \mathbf{Z}^{[l]}\mathbf{P} \\
+&\quad\small \text{the columns of } \mathbf{Z}^{[l]} \text{ are permuted}\\
+\mathbf{A}' &= g(\mathbf{Z}^{[l]}\mathbf{P}) = g(\mathbf{Z}^{[l]})\mathbf{P} = \mathbf{A}^{[l]}\mathbf{P} \\
+&\quad\small g \text{ acts element-wise, so it commutes with moving columns}\\
+\mathbf{A}'\,\mathbf{P}^\top\mathbf{W}^{[l+1]} + \mathbf{b}^{[l+1]} &= \mathbf{A}^{[l]}\mathbf{P}\mathbf{P}^\top\mathbf{W}^{[l+1]} + \mathbf{b}^{[l+1]} = \mathbf{Z}^{[l+1]} \\
+&\quad\small \mathbf{P}\mathbf{P}^\top = \mathbf{I}
 \end{aligned}
 $$
 
