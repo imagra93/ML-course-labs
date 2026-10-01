@@ -138,9 +138,12 @@ $$
 
 $$
 \begin{aligned}
-o(1-p) &= p && \text{(multiply by } 1-p\text{)}\\
-o &= p + o\,p = p\,(1+o) && \text{(move } o\,p \text{ to the right)}\\
-p &= \frac{o}{1+o} && \text{(divide by } 1+o\text{)}
+o(1-p) &= p \\
+&\quad\small \text{(multiply by } 1-p\text{)}\\
+o &= p + o\,p = p\,(1+o) \\
+&\quad\small \text{(move } o\,p \text{ to the right)}\\
+p &= \frac{o}{1+o} \\
+&\quad\small \text{(divide by } 1+o\text{)}
 \end{aligned}
 $$
 
@@ -166,10 +169,14 @@ the logarithm of the odds, the **log-odds**. In logistic regression it is also c
 
 $$
 \begin{aligned}
-e^{z} &= \frac{p}{1-p} && \text{(exponentiate both sides)}\\
-e^{z} - p\,e^{z} &= p && \text{(multiply by } 1-p\text{)}\\
-p &= \frac{e^{z}}{1+e^{z}} && \text{(collect } p\text{, divide by } 1+e^{z}\text{)}\\
-&= \frac{1}{1+e^{-z}} = \sigma(z) && \text{(divide numerator and denominator by } e^{z}\text{)}
+e^{z} &= \frac{p}{1-p} \\
+&\quad\small \text{(exponentiate both sides)}\\
+e^{z} - p\,e^{z} &= p \\
+&\quad\small \text{(multiply by } 1-p\text{)}\\
+p &= \frac{e^{z}}{1+e^{z}} \\
+&\quad\small \text{(collect } p\text{, divide by } 1+e^{z}\text{)}\\
+&= \frac{1}{1+e^{-z}} = \sigma(z) \\
+&\quad\small \text{(divide numerator and denominator by } e^{z}\text{)}
 \end{aligned}
 $$
 
@@ -199,8 +206,10 @@ So logistic regression is a **linear regression of the log-odds**; that is where
 $$
 \begin{aligned}
 \frac{\text{odds}(x_j+1)}{\text{odds}(x_j)}
-&= \frac{e^{\theta_0 + \dots + \theta_j (x_j+1) + \dots + \theta_n x_n}}{e^{\theta_0 + \dots + \theta_j x_j + \dots + \theta_n x_n}} && \text{(odds} = e^{\text{log-odds}}\text{)}\\
-&= e^{\theta_j} && \text{(every other term cancels)}
+&= \frac{e^{\theta_0 + \dots + \theta_j (x_j+1) + \dots + \theta_n x_n}}{e^{\theta_0 + \dots + \theta_j x_j + \dots + \theta_n x_n}} \\
+&\quad\small \text{(odds} = e^{\text{log-odds}}\text{)}\\
+&= e^{\theta_j} \\
+&\quad\small \text{(every other term cancels)}
 \end{aligned}
 $$
 
@@ -262,8 +271,10 @@ Section 12.9 derives the best $\tau$ from the costs of the two errors.
 $$
 \begin{aligned}
 h_{\boldsymbol{\theta}}(\mathbf{x}) \ge \tau
-&\iff \sigma(\boldsymbol{\theta}^\top\mathbf{x}) \ge \tau && \text{(definition of } h\text{)}\\
-&\iff \boldsymbol{\theta}^\top\mathbf{x} \ge \operatorname{logit}(\tau) = \log\frac{\tau}{1-\tau} && \text{(apply the increasing logit; property 5)}
+&\iff \sigma(\boldsymbol{\theta}^\top\mathbf{x}) \ge \tau \\
+&\quad\small \text{(definition of } h\text{)}\\
+&\iff \boldsymbol{\theta}^\top\mathbf{x} \ge \operatorname{logit}(\tau) = \log\frac{\tau}{1-\tau} \\
+&\quad\small \text{(apply the increasing logit; property 5)}
 \end{aligned}
 $$
 
@@ -421,10 +432,14 @@ because $\mathbf{v}^\top\mathbf{x}^{(i)}$ is a number and $\mathbf{x}^{(i)\top}\
 
 $$
 \begin{aligned}
-f'(z) &= (\sigma - 1)\,\sigma' && \text{(chain rule)}\\
-f''(z) &= \sigma'^2 + (\sigma-1)\,\sigma'' && \text{(product rule)}\\
-&= \sigma^2(1-\sigma)^2 - (1-\sigma)\,\sigma(1-\sigma)(1-2\sigma) && (\sigma' = \sigma(1-\sigma),\ \sigma'' = \sigma'(1-2\sigma))\\
-&= \sigma(1-\sigma)^2\,\big(3\sigma - 1\big) && \text{(factor out } \sigma(1-\sigma)^2\text{)}
+f'(z) &= (\sigma - 1)\,\sigma' \\
+&\quad\small \text{(chain rule)}\\
+f''(z) &= \sigma'^2 + (\sigma-1)\,\sigma'' \\
+&\quad\small \text{(product rule)}\\
+&= \sigma^2(1-\sigma)^2 - (1-\sigma)\,\sigma(1-\sigma)(1-2\sigma) \\
+&\quad\small (\sigma' = \sigma(1-\sigma),\ \sigma'' = \sigma'(1-2\sigma))\\
+&= \sigma(1-\sigma)^2\,\big(3\sigma - 1\big) \\
+&\quad\small \text{(factor out } \sigma(1-\sigma)^2\text{)}
 \end{aligned}
 $$
 
@@ -619,8 +634,10 @@ $\mathcal{I}(\boldsymbol{\theta})$ is the **(Fisher) information matrix**. It do
 
 $$
 \begin{aligned}
-\mathbf{0} = \nabla\ell(\hat{\boldsymbol{\theta}}) &\approx \nabla\ell(\boldsymbol{\theta}) - \mathcal{I}(\boldsymbol{\theta})\,(\hat{\boldsymbol{\theta}} - \boldsymbol{\theta}) && \text{(first-order Taylor expansion; } \hat{\boldsymbol{\theta}} \text{ maximises } \ell\text{)}\\
-\hat{\boldsymbol{\theta}} - \boldsymbol{\theta} &\approx \mathcal{I}(\boldsymbol{\theta})^{-1}\,\nabla\ell(\boldsymbol{\theta}) && \text{(solve: one Newton step from the truth)}
+\mathbf{0} = \nabla\ell(\hat{\boldsymbol{\theta}}) &\approx \nabla\ell(\boldsymbol{\theta}) - \mathcal{I}(\boldsymbol{\theta})\,(\hat{\boldsymbol{\theta}} - \boldsymbol{\theta}) \\
+&\quad\small \text{(first-order Taylor expansion; } \hat{\boldsymbol{\theta}} \text{ maximises } \ell\text{)}\\
+\hat{\boldsymbol{\theta}} - \boldsymbol{\theta} &\approx \mathcal{I}(\boldsymbol{\theta})^{-1}\,\nabla\ell(\boldsymbol{\theta}) \\
+&\quad\small \text{(solve: one Newton step from the truth)}
 \end{aligned}
 $$
 
@@ -995,10 +1012,14 @@ Flag when flagging is the cheaper option:
 
 $$
 \begin{aligned}
-(1-p)\,c_{FP} &< p\,c_{FN} && \text{(expected cost of flagging below that of not flagging)}\\
-c_{FP} - p\,c_{FP} &< p\,c_{FN} && \text{(expand)}\\
-c_{FP} &< p\,(c_{FP} + c_{FN}) && \text{(collect the } p \text{ terms on the right)}\\
-p &> \frac{c_{FP}}{c_{FP}+c_{FN}} = \tau^* && \text{(divide by } c_{FP}+c_{FN} > 0\text{)}
+(1-p)\,c_{FP} &< p\,c_{FN} \\
+&\quad\small \text{(expected cost of flagging below that of not flagging)}\\
+c_{FP} - p\,c_{FP} &< p\,c_{FN} \\
+&\quad\small \text{(expand)}\\
+c_{FP} &< p\,(c_{FP} + c_{FN}) \\
+&\quad\small \text{(collect the } p \text{ terms on the right)}\\
+p &> \frac{c_{FP}}{c_{FP}+c_{FN}} = \tau^* \\
+&\quad\small \text{(divide by } c_{FP}+c_{FN} > 0\text{)}
 \end{aligned}
 $$
 

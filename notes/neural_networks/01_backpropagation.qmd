@@ -55,9 +55,12 @@ A **partial derivative** $\frac{\partial L}{\partial w}$ is the same thing for o
 
 $$
 \begin{aligned}
-u &= 3\cdot1 + 1 = 4, \qquad y = 4^2 = 16 && \text{forward: compute and keep every intermediate value}\\
-\frac{du}{dx} &= 3, \qquad \frac{dy}{du} = 2u = 8 && \text{each box knows its own local derivative}\\
-\frac{dy}{dx} &= \frac{dy}{du}\cdot\frac{du}{dx} = 8\cdot3 = 24 && \text{chain rule: multiply along the path}
+u &= 3\cdot1 + 1 = 4, \qquad y = 4^2 = 16 \\
+&\quad\small \text{forward: compute and keep every intermediate value}\\
+\frac{du}{dx} &= 3, \qquad \frac{dy}{du} = 2u = 8 \\
+&\quad\small \text{each box knows its own local derivative}\\
+\frac{dy}{dx} &= \frac{dy}{du}\cdot\frac{du}{dx} = 8\cdot3 = 24 \\
+&\quad\small \text{chain rule: multiply along the path}
 \end{aligned}
 $$
 
@@ -94,8 +97,10 @@ $$
 
 $$
 \begin{aligned}
-\frac{dJ}{d\theta} &= \frac{\partial J}{\partial g_1}\frac{dg_1}{d\theta} + \frac{\partial J}{\partial g_2}\frac{dg_2}{d\theta} && \text{two paths}\\
-&= g_2\cdot2\theta + g_1\cdot3 = 6\cdot4 + 4\cdot3 = 24 + 12 = 36 . && \text{local derivatives at } \theta = 2
+\frac{dJ}{d\theta} &= \frac{\partial J}{\partial g_1}\frac{dg_1}{d\theta} + \frac{\partial J}{\partial g_2}\frac{dg_2}{d\theta} \\
+&\quad\small \text{two paths}\\
+&= g_2\cdot2\theta + g_1\cdot3 = 6\cdot4 + 4\cdot3 = 24 + 12 = 36 . \\
+&\quad\small \text{local derivatives at } \theta = 2
 \end{aligned}
 $$
 
@@ -117,10 +122,14 @@ With $a = 2$, $b = 5$, $c = -4$ and the intermediate node $q = a + b$:
 
 $$
 \begin{aligned}
-q &= a + b = 2 + 5 = 7, \qquad f = q\cdot c = 7\cdot(-4) = -28 && \text{forward}\\
-\frac{\partial f}{\partial f} &= 1 && \text{start of the backward pass}\\
-\frac{\partial f}{\partial q} &= c = -4, \qquad \frac{\partial f}{\partial c} = q = 7 && \text{multiply node: } \tfrac{\partial(qc)}{\partial q} = c,\ \tfrac{\partial(qc)}{\partial c} = q\\
-\frac{\partial f}{\partial a} &= \frac{\partial f}{\partial q}\cdot\frac{\partial q}{\partial a} = (-4)\cdot1 = -4, \qquad \frac{\partial f}{\partial b} = -4 && \text{add node: local derivative 1}
+q &= a + b = 2 + 5 = 7, \qquad f = q\cdot c = 7\cdot(-4) = -28 \\
+&\quad\small \text{forward}\\
+\frac{\partial f}{\partial f} &= 1 \\
+&\quad\small \text{start of the backward pass}\\
+\frac{\partial f}{\partial q} &= c = -4, \qquad \frac{\partial f}{\partial c} = q = 7 \\
+&\quad\small \text{multiply node: } \tfrac{\partial(qc)}{\partial q} = c,\ \tfrac{\partial(qc)}{\partial c} = q\\
+\frac{\partial f}{\partial a} &= \frac{\partial f}{\partial q}\cdot\frac{\partial q}{\partial a} = (-4)\cdot1 = -4, \qquad \frac{\partial f}{\partial b} = -4 \\
+&\quad\small \text{add node: local derivative 1}
 \end{aligned}
 $$
 
@@ -393,9 +402,12 @@ The weight $W_{jk}$ appears in $Z_{ik}$ for **every** example $i$ (and in no oth
 
 $$
 \begin{aligned}
-\frac{\partial J}{\partial W_{jk}} &= \sum_{i=1}^m\frac{\partial J}{\partial Z_{ik}}\,\frac{\partial Z_{ik}}{\partial W_{jk}} && \text{one path per example}\\
-&= \sum_{i=1}^m\delta_{ik}\,A_{ij} && \tfrac{\partial Z_{ik}}{\partial W_{jk}} = A_{ij} \text{ (multiply gate)}\\
-&= \big(\mathbf{A}^\top\boldsymbol{\delta}\big)_{jk} && \text{definition of the matrix product}
+\frac{\partial J}{\partial W_{jk}} &= \sum_{i=1}^m\frac{\partial J}{\partial Z_{ik}}\,\frac{\partial Z_{ik}}{\partial W_{jk}} \\
+&\quad\small \text{one path per example}\\
+&= \sum_{i=1}^m\delta_{ik}\,A_{ij} \\
+&\quad\small \tfrac{\partial Z_{ik}}{\partial W_{jk}} = A_{ij} \text{ (multiply gate)}\\
+&= \big(\mathbf{A}^\top\boldsymbol{\delta}\big)_{jk} \\
+&\quad\small \text{definition of the matrix product}
 \end{aligned}
 \qquad\Longrightarrow\qquad
 \boxed{\frac{\partial J}{\partial\mathbf{W}^{[l]}} = \mathbf{A}^{[l-1]\top}\boldsymbol{\delta}^{[l]}} .
@@ -413,8 +425,10 @@ $$
 
 $$
 \begin{aligned}
-\frac{\partial J}{\partial A_{ij}} &= \sum_{k=1}^{n_l}\frac{\partial J}{\partial Z_{ik}}\,\frac{\partial Z_{ik}}{\partial A_{ij}} && \text{one path per unit of layer } l\\
-&= \sum_{k}\delta_{ik}W_{jk} = \big(\boldsymbol{\delta}\mathbf{W}^\top\big)_{ij} . && \tfrac{\partial Z_{ik}}{\partial A_{ij}} = W_{jk}
+\frac{\partial J}{\partial A_{ij}} &= \sum_{k=1}^{n_l}\frac{\partial J}{\partial Z_{ik}}\,\frac{\partial Z_{ik}}{\partial A_{ij}} \\
+&\quad\small \text{one path per unit of layer } l\\
+&= \sum_{k}\delta_{ik}W_{jk} = \big(\boldsymbol{\delta}\mathbf{W}^\top\big)_{ij} . \\
+&\quad\small \tfrac{\partial Z_{ik}}{\partial A_{ij}} = W_{jk}
 \end{aligned}
 $$
 
@@ -916,8 +930,10 @@ Backpropagation needs the stored $\mathbf{Z}^{[l]}$ and $\mathbf{A}^{[l]}$ of ev
 
 $$
 \begin{aligned}
-\log\sum_k e^{z_k} &= \log\Big(e^{c}\sum_k e^{z_k - c}\Big) && \text{factor out } e^{c}\\
-&= c + \log\sum_k e^{z_k - c}, && \log(ab) = \log a + \log b
+\log\sum_k e^{z_k} &= \log\Big(e^{c}\sum_k e^{z_k - c}\Big) \\
+&\quad\small \text{factor out } e^{c}\\
+&= c + \log\sum_k e^{z_k - c}, \\
+&\quad\small \log(ab) = \log a + \log b
 \end{aligned}
 $$
 
@@ -1042,10 +1058,14 @@ $$
 
 $$
 \begin{aligned}
-\lVert\boldsymbol{\delta}^{[k-1]}\rVert &= \lVert(\boldsymbol{\delta}^{[k]}\mathbf{W}^{[k]\top})\odot g'(\mathbf{z}^{[k-1]})\rVert && \text{fact (c)}\\
-&\le \gamma\,\lVert\boldsymbol{\delta}^{[k]}\mathbf{W}^{[k]\top}\rVert && \text{each entry is multiplied by a number of size} \le\gamma\\
-&\le \gamma\,\lVert\mathbf{W}^{[k]\top}\rVert_2\,\lVert\boldsymbol{\delta}^{[k]}\rVert && \text{definition of the spectral norm: } \lVert\mathbf{u}\mathbf{M}\rVert\le\lVert\mathbf{M}\rVert_2\lVert\mathbf{u}\rVert\\
-&= \gamma\,\lVert\mathbf{W}^{[k]}\rVert_2\,\lVert\boldsymbol{\delta}^{[k]}\rVert . && \mathbf{M} \text{ and } \mathbf{M}^\top \text{ have the same singular values}
+\lVert\boldsymbol{\delta}^{[k-1]}\rVert &= \lVert(\boldsymbol{\delta}^{[k]}\mathbf{W}^{[k]\top})\odot g'(\mathbf{z}^{[k-1]})\rVert \\
+&\quad\small \text{fact (c)}\\
+&\le \gamma\,\lVert\boldsymbol{\delta}^{[k]}\mathbf{W}^{[k]\top}\rVert \\
+&\quad\small \text{each entry is multiplied by a number of size} \le\gamma\\
+&\le \gamma\,\lVert\mathbf{W}^{[k]\top}\rVert_2\,\lVert\boldsymbol{\delta}^{[k]}\rVert \\
+&\quad\small \text{definition of the spectral norm: } \lVert\mathbf{u}\mathbf{M}\rVert\le\lVert\mathbf{M}\rVert_2\lVert\mathbf{u}\rVert\\
+&= \gamma\,\lVert\mathbf{W}^{[k]}\rVert_2\,\lVert\boldsymbol{\delta}^{[k]}\rVert . \\
+&\quad\small \mathbf{M} \text{ and } \mathbf{M}^\top \text{ have the same singular values}
 \end{aligned}
 $$
 
@@ -1133,8 +1153,10 @@ All are used in practice, usually together.
 4. **Residual connections** ([NN note 03](03_cnn_transfer_multitask.html), and every transformer): $\mathbf{h}^{[l+1]} = \mathbf{h}^{[l]} + F(\mathbf{h}^{[l]})$, where $F$ is a small block of layers. Its Jacobian always contains the identity:
 $$
 \begin{aligned}
-\frac{\partial\mathbf{h}^{[l+1]}}{\partial\mathbf{h}^{[l]}} &= \frac{\partial\mathbf{h}^{[l]}}{\partial\mathbf{h}^{[l]}} + \frac{\partial F(\mathbf{h}^{[l]})}{\partial\mathbf{h}^{[l]}} = \mathbf{I} + \mathbf{J}_F && \text{derivative of a sum; } \partial\mathbf{h}/\partial\mathbf{h} = \mathbf{I}\\
-\boldsymbol{\delta}_{\mathbf{h}^{[l]}} &= \boldsymbol{\delta}_{\mathbf{h}^{[l+1]}}(\mathbf{I} + \mathbf{J}_F) = \boldsymbol{\delta}_{\mathbf{h}^{[l+1]}} + \boldsymbol{\delta}_{\mathbf{h}^{[l+1]}}\mathbf{J}_F . && \text{chain rule (row vectors)}
+\frac{\partial\mathbf{h}^{[l+1]}}{\partial\mathbf{h}^{[l]}} &= \frac{\partial\mathbf{h}^{[l]}}{\partial\mathbf{h}^{[l]}} + \frac{\partial F(\mathbf{h}^{[l]})}{\partial\mathbf{h}^{[l]}} = \mathbf{I} + \mathbf{J}_F \\
+&\quad\small \text{derivative of a sum; } \partial\mathbf{h}/\partial\mathbf{h} = \mathbf{I}\\
+\boldsymbol{\delta}_{\mathbf{h}^{[l]}} &= \boldsymbol{\delta}_{\mathbf{h}^{[l+1]}}(\mathbf{I} + \mathbf{J}_F) = \boldsymbol{\delta}_{\mathbf{h}^{[l+1]}} + \boldsymbol{\delta}_{\mathbf{h}^{[l+1]}}\mathbf{J}_F . \\
+&\quad\small \text{chain rule (row vectors)}
 \end{aligned}
 $$
 The first term passes the gradient back **unchanged** (the add gate copies it, section 5), so even if every $\mathbf{J}_F$ is small the gradient has a direct path to the early layers; the product $\prod_k(\mathbf{I} + \mathbf{J}_{F_k})$ does not collapse the way $\prod_k\mathbf{W}^{[k]\top}\mathbf{D}^{[k-1]}$ can.

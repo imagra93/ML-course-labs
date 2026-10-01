@@ -141,9 +141,12 @@ It keeps most of the benefits of SGD, and the $B$ examples are computed as one m
 **Proof.** Write the mini-batch as indices $i_1,\dots,i_B$. Whether they are drawn with replacement or by shuffling and cutting (without replacement), each $i_b$ on its own is uniform on $\{1,\dots,m\}$. Then
 $$
 \begin{aligned}
-\mathbb{E}[\mathbf{g}] &= \frac1B\sum_{b=1}^B\mathbb{E}\big[\nabla\ell^{(i_b)}\big] && \text{linearity of expectation}\\
-&= \frac1B\sum_{b=1}^B\,\frac1m\sum_{i=1}^m\nabla\ell^{(i)} && i_b \text{ is uniform: each } i \text{ has probability } 1/m\\
-&= \frac1B\cdot B\,\nabla J = \nabla J . && \text{the inner sum is } \nabla J \text{ for every } b
+\mathbb{E}[\mathbf{g}] &= \frac1B\sum_{b=1}^B\mathbb{E}\big[\nabla\ell^{(i_b)}\big] \\
+&\quad\small \text{linearity of expectation}\\
+&= \frac1B\sum_{b=1}^B\,\frac1m\sum_{i=1}^m\nabla\ell^{(i)} \\
+&\quad\small i_b \text{ is uniform: each } i \text{ has probability } 1/m\\
+&= \frac1B\cdot B\,\nabla J = \nabla J . \\
+&\quad\small \text{the inner sum is } \nabla J \text{ for every } b
 \end{aligned}
 $$
 $\blacksquare$ On average every step points the right way. The proof uses only "each index is uniform", which is exactly what shuffling provides (section 12.1 shows what happens without it).
@@ -157,10 +160,14 @@ Let $\mathbf{u}_i=\nabla\ell^{(i)}-\nabla J$ be the deviation of example $i$'s g
 **Proof.**
 $$
 \begin{aligned}
-\mathbf{g}-\nabla J &= \frac1B\sum_{b=1}^B\big(\nabla\ell^{(i_b)}-\nabla J\big)=\frac1B\sum_{b=1}^B\mathbf{u}_{i_b} && \text{subtract } \nabla J=\tfrac1B\textstyle\sum_b\nabla J\\
-\mathrm{Cov}(\mathbf{g}) &= \frac1{B^2}\,\mathrm{Cov}\Big(\sum_{b=1}^B\mathbf{u}_{i_b}\Big) && \mathrm{Cov}(c\,\mathbf{v})=c^2\,\mathrm{Cov}(\mathbf{v})\\
-&= \frac1{B^2}\sum_{b=1}^B\mathrm{Cov}(\mathbf{u}_{i_b}) && \text{independent draws: cross-covariances are } 0\\
-&= \frac1{B^2}\cdot B\,\boldsymbol{\Sigma}=\frac{\boldsymbol{\Sigma}}{B}. && \mathbb{E}[\mathbf{u}_{i_b}]=\mathbf{0},\ \mathbb{E}[\mathbf{u}_{i_b}\mathbf{u}_{i_b}^\top]=\boldsymbol{\Sigma}
+\mathbf{g}-\nabla J &= \frac1B\sum_{b=1}^B\big(\nabla\ell^{(i_b)}-\nabla J\big)=\frac1B\sum_{b=1}^B\mathbf{u}_{i_b} \\
+&\quad\small \text{subtract } \nabla J=\tfrac1B\textstyle\sum_b\nabla J\\
+\mathrm{Cov}(\mathbf{g}) &= \frac1{B^2}\,\mathrm{Cov}\Big(\sum_{b=1}^B\mathbf{u}_{i_b}\Big) \\
+&\quad\small \mathrm{Cov}(c\,\mathbf{v})=c^2\,\mathrm{Cov}(\mathbf{v})\\
+&= \frac1{B^2}\sum_{b=1}^B\mathrm{Cov}(\mathbf{u}_{i_b}) \\
+&\quad\small \text{independent draws: cross-covariances are } 0\\
+&= \frac1{B^2}\cdot B\,\boldsymbol{\Sigma}=\frac{\boldsymbol{\Sigma}}{B}. \\
+&\quad\small \mathbb{E}[\mathbf{u}_{i_b}]=\mathbf{0},\ \mathbb{E}[\mathbf{u}_{i_b}\mathbf{u}_{i_b}^\top]=\boldsymbol{\Sigma}
 \end{aligned}
 $$
 $\blacksquare$ Without replacement (shuffle and cut) the draws are slightly negatively correlated and the variance is a little smaller, $\mathrm{Cov}(\mathbf{g})=\frac{m-B}{m-1}\,\frac{\boldsymbol{\Sigma}}{B}$ (the finite-population correction of survey sampling). It is $0$ for $B=m$, as it should be, and indistinguishable from $\boldsymbol{\Sigma}/B$ when $B\ll m$.
@@ -189,17 +196,23 @@ The column "with replacement" follows $\mathrm{tr}\,\boldsymbol{\Sigma}/B$ and t
 **Constant-$\alpha$ SGD does not converge to a point.** Take the simplest loss, one parameter with curvature $h>0$: $J(\theta)=\frac12h\theta^2$, minimum at $0$. The mini-batch gradient is $g_t=h\theta_t+\xi_t$, with noise $\xi_t$ of mean $0$ and variance $\sigma^2/B$ (section 2.4), independent across steps. Then
 $$
 \begin{aligned}
-\theta_{t+1} &= \theta_t-\alpha(h\theta_t+\xi_t)=(1-\alpha h)\,\theta_t-\alpha\,\xi_t && \text{SGD step}\\
-\mathbb{E}[\theta_{t+1}] &= (1-\alpha h)\,\mathbb{E}[\theta_t] && \mathbb{E}[\xi_t]=0\\
-v_{t+1}:=\mathrm{Var}(\theta_{t+1}) &= (1-\alpha h)^2\,v_t+\alpha^2\sigma^2/B . && \theta_t \text{ and } \xi_t \text{ are independent}
+\theta_{t+1} &= \theta_t-\alpha(h\theta_t+\xi_t)=(1-\alpha h)\,\theta_t-\alpha\,\xi_t \\
+&\quad\small \text{SGD step}\\
+\mathbb{E}[\theta_{t+1}] &= (1-\alpha h)\,\mathbb{E}[\theta_t] \\
+&\quad\small \mathbb{E}[\xi_t]=0\\
+v_{t+1}:=\mathrm{Var}(\theta_{t+1}) &= (1-\alpha h)^2\,v_t+\alpha^2\sigma^2/B . \\
+&\quad\small \theta_t \text{ and } \xi_t \text{ are independent}
 \end{aligned}
 $$
 The mean goes to $0$ when $|1-\alpha h|<1$ (the same condition as for gradient descent), but the variance settles at the fixed point $v=(1-\alpha h)^2v+\alpha^2\sigma^2/B$:
 $$
 \begin{aligned}
-v\,\big(1-(1-\alpha h)^2\big) &= \alpha^2\sigma^2/B && \text{collect } v\\
-v\,\alpha h\,(2-\alpha h) &= \alpha^2\sigma^2/B && 1-(1-a)^2=a(2-a)\\
-v &= \frac{\alpha\,\sigma^2}{B\,h\,(2-\alpha h)}\;\approx\;\frac{\sigma^2}{2h}\cdot\frac{\alpha}{B}. && \text{divide; } \alpha h\ll1
+v\,\big(1-(1-\alpha h)^2\big) &= \alpha^2\sigma^2/B \\
+&\quad\small \text{collect } v\\
+v\,\alpha h\,(2-\alpha h) &= \alpha^2\sigma^2/B \\
+&\quad\small 1-(1-a)^2=a(2-a)\\
+v &= \frac{\alpha\,\sigma^2}{B\,h\,(2-\alpha h)}\;\approx\;\frac{\sigma^2}{2h}\cdot\frac{\alpha}{B}. \\
+&\quad\small \text{divide; } \alpha h\ll1
 \end{aligned}
 $$
 SGD with a constant learning rate hovers in a "noise ball" around the minimum whose size depends on the ratio $\alpha/B$, the **noise scale**. Two consequences: decaying $\alpha$ late in training shrinks the ball (the schedules of section 5), and scaling $\alpha$ and $B$ together keeps the same noise level.
@@ -218,9 +231,12 @@ print(f"simulated Var(theta) = {np.var(samples):.5f};  formula alpha*sigma^2/(B 
 **The linear scaling rule.** Compare $k$ small steps of size $\alpha$ on mini-batches $\mathcal{B}_1,\dots,\mathcal{B}_k$ (each of size $B$) with one big step of size $k\alpha$ on their union (size $kB$):
 $$
 \begin{aligned}
-\boldsymbol{\theta}_{t+k} &= \boldsymbol{\theta}_t-\alpha\sum_{j=1}^{k}\frac1B\sum_{i\in\mathcal{B}_j}\nabla\ell^{(i)}(\boldsymbol{\theta}_{t+j-1}) && k \text{ small steps}\\
-&\approx \boldsymbol{\theta}_t-\alpha\sum_{j=1}^{k}\frac1B\sum_{i\in\mathcal{B}_j}\nabla\ell^{(i)}(\boldsymbol{\theta}_{t}) && \text{if the gradients barely change in } k \text{ steps}\\
-&= \boldsymbol{\theta}_t-k\alpha\cdot\frac{1}{kB}\sum_{i\in\mathcal{B}_1\cup\dots\cup\mathcal{B}_k}\nabla\ell^{(i)}(\boldsymbol{\theta}_t). && \text{multiply and divide by } k
+\boldsymbol{\theta}_{t+k} &= \boldsymbol{\theta}_t-\alpha\sum_{j=1}^{k}\frac1B\sum_{i\in\mathcal{B}_j}\nabla\ell^{(i)}(\boldsymbol{\theta}_{t+j-1}) \\
+&\quad\small k \text{ small steps}\\
+&\approx \boldsymbol{\theta}_t-\alpha\sum_{j=1}^{k}\frac1B\sum_{i\in\mathcal{B}_j}\nabla\ell^{(i)}(\boldsymbol{\theta}_{t}) \\
+&\quad\small \text{if the gradients barely change in } k \text{ steps}\\
+&= \boldsymbol{\theta}_t-k\alpha\cdot\frac{1}{kB}\sum_{i\in\mathcal{B}_1\cup\dots\cup\mathcal{B}_k}\nabla\ell^{(i)}(\boldsymbol{\theta}_t). \\
+&\quad\small \text{multiply and divide by } k
 \end{aligned}
 $$
 The last line is one step with batch $kB$ and learning rate $k\alpha$. Hence the rule of Goyal et al. (2017): **when you multiply the batch size by $k$, multiply the learning rate by $k$** (same epochs, same noise scale $\alpha/B$). The approximation fails in two places:
@@ -350,10 +366,14 @@ The gradient from $j=t-k$ steps ago has weight $(1-\beta)\beta^{j}$: recent valu
 **Proof.**
 $$
 \begin{aligned}
-\mathbb{E}[v_t] &= (1-\beta)\sum_{k=1}^{t}\beta^{t-k}\,\mathbb{E}[g_k] && \text{unrolled form, linearity of } \mathbb{E}\\
-&= (1-\beta)\,\mathbb{E}[g]\sum_{j=0}^{t-1}\beta^{j} && \text{stationarity; substitute } j=t-k\\
-&= (1-\beta)\,\mathbb{E}[g]\;\frac{1-\beta^t}{1-\beta} && \text{geometric series}\\
-&= (1-\beta^t)\,\mathbb{E}[g]. && \text{cancel } 1-\beta
+\mathbb{E}[v_t] &= (1-\beta)\sum_{k=1}^{t}\beta^{t-k}\,\mathbb{E}[g_k] \\
+&\quad\small \text{unrolled form, linearity of } \mathbb{E}\\
+&= (1-\beta)\,\mathbb{E}[g]\sum_{j=0}^{t-1}\beta^{j} \\
+&\quad\small \text{stationarity; substitute } j=t-k\\
+&= (1-\beta)\,\mathbb{E}[g]\;\frac{1-\beta^t}{1-\beta} \\
+&\quad\small \text{geometric series}\\
+&= (1-\beta^t)\,\mathbb{E}[g]. \\
+&\quad\small \text{cancel } 1-\beta
 \end{aligned}
 $$
 $\blacksquare$ Early values are biased towards $0$: $v_1=(1-\beta)g_1$ is only 10 % of $g_1$ for $\beta=0.9$. The fix follows directly: the **bias-corrected** average
@@ -470,9 +490,12 @@ $$
 Keep both averages, correct their start, and step:
 $$
 \begin{aligned}
-\mathbf{m}_t &= \beta_1\mathbf{m}_{t-1}+(1-\beta_1)\,\mathbf{g}_t && \text{momentum: EMA of } \mathbf{g}\\
-\mathbf{s}_t &= \beta_2\mathbf{s}_{t-1}+(1-\beta_2)\,\mathbf{g}_t^2 && \text{RMSProp: EMA of } \mathbf{g}^2\\
-\hat{\mathbf{m}}_t &= \frac{\mathbf{m}_t}{1-\beta_1^t},\qquad\hat{\mathbf{s}}_t=\frac{\mathbf{s}_t}{1-\beta_2^t} && \text{bias correction (section 4.1)}\\
+\mathbf{m}_t &= \beta_1\mathbf{m}_{t-1}+(1-\beta_1)\,\mathbf{g}_t \\
+&\quad\small \text{momentum: EMA of } \mathbf{g}\\
+\mathbf{s}_t &= \beta_2\mathbf{s}_{t-1}+(1-\beta_2)\,\mathbf{g}_t^2 \\
+&\quad\small \text{RMSProp: EMA of } \mathbf{g}^2\\
+\hat{\mathbf{m}}_t &= \frac{\mathbf{m}_t}{1-\beta_1^t},\qquad\hat{\mathbf{s}}_t=\frac{\mathbf{s}_t}{1-\beta_2^t} \\
+&\quad\small \text{bias correction (section 4.1)}\\
 \boldsymbol{\theta}_t &= \boldsymbol{\theta}_{t-1}-\alpha\,\frac{\hat{\mathbf{m}}_t}{\sqrt{\hat{\mathbf{s}}_t}+\varepsilon}
 \end{aligned}
 $$
@@ -481,9 +504,12 @@ with defaults $\beta_1=0.9$, $\beta_2=0.999$, $\varepsilon=10^{-8}$, $\alpha=10^
 **Why the bias correction matters for Adam.** Both averages start at $\mathbf{0}$. At $t=1$:
 $$
 \begin{aligned}
-\mathbf{m}_1 &= 0.1\,\mathbf{g}_1,\qquad \mathbf{s}_1=0.001\,\mathbf{g}_1^2 && \text{one EMA step from } \mathbf{0}\\
-\hat{\mathbf{m}}_1 &= \mathbf{g}_1,\qquad\ \ \hat{\mathbf{s}}_1=\mathbf{g}_1^2 && \text{divide by } 1-0.9 \text{ and } 1-0.999\\
-\boldsymbol{\theta}_1-\boldsymbol{\theta}_0 &= -\alpha\,\frac{\mathbf{g}_1}{|\mathbf{g}_1|+\varepsilon}\approx-\alpha\,\mathrm{sign}(\mathbf{g}_1). && \sqrt{\mathbf{g}_1^2}=|\mathbf{g}_1|
+\mathbf{m}_1 &= 0.1\,\mathbf{g}_1,\qquad \mathbf{s}_1=0.001\,\mathbf{g}_1^2 \\
+&\quad\small \text{one EMA step from } \mathbf{0}\\
+\hat{\mathbf{m}}_1 &= \mathbf{g}_1,\qquad\ \ \hat{\mathbf{s}}_1=\mathbf{g}_1^2 \\
+&\quad\small \text{divide by } 1-0.9 \text{ and } 1-0.999\\
+\boldsymbol{\theta}_1-\boldsymbol{\theta}_0 &= -\alpha\,\frac{\mathbf{g}_1}{|\mathbf{g}_1|+\varepsilon}\approx-\alpha\,\mathrm{sign}(\mathbf{g}_1). \\
+&\quad\small \sqrt{\mathbf{g}_1^2}=|\mathbf{g}_1|
 \end{aligned}
 $$
 The first step moves every parameter by about $\alpha$. Without the correction it would be $\alpha\cdot0.1\,\mathbf{g}_1/(\sqrt{0.001}\,|\mathbf{g}_1|)=3.16\,\alpha\,\mathrm{sign}(\mathbf{g}_1)$: more than three times too large, because $\mathbf{s}$ is biased more than $\mathbf{m}$. The correction matters for about 50 steps for $\mathbf{m}$ ($0.9^{50}\approx0.005$) but for thousands of steps for $\mathbf{s}$ ($0.999^{5000}\approx0.007$).
@@ -773,8 +799,10 @@ $$
 (the gradient of $\frac\lambda2\sum_jw_j^2$ with respect to $w_j$ is $\lambda w_j$). Plug it into the gradient-descent step:
 $$
 \begin{aligned}
-\mathbf{w} &\leftarrow \mathbf{w}-\alpha\big(\nabla J+\lambda\mathbf{w}\big) && \text{gradient step on } J_{\text{reg}}\\
-&= (1-\alpha\lambda)\,\mathbf{w}-\alpha\nabla J . && \text{collect the terms in } \mathbf{w}
+\mathbf{w} &\leftarrow \mathbf{w}-\alpha\big(\nabla J+\lambda\mathbf{w}\big) \\
+&\quad\small \text{gradient step on } J_{\text{reg}}\\
+&= (1-\alpha\lambda)\,\mathbf{w}-\alpha\nabla J . \\
+&\quad\small \text{collect the terms in } \mathbf{w}
 \end{aligned}
 $$
 Every step first **shrinks** the weights by a constant factor $1-\alpha\lambda$ (e.g. $1-10^{-3}\cdot10^{-1}=0.9999$), then takes the data step: hence the name **weight decay**. Only weights that the data keeps pushing stay large.
@@ -802,8 +830,10 @@ With $\lambda=0$ the network fits all 40 training points (training accuracy 1.00
 With SGD, adding $\frac\lambda2\lVert\mathbf{w}\rVert^2$ to the loss and shrinking the weights by $1-\alpha\lambda$ are the same thing (section 8.1). With Adam they are not. Adding the penalty to the loss means Adam sees the gradient $\tilde{\mathbf{g}}_t=\mathbf{g}_t+\lambda\mathbf{w}_{t-1}$, and
 $$
 \begin{aligned}
-\hat{\mathbf{m}}_t(\tilde{\mathbf{g}}) &= \hat{\mathbf{m}}_t(\mathbf{g})+\lambda\,\overline{\mathbf{w}}_t\;\approx\;\hat{\mathbf{m}}_t(\mathbf{g})+\lambda\,\mathbf{w}_{t-1} && \text{the EMA is linear; } \overline{\mathbf{w}}_t \text{ = EMA of recent weights}\\
-\Delta w_j &\approx -\alpha\,\frac{\hat m_{t,j}(\mathbf{g})}{\sqrt{\hat s_{t,j}}+\varepsilon}\;-\;\underbrace{\frac{\alpha\lambda}{\sqrt{\hat s_{t,j}}+\varepsilon}}_{\text{decay rate of } w_j}\,w_{j} . && \text{Adam step, split in two}
+\hat{\mathbf{m}}_t(\tilde{\mathbf{g}}) &= \hat{\mathbf{m}}_t(\mathbf{g})+\lambda\,\overline{\mathbf{w}}_t\;\approx\;\hat{\mathbf{m}}_t(\mathbf{g})+\lambda\,\mathbf{w}_{t-1} \\
+&\quad\small \text{the EMA is linear; } \overline{\mathbf{w}}_t \text{ = EMA of recent weights}\\
+\Delta w_j &\approx -\alpha\,\frac{\hat m_{t,j}(\mathbf{g})}{\sqrt{\hat s_{t,j}}+\varepsilon}\;-\;\underbrace{\frac{\alpha\lambda}{\sqrt{\hat s_{t,j}}+\varepsilon}}_{\text{decay rate of } w_j}\,w_{j} . \\
+&\quad\small \text{Adam step, split in two}
 \end{aligned}
 $$
 The decay term is divided by $\sqrt{\hat s_{t,j}}+\varepsilon$ like the rest of the gradient. Weight $j$ is decayed at the rate $\alpha\lambda/(\sqrt{\hat s_{t,j}}+\varepsilon)$ instead of $\alpha\lambda$: **heavily-updated weights (large gradients, large $\hat s_{t,j}$) are decayed less**, and weights with tiny gradients much more. The regularisation strength now depends on the gradient history, which is not what L2 was meant to do.
@@ -853,9 +883,12 @@ Apply random, **label-preserving** transformations to the training inputs, a new
 $$
 \begin{aligned}
 \mathbb{E}_{\boldsymbol{\epsilon}}\big[(y-\boldsymbol{\theta}^\top(\mathbf{x}+\boldsymbol{\epsilon}))^2\big]
-&= \mathbb{E}\big[(r-\boldsymbol{\theta}^\top\boldsymbol{\epsilon})^2\big] && r:=y-\boldsymbol{\theta}^\top\mathbf{x}\\
-&= r^2-2r\,\boldsymbol{\theta}^\top\mathbb{E}[\boldsymbol{\epsilon}]+\boldsymbol{\theta}^\top\mathbb{E}[\boldsymbol{\epsilon}\boldsymbol{\epsilon}^\top]\boldsymbol{\theta} && \text{expand the square}\\
-&= r^2+\sigma^2\lVert\boldsymbol{\theta}\rVert^2 . && \mathbb{E}[\boldsymbol{\epsilon}]=\mathbf{0},\ \mathbb{E}[\boldsymbol{\epsilon}\boldsymbol{\epsilon}^\top]=\sigma^2\mathbf{I}
+&= \mathbb{E}\big[(r-\boldsymbol{\theta}^\top\boldsymbol{\epsilon})^2\big] \\
+&\quad\small r:=y-\boldsymbol{\theta}^\top\mathbf{x}\\
+&= r^2-2r\,\boldsymbol{\theta}^\top\mathbb{E}[\boldsymbol{\epsilon}]+\boldsymbol{\theta}^\top\mathbb{E}[\boldsymbol{\epsilon}\boldsymbol{\epsilon}^\top]\boldsymbol{\theta} \\
+&\quad\small \text{expand the square}\\
+&= r^2+\sigma^2\lVert\boldsymbol{\theta}\rVert^2 . \\
+&\quad\small \mathbb{E}[\boldsymbol{\epsilon}]=\mathbf{0},\ \mathbb{E}[\boldsymbol{\epsilon}\boldsymbol{\epsilon}^\top]=\sigma^2\mathbf{I}
 \end{aligned}
 $$
 The noisy-input loss $\frac1{2m}\sum_i\mathbb{E}[\cdot]$ is the ridge loss with $\lambda=\sigma^2$. For networks the equivalence holds only approximately (Bishop, 1995), but the message carries over: augmentation is a regulariser.
@@ -876,9 +909,12 @@ Monitor the validation loss, keep the best checkpoint, and stop after `patience`
 **Why training time acts like L2.** Near a minimum $\boldsymbol{\theta}^*$ of the training loss, approximate $J$ by a quadratic, $J(\boldsymbol{\theta})\approx J(\boldsymbol{\theta}^*)+\frac12(\boldsymbol{\theta}-\boldsymbol{\theta}^*)^\top\mathbf{H}(\boldsymbol{\theta}-\boldsymbol{\theta}^*)$, with Hessian $\mathbf{H}=\mathbf{Q}\,\mathrm{diag}(h_1,\dots,h_p)\,\mathbf{Q}^\top$ (orthonormal eigenvectors $\mathbf{Q}$, eigenvalues $h_j>0$), so $\nabla J=\mathbf{H}(\boldsymbol{\theta}-\boldsymbol{\theta}^*)$. Start gradient descent at $\boldsymbol{\theta}_0=\mathbf{0}$ (small initial weights):
 $$
 \begin{aligned}
-\boldsymbol{\theta}_t-\boldsymbol{\theta}^* &= \boldsymbol{\theta}_{t-1}-\alpha\mathbf{H}(\boldsymbol{\theta}_{t-1}-\boldsymbol{\theta}^*)-\boldsymbol{\theta}^*=(\mathbf{I}-\alpha\mathbf{H})(\boldsymbol{\theta}_{t-1}-\boldsymbol{\theta}^*) && \text{one GD step}\\
-&= (\mathbf{I}-\alpha\mathbf{H})^t(\boldsymbol{\theta}_0-\boldsymbol{\theta}^*)=-(\mathbf{I}-\alpha\mathbf{H})^t\boldsymbol{\theta}^* && \text{repeat } t \text{ times; } \boldsymbol{\theta}_0=\mathbf{0}\\
-\tilde\theta_{t,j} &= \big[1-(1-\alpha h_j)^t\big]\,\tilde\theta^*_j && \text{in eigen-coordinates } \tilde{\boldsymbol{\theta}}=\mathbf{Q}^\top\boldsymbol{\theta}
+\boldsymbol{\theta}_t-\boldsymbol{\theta}^* &= \boldsymbol{\theta}_{t-1}-\alpha\mathbf{H}(\boldsymbol{\theta}_{t-1}-\boldsymbol{\theta}^*)-\boldsymbol{\theta}^*=(\mathbf{I}-\alpha\mathbf{H})(\boldsymbol{\theta}_{t-1}-\boldsymbol{\theta}^*) \\
+&\quad\small \text{one GD step}\\
+&= (\mathbf{I}-\alpha\mathbf{H})^t(\boldsymbol{\theta}_0-\boldsymbol{\theta}^*)=-(\mathbf{I}-\alpha\mathbf{H})^t\boldsymbol{\theta}^* \\
+&\quad\small \text{repeat } t \text{ times; } \boldsymbol{\theta}_0=\mathbf{0}\\
+\tilde\theta_{t,j} &= \big[1-(1-\alpha h_j)^t\big]\,\tilde\theta^*_j \\
+&\quad\small \text{in eigen-coordinates } \tilde{\boldsymbol{\theta}}=\mathbf{Q}^\top\boldsymbol{\theta}
 \end{aligned}
 $$
 Ridge instead minimises $J+\frac\lambda2\lVert\boldsymbol{\theta}\rVert^2$: setting the gradient to zero, $\mathbf{H}(\boldsymbol{\theta}-\boldsymbol{\theta}^*)+\lambda\boldsymbol{\theta}=\mathbf{0}$, so $(\mathbf{H}+\lambda\mathbf{I})\boldsymbol{\theta}=\mathbf{H}\boldsymbol{\theta}^*$ and, in the same coordinates,

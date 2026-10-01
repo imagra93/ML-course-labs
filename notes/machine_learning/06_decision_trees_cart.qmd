@@ -94,10 +94,14 @@ $$
 
 $$
 \begin{aligned}
-\mathcal{L}(q,\mu) &= -\sum_{k=1}^K N_k\log q_k + \mu\Big(\sum_{k=1}^K q_k - 1\Big) && \text{loss plus multiplier times constraint}\\
-\frac{\partial\mathcal{L}}{\partial q_k} &= -\frac{N_k}{q_k} + \mu = 0 \;\Rightarrow\; q_k = \frac{N_k}{\mu} && \text{derivative of $\log q$ is $1/q$}\\
-\sum_{k} q_k &= \frac{\sum_k N_k}{\mu} = \frac{N}{\mu} = 1 \;\Rightarrow\; \mu = N && \text{impose the constraint}\\
-q_k &= \frac{N_k}{N} && \text{substitute $\mu$}
+\mathcal{L}(q,\mu) &= -\sum_{k=1}^K N_k\log q_k + \mu\Big(\sum_{k=1}^K q_k - 1\Big) \\
+&\quad\small \text{loss plus multiplier times constraint}\\
+\frac{\partial\mathcal{L}}{\partial q_k} &= -\frac{N_k}{q_k} + \mu = 0 \;\Rightarrow\; q_k = \frac{N_k}{\mu} \\
+&\quad\small \text{derivative of $\log q$ is $1/q$}\\
+\sum_{k} q_k &= \frac{\sum_k N_k}{\mu} = \frac{N}{\mu} = 1 \;\Rightarrow\; \mu = N \\
+&\quad\small \text{impose the constraint}\\
+q_k &= \frac{N_k}{N} \\
+&\quad\small \text{substitute $\mu$}
 \end{aligned}
 $$
 
@@ -1044,9 +1048,12 @@ which enter the impurity (so the splits change: the tree works harder to isolate
 
 $$
 \begin{aligned}
-\text{predict 1} &\iff w_1 N_{t,1} > w_0 N_{t,0} && \text{weighted majority}\\
-&\iff \frac{N_{t,1}}{m_1} > \frac{N_{t,0}}{m_0} && \text{substitute } w_k = m/(2m_k)\\
-&\iff \frac{N_{t,1}}{N_{t,0}} > \frac{m_1}{m_0} && \text{rearrange}
+\text{predict 1} &\iff w_1 N_{t,1} > w_0 N_{t,0} \\
+&\quad\small \text{weighted majority}\\
+&\iff \frac{N_{t,1}}{m_1} > \frac{N_{t,0}}{m_0} \\
+&\quad\small \text{substitute } w_k = m/(2m_k)\\
+&\iff \frac{N_{t,1}}{N_{t,0}} > \frac{m_1}{m_0} \\
+&\quad\small \text{rearrange}
 \end{aligned}
 $$
 

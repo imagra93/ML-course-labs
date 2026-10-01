@@ -533,9 +533,12 @@ Solve "half-width $\le E$" for $m_{\text{test}}$:
 
 $$
 \begin{aligned}
-1.96\sqrt{\frac{p(1-p)}{m_{\text{test}}}} &\le E && \text{the half-width of the interval must not exceed $E$}\\
-\frac{p(1-p)}{m_{\text{test}}} &\le \frac{E^2}{1.96^2} && \text{square both sides and divide by $1.96^2$}\\
-m_{\text{test}} &\ge \frac{1.96^2\, p(1-p)}{E^2} && \text{multiply by $m_{\text{test}}/(E^2/1.96^2)$}
+1.96\sqrt{\frac{p(1-p)}{m_{\text{test}}}} &\le E \\
+&\quad\small \text{the half-width of the interval must not exceed $E$}\\
+\frac{p(1-p)}{m_{\text{test}}} &\le \frac{E^2}{1.96^2} \\
+&\quad\small \text{square both sides and divide by $1.96^2$}\\
+m_{\text{test}} &\ge \frac{1.96^2\, p(1-p)}{E^2} \\
+&\quad\small \text{multiply by $m_{\text{test}}/(E^2/1.96^2)$}
 \end{aligned}
 $$
 
@@ -614,9 +617,12 @@ Choosing hyperparameters and estimating the final performance are two different 
 
 $$
 \begin{aligned}
-\max_j V_j &\ge V_{j'} \quad\text{for every } j' && \text{a maximum is at least each term}\\
-\mathbb{E}\big[\max_j V_j\big] &\ge \mathbb{E}[V_{j'}] = \mu_{j'} \quad\text{for every } j' && \text{take expectations}\\
-\mathbb{E}\big[\max_j V_j\big] &\ge \max_{j'} \mu_{j'} && \text{true for every $j'$, so for the best one}
+\max_j V_j &\ge V_{j'} \quad\text{for every } j' \\
+&\quad\small \text{a maximum is at least each term}\\
+\mathbb{E}\big[\max_j V_j\big] &\ge \mathbb{E}[V_{j'}] = \mu_{j'} \quad\text{for every } j' \\
+&\quad\small \text{take expectations}\\
+\mathbb{E}\big[\max_j V_j\big] &\ge \max_{j'} \mu_{j'} \\
+&\quad\small \text{true for every $j'$, so for the best one}
 \end{aligned}
 $$
 
@@ -866,9 +872,12 @@ So minimising the **weighted** training loss $\frac1m\sum_i w(\mathbf{x}^{(i)})\
 
 $$
 \begin{aligned}
-P(z=1\mid\mathbf{x}) &= \frac{p_{\text{te}}(\mathbf{x})\,m_{\text{te}}}{p_{\text{te}}(\mathbf{x})\,m_{\text{te}} + p_{\text{tr}}(\mathbf{x})\,m_{\text{tr}}} && \text{Bayes: density of $\mathbf{x}$ in each group times its share}\\
-\frac{P(z=1\mid\mathbf{x})}{P(z=0\mid\mathbf{x})} &= \frac{p_{\text{te}}(\mathbf{x})\,m_{\text{te}}}{p_{\text{tr}}(\mathbf{x})\,m_{\text{tr}}} && \text{the two posteriors share the denominator}\\
-w(\mathbf{x}) &= \frac{P(z=1\mid\mathbf{x})}{1 - P(z=1\mid\mathbf{x})}\cdot\frac{m_{\text{tr}}}{m_{\text{te}}} && \text{solve for } p_{\text{te}}/p_{\text{tr}}
+P(z=1\mid\mathbf{x}) &= \frac{p_{\text{te}}(\mathbf{x})\,m_{\text{te}}}{p_{\text{te}}(\mathbf{x})\,m_{\text{te}} + p_{\text{tr}}(\mathbf{x})\,m_{\text{tr}}} \\
+&\quad\small \text{Bayes: density of $\mathbf{x}$ in each group times its share}\\
+\frac{P(z=1\mid\mathbf{x})}{P(z=0\mid\mathbf{x})} &= \frac{p_{\text{te}}(\mathbf{x})\,m_{\text{te}}}{p_{\text{tr}}(\mathbf{x})\,m_{\text{tr}}} \\
+&\quad\small \text{the two posteriors share the denominator}\\
+w(\mathbf{x}) &= \frac{P(z=1\mid\mathbf{x})}{1 - P(z=1\mid\mathbf{x})}\cdot\frac{m_{\text{tr}}}{m_{\text{te}}} \\
+&\quad\small \text{solve for } p_{\text{te}}/p_{\text{tr}}
 \end{aligned}
 $$
 

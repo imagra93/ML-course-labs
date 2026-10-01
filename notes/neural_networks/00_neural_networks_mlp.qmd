@@ -124,9 +124,12 @@ Three facts about the sigmoid, used again and again:
 - **Symmetry.** $1 - \sigma(z) = \sigma(-z)$:
 $$
 \begin{aligned}
-1-\sigma(z) &= \frac{1+e^{-z}-1}{1+e^{-z}} && \text{common denominator}\\
-&= \frac{e^{-z}}{1+e^{-z}} = \frac{1}{e^{z}+1} && \text{multiply top and bottom by } e^{z}\\
-&= \sigma(-z). && \text{definition of }\sigma
+1-\sigma(z) &= \frac{1+e^{-z}-1}{1+e^{-z}} \\
+&\quad\small \text{common denominator}\\
+&= \frac{e^{-z}}{1+e^{-z}} = \frac{1}{e^{z}+1} \\
+&\quad\small \text{multiply top and bottom by } e^{z}\\
+&= \sigma(-z). \\
+&\quad\small \text{definition of }\sigma
 \end{aligned}
 $$
 - **Log-odds.** Solving $\hat y = \sigma(z)$ for $z$: $\hat y(1+e^{-z}) = 1 \Rightarrow e^{-z} = (1-\hat y)/\hat y \Rightarrow z = \log\frac{\hat y}{1-\hat y}$. The pre-activation $z$ of a sigmoid unit is the **log-odds** (the *logit*) of the positive class.
@@ -190,9 +193,12 @@ and the **softmax** turns the scores into probabilities, $\hat y_k = e^{z_k}/\su
 $$
 \begin{aligned}
 \hat y_k > \hat y_j
-&\iff \frac{e^{z_k}}{S} > \frac{e^{z_j}}{S} && S = \textstyle\sum_l e^{z_l} > 0 \text{ is the same for both}\\
-&\iff z_k > z_j && e^{t}\text{ is strictly increasing}\\
-&\iff (\mathbf{w}_k-\mathbf{w}_j)^\top\mathbf{x} + (b_k - b_j) > 0 . && \text{substitute } z_k, z_j
+&\iff \frac{e^{z_k}}{S} > \frac{e^{z_j}}{S} \\
+&\quad\small S = \textstyle\sum_l e^{z_l} > 0 \text{ is the same for both}\\
+&\iff z_k > z_j \\
+&\quad\small e^{t}\text{ is strictly increasing}\\
+&\iff (\mathbf{w}_k-\mathbf{w}_j)^\top\mathbf{x} + (b_k - b_j) > 0 . \\
+&\quad\small \text{substitute } z_k, z_j
 \end{aligned}
 $$
 
@@ -212,10 +218,14 @@ XOR ("exclusive or": one or the other, not both) on the four corners of the unit
 
 $$
 \begin{aligned}
-&(0,0) \text{ is class 0:} && s(0,0) = b \le 0\\
-&(1,0),\ (0,1) \text{ are class 1:} && w_1 + b > 0 \ \text{ and } \ w_2 + b > 0\\
-&\text{add the two:} && w_1 + w_2 + 2b > 0 \ \Rightarrow\ w_1 + w_2 + b > -b \ge 0 \quad(\text{using } b\le 0)\\
-&(1,1) \text{ is class 0:} && w_1 + w_2 + b \le 0 . \quad\text{Contradiction.} \ \blacksquare
+&(0,0) \text{ is class 0:} \\
+&\quad\small s(0,0) = b \le 0\\
+&(1,0),\ (0,1) \text{ are class 1:} \\
+&\quad\small w_1 + b > 0 \ \text{ and } \ w_2 + b > 0\\
+&\text{add the two:} \\
+&\quad\small w_1 + w_2 + 2b > 0 \ \Rightarrow\ w_1 + w_2 + b > -b \ge 0 \quad(\text{using } b\le 0)\\
+&(1,1) \text{ is class 0:} \\
+&\quad\small w_1 + w_2 + b \le 0 . \quad\text{Contradiction.} \ \blacksquare
 \end{aligned}
 $$
 
@@ -404,12 +414,17 @@ Row $i$ of $\mathbf{W}^{[1]}$ holds the weights leaving input $x_i$; column $j$ 
 
 $$
 \begin{aligned}
-z^{[1]}_1 &= x_1W^{[1]}_{11} + x_2W^{[1]}_{21} + b^{[1]}_1 = 1\cdot0.5 + 2\cdot0.2 + 0.1 = 1.000 && \text{hidden, linear step}\\
+z^{[1]}_1 &= x_1W^{[1]}_{11} + x_2W^{[1]}_{21} + b^{[1]}_1 = 1\cdot0.5 + 2\cdot0.2 + 0.1 = 1.000 \\
+&\quad\small \text{hidden, linear step}\\
 z^{[1]}_2 &= x_1W^{[1]}_{12} + x_2W^{[1]}_{22} + b^{[1]}_2 = 1\cdot(-0.3) + 2\cdot0.4 - 0.1 = 0.400\\
-a^{[1]}_1 &= \tanh(1.0) = 0.762, \qquad a^{[1]}_2 = \tanh(0.4) = 0.380 && \text{hidden, activation}\\
-z^{[2]} &= 0.762\cdot0.7 + 0.380\cdot(-0.5) + 0.2 = 0.533 - 0.190 + 0.2 = 0.543 && \text{output, linear step}\\
-\hat y &= \sigma(0.543) = 0.633 && \text{output, activation}\\
-J &= -\log\hat y = -\log 0.633 = 0.458 && \text{cross-entropy with } y = 1
+a^{[1]}_1 &= \tanh(1.0) = 0.762, \qquad a^{[1]}_2 = \tanh(0.4) = 0.380 \\
+&\quad\small \text{hidden, activation}\\
+z^{[2]} &= 0.762\cdot0.7 + 0.380\cdot(-0.5) + 0.2 = 0.533 - 0.190 + 0.2 = 0.543 \\
+&\quad\small \text{output, linear step}\\
+\hat y &= \sigma(0.543) = 0.633 \\
+&\quad\small \text{output, activation}\\
+J &= -\log\hat y = -\log 0.633 = 0.458 \\
+&\quad\small \text{cross-entropy with } y = 1
 \end{aligned}
 $$
 
@@ -531,9 +546,12 @@ Activation layers apply a **non-linearity**, element by element. They must be fa
 
 $$
 \begin{aligned}
-\sigma'(z) &= -(1+e^{-z})^{-2}\cdot\frac{d}{dz}(1+e^{-z}) && \text{chain rule on } u^{-1}\\
-&= -(1+e^{-z})^{-2}\cdot(-e^{-z}) = \frac{e^{-z}}{(1+e^{-z})^2} && \tfrac{d}{dz}e^{-z} = -e^{-z}\\
-&= \underbrace{\frac{1}{1+e^{-z}}}_{\sigma(z)}\cdot\underbrace{\frac{e^{-z}}{1+e^{-z}}}_{1-\sigma(z)} && \text{split the fraction; section 4.2}\\
+\sigma'(z) &= -(1+e^{-z})^{-2}\cdot\frac{d}{dz}(1+e^{-z}) \\
+&\quad\small \text{chain rule on } u^{-1}\\
+&= -(1+e^{-z})^{-2}\cdot(-e^{-z}) = \frac{e^{-z}}{(1+e^{-z})^2} \\
+&\quad\small \tfrac{d}{dz}e^{-z} = -e^{-z}\\
+&= \underbrace{\frac{1}{1+e^{-z}}}_{\sigma(z)}\cdot\underbrace{\frac{e^{-z}}{1+e^{-z}}}_{1-\sigma(z)} \\
+&\quad\small \text{split the fraction; section 4.2}\\
 &= \sigma(z)\big(1-\sigma(z)\big).
 \end{aligned}
 $$
@@ -544,9 +562,12 @@ Its maximum: $s(1-s)$ with $s = \sigma(z)\in(0,1)$ has derivative $1 - 2s$, zero
 
 $$
 \begin{aligned}
-\tanh'z &= \frac{(e^z+e^{-z})^2-(e^z-e^{-z})^2}{(e^z+e^{-z})^2} && \text{quotient rule}\\
-&= 1-\frac{(e^z-e^{-z})^2}{(e^z+e^{-z})^2} && \text{split the fraction}\\
-&= 1-\tanh^2z , && \text{definition of tanh}
+\tanh'z &= \frac{(e^z+e^{-z})^2-(e^z-e^{-z})^2}{(e^z+e^{-z})^2} \\
+&\quad\small \text{quotient rule}\\
+&= 1-\frac{(e^z-e^{-z})^2}{(e^z+e^{-z})^2} \\
+&\quad\small \text{split the fraction}\\
+&= 1-\tanh^2z , \\
+&\quad\small \text{definition of tanh}
 \end{aligned}
 $$
 
@@ -593,9 +614,12 @@ The linear activation $g(z) = z$ is only used in the **last layer** of a **regre
 
 $$
 \begin{aligned}
-\mathbf{A}^{[2]} &= \big(\mathbf{X}\mathbf{W}^{[1]} + \mathbf{b}^{[1]}\big)\mathbf{W}^{[2]} + \mathbf{b}^{[2]} && \text{two layers, no activation}\\
-&= \mathbf{X}\mathbf{W}^{[1]}\mathbf{W}^{[2]} + \mathbf{b}^{[1]}\mathbf{W}^{[2]} + \mathbf{b}^{[2]} && \text{distribute}\\
-&= \mathbf{X}\underbrace{\mathbf{W}^{[1]}\mathbf{W}^{[2]}}_{\tilde{\mathbf{W}}} + \underbrace{\mathbf{b}^{[1]}\mathbf{W}^{[2]} + \mathbf{b}^{[2]}}_{\tilde{\mathbf{b}}}, && \text{associativity of the matrix product}
+\mathbf{A}^{[2]} &= \big(\mathbf{X}\mathbf{W}^{[1]} + \mathbf{b}^{[1]}\big)\mathbf{W}^{[2]} + \mathbf{b}^{[2]} \\
+&\quad\small \text{two layers, no activation}\\
+&= \mathbf{X}\mathbf{W}^{[1]}\mathbf{W}^{[2]} + \mathbf{b}^{[1]}\mathbf{W}^{[2]} + \mathbf{b}^{[2]} \\
+&\quad\small \text{distribute}\\
+&= \mathbf{X}\underbrace{\mathbf{W}^{[1]}\mathbf{W}^{[2]}}_{\tilde{\mathbf{W}}} + \underbrace{\mathbf{b}^{[1]}\mathbf{W}^{[2]} + \mathbf{b}^{[2]}}_{\tilde{\mathbf{b}}}, \\
+&\quad\small \text{associativity of the matrix product}
 \end{aligned}
 $$
 
@@ -732,10 +756,14 @@ One example, label $y\in\{0,1\}$, logit $z$, prediction $\hat y = \sigma(z)$, lo
 
 $$
 \begin{aligned}
-\frac{\partial L}{\partial\hat y} &= -\frac{y}{\hat y} + \frac{1-y}{1-\hat y} && \tfrac{d}{dp}\log p = \tfrac1p,\ \tfrac{d}{dp}\log(1-p) = -\tfrac{1}{1-p}\\
-&= \frac{-y(1-\hat y) + (1-y)\hat y}{\hat y(1-\hat y)} = \frac{\hat y - y}{\hat y(1-\hat y)} && \text{common denominator; } -y + y\hat y + \hat y - y\hat y = \hat y - y\\
-\frac{\partial\hat y}{\partial z} &= \hat y(1-\hat y) && \text{sigmoid derivative, section 14}\\
-\frac{\partial L}{\partial z} &= \frac{\hat y - y}{\hat y(1-\hat y)}\cdot\hat y(1-\hat y) = \boxed{\hat y - y} && \text{chain rule: the two } \hat y(1-\hat y) \text{ cancel}
+\frac{\partial L}{\partial\hat y} &= -\frac{y}{\hat y} + \frac{1-y}{1-\hat y} \\
+&\quad\small \tfrac{d}{dp}\log p = \tfrac1p,\ \tfrac{d}{dp}\log(1-p) = -\tfrac{1}{1-p}\\
+&= \frac{-y(1-\hat y) + (1-y)\hat y}{\hat y(1-\hat y)} = \frac{\hat y - y}{\hat y(1-\hat y)} \\
+&\quad\small \text{common denominator; } -y + y\hat y + \hat y - y\hat y = \hat y - y\\
+\frac{\partial\hat y}{\partial z} &= \hat y(1-\hat y) \\
+&\quad\small \text{sigmoid derivative, section 14}\\
+\frac{\partial L}{\partial z} &= \frac{\hat y - y}{\hat y(1-\hat y)}\cdot\hat y(1-\hat y) = \boxed{\hat y - y} \\
+&\quad\small \text{chain rule: the two } \hat y(1-\hat y) \text{ cancel}
 \end{aligned}
 $$
 
@@ -1194,8 +1222,10 @@ With 100 examples the training MSE goes to 0.000 while the validation MSE stays 
 
 $$
 \begin{aligned}
-\mathrm{Var}(z_j\mid\mathbf{x}) &= \sum_k x_k^2\,\mathrm{Var}(W_{kj}) && \text{independent terms: variances add; } x_k \text{ fixed}\\
-&= s^2\lVert\mathbf{x}\rVert^2 . && \text{same variance for every weight}
+\mathrm{Var}(z_j\mid\mathbf{x}) &= \sum_k x_k^2\,\mathrm{Var}(W_{kj}) \\
+&\quad\small \text{independent terms: variances add; } x_k \text{ fixed}\\
+&= s^2\lVert\mathbf{x}\rVert^2 . \\
+&\quad\small \text{same variance for every weight}
 \end{aligned}
 $$
 
@@ -1256,8 +1286,10 @@ Differentiating the normalisation with respect to $\eta$ gives the mean:
 
 $$
 \begin{aligned}
-0 &= \frac{d}{d\eta}\int h(y)e^{\eta y - A(\eta)}\,dy = \int h(y)e^{\eta y - A(\eta)}\big(y - A'(\eta)\big)\,dy && \text{differentiate under the integral}\\
-&= \mathbb{E}[y] - A'(\eta) \ \Rightarrow\ \mu := \mathbb{E}[y] = A'(\eta). && \text{the density integrates to 1}
+0 &= \frac{d}{d\eta}\int h(y)e^{\eta y - A(\eta)}\,dy = \int h(y)e^{\eta y - A(\eta)}\big(y - A'(\eta)\big)\,dy \\
+&\quad\small \text{differentiate under the integral}\\
+&= \mathbb{E}[y] - A'(\eta) \ \Rightarrow\ \mu := \mathbb{E}[y] = A'(\eta). \\
+&\quad\small \text{the density integrates to 1}
 \end{aligned}
 $$
 
@@ -1265,8 +1297,10 @@ The loss of one example is the negative log-likelihood, and its derivative:
 
 $$
 \begin{aligned}
-\ell(\eta) &= -\log p(y\mid\eta) = -\eta y + A(\eta) - \log h(y) && \text{take } -\log\\
-\frac{\partial\ell}{\partial\eta} &= -y + A'(\eta) = \boxed{\mu - y} . && \text{the result above}
+\ell(\eta) &= -\log p(y\mid\eta) = -\eta y + A(\eta) - \log h(y) \\
+&\quad\small \text{take } -\log\\
+\frac{\partial\ell}{\partial\eta} &= -y + A'(\eta) = \boxed{\mu - y} . \\
+&\quad\small \text{the result above}
 \end{aligned}
 $$
 
@@ -1489,8 +1523,10 @@ Two checks catch most bugs in minutes, before any long training run.
 
 $$
 \begin{aligned}
-\hat y_k &= \frac{e^{0}}{\sum_{j=1}^K e^{0}} = \frac1K && \text{all logits equal (0)}\\
-J &= -\frac1m\sum_i\log\hat y^{(i)}_{\text{true}} = -\log\frac1K = \log K . && \text{same term for every example}
+\hat y_k &= \frac{e^{0}}{\sum_{j=1}^K e^{0}} = \frac1K \\
+&\quad\small \text{all logits equal (0)}\\
+J &= -\frac1m\sum_i\log\hat y^{(i)}_{\text{true}} = -\log\frac1K = \log K . \\
+&\quad\small \text{same term for every example}
 \end{aligned}
 $$
 

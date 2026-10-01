@@ -152,8 +152,10 @@ The chord is always above the curve, so $J$ is convex. (Also: each term $(\theta
 
 $$
 \begin{aligned}
-J'(\theta_t) &= \tfrac{1}{m}\big(S_{xx}\theta_t - S_{xy}\big) = \tfrac{S_{xx}}{m}\big(\theta_t - \theta^*\big) && S_{xy} = S_{xx}\theta^* \text{ by the boxed formula}\\
-e_{t+1} = \theta_{t+1} - \theta^* &= \theta_t - \theta^* - \alpha\,\tfrac{S_{xx}}{m}\big(\theta_t - \theta^*\big) && \text{subtract } \theta^* \text{ from the update}\\
+J'(\theta_t) &= \tfrac{1}{m}\big(S_{xx}\theta_t - S_{xy}\big) = \tfrac{S_{xx}}{m}\big(\theta_t - \theta^*\big) \\
+&\quad\small S_{xy} = S_{xx}\theta^* \text{ by the boxed formula}\\
+e_{t+1} = \theta_{t+1} - \theta^* &= \theta_t - \theta^* - \alpha\,\tfrac{S_{xx}}{m}\big(\theta_t - \theta^*\big) \\
+&\quad\small \text{subtract } \theta^* \text{ from the update}\\
 &= \Big(1 - \alpha\,\tfrac{S_{xx}}{m}\Big)\,e_t .
 \end{aligned}
 $$
@@ -264,9 +266,12 @@ The component form also follows directly, one rule per line:
 
 $$
 \begin{aligned}
-\frac{\partial J}{\partial\theta_j} &= \frac{1}{2m}\sum_{i=1}^m\frac{\partial}{\partial\theta_j}\big(h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)}) - y^{(i)}\big)^2 && \text{the derivative of a sum is the sum of the derivatives}\\
-&= \frac{1}{m}\sum_{i=1}^m\big(h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)}) - y^{(i)}\big)\,\frac{\partial h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)})}{\partial\theta_j} && \text{chain rule } (u^2)' = 2u\,u'\text{; the 2 cancels the }\tfrac12\\
-&= \frac{1}{m}\sum_{i=1}^m\big(h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)}) - y^{(i)}\big)\,x^{(i)}_j && h_{\boldsymbol{\theta}} = \textstyle\sum_k\theta_kx_k \text{, so } \partial h_{\boldsymbol{\theta}}/\partial\theta_j = x_j
+\frac{\partial J}{\partial\theta_j} &= \frac{1}{2m}\sum_{i=1}^m\frac{\partial}{\partial\theta_j}\big(h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)}) - y^{(i)}\big)^2 \\
+&\quad\small \text{the derivative of a sum is the sum of the derivatives}\\
+&= \frac{1}{m}\sum_{i=1}^m\big(h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)}) - y^{(i)}\big)\,\frac{\partial h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)})}{\partial\theta_j} \\
+&\quad\small \text{chain rule } (u^2)' = 2u\,u'\text{; the 2 cancels the }\tfrac12\\
+&= \frac{1}{m}\sum_{i=1}^m\big(h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)}) - y^{(i)}\big)\,x^{(i)}_j \\
+&\quad\small h_{\boldsymbol{\theta}} = \textstyle\sum_k\theta_kx_k \text{, so } \partial h_{\boldsymbol{\theta}}/\partial\theta_j = x_j
 \end{aligned}
 $$
 
@@ -553,8 +558,10 @@ and jump to the minimum of this quadratic model:
 
 $$
 \begin{aligned}
-\nabla q(\boldsymbol{\theta}) &= \mathbf{g} + \mathbf{H}_J(\boldsymbol{\theta}-\boldsymbol{\theta}_{\text{old}}) = \mathbf{0} && \text{Facts 1 and 2 with } \mathbf{d} = \boldsymbol{\theta}-\boldsymbol{\theta}_{\text{old}}\\
-\Rightarrow\quad \boldsymbol{\theta}_{\text{new}} &= \boldsymbol{\theta}_{\text{old}} - \big[\nabla^2 J(\boldsymbol{\theta}_{\text{old}})\big]^{-1}\nabla J(\boldsymbol{\theta}_{\text{old}}) . && \text{multiply by } \mathbf{H}_J^{-1}
+\nabla q(\boldsymbol{\theta}) &= \mathbf{g} + \mathbf{H}_J(\boldsymbol{\theta}-\boldsymbol{\theta}_{\text{old}}) = \mathbf{0} \\
+&\quad\small \text{Facts 1 and 2 with } \mathbf{d} = \boldsymbol{\theta}-\boldsymbol{\theta}_{\text{old}}\\
+\Rightarrow\quad \boldsymbol{\theta}_{\text{new}} &= \boldsymbol{\theta}_{\text{old}} - \big[\nabla^2 J(\boldsymbol{\theta}_{\text{old}})\big]^{-1}\nabla J(\boldsymbol{\theta}_{\text{old}}) . \\
+&\quad\small \text{multiply by } \mathbf{H}_J^{-1}
 \end{aligned}
 $$
 
@@ -855,10 +862,14 @@ $$
 
 $$
 \begin{aligned}
-\hat{\boldsymbol{\theta}} &= (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{y} && \text{normal equation}\\
-&= (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top(\mathbf{X}\boldsymbol{\theta} + \boldsymbol{\varepsilon}) && \text{substitute the model}\\
-&= (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{X}\,\boldsymbol{\theta} + (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\boldsymbol{\varepsilon} && \text{distribute}\\
-&= \boldsymbol{\theta} + (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\boldsymbol{\varepsilon} . && (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{X} = \mathbf{I}
+\hat{\boldsymbol{\theta}} &= (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{y} \\
+&\quad\small \text{normal equation}\\
+&= (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top(\mathbf{X}\boldsymbol{\theta} + \boldsymbol{\varepsilon}) \\
+&\quad\small \text{substitute the model}\\
+&= (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{X}\,\boldsymbol{\theta} + (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\boldsymbol{\varepsilon} \\
+&\quad\small \text{distribute}\\
+&= \boldsymbol{\theta} + (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\boldsymbol{\varepsilon} . \\
+&\quad\small (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{X} = \mathbf{I}
 \end{aligned}
 $$
 
@@ -876,9 +887,12 @@ Write $\mathbf{A} = (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top$, so $\hat{\
 
 $$
 \begin{aligned}
-\mathrm{Cov}(\hat{\boldsymbol{\theta}}) &= \mathbf{A}\,\mathrm{Cov}(\boldsymbol{\varepsilon})\,\mathbf{A}^\top && \text{rule of 14.1; } \boldsymbol{\theta} \text{ is a constant}\\
-&= \sigma^2\mathbf{A}\mathbf{A}^\top && \text{assumption (ii)}\\
-&= \sigma^2(\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{X}(\mathbf{X}^\top\mathbf{X})^{-1} && \mathbf{A}^\top = \mathbf{X}(\mathbf{X}^\top\mathbf{X})^{-1}\text{, since } (\mathbf{X}^\top\mathbf{X})^{-1} \text{ is symmetric}\\
+\mathrm{Cov}(\hat{\boldsymbol{\theta}}) &= \mathbf{A}\,\mathrm{Cov}(\boldsymbol{\varepsilon})\,\mathbf{A}^\top \\
+&\quad\small \text{rule of 14.1; } \boldsymbol{\theta} \text{ is a constant}\\
+&= \sigma^2\mathbf{A}\mathbf{A}^\top \\
+&\quad\small \text{assumption (ii)}\\
+&= \sigma^2(\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{X}(\mathbf{X}^\top\mathbf{X})^{-1} \\
+&\quad\small \mathbf{A}^\top = \mathbf{X}(\mathbf{X}^\top\mathbf{X})^{-1}\text{, since } (\mathbf{X}^\top\mathbf{X})^{-1} \text{ is symmetric}\\
 &= \sigma^2(\mathbf{X}^\top\mathbf{X})^{-1} .
 \end{aligned}
 $$
@@ -1020,9 +1034,12 @@ Take a new input $\mathbf{x}_0$ (with $x_{0,0} = 1$) and its prediction $\hat y_
 
 $$
 \begin{aligned}
-y_0 - \hat y_0 &= \varepsilon_0 - \mathbf{x}_0^\top(\hat{\boldsymbol{\theta}} - \boldsymbol{\theta}) && \text{subtract}\\
-\mathbb{E}[y_0 - \hat y_0] &= 0 && \text{both terms have mean zero}\\
-\mathrm{Var}(y_0 - \hat y_0) &= \sigma^2 + \sigma^2 h_0 = \sigma^2(1 + h_0) && \text{independent terms: variances add}
+y_0 - \hat y_0 &= \varepsilon_0 - \mathbf{x}_0^\top(\hat{\boldsymbol{\theta}} - \boldsymbol{\theta}) \\
+&\quad\small \text{subtract}\\
+\mathbb{E}[y_0 - \hat y_0] &= 0 \\
+&\quad\small \text{both terms have mean zero}\\
+\mathrm{Var}(y_0 - \hat y_0) &= \sigma^2 + \sigma^2 h_0 = \sigma^2(1 + h_0) \\
+&\quad\small \text{independent terms: variances add}
 \end{aligned}
 $$
 
@@ -1036,8 +1053,10 @@ The second is the **prediction interval**, the one to quote with a forecast. For
 
 $$
 \begin{aligned}
-h_0 &= \frac{\sum_i x_i^2 - 2x_0\sum_i x_i + m x_0^2}{mS} && \mathbf{x}_0 = (1, x_0)\text{, multiply out}\\
-&= \frac{S + m\bar x^2 - 2m x_0\bar x + m x_0^2}{mS} = \frac{S + m(x_0 - \bar x)^2}{mS} && \textstyle\sum x^2 = S + m\bar x^2,\ \sum x = m\bar x\\
+h_0 &= \frac{\sum_i x_i^2 - 2x_0\sum_i x_i + m x_0^2}{mS} \\
+&\quad\small \mathbf{x}_0 = (1, x_0)\text{, multiply out}\\
+&= \frac{S + m\bar x^2 - 2m x_0\bar x + m x_0^2}{mS} = \frac{S + m(x_0 - \bar x)^2}{mS} \\
+&\quad\small \textstyle\sum x^2 = S + m\bar x^2,\ \sum x = m\bar x\\
 &= \frac1m + \frac{(x_0 - \bar x)^2}{\sum_i (x_i - \bar x)^2} .
 \end{aligned}
 $$
@@ -1644,9 +1663,12 @@ Dropping a redundant feature costs almost nothing in test RMSE; the re-parametri
 
 $$
 \begin{aligned}
-\hat{\boldsymbol{\beta}}_1 &= (\mathbf{X}_1^\top\mathbf{X}_1)^{-1}\mathbf{X}_1^\top\mathbf{y} && \text{the "short" regression}\\
-&= \boldsymbol{\beta}_1 + (\mathbf{X}_1^\top\mathbf{X}_1)^{-1}\mathbf{X}_1^\top\mathbf{x}_2\,\beta_2 + (\mathbf{X}_1^\top\mathbf{X}_1)^{-1}\mathbf{X}_1^\top\boldsymbol{\varepsilon} && \text{substitute the truth, distribute}\\
-\mathbb{E}[\hat{\boldsymbol{\beta}}_1] &= \boldsymbol{\beta}_1 + \boldsymbol{\delta}\,\beta_2,\qquad \boldsymbol{\delta} = (\mathbf{X}_1^\top\mathbf{X}_1)^{-1}\mathbf{X}_1^\top\mathbf{x}_2 . && \text{the noise term has mean zero}
+\hat{\boldsymbol{\beta}}_1 &= (\mathbf{X}_1^\top\mathbf{X}_1)^{-1}\mathbf{X}_1^\top\mathbf{y} \\
+&\quad\small \text{the "short" regression}\\
+&= \boldsymbol{\beta}_1 + (\mathbf{X}_1^\top\mathbf{X}_1)^{-1}\mathbf{X}_1^\top\mathbf{x}_2\,\beta_2 + (\mathbf{X}_1^\top\mathbf{X}_1)^{-1}\mathbf{X}_1^\top\boldsymbol{\varepsilon} \\
+&\quad\small \text{substitute the truth, distribute}\\
+\mathbb{E}[\hat{\boldsymbol{\beta}}_1] &= \boldsymbol{\beta}_1 + \boldsymbol{\delta}\,\beta_2,\qquad \boldsymbol{\delta} = (\mathbf{X}_1^\top\mathbf{X}_1)^{-1}\mathbf{X}_1^\top\mathbf{x}_2 . \\
+&\quad\small \text{the noise term has mean zero}
 \end{aligned}
 $$
 

@@ -190,7 +190,7 @@ window.Quarto = {
 <p><strong>What this note covers.</strong> Sections 1–8 set up the model and the least-squares loss and minimise it in two ways (gradient descent and the normal equation), with a one-parameter warm-up. Section 9 is Newton’s method, section 10 the probabilistic view (least squares = maximum likelihood), sections 11–12 feature engineering and a preview of regularisation, section 13 the metrics. Section 14 derives the statistics of the estimator (bias, variance, standard errors, confidence and prediction intervals, the Gauss–Markov theorem), and section 15 goes through the <strong>assumptions</strong> one by one: what each says, which result needs it, how to check it and what to do when it fails. Section 16 is a practical guide, “what to do when…”.</p>
 <p><strong>What you need.</strong> Derivatives and the chain rule; vectors and matrices (products, transpose, inverse, trace, eigenvalues); basic probability (expectation, variance, covariance, the normal distribution). The notation (<span class="math inline">\(m\)</span> examples, <span class="math inline">\(n\)</span> features, <span class="math inline">\(\mathbf{x}^{(i)}\)</span>, <span class="math inline">\(y^{(i)}\)</span>) and the train/validation/test split come from <a href="00_supervised_learning.html">note 00</a>.</p>
 <p><strong>After this note you can</strong> fit a linear regression from scratch and with scikit-learn, explain why the solution exists and is unique, attach honest uncertainty to its coefficients and predictions, and diagnose and fix the usual problems: curvature, dependent errors, non-constant variance, non-normal noise, collinearity, confounding, influential points and extrapolation. Regularisation (Ridge, Lasso) and the full treatment of input variables are in <a href="03_regularization_inputs_assumptions.html">note 03</a>. The lab is <a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%201%20-%20Ordinary%20Least%20Squares%20Regression.ipynb">OLS from scratch</a>.</p>
-<div id="9fcbc196" class="cell" data-execution_count="1">
+<div id="2c997598" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>plt.rcParams.update({<span class="st">"figure.dpi"</span>: <span class="dv">90</span>, <span class="st">"axes.grid"</span>: <span class="va">True</span>, <span class="st">"grid.alpha"</span>: <span class="fl">0.3</span>,</span>
@@ -210,7 +210,7 @@ h_{\boldsymbol{\theta}}(\mathbf{x}) = \theta_0 + \theta_1 x_1 + \dots + \theta_n
 </ul>
 <p>“Linear” means linear <strong>in the parameters</strong>. The features can be any fixed transformation of the raw inputs (<span class="math inline">\(x^2\)</span>, <span class="math inline">\(\log x\)</span>, <span class="math inline">\(x_1 x_2\)</span>, …) and the model is still linear regression (section 11).</p>
 <p>Typical uses: market sales, medical insurance costs, real-estate prices, wine quality scores, taxi fares, life expectancy. Whenever the target is a number and a weighted sum of features is a reasonable first guess, linear regression is the baseline every other model has to beat.</p>
-<div id="e4488094" class="cell" data-execution_count="2">
+<div id="7bc85b46" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Running example: y = 4 + 3 x + noise</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>m <span class="op">=</span> <span class="dv">100</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>x <span class="op">=</span> rng.uniform(<span class="dv">0</span>, <span class="dv">2</span>, m)</span>
@@ -299,8 +299,10 @@ t\,J(u) + (1-t)\,J(v) - J\big(tu + (1-t)v\big) = \frac{S_{xx}}{2m}\; t(1-t)\,(u 
 <p><strong>Gradient descent in 1D.</strong> Instead of solving <span class="math inline">\(J'(\theta)=0\)</span>, walk downhill: <span class="math inline">\(\theta_{t+1} = \theta_t - \alpha J'(\theta_t)\)</span>, where <span class="math inline">\(\alpha &gt; 0\)</span> is the <strong>learning rate</strong>. How fast does the error <span class="math inline">\(e_t = \theta_t - \theta^*\)</span> shrink?</p>
 <p><span class="math display">\[
 \begin{aligned}
-J'(\theta_t) &amp;= \tfrac{1}{m}\big(S_{xx}\theta_t - S_{xy}\big) = \tfrac{S_{xx}}{m}\big(\theta_t - \theta^*\big) &amp;&amp; S_{xy} = S_{xx}\theta^* \text{ by the boxed formula}\\
-e_{t+1} = \theta_{t+1} - \theta^* &amp;= \theta_t - \theta^* - \alpha\,\tfrac{S_{xx}}{m}\big(\theta_t - \theta^*\big) &amp;&amp; \text{subtract } \theta^* \text{ from the update}\\
+J'(\theta_t) &amp;= \tfrac{1}{m}\big(S_{xx}\theta_t - S_{xy}\big) = \tfrac{S_{xx}}{m}\big(\theta_t - \theta^*\big) \\
+&amp;\quad\small S_{xy} = S_{xx}\theta^* \text{ by the boxed formula}\\
+e_{t+1} = \theta_{t+1} - \theta^* &amp;= \theta_t - \theta^* - \alpha\,\tfrac{S_{xx}}{m}\big(\theta_t - \theta^*\big) \\
+&amp;\quad\small \text{subtract } \theta^* \text{ from the update}\\
 &amp;= \Big(1 - \alpha\,\tfrac{S_{xx}}{m}\Big)\,e_t .
 \end{aligned}
 \]</span></p>
@@ -370,7 +372,7 @@ e_{t+1} = \theta_{t+1} - \theta^* &amp;= \theta_t - \theta^* - \alpha\,\tfrac{S_
 </tbody>
 </table>
 <p>Dividing by <span class="math inline">\(S_{xx}\)</span> becomes multiplying by <span class="math inline">\((\mathbf{X}^\top\mathbf{X})^{-1}\)</span>, and “the second derivative is positive” becomes “the Hessian is positive semi-definite”.</p>
-<div id="07d3f4e2" class="cell" data-execution_count="3">
+<div id="89a2deaa" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Warm-up data: y = 3 x + noise, model h(x) = theta * x (no intercept)</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>rng_w <span class="op">=</span> np.random.default_rng(<span class="dv">0</span>)</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>xw <span class="op">=</span> rng_w.uniform(<span class="dv">0</span>, <span class="dv">2</span>, <span class="dv">30</span>)</span>
@@ -449,13 +451,16 @@ J''(theta) = Sxx/m = 1.544 &gt; 0  -&gt; convex; GD stable iff alpha &lt; 1.296<
 <p>The component form also follows directly, one rule per line:</p>
 <p><span class="math display">\[
 \begin{aligned}
-\frac{\partial J}{\partial\theta_j} &amp;= \frac{1}{2m}\sum_{i=1}^m\frac{\partial}{\partial\theta_j}\big(h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)}) - y^{(i)}\big)^2 &amp;&amp; \text{the derivative of a sum is the sum of the derivatives}\\
-&amp;= \frac{1}{m}\sum_{i=1}^m\big(h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)}) - y^{(i)}\big)\,\frac{\partial h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)})}{\partial\theta_j} &amp;&amp; \text{chain rule } (u^2)' = 2u\,u'\text{; the 2 cancels the }\tfrac12\\
-&amp;= \frac{1}{m}\sum_{i=1}^m\big(h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)}) - y^{(i)}\big)\,x^{(i)}_j &amp;&amp; h_{\boldsymbol{\theta}} = \textstyle\sum_k\theta_kx_k \text{, so } \partial h_{\boldsymbol{\theta}}/\partial\theta_j = x_j
+\frac{\partial J}{\partial\theta_j} &amp;= \frac{1}{2m}\sum_{i=1}^m\frac{\partial}{\partial\theta_j}\big(h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)}) - y^{(i)}\big)^2 \\
+&amp;\quad\small \text{the derivative of a sum is the sum of the derivatives}\\
+&amp;= \frac{1}{m}\sum_{i=1}^m\big(h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)}) - y^{(i)}\big)\,\frac{\partial h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)})}{\partial\theta_j} \\
+&amp;\quad\small \text{chain rule } (u^2)' = 2u\,u'\text{; the 2 cancels the }\tfrac12\\
+&amp;= \frac{1}{m}\sum_{i=1}^m\big(h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)}) - y^{(i)}\big)\,x^{(i)}_j \\
+&amp;\quad\small h_{\boldsymbol{\theta}} = \textstyle\sum_k\theta_kx_k \text{, so } \partial h_{\boldsymbol{\theta}}/\partial\theta_j = x_j
 \end{aligned}
 \]</span></p>
 <p><strong>Reading it:</strong> each example pushes <span class="math inline">\(\boldsymbol{\theta}\)</span> proportionally to its error times its input. Examples that are already well predicted barely contribute. With one feature and no intercept it is the <span class="math inline">\(J'(\theta)\)</span> of the warm-up.</p>
-<div id="ce761d1b" class="cell" data-execution_count="4">
+<div id="c3627172" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> J(theta, X, y):</span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    r <span class="op">=</span> X <span class="op">@</span> theta <span class="op">-</span> y</span>
 <span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> (r <span class="op">@</span> r) <span class="op">/</span> (<span class="dv">2</span> <span class="op">*</span> <span class="bu">len</span>(y))</span>
@@ -493,7 +498,7 @@ numerical: [-7.85318134 -9.13831664]</code></pre>
   <div class="ro"><div class="m"><span>θ₀</span><b data-r="t0">–</b></div><div class="m"><span>θ₁</span><b data-r="t1">–</b></div><div class="m"><span>J(θ)</span><b data-r="j">–</b></div></div>
   <p class="from">Same figure as <a href="../../slides/machine_learning/02_linear_regression.html#7">slide 7</a> of the Linear Regression deck.</p>
 </div>
-<div id="a594741f" class="cell" data-execution_count="5">
+<div id="d59591ad" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> gradient_descent(X, y, alpha, n_iters, theta0<span class="op">=</span><span class="va">None</span>):</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>    theta <span class="op">=</span> np.zeros(X.shape[<span class="dv">1</span>]) <span class="cf">if</span> theta0 <span class="kw">is</span> <span class="va">None</span> <span class="cf">else</span> theta0.astype(<span class="bu">float</span>).copy()</span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    path, costs <span class="op">=</span> [theta.copy()], [J(theta, X, y)]</span>
@@ -535,7 +540,7 @@ numerical: [-7.85318134 -9.13831664]</code></pre>
 <li><strong>Too small</strong>: converges, but needs many iterations.</li>
 <li><strong>Too large</strong>: overshoots the minimum; <span class="math inline">\(J\)</span> oscillates or grows (divergence).</li>
 </ul>
-<div id="3271c46c" class="cell" data-execution_count="6">
+<div id="561d9852" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">12</span>, <span class="fl">3.8</span>))</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a, c <span class="kw">in</span> <span class="bu">zip</span>([<span class="fl">0.02</span>, <span class="fl">0.3</span>, <span class="fl">0.9</span>, <span class="fl">1.02</span>], [<span class="st">"C0"</span>, <span class="st">"C2"</span>, <span class="st">"C1"</span>, <span class="st">"C3"</span>]):</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    _, p, cst <span class="op">=</span> gradient_descent(X, y, alpha<span class="op">=</span>a, n_iters<span class="op">=</span><span class="dv">40</span>)</span>
@@ -581,7 +586,7 @@ numerical: [-7.85318134 -9.13831664]</code></pre>
   <p class="why">After scaling, gradient-descent steps are updated at the same rate for all the features.</p>
   <p class="from">Same figure as <a href="../../slides/machine_learning/02_linear_regression.html#21">slide 21</a> of the Linear Regression deck.</p>
 </div>
-<div id="3f397e67" class="cell" data-execution_count="7">
+<div id="9dbb7291" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>H <span class="op">=</span> X.T <span class="op">@</span> X <span class="op">/</span> m</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>lam <span class="op">=</span> np.linalg.eigvalsh(H)</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"eigenvalues of H: </span><span class="sc">{</span>lam<span class="sc">.</span><span class="bu">round</span>(<span class="dv">3</span>)<span class="sc">}</span><span class="ss"> -&gt; alpha must be &lt; </span><span class="sc">{</span><span class="dv">2</span><span class="op">/</span>lam<span class="sc">.</span><span class="bu">max</span>()<span class="sc">:.3f}</span><span class="ss">  (1.02 diverged, 0.9 did not)"</span>)</span>
@@ -687,7 +692,7 @@ numerical: [-7.85318134 -9.13831664]</code></pre>
 </tbody>
 </table>
 <p>In practice, never form the inverse explicitly; solve the linear system (<code>np.linalg.solve</code>) or use <code>np.linalg.lstsq</code> (QR/SVD), which is numerically more stable.</p>
-<div id="e803a591" class="cell" data-execution_count="8">
+<div id="2d7474e6" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>theta_ne <span class="op">=</span> np.linalg.solve(X.T <span class="op">@</span> X, X.T <span class="op">@</span> y)</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>theta_ls <span class="op">=</span> np.linalg.lstsq(X, y, rcond<span class="op">=</span><span class="va">None</span>)[<span class="dv">0</span>]</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"normal equation :"</span>, theta_ne.<span class="bu">round</span>(<span class="dv">4</span>))</span>
@@ -717,7 +722,7 @@ three points    : [-2.3333  3.    ]  (-7/3 = -2.3333, 3)</code></pre>
 \]</span></p>
 <p>(Without the <span class="math inline">\(\frac{1}{2m}\)</span>, as in the slides, the Hessian of <span class="math inline">\(\tilde J\)</span> is <span class="math inline">\(2\mathbf{X}^\top\mathbf{X}\)</span>: a positive multiple, same conclusions.) For any <span class="math inline">\(\mathbf{v}\)</span>: <span class="math inline">\(\;\mathbf{v}^\top\mathbf{X}^\top\mathbf{X}\mathbf{v} = (\mathbf{X}\mathbf{v})^\top(\mathbf{X}\mathbf{v}) = \lVert\mathbf{X}\mathbf{v}\rVert^2 \ge 0\)</span>. So <span class="math inline">\(J\)</span> is convex. <span class="math inline">\(\blacksquare\)</span></p>
 <p>It is <strong>strictly</strong> convex iff <span class="math inline">\(\lVert\mathbf{X}\mathbf{v}\rVert^2 &gt; 0\)</span> for every <span class="math inline">\(\mathbf{v}\neq 0\)</span>, i.e.&nbsp;iff <span class="math inline">\(\mathbf{X}\mathbf{v}\neq\mathbf{0}\)</span> for <span class="math inline">\(\mathbf{v}\neq 0\)</span>, which is the definition of <strong>linearly independent columns</strong>. The same condition makes <span class="math inline">\(\mathbf{X}^\top\mathbf{X}\)</span> invertible (a PD matrix has no zero eigenvalue), which justifies the normal-equation formula.</p>
-<div id="bf528af6" class="cell" data-execution_count="9">
+<div id="654d1e70" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> mpl_toolkits.mplot3d <span class="im">import</span> Axes3D  <span class="co"># noqa: F401</span></span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plt.figure(figsize<span class="op">=</span>(<span class="dv">11</span>, <span class="dv">4</span>))</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>ax <span class="op">=</span> fig.add_subplot(<span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">1</span>, projection<span class="op">=</span><span class="st">"3d"</span>)</span>
@@ -751,8 +756,10 @@ J(\boldsymbol{\theta}) \approx q(\boldsymbol{\theta}) = J(\boldsymbol{\theta}_{\
 <p>and jump to the minimum of this quadratic model:</p>
 <p><span class="math display">\[
 \begin{aligned}
-\nabla q(\boldsymbol{\theta}) &amp;= \mathbf{g} + \mathbf{H}_J(\boldsymbol{\theta}-\boldsymbol{\theta}_{\text{old}}) = \mathbf{0} &amp;&amp; \text{Facts 1 and 2 with } \mathbf{d} = \boldsymbol{\theta}-\boldsymbol{\theta}_{\text{old}}\\
-\Rightarrow\quad \boldsymbol{\theta}_{\text{new}} &amp;= \boldsymbol{\theta}_{\text{old}} - \big[\nabla^2 J(\boldsymbol{\theta}_{\text{old}})\big]^{-1}\nabla J(\boldsymbol{\theta}_{\text{old}}) . &amp;&amp; \text{multiply by } \mathbf{H}_J^{-1}
+\nabla q(\boldsymbol{\theta}) &amp;= \mathbf{g} + \mathbf{H}_J(\boldsymbol{\theta}-\boldsymbol{\theta}_{\text{old}}) = \mathbf{0} \\
+&amp;\quad\small \text{Facts 1 and 2 with } \mathbf{d} = \boldsymbol{\theta}-\boldsymbol{\theta}_{\text{old}}\\
+\Rightarrow\quad \boldsymbol{\theta}_{\text{new}} &amp;= \boldsymbol{\theta}_{\text{old}} - \big[\nabla^2 J(\boldsymbol{\theta}_{\text{old}})\big]^{-1}\nabla J(\boldsymbol{\theta}_{\text{old}}) . \\
+&amp;\quad\small \text{multiply by } \mathbf{H}_J^{-1}
 \end{aligned}
 \]</span></p>
 <p>In one dimension this is <span class="math inline">\(\theta_{\text{new}} = \theta_{\text{old}} - J'(\theta_{\text{old}})/J''(\theta_{\text{old}})\)</span>: a gradient step with the learning rate <span class="math inline">\(1/J''\)</span>.</p>
@@ -769,7 +776,7 @@ J(\boldsymbol{\theta}) \approx q(\boldsymbol{\theta}) = J(\boldsymbol{\theta}_{\
 \]</span></p>
 <p>(With the slides’ <span class="math inline">\(\tilde J\)</span>, gradient <span class="math inline">\(-2\mathbf{X}^\top\mathbf{y} + 2\mathbf{X}^\top\mathbf{X}\boldsymbol{\theta}\)</span> and Hessian <span class="math inline">\(2\mathbf{X}^\top\mathbf{X}\)</span>, the factors 2 cancel in the same way.) The starting point disappears: from <strong>any</strong> <span class="math inline">\(\boldsymbol{\theta}_{\text{old}}\)</span>, one Newton step lands exactly on the normal-equation solution. The reason is that <span class="math inline">\(J\)</span> is exactly quadratic, so the Taylor model <span class="math inline">\(q\)</span> is not an approximation but <span class="math inline">\(J\)</span> itself. In the warm-up: <span class="math inline">\(\theta_{\text{new}} = \theta_{\text{old}} - \frac{(14\theta_{\text{old}} - 28)/3}{14/3} = \theta_{\text{old}} - (\theta_{\text{old}} - 2) = 2\)</span>.</p>
 <p><strong>Newton vs gradient descent.</strong> In the eigen-directions of section 6, gradient descent multiplies the error along <span class="math inline">\(\mathbf{v}_k\)</span> by <span class="math inline">\(1-\alpha\lambda_k\)</span> with one <span class="math inline">\(\alpha\)</span> for all directions; Newton effectively uses <span class="math inline">\(\alpha_k = 1/\lambda_k\)</span> in each direction, which makes every factor 0. That is why Newton is immune to bad conditioning and to feature scaling. The price is forming and solving an <span class="math inline">\((n+1)\times(n+1)\)</span> system, <span class="math inline">\(O(mn^2 + n^3)\)</span>, which is impractical for <span class="math inline">\(n\)</span> beyond about <span class="math inline">\(10\,000\)</span>. For losses that are not quadratic (logistic regression, <a href="02_logistic_regression.html">note 02</a>) the Hessian changes with <span class="math inline">\(\boldsymbol{\theta}\)</span>, and Newton needs several iterations, usually very few.</p>
-<div id="21e19dff" class="cell" data-execution_count="10">
+<div id="8cf54600" class="cell" data-execution_count="10">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> newton_step(theta, X, y):</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>    g <span class="op">=</span> grad_J(theta, X, y)                  <span class="co"># (1/m) X^T (X theta - y)</span></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    Hess <span class="op">=</span> X.T <span class="op">@</span> X <span class="op">/</span> <span class="bu">len</span>(y)                  <span class="co"># (1/m) X^T X, the same everywhere</span></span>
@@ -1076,7 +1083,7 @@ y^{(i)} - \bar y &amp;= (\hat y^{(i)} - \bar y) + e^{(i)}, \qquad e^{(i)} = y^{(
 </tbody>
 </table>
 <p>Always compare with a <strong>baseline</strong> (predict the mean or the median for everyone; <span class="math inline">\(R^2\)</span> does it for you) and <strong>report on validation or test data</strong>, in the units the business understands. Always look at a <strong>residual plot</strong> as well: a good model leaves residuals that look like structureless noise around 0 (section 15).</p>
-<div id="a448fec4" class="cell" data-execution_count="11">
+<div id="2398c9aa" class="cell" data-execution_count="11">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> mean_squared_error, mean_absolute_error, r2_score, mean_absolute_percentage_error</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="co"># the five houses of the worked example</span></span>
@@ -1153,10 +1160,14 @@ R^2  = 0.776  (sklearn 0.776)</code></pre>
 <h3 class="anchored" data-anchor-id="the-estimate-is-the-truth-plus-weighted-noise-unbiasedness">14.2 The estimate is the truth plus weighted noise; unbiasedness</h3>
 <p><span class="math display">\[
 \begin{aligned}
-\hat{\boldsymbol{\theta}} &amp;= (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{y} &amp;&amp; \text{normal equation}\\
-&amp;= (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top(\mathbf{X}\boldsymbol{\theta} + \boldsymbol{\varepsilon}) &amp;&amp; \text{substitute the model}\\
-&amp;= (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{X}\,\boldsymbol{\theta} + (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\boldsymbol{\varepsilon} &amp;&amp; \text{distribute}\\
-&amp;= \boldsymbol{\theta} + (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\boldsymbol{\varepsilon} . &amp;&amp; (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{X} = \mathbf{I}
+\hat{\boldsymbol{\theta}} &amp;= (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{y} \\
+&amp;\quad\small \text{normal equation}\\
+&amp;= (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top(\mathbf{X}\boldsymbol{\theta} + \boldsymbol{\varepsilon}) \\
+&amp;\quad\small \text{substitute the model}\\
+&amp;= (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{X}\,\boldsymbol{\theta} + (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\boldsymbol{\varepsilon} \\
+&amp;\quad\small \text{distribute}\\
+&amp;= \boldsymbol{\theta} + (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\boldsymbol{\varepsilon} . \\
+&amp;\quad\small (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{X} = \mathbf{I}
 \end{aligned}
 \]</span></p>
 <p>Take expectations with <span class="math inline">\(\mathbf{X}\)</span> fixed: <span class="math inline">\(\mathbb{E}[\hat{\boldsymbol{\theta}}\mid\mathbf{X}] = \boldsymbol{\theta} + (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\,\mathbb{E}[\boldsymbol{\varepsilon}\mid\mathbf{X}] = \boldsymbol{\theta}\)</span> by (i):</p>
@@ -1170,9 +1181,12 @@ R^2  = 0.776  (sklearn 0.776)</code></pre>
 <p>Write <span class="math inline">\(\mathbf{A} = (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\)</span>, so <span class="math inline">\(\hat{\boldsymbol{\theta}} = \boldsymbol{\theta} + \mathbf{A}\boldsymbol{\varepsilon}\)</span>:</p>
 <p><span class="math display">\[
 \begin{aligned}
-\mathrm{Cov}(\hat{\boldsymbol{\theta}}) &amp;= \mathbf{A}\,\mathrm{Cov}(\boldsymbol{\varepsilon})\,\mathbf{A}^\top &amp;&amp; \text{rule of 14.1; } \boldsymbol{\theta} \text{ is a constant}\\
-&amp;= \sigma^2\mathbf{A}\mathbf{A}^\top &amp;&amp; \text{assumption (ii)}\\
-&amp;= \sigma^2(\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{X}(\mathbf{X}^\top\mathbf{X})^{-1} &amp;&amp; \mathbf{A}^\top = \mathbf{X}(\mathbf{X}^\top\mathbf{X})^{-1}\text{, since } (\mathbf{X}^\top\mathbf{X})^{-1} \text{ is symmetric}\\
+\mathrm{Cov}(\hat{\boldsymbol{\theta}}) &amp;= \mathbf{A}\,\mathrm{Cov}(\boldsymbol{\varepsilon})\,\mathbf{A}^\top \\
+&amp;\quad\small \text{rule of 14.1; } \boldsymbol{\theta} \text{ is a constant}\\
+&amp;= \sigma^2\mathbf{A}\mathbf{A}^\top \\
+&amp;\quad\small \text{assumption (ii)}\\
+&amp;= \sigma^2(\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{X}(\mathbf{X}^\top\mathbf{X})^{-1} \\
+&amp;\quad\small \mathbf{A}^\top = \mathbf{X}(\mathbf{X}^\top\mathbf{X})^{-1}\text{, since } (\mathbf{X}^\top\mathbf{X})^{-1} \text{ is symmetric}\\
 &amp;= \sigma^2(\mathbf{X}^\top\mathbf{X})^{-1} .
 \end{aligned}
 \]</span></p>
@@ -1224,7 +1238,7 @@ R^2  = 0.776  (sklearn 0.776)</code></pre>
 \]</span></p>
 <p>The MLE <span class="math inline">\(\text{SSE}/m\)</span> of section 10 is too small on average by the factor <span class="math inline">\((m-n-1)/m\)</span>: the fit spends <span class="math inline">\(p = n+1\)</span> degrees of freedom chasing the noise, so the residuals are smaller than the errors. For the three points, <span class="math inline">\(\text{SSE} = \frac19 + \frac49 + \frac19 = \frac23\)</span> and <span class="math inline">\(m - n - 1 = 1\)</span>, so <span class="math inline">\(\hat\sigma^2 = \frac23\)</span>.</p>
 <p>The cell below checks 14.2–14.5 by simulation: keep the running example’s <span class="math inline">\(\mathbf{X}\)</span> (100 points), redraw the noise 5 000 times with <span class="math inline">\(\boldsymbol{\theta} = (4, 3)\)</span> and <span class="math inline">\(\sigma = 1\)</span>, and refit each time.</p>
-<div id="a22f5269" class="cell" data-execution_count="12">
+<div id="fb32b3ae" class="cell" data-execution_count="12">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy <span class="im">import</span> stats</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> ols_fit(X, y):</span>
@@ -1280,7 +1294,7 @@ t_j = \frac{\hat\theta_j - \theta_j}{\text{SE}_j} = \frac{(\hat\theta_j - \theta
 \]</span></p>
 <p>(for 95 % intervals <span class="math inline">\(a = 0.05\)</span> and the quantile is close to 2 once <span class="math inline">\(m - p\)</span> is more than about 30). The <strong>t test</strong> of <span class="math inline">\(H_0: \theta_j = 0\)</span> (“feature <span class="math inline">\(j\)</span> has no effect given the others”) uses <span class="math inline">\(t = \hat\theta_j/\text{SE}_j\)</span> and the p-value <span class="math inline">\(2\,P(T_{m-p} &gt; |t|)\)</span>.</p>
 <p><strong>Worked example.</strong> For the three points, <span class="math inline">\(\text{SE}(\hat\theta_1) = \sqrt{\hat\sigma^2 c_{11}} = \sqrt{\frac23\cdot\frac12} = \sqrt{1/3} = 0.577\)</span> and <span class="math inline">\(t = 3/0.577 = 5.20\)</span>. With <span class="math inline">\(m - p = 1\)</span> degree of freedom the 97.5 % quantile is <span class="math inline">\(12.71\)</span>, so the 95 % interval is <span class="math inline">\(3 \pm 12.71\times0.577 = 3 \pm 7.34\)</span>, i.e.&nbsp;<span class="math inline">\((-4.34,\ 10.34)\)</span>: three points cannot pin down a slope, even though the fit looks good.</p>
-<div id="057b8665" class="cell" data-execution_count="13">
+<div id="0801b967" class="cell" data-execution_count="13">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>f <span class="op">=</span> ols_fit(X, y)                                     <span class="co"># the running example, m = 100</span></span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>tq <span class="op">=</span> stats.t.ppf(<span class="fl">0.975</span>, f[<span class="st">"df"</span>])</span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>tstat <span class="op">=</span> f[<span class="st">"theta"</span>] <span class="op">/</span> f[<span class="st">"se"</span>]</span>
@@ -1312,9 +1326,12 @@ three points: t quantile (1 df) = 12.706,  CI = 3 +- 7.34</code></pre>
 <p><strong>Where will a new observation fall?</strong> <span class="math inline">\(y_0 = \mathbf{x}_0^\top\boldsymbol{\theta} + \varepsilon_0\)</span>, with <span class="math inline">\(\varepsilon_0\)</span> independent of the training noise:</p>
 <p><span class="math display">\[
 \begin{aligned}
-y_0 - \hat y_0 &amp;= \varepsilon_0 - \mathbf{x}_0^\top(\hat{\boldsymbol{\theta}} - \boldsymbol{\theta}) &amp;&amp; \text{subtract}\\
-\mathbb{E}[y_0 - \hat y_0] &amp;= 0 &amp;&amp; \text{both terms have mean zero}\\
-\mathrm{Var}(y_0 - \hat y_0) &amp;= \sigma^2 + \sigma^2 h_0 = \sigma^2(1 + h_0) &amp;&amp; \text{independent terms: variances add}
+y_0 - \hat y_0 &amp;= \varepsilon_0 - \mathbf{x}_0^\top(\hat{\boldsymbol{\theta}} - \boldsymbol{\theta}) \\
+&amp;\quad\small \text{subtract}\\
+\mathbb{E}[y_0 - \hat y_0] &amp;= 0 \\
+&amp;\quad\small \text{both terms have mean zero}\\
+\mathrm{Var}(y_0 - \hat y_0) &amp;= \sigma^2 + \sigma^2 h_0 = \sigma^2(1 + h_0) \\
+&amp;\quad\small \text{independent terms: variances add}
 \end{aligned}
 \]</span></p>
 <p>Under normality, the same argument as in 14.6 gives <span class="math inline">\(t\)</span> distributions with <span class="math inline">\(m-p\)</span> degrees of freedom, hence</p>
@@ -1324,13 +1341,15 @@ y_0 - \hat y_0 &amp;= \varepsilon_0 - \mathbf{x}_0^\top(\hat{\boldsymbol{\theta}
 <p>The second is the <strong>prediction interval</strong>, the one to quote with a forecast. For one feature, <span class="math inline">\(h_0\)</span> has a simple form. With <span class="math inline">\(S = \sum_i(x_i - \bar x)^2\)</span> and the inverse from 14.3, <span class="math inline">\((\mathbf{X}^\top\mathbf{X})^{-1} = \frac{1}{mS}\begin{pmatrix}\sum x^2 &amp; -\sum x\\ -\sum x &amp; m\end{pmatrix}\)</span> (the determinant is <span class="math inline">\(m\sum x^2 - (\sum x)^2 = mS\)</span>):</p>
 <p><span class="math display">\[
 \begin{aligned}
-h_0 &amp;= \frac{\sum_i x_i^2 - 2x_0\sum_i x_i + m x_0^2}{mS} &amp;&amp; \mathbf{x}_0 = (1, x_0)\text{, multiply out}\\
-&amp;= \frac{S + m\bar x^2 - 2m x_0\bar x + m x_0^2}{mS} = \frac{S + m(x_0 - \bar x)^2}{mS} &amp;&amp; \textstyle\sum x^2 = S + m\bar x^2,\ \sum x = m\bar x\\
+h_0 &amp;= \frac{\sum_i x_i^2 - 2x_0\sum_i x_i + m x_0^2}{mS} \\
+&amp;\quad\small \mathbf{x}_0 = (1, x_0)\text{, multiply out}\\
+&amp;= \frac{S + m\bar x^2 - 2m x_0\bar x + m x_0^2}{mS} = \frac{S + m(x_0 - \bar x)^2}{mS} \\
+&amp;\quad\small \textstyle\sum x^2 = S + m\bar x^2,\ \sum x = m\bar x\\
 &amp;= \frac1m + \frac{(x_0 - \bar x)^2}{\sum_i (x_i - \bar x)^2} .
 \end{aligned}
 \]</span></p>
 <p>Both bands are narrowest at <span class="math inline">\(\bar x\)</span> and widen quadratically away from it (extrapolation is expensive, section 15.8). As <span class="math inline">\(m\)</span> grows the confidence band shrinks to zero, but the prediction band never gets narrower than <span class="math inline">\(\pm t\,\hat\sigma\)</span>: the noise of a single new observation is irreducible.</p>
-<div id="8b439439" class="cell" data-execution_count="14">
+<div id="bed18899" class="cell" data-execution_count="14">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>x0 <span class="op">=</span> np.linspace(<span class="op">-</span><span class="dv">1</span>, <span class="dv">3</span>, <span class="dv">200</span>)<span class="op">;</span> X0 <span class="op">=</span> np.c_[np.ones(<span class="dv">200</span>), x0]</span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>h0 <span class="op">=</span> np.einsum(<span class="st">"ij,jk,ik-&gt;i"</span>, X0, f[<span class="st">"XtX_inv"</span>], X0)</span>
 <span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>band_ci, band_pi <span class="op">=</span> tq <span class="op">*</span> np.sqrt(f[<span class="st">"s2"</span>] <span class="op">*</span> h0), tq <span class="op">*</span> np.sqrt(f[<span class="st">"s2"</span>] <span class="op">*</span> (<span class="dv">1</span> <span class="op">+</span> h0))</span>
@@ -1394,7 +1413,7 @@ new observations inside their 95% prediction interval: 95.2%</code></pre>
 <li>“Linear” and “unbiased” are restrictions. A slightly <strong>biased</strong> estimator can have a much smaller mean squared error: Ridge regression (<a href="03_regularization_inputs_assumptions.html#ridge-bias-variance">note 03</a>) always beats OLS in mean squared error for a well-chosen <span class="math inline">\(\lambda\)</span>. A <strong>non-linear</strong> estimator (the Huber fit of section 15.7) can be far better when the noise has heavy tails. With Gaussian noise a stronger result holds (OLS has the smallest variance among <em>all</em> unbiased estimators, linear or not); we do not prove it here.</li>
 </ul>
 <p><strong>A competitor that loses.</strong> Wald’s grouping estimator splits the points at the median of <span class="math inline">\(x\)</span> and uses the slope between the two group means, <span class="math inline">\(\tilde\theta_1 = (\bar y_{\text{upper}} - \bar y_{\text{lower}})/(\bar x_{\text{upper}} - \bar x_{\text{lower}})\)</span>. It is linear in <span class="math inline">\(\mathbf{y}\)</span> and unbiased (the expected difference of the group means is <span class="math inline">\(\theta_1(\bar x_{\text{upper}} - \bar x_{\text{lower}})\)</span>, the intercepts cancel), so Gauss–Markov says it cannot beat OLS:</p>
-<div id="4bb9f1e5" class="cell" data-execution_count="15">
+<div id="6eb58737" class="cell" data-execution_count="15">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>upper <span class="op">=</span> x <span class="op">&gt;</span> np.median(x)</span>
 <span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>c <span class="op">=</span> np.where(upper, <span class="dv">1</span> <span class="op">/</span> upper.<span class="bu">sum</span>(), <span class="op">-</span><span class="dv">1</span> <span class="op">/</span> (<span class="op">~</span>upper).<span class="bu">sum</span>()) <span class="op">/</span> (x[upper].mean() <span class="op">-</span> x[<span class="op">~</span>upper].mean())   <span class="co"># theta_tilde = c @ y</span></span>
 <span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>wald <span class="op">=</span> c <span class="op">@</span> Y                                            <span class="co"># on the same 5000 simulated datasets</span></span>
@@ -1491,7 +1510,7 @@ OLS slope     : mean 2.9954,            variance 0.0339  (theory 0.0337)</code><
 </tbody>
 </table>
 <p>Items 1–6 are assumptions of the model; 7 and 8 are conditions for trusting a particular fit or a particular prediction. The helpers below are used throughout the section (<code>ols_fit</code> was defined in section 14.5).</p>
-<div id="538ac081" class="cell" data-execution_count="16">
+<div id="bc696aac" class="cell" data-execution_count="16">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> binned(x, y, bins<span class="op">=</span><span class="dv">12</span>):</span>
 <span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Mean of y in quantile bins of x: a simple smoother to draw trend lines through residual plots."""</span></span>
 <span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>    edges <span class="op">=</span> np.quantile(x, np.linspace(<span class="dv">0</span>, <span class="dv">1</span>, bins <span class="op">+</span> <span class="dv">1</span>))</span>
@@ -1521,7 +1540,7 @@ OLS slope     : mean 2.9954,            variance 0.0339  (theory 0.0337)</code><
 <li><strong>RESET test</strong> (Ramsey): add <span class="math inline">\(\hat y^2\)</span> and <span class="math inline">\(\hat y^3\)</span> as extra columns and test whether they improve the fit with the nested-model <strong>F test</strong>, <span class="math inline">\(F = \frac{(\text{SSE}_{\text{small}} - \text{SSE}_{\text{big}})/q}{\text{SSE}_{\text{big}}/(m - p_{\text{big}})}\)</span>, which under the model (with normal errors) follows an <span class="math inline">\(F_{q,\,m-p_{\text{big}}}\)</span> distribution (<span class="math inline">\(q\)</span> added columns, <span class="math inline">\(p_{\text{big}}\)</span> parameters in the big model). Curvature anywhere shows up as residuals correlated with powers of <span class="math inline">\(\hat y\)</span>. Caveats: RESET says <em>that</em> something is missing, not <em>which</em> feature; with large <span class="math inline">\(m\)</span> it flags harmless curvature, so look at the plots and at how much the RMSE improves.</li>
 </ul>
 <p>Below, two features, <span class="math inline">\(x_1 \sim U(0, 3)\)</span> and <span class="math inline">\(x_2 \sim U(-2, 2)\)</span>, 300 points, noise <span class="math inline">\(\sigma = 0.5\)</span>. In one dataset <span class="math inline">\(y = 1 + 2x_1 + 1.5x_2 + \varepsilon\)</span> (the assumption holds); in the other the effect of <span class="math inline">\(x_2\)</span> is curved, <span class="math inline">\(y = 1 + 2x_1 + 1.5x_2 + 0.8x_2^2 + \varepsilon\)</span>.</p>
-<div id="9db274ed" class="cell" data-execution_count="17">
+<div id="485ac6e6" class="cell" data-execution_count="17">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>rng_l <span class="op">=</span> np.random.default_rng(<span class="dv">1</span>)<span class="op">;</span> ml <span class="op">=</span> <span class="dv">300</span></span>
 <span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>x1, x2 <span class="op">=</span> rng_l.uniform(<span class="dv">0</span>, <span class="dv">3</span>, ml), rng_l.uniform(<span class="op">-</span><span class="dv">2</span>, <span class="dv">2</span>, ml)</span>
 <span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>Xl <span class="op">=</span> np.c_[np.ones(ml), x1, x2]</span>
@@ -1595,7 +1614,7 @@ fixed model coefficients: [1.034 1.964 1.524 0.794]   (truth 1, 2, 1.5, 0.8)</co
 \]</span></p>
 <p><span class="math inline">\(\text{DW} \approx 2\)</span> means no lag-1 autocorrelation, towards 0 strong positive and towards 4 negative autocorrelation; values between about 1.5 and 2.5 are usually fine. Its exact null distribution depends on <span class="math inline">\(\mathbf{X}\)</span>, so we simulate it: under independence <span class="math inline">\(\mathbf{e} = (\mathbf{I}-\mathbf{H})\boldsymbol{\varepsilon}\)</span> with i.i.d. <span class="math inline">\(\boldsymbol{\varepsilon}\)</span>, which we can draw many times.</p>
 <p>Below: 200 consecutive months, <span class="math inline">\(x_t\)</span> a linear trend from 0 to 3, <span class="math inline">\(y_t = 1 + 0.5x_t + \varepsilon_t\)</span>. The errors are either i.i.d. <span class="math inline">\(\mathcal{N}(0,1)\)</span> or <strong>AR(1)</strong>, <span class="math inline">\(\varepsilon_t = 0.8\,\varepsilon_{t-1} + u_t\)</span> with <span class="math inline">\(u_t\)</span> i.i.d. (a shock persists into the next months).</p>
-<div id="e2093701" class="cell" data-execution_count="18">
+<div id="7d857bd2" class="cell" data-execution_count="18">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> ar1(rng_, m_, rho, sd<span class="op">=</span><span class="fl">1.0</span>):</span>
 <span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""AR(1) errors e_t = rho e_{t-1} + u_t, started from their stationary distribution."""</span></span>
 <span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>    u <span class="op">=</span> rng_.normal(<span class="dv">0</span>, sd, m_)<span class="op">;</span> e <span class="op">=</span> np.empty(m_)<span class="op">;</span> e[<span class="dv">0</span>] <span class="op">=</span> u[<span class="dv">0</span>] <span class="op">/</span> np.sqrt(<span class="dv">1</span> <span class="op">-</span> rho<span class="op">**</span><span class="dv">2</span>)</span>
@@ -1643,7 +1662,7 @@ AR(1)      : DW = 0.403,  2(1 - r1) = 0.407
 </div>
 </div>
 <p>How wrong are the standard errors? Simulate 2 000 series with AR(1) errors (<span class="math inline">\(\rho = 0.8\)</span>, <span class="math inline">\(u_t \sim \mathcal{N}(0,1)\)</span>) and the same trend, and compare the real spread of the slope estimates with the SE that OLS reports:</p>
-<div id="751b8d05" class="cell" data-execution_count="19">
+<div id="76a7f1d2" class="cell" data-execution_count="19">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>rng_s <span class="op">=</span> np.random.default_rng(<span class="dv">4</span>)<span class="op">;</span> Rs <span class="op">=</span> <span class="dv">2000</span></span>
 <span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>A_t <span class="op">=</span> np.linalg.solve(Xt.T <span class="op">@</span> Xt, Xt.T)</span>
 <span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>Ys <span class="op">=</span> (<span class="dv">1</span> <span class="op">+</span> <span class="fl">0.5</span> <span class="op">*</span> xt)[:, <span class="va">None</span>] <span class="op">+</span> np.array([ar1(rng_s, mt, <span class="fl">0.8</span>) <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(Rs)]).T</span>
@@ -1696,7 +1715,7 @@ y_t - \rho y_{t-1} = (\mathbf{x}_t - \rho\mathbf{x}_{t-1})^\top\boldsymbol{\thet
 <li><strong>Breusch–Pagan test</strong> (Koenker’s version), from scratch: regress the squared residuals on the features, <span class="math inline">\(e_i^2 = \gamma_0 + \boldsymbol{\gamma}^\top\mathbf{x}^{(i)} + v_i\)</span>. If the variance is constant the features cannot predict <span class="math inline">\(e^2\)</span> and the <span class="math inline">\(R^2\)</span> of this auxiliary regression is near 0. Under <span class="math inline">\(H_0\)</span>, <span class="math inline">\(\text{LM} = m\,R^2_{\text{aux}}\)</span> approximately follows a <span class="math inline">\(\chi^2_n\)</span> distribution (<span class="math inline">\(n\)</span> features in the auxiliary regression). Caveat: with large <span class="math inline">\(m\)</span> it rejects tiny, harmless heteroscedasticity; always look at the size of the effect, e.g.&nbsp;the ratio of residual spreads between the top and bottom fifth of fitted values.</li>
 </ul>
 <p>Below: a skewed feature (say, vehicle value in k€, log-normal, 200 policies), <span class="math inline">\(y = 5 + 0.8x + \varepsilon\)</span>. In one dataset the noise has constant <span class="math inline">\(\sigma = 1.5\)</span>; in the other its standard deviation is <span class="math inline">\(0.08\,x\)</span>, proportional to the feature.</p>
-<div id="12960a35" class="cell" data-execution_count="20">
+<div id="a0274f56" class="cell" data-execution_count="20">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> breusch_pagan(X, e):</span>
 <span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Koenker's LM = m * R^2 of e^2 on the columns of X; approximately chi^2 with n = (columns - 1) df."""</span></span>
 <span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>    m_, p_ <span class="op">=</span> X.shape<span class="op">;</span> e2 <span class="op">=</span> e<span class="op">**</span><span class="dv">2</span><span class="op">;</span> fb <span class="op">=</span> ols_fit(X, e2)</span>
@@ -1753,7 +1772,7 @@ J_w(\boldsymbol{\theta}) &amp;= \mathbf{y}^\top\mathbf{W}\mathbf{y} - 2(\mathbf{
 \widehat{\mathrm{Cov}}_{\text{HC0}}(\hat{\boldsymbol{\theta}}) = (\mathbf{X}^\top\mathbf{X})^{-1}\Big(\sum_i e_i^2\,\mathbf{x}^{(i)}\mathbf{x}^{(i)\top}\Big)(\mathbf{X}^\top\mathbf{X})^{-1}.
 \]</span> Because <span class="math inline">\(\mathbb{E}[e_i^2] = \sigma^2(1-h_{ii})\)</span> under homoscedasticity (14.4), residuals at high-leverage points are too small; <strong>HC3</strong> uses <span class="math inline">\(e_i^2/(1-h_{ii})^2\)</span> instead and behaves better in small samples.</li>
 </ol>
-<div id="115d2aea" class="cell" data-execution_count="21">
+<div id="d85a14b4" class="cell" data-execution_count="21">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>lams_bc <span class="op">=</span> np.linspace(<span class="op">-</span><span class="dv">1</span>, <span class="dv">2</span>, <span class="dv">61</span>)</span>
 <span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> boxcox_profile(X, yy, lams):</span>
 <span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>    out <span class="op">=</span> []</span>
@@ -1819,7 +1838,7 @@ HC3   95% CIs containing 0.8: 92.9%</code></pre>
 <li><strong>Shapiro–Wilk</strong> (<code>scipy.stats.shapiro</code>) tests normality. Caveats: residuals are slightly correlated (<span class="math inline">\(\mathrm{Cov}(\mathbf{e}) = \sigma^2(\mathbf{I}-\mathbf{H})\)</span>); with small <span class="math inline">\(m\)</span> it has little power; with large <span class="math inline">\(m\)</span> it rejects departures far too small to matter.</li>
 </ul>
 <p>Below: 200 points, <span class="math inline">\(y = 1 + 2x + \varepsilon\)</span> with three noise distributions of variance 1: normal, skewed (exponential minus 1) and heavy-tailed (Student <span class="math inline">\(t\)</span> with 3 degrees of freedom, rescaled).</p>
-<div id="116c6768" class="cell" data-execution_count="22">
+<div id="9adff482" class="cell" data-execution_count="22">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>rng_n <span class="op">=</span> np.random.default_rng(<span class="dv">6</span>)<span class="op">;</span> mn_ <span class="op">=</span> <span class="dv">200</span></span>
 <span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>xq <span class="op">=</span> rng_n.uniform(<span class="dv">0</span>, <span class="dv">3</span>, mn_)<span class="op">;</span> Xq <span class="op">=</span> np.c_[np.ones(mn_), xq]</span>
 <span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>noises <span class="op">=</span> {<span class="st">"normal"</span>: rng_n.normal(<span class="dv">0</span>, <span class="dv">1</span>, mn_), <span class="st">"skewed"</span>: rng_n.exponential(<span class="dv">1</span>, mn_) <span class="op">-</span> <span class="dv">1</span>,</span>
@@ -1853,7 +1872,7 @@ heavy-tailed: Shapiro-Wilk p = 0.00028,  skewness -0.51,  excess kurtosis  2.07<
 </div>
 </div>
 <p>The large-<span class="math inline">\(m\)</span> case is the caveat in action: noise with Student-<span class="math inline">\(t\)</span> tails and 10 degrees of freedom is almost Gaussian and harmless for every result of section 14, yet the test rejects with a tiny p-value. Now what non-normality actually does, with the skewed noise:</p>
-<div id="6002c1fd" class="cell" data-execution_count="23">
+<div id="4ea93f1b" class="cell" data-execution_count="23">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> mm <span class="kw">in</span> [<span class="dv">8</span>, <span class="dv">200</span>]:                                     <span class="co"># coefficient CIs: coverage with skewed noise</span></span>
 <span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>    rr <span class="op">=</span> np.random.default_rng(<span class="dv">9</span>)<span class="op">;</span> xs_ <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">3</span>, mm)<span class="op">;</span> Xs_ <span class="op">=</span> np.c_[np.ones(mm), xs_]</span>
 <span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>    A_s <span class="op">=</span> np.linalg.solve(Xs_.T <span class="op">@</span> Xs_, Xs_.T)<span class="op">;</span> Ysk <span class="op">=</span> (<span class="dv">1</span> <span class="op">+</span> <span class="dv">2</span> <span class="op">*</span> xs_)[:, <span class="va">None</span>] <span class="op">+</span> rr.exponential(<span class="dv">1</span>, (mm, <span class="dv">5000</span>)) <span class="op">-</span> <span class="dv">1</span></span>
@@ -1927,7 +1946,7 @@ empirical-quantile: covers 93.5%,  misses below 3.2%,  above 3.3%</code></pre>
 <p><strong>(c) The condition number</strong> <span class="math inline">\(\kappa = \sqrt{\lambda_{\max}/\lambda_{\min}}\)</span> of the standardised feature matrix (its largest over its smallest singular value; the square root because it refers to <span class="math inline">\(\mathbf{X}\)</span>, not <span class="math inline">\(\mathbf{X}^\top\mathbf{X}\)</span>). Common rules of thumb: above 30 strong collinearity, 10–30 moderate. It depends on the scaling of the columns (section 6), so compute it after standardising. The eigenvector of the smallest eigenvalue tells <em>which</em> combination is nearly constant.</p>
 <p><strong>How to check.</strong> Symptoms: large standard errors; coefficients individually “not significant” while the model fits well and a joint test of the group is highly significant; signs contrary to common sense; coefficients that jump when a feature or a few rows are added or removed, while the <strong>predictions</strong> (inside the range of the data) and the test error barely change. Diagnostics: the matrix rank (perfect case), VIFs, the condition number and its eigenvector, and the <strong>bootstrap</strong> (refit on resamples of the rows and look at the spread of each coefficient).</p>
 <p>Below: a made-up motor portfolio of 200 policies. The premium depends on the driver’s age, the years since the driving licence was obtained (which is age minus 18 to 21) and the annual mileage (thousand km): premium <span class="math inline">\(= 300 + 1.0\cdot\text{age} - 4\cdot\text{licence years} + 6\cdot\text{mileage} + \varepsilon\)</span>, <span class="math inline">\(\sigma = 40\)</span> €.</p>
-<div id="3943cac8" class="cell" data-execution_count="24">
+<div id="6e8744c2" class="cell" data-execution_count="24">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> make_policies(rng_, m_):</span>
 <span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>    age <span class="op">=</span> rng_.uniform(<span class="dv">25</span>, <span class="dv">70</span>, m_)</span>
 <span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>    lic <span class="op">=</span> age <span class="op">-</span> <span class="dv">18</span> <span class="op">-</span> rng_.uniform(<span class="dv">0</span>, <span class="dv">3</span>, m_)             <span class="co"># licence obtained between 18 and 21</span></span>
@@ -1964,7 +1983,7 @@ eigenvector of the smallest eigenvalue (age, licence, mileage): [-0.707  0.707  
 joint F test that age and licence both have no effect: p = 3e-29</code></pre>
 </div>
 </div>
-<div id="f92b7ae9" class="cell" data-execution_count="25">
+<div id="4830ea75" class="cell" data-execution_count="25">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>rng_bs <span class="op">=</span> np.random.default_rng(<span class="dv">11</span>)<span class="op">;</span> B <span class="op">=</span> <span class="dv">500</span></span>
 <span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>x_typ <span class="op">=</span> np.array([<span class="dv">1</span>, <span class="dv">45</span>, <span class="dv">25</span>, <span class="fl">15.0</span>])                               <span class="co"># a typical policy: 45 years old, licence 25 years, 15k km</span></span>
 <span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>boot <span class="op">=</span> np.array([np.linalg.lstsq(Xp[i], prem[i], rcond<span class="op">=</span><span class="va">None</span>)[<span class="dv">0</span>] <span class="cf">for</span> i <span class="kw">in</span> rng_bs.integers(<span class="dv">0</span>, <span class="dv">200</span>, (B, <span class="dv">200</span>))])</span>
@@ -2001,7 +2020,7 @@ prediction for the typical policy: 331.3 EUR, bootstrap sd 3.2 EUR</code></pre>
 <li><strong>Principal-component regression (PCR)</strong>: regress <span class="math inline">\(y\)</span> on the first <span class="math inline">\(k\)</span> principal components of the standardised features, i.e.&nbsp;drop the directions with tiny <span class="math inline">\(\lambda_k\)</span>, exactly where the variance explodes. Cost: components are hard to interpret, and PCA ignores <span class="math inline">\(y\)</span>, so a dropped direction may be the one that matters.</li>
 <li><strong>Ridge regression</strong> (<a href="03_regularization_inputs_assumptions.html#ridge-svd">note 03</a>): it adds <span class="math inline">\(\lambda\)</span> to every eigenvalue, so the variance along <span class="math inline">\(\mathbf{v}_k\)</span> becomes <span class="math inline">\(\sigma^2\lambda_k/(\lambda_k + \lambda)^2 \le \sigma^2/(4\lambda)\)</span>, bounded however small <span class="math inline">\(\lambda_k\)</span> is, at the cost of a little bias.</li>
 </ol>
-<div id="7a95031d" class="cell" data-execution_count="26">
+<div id="f186e5a7" class="cell" data-execution_count="26">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb47"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.pipeline <span class="im">import</span> make_pipeline</span>
 <span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.preprocessing <span class="im">import</span> StandardScaler</span>
 <span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.decomposition <span class="im">import</span> PCA</span>
@@ -2055,15 +2074,18 @@ bootstrap sd of the standardised coefficients (age, licence, mileage): OLS [42.3
 <p><strong>Why it matters.</strong> Unbiasedness (14.2) used exactly this assumption. The <strong>omitted-variable bias</strong> formula: suppose the truth is <span class="math inline">\(\mathbf{y} = \mathbf{X}_1\boldsymbol{\beta}_1 + \mathbf{x}_2\beta_2 + \boldsymbol{\varepsilon}\)</span> with <span class="math inline">\(\mathbb{E}[\boldsymbol{\varepsilon}\mid\mathbf{X}_1, \mathbf{x}_2] = \mathbf{0}\)</span>, but we fit <span class="math inline">\(\mathbf{y}\)</span> on <span class="math inline">\(\mathbf{X}_1\)</span> only:</p>
 <p><span class="math display">\[
 \begin{aligned}
-\hat{\boldsymbol{\beta}}_1 &amp;= (\mathbf{X}_1^\top\mathbf{X}_1)^{-1}\mathbf{X}_1^\top\mathbf{y} &amp;&amp; \text{the "short" regression}\\
-&amp;= \boldsymbol{\beta}_1 + (\mathbf{X}_1^\top\mathbf{X}_1)^{-1}\mathbf{X}_1^\top\mathbf{x}_2\,\beta_2 + (\mathbf{X}_1^\top\mathbf{X}_1)^{-1}\mathbf{X}_1^\top\boldsymbol{\varepsilon} &amp;&amp; \text{substitute the truth, distribute}\\
-\mathbb{E}[\hat{\boldsymbol{\beta}}_1] &amp;= \boldsymbol{\beta}_1 + \boldsymbol{\delta}\,\beta_2,\qquad \boldsymbol{\delta} = (\mathbf{X}_1^\top\mathbf{X}_1)^{-1}\mathbf{X}_1^\top\mathbf{x}_2 . &amp;&amp; \text{the noise term has mean zero}
+\hat{\boldsymbol{\beta}}_1 &amp;= (\mathbf{X}_1^\top\mathbf{X}_1)^{-1}\mathbf{X}_1^\top\mathbf{y} \\
+&amp;\quad\small \text{the "short" regression}\\
+&amp;= \boldsymbol{\beta}_1 + (\mathbf{X}_1^\top\mathbf{X}_1)^{-1}\mathbf{X}_1^\top\mathbf{x}_2\,\beta_2 + (\mathbf{X}_1^\top\mathbf{X}_1)^{-1}\mathbf{X}_1^\top\boldsymbol{\varepsilon} \\
+&amp;\quad\small \text{substitute the truth, distribute}\\
+\mathbb{E}[\hat{\boldsymbol{\beta}}_1] &amp;= \boldsymbol{\beta}_1 + \boldsymbol{\delta}\,\beta_2,\qquad \boldsymbol{\delta} = (\mathbf{X}_1^\top\mathbf{X}_1)^{-1}\mathbf{X}_1^\top\mathbf{x}_2 . \\
+&amp;\quad\small \text{the noise term has mean zero}
 \end{aligned}
 \]</span></p>
 <p><span class="math inline">\(\boldsymbol{\delta}\)</span> is the coefficient vector of the regression of the omitted <span class="math inline">\(\mathbf{x}_2\)</span> on the included features. The bias <span class="math inline">\(\boldsymbol{\delta}\beta_2\)</span> is non-zero exactly when the omitted variable matters (<span class="math inline">\(\beta_2 \ne 0\)</span>) <strong>and</strong> is correlated with the included ones (<span class="math inline">\(\boldsymbol{\delta}\neq\mathbf{0}\)</span>); with one included feature, <span class="math inline">\(\delta = \mathrm{Cov}(x_1, x_2)/\mathrm{Var}(x_1)\)</span>. The coefficient then measures the effect of <span class="math inline">\(x_1\)</span> <strong>plus</strong> the effect of everything that moves together with <span class="math inline">\(x_1\)</span>. More data does not help: the bias does not shrink with <span class="math inline">\(m\)</span>. <strong>Measurement error</strong> biases towards zero: if we observe <span class="math inline">\(\tilde x = x + u\)</span> with independent noise <span class="math inline">\(u\)</span>, the least-squares slope tends to <span class="math inline">\(\mathrm{Cov}(\tilde x, y)/\mathrm{Var}(\tilde x) = \beta\sigma_x^2/(\sigma_x^2 + \sigma_u^2)\)</span> (because <span class="math inline">\(\mathrm{Cov}(x + u, \beta x + \varepsilon) = \beta\sigma_x^2\)</span>), the <strong>attenuation</strong> factor.</p>
 <p><strong>Prediction vs causation.</strong> For predicting <span class="math inline">\(y\)</span> on new data from the same process, the short model is perfectly legitimate: it is the best linear predictor given <span class="math inline">\(x_1\)</span>, using <span class="math inline">\(x_1\)</span> as a proxy for the omitted <span class="math inline">\(x_2\)</span>. It fails when we <strong>intervene</strong> (change <span class="math inline">\(x_1\)</span> without <span class="math inline">\(x_2\)</span> moving with it, e.g.&nbsp;a pricing decision) or when the relation between <span class="math inline">\(x_1\)</span> and <span class="math inline">\(x_2\)</span> changes in deployment. Reading a coefficient as “what happens to <span class="math inline">\(y\)</span> if we change <span class="math inline">\(x_j\)</span>” needs exogeneity; predicting does not.</p>
 <p><strong>How to check.</strong> <strong>Not from the residuals.</strong> The normal equations force <span class="math inline">\(\mathbf{X}^\top\mathbf{e} = \mathbf{0}\)</span>: the residuals are uncorrelated with every included feature by construction, so the residual plot of a confounded model looks perfect. What helps: domain knowledge and a causal diagram (what affects both the feature and the outcome?), the stability of a coefficient when plausible controls are added (a big change reveals confounding), and designs that break the confounding: randomised experiments (A/B tests) or natural experiments and instrumental variables (beyond this course).</p>
-<div id="576f7297" class="cell" data-execution_count="27">
+<div id="a6ce949c" class="cell" data-execution_count="27">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb49"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>rng_o <span class="op">=</span> np.random.default_rng(<span class="dv">15</span>)<span class="op">;</span> mo <span class="op">=</span> <span class="dv">500</span></span>
 <span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>x1o <span class="op">=</span> rng_o.normal(<span class="dv">0</span>, <span class="dv">1</span>, mo)<span class="op">;</span> x2o <span class="op">=</span> <span class="fl">0.8</span> <span class="op">*</span> x1o <span class="op">+</span> rng_o.normal(<span class="dv">0</span>, <span class="fl">0.6</span>, mo)       <span class="co"># x2 moves with x1</span></span>
 <span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>yo <span class="op">=</span> <span class="dv">1</span> <span class="op">+</span> <span class="dv">2</span> <span class="op">*</span> x1o <span class="op">+</span> <span class="dv">3</span> <span class="op">*</span> x2o <span class="op">+</span> rng_o.normal(<span class="dv">0</span>, <span class="dv">1</span>, mo)</span>
@@ -2132,7 +2154,7 @@ D_i &amp;= \frac{\lVert\mathbf{X}\hat{\boldsymbol{\theta}} - \mathbf{X}\hat{\bol
 \]</span></p>
 <p>Rules of thumb: <span class="math inline">\(D_i &gt; 1\)</span> is very influential, <span class="math inline">\(D_i &gt; 4/m\)</span> deserves a look.</p>
 <p><strong>How to check.</strong> Below, 30 clean points around <span class="math inline">\(y = 2 + 0.5x\)</span> (<span class="math inline">\(x \in [0, 10]\)</span>, <span class="math inline">\(\sigma = 1\)</span>) and three ways of adding a 31st point: <strong>A</strong>, an outlier in <span class="math inline">\(y\)</span> in the middle of the <span class="math inline">\(x\)</span> range; <strong>B</strong>, a point far out in <span class="math inline">\(x\)</span> (<span class="math inline">\(x = 25\)</span>) that lies on the line fitted to the other 30; <strong>C</strong>, a point at <span class="math inline">\(x = 25\)</span> far below the line.</p>
-<div id="f74d1007" class="cell" data-execution_count="28">
+<div id="674002c6" class="cell" data-execution_count="28">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb51"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> influence(X, y):</span>
 <span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>    f_ <span class="op">=</span> ols_fit(X, y)<span class="op">;</span> p_ <span class="op">=</span> X.shape[<span class="dv">1</span>]</span>
 <span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>    r_std <span class="op">=</span> f_[<span class="st">"e"</span>] <span class="op">/</span> np.sqrt(f_[<span class="st">"s2"</span>] <span class="op">*</span> (<span class="dv">1</span> <span class="op">-</span> f_[<span class="st">"h"</span>]))</span>
@@ -2195,7 +2217,7 @@ LOOCV MSE of the clean fit: shortcut 0.7589, refitting 30 times 0.7589</code></p
 <li><strong>Never delete points blindly</strong> to improve the fit. If you exclude something, say so and report the fit with and without it.</li>
 <li>If the “outliers” are simply the long right tail of a skewed variable, <strong>transform</strong> it (log; section 16.1 for the target, <a href="03_regularization_inputs_assumptions.html#skewed-features">note 03</a> for features).</li>
 </ol>
-<div id="d59e210f" class="cell" data-execution_count="29">
+<div id="ecf3c401" class="cell" data-execution_count="29">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb54"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.linear_model <span class="im">import</span> HuberRegressor</span>
 <span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>rng_u <span class="op">=</span> np.random.default_rng(<span class="dv">14</span>)<span class="op">;</span> mu_ <span class="op">=</span> <span class="dv">100</span></span>
 <span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>xu <span class="op">=</span> rng_u.uniform(<span class="dv">0</span>, <span class="dv">10</span>, mu_)<span class="op">;</span> yu <span class="op">=</span> <span class="dv">2</span> <span class="op">+</span> <span class="fl">0.5</span> <span class="op">*</span> xu <span class="op">+</span> rng_u.normal(<span class="dv">0</span>, <span class="dv">1</span>, mu_)</span>
@@ -2214,7 +2236,7 @@ Huber: intercept 2.05, slope 0.516   (truth 2, 0.5)</code></pre>
 <p><strong>What it says.</strong> Predictions are only supported where there is data. Outside the range of the training features, or outside the region of their <em>joint</em> distribution, linearity is an untested assumption.</p>
 <p><strong>Why it matters.</strong> The prediction interval of 14.7 widens as <span class="math inline">\((x_0 - \bar x)^2\)</span>, but even that assumes the straight line holds out there; real relationships saturate or bend (repair costs vs vehicle age, dose and response). <strong>Hidden extrapolation</strong> is the multivariate trap: every feature is inside its own range, but the combination is not (a 30-year-old with 28 years of driving licence).</p>
 <p><strong>How to check.</strong> Compare the leverage of the new point, <span class="math inline">\(h_0 = \mathbf{x}_0^\top(\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{x}_0\)</span>, with the training leverages: <span class="math inline">\(h_0 &gt; \max_i h_{ii}\)</span> means <span class="math inline">\(\mathbf{x}_0\)</span> lies outside the ellipsoid that contains the data.</p>
-<div id="1044d4a8" class="cell" data-execution_count="30">
+<div id="98b3e6e4" class="cell" data-execution_count="30">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb56"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>rng_e <span class="op">=</span> np.random.default_rng(<span class="dv">16</span>)<span class="op">;</span> me <span class="op">=</span> <span class="dv">60</span></span>
 <span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>xe <span class="op">=</span> rng_e.uniform(<span class="dv">0</span>, <span class="dv">4</span>, me)<span class="op">;</span> f_true <span class="op">=</span> <span class="kw">lambda</span> t: <span class="dv">3</span> <span class="op">*</span> np.log1p(t)                <span class="co"># the truth bends</span></span>
 <span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a>ye <span class="op">=</span> f_true(xe) <span class="op">+</span> rng_e.normal(<span class="dv">0</span>, <span class="fl">0.3</span>, me)</span>
@@ -2374,7 +2396,7 @@ hidden extrapolation: age 30 in [26, 69], licence 28 in [5, 50], but h0 = 2.10 v
 \]</span></p>
 <p>So <span class="math inline">\(e^{\hat y}\)</span> underestimates the expected cost by the factor <span class="math inline">\(e^{-\sigma^2/2}\)</span>, and a reserve or a premium built on it is systematically too low.</p>
 <p><strong>What to do.</strong> Multiply by <span class="math inline">\(e^{\hat\sigma^2/2}\)</span> (if the log-residuals are normal), or by <strong>Duan’s smearing factor</strong> <span class="math inline">\(\frac1m\sum_i e^{e_i}\)</span> (the average of the exponentiated residuals, which needs no normality). Alternatively, fit a GLM with a log link (Gamma or Tweedie regression, <a href="02b_generalized_linear_models.html">note 02b</a>; scikit-learn’s <code>GammaRegressor</code>, <code>TweedieRegressor</code>), which models the mean directly.</p>
-<div id="6d471d8e" class="cell" data-execution_count="31">
+<div id="c993740c" class="cell" data-execution_count="31">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb58"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>rng_c16 <span class="op">=</span> np.random.default_rng(<span class="dv">17</span>)<span class="op">;</span> mc <span class="op">=</span> <span class="dv">2000</span><span class="op">;</span> s_c <span class="op">=</span> <span class="fl">0.8</span></span>
 <span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> claims(rng_, m_):</span>
 <span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>    a, b <span class="op">=</span> rng_.normal(<span class="dv">0</span>, <span class="dv">1</span>, m_), rng_.uniform(<span class="dv">0</span>, <span class="dv">1</span>, m_)</span>
