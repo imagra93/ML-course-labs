@@ -204,8 +204,10 @@ Computing $e^{z_k}$ directly fails for scores of realistic size. In double preci
 
 $$
 \begin{aligned}
-\mathrm{LSE}(\mathbf{z}) = \log\sum_l e^{z_l} &= \log\Big(e^{M}\sum_l e^{z_l - M}\Big) && (e^{z_l} = e^{M}e^{z_l - M})\\
-&= M + \log\sum_l e^{z_l - M} && (\log(ab) = \log a + \log b)
+\mathrm{LSE}(\mathbf{z}) = \log\sum_l e^{z_l} &= \log\Big(e^{M}\sum_l e^{z_l - M}\Big) \\
+&\quad\small (e^{z_l} = e^{M}e^{z_l - M})\\
+&= M + \log\sum_l e^{z_l - M} \\
+&\quad\small (\log(ab) = \log a + \log b)
 \end{aligned}
 $$
 
@@ -397,9 +399,12 @@ ax.grid(False); plt.tight_layout(); plt.show()
 $$
 \begin{aligned}
 \text{accuracy} = \text{micro-}F_1 &= \frac{65+12+6}{100} = 0.83 \\
-\text{macro-}F_1 &= \frac{0.92+0.62+0.60}{3} = 0.71 && \text{(every class counts the same)}\\
-\text{weighted-}F_1 &= 0.7\cdot0.92+0.2\cdot0.62+0.1\cdot0.60 = 0.83 && \text{(weights = the class shares)}\\
-\text{balanced accuracy} &= \frac{0.93 + 0.60 + 0.60}{3} = 0.71 && \text{(macro recall)}
+\text{macro-}F_1 &= \frac{0.92+0.62+0.60}{3} = 0.71 \\
+&\quad\small \text{(every class counts the same)}\\
+\text{weighted-}F_1 &= 0.7\cdot0.92+0.2\cdot0.62+0.1\cdot0.60 = 0.83 \\
+&\quad\small \text{(weights = the class shares)}\\
+\text{balanced accuracy} &= \frac{0.93 + 0.60 + 0.60}{3} = 0.71 \\
+&\quad\small \text{(macro recall)}
 \end{aligned}
 $$
 

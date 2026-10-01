@@ -4,6 +4,7 @@ One HTML file per topic. The shared engine (styles, navigation, logo, shared fig
 
 | File | Topic | From ML_classNotes.pptx |
 |---|---|---|
+| `00_introduction.html` | Teacher, course overview, Python / NumPy / pandas / Matplotlib basics (Lab 0) | slides 2–19 + Lab 0 notebook |
 | `01_supervised_learning.html` | Supervised learning, train / validation / test, k-fold CV | slides 20–22 |
 | `02_linear_regression.html` | Linear regression | slides 23–44 |
 | `03_logistic_regression.html` | Logistic regression and classification metrics | slides 45–67 |

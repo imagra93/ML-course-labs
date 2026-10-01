@@ -104,9 +104,12 @@ Two rules that always apply.
 
 $$
 \begin{aligned}
-\frac{\partial J}{\partial\theta_0} &= -\frac1m\sum_i\big(y_i - \theta_0 - \boldsymbol{\theta}_{1:n}^\top\mathbf{x}^{(i)}\big) + \frac{\lambda}{m}\theta_0 = 0 && \text{chain rule}\\
-\sum_i y_i - m\,\theta_0 - \boldsymbol{\theta}_{1:n}^\top\textstyle\sum_i\mathbf{x}^{(i)} &= \lambda\,\theta_0 && \text{multiply by } m\\
-\theta_0 &= \frac{m\,\bar y}{m + \lambda} && \textstyle\sum_i\mathbf{x}^{(i)} = \mathbf{0}\text{ (centred)}
+\frac{\partial J}{\partial\theta_0} &= -\frac1m\sum_i\big(y_i - \theta_0 - \boldsymbol{\theta}_{1:n}^\top\mathbf{x}^{(i)}\big) + \frac{\lambda}{m}\theta_0 = 0 \\
+&\quad\small \text{chain rule}\\
+\sum_i y_i - m\,\theta_0 - \boldsymbol{\theta}_{1:n}^\top\textstyle\sum_i\mathbf{x}^{(i)} &= \lambda\,\theta_0 \\
+&\quad\small \text{multiply by } m\\
+\theta_0 &= \frac{m\,\bar y}{m + \lambda} \\
+&\quad\small \textstyle\sum_i\mathbf{x}^{(i)} = \mathbf{0}\text{ (centred)}
 \end{aligned}
 $$
 
@@ -169,9 +172,12 @@ In matrix form, $\nabla J = \frac{1}{m}\big[\mathbf{X}^\top(\mathbf{X}\boldsymbo
 
 $$
 \begin{aligned}
-\mathbf{X}^\top(\mathbf{X}\boldsymbol{\theta} - \mathbf{y}) + \lambda\mathbf{L}\boldsymbol{\theta} &= \mathbf{0} && \text{set the gradient to zero, drop the common } \tfrac1m\\
-\mathbf{X}^\top\mathbf{X}\boldsymbol{\theta} + \lambda\mathbf{L}\boldsymbol{\theta} &= \mathbf{X}^\top\mathbf{y} && \text{move } \mathbf{X}^\top\mathbf{y} \text{ to the right}\\
-(\mathbf{X}^\top\mathbf{X} + \lambda\mathbf{L})\,\boldsymbol{\theta} &= \mathbf{X}^\top\mathbf{y} && \text{collect the } \boldsymbol{\theta} \text{ terms}
+\mathbf{X}^\top(\mathbf{X}\boldsymbol{\theta} - \mathbf{y}) + \lambda\mathbf{L}\boldsymbol{\theta} &= \mathbf{0} \\
+&\quad\small \text{set the gradient to zero, drop the common } \tfrac1m\\
+\mathbf{X}^\top\mathbf{X}\boldsymbol{\theta} + \lambda\mathbf{L}\boldsymbol{\theta} &= \mathbf{X}^\top\mathbf{y} \\
+&\quad\small \text{move } \mathbf{X}^\top\mathbf{y} \text{ to the right}\\
+(\mathbf{X}^\top\mathbf{X} + \lambda\mathbf{L})\,\boldsymbol{\theta} &= \mathbf{X}^\top\mathbf{y} \\
+&\quad\small \text{collect the } \boldsymbol{\theta} \text{ terms}
 \end{aligned}
 $$
 
@@ -283,8 +289,10 @@ At $\lambda = 0$ this is the OLS value $\sigma^2\sum_j 1/d_j^2$: no bias, all va
 
 $$
 \begin{aligned}
-f_j'(\lambda) &= \frac{2\lambda\gamma_j^2(d_j^2+\lambda)^2 - 2(d_j^2+\lambda)(\lambda^2\gamma_j^2 + \sigma^2d_j^2)}{(d_j^2+\lambda)^4} && \text{quotient rule}\\
-&= \frac{2\big[\lambda\gamma_j^2(d_j^2+\lambda) - \lambda^2\gamma_j^2 - \sigma^2d_j^2\big]}{(d_j^2+\lambda)^3} = \frac{2d_j^2\,(\lambda\gamma_j^2 - \sigma^2)}{(d_j^2+\lambda)^3} . && \text{cancel one } (d_j^2+\lambda)\text{; expand}
+f_j'(\lambda) &= \frac{2\lambda\gamma_j^2(d_j^2+\lambda)^2 - 2(d_j^2+\lambda)(\lambda^2\gamma_j^2 + \sigma^2d_j^2)}{(d_j^2+\lambda)^4} \\
+&\quad\small \text{quotient rule}\\
+&= \frac{2\big[\lambda\gamma_j^2(d_j^2+\lambda) - \lambda^2\gamma_j^2 - \sigma^2d_j^2\big]}{(d_j^2+\lambda)^3} = \frac{2d_j^2\,(\lambda\gamma_j^2 - \sigma^2)}{(d_j^2+\lambda)^3} . \\
+&\quad\small \text{cancel one } (d_j^2+\lambda)\text{; expand}
 \end{aligned}
 $$
 
@@ -399,10 +407,14 @@ With several features the one-feature solution becomes the building block of an 
 
 $$
 \begin{aligned}
-J(\theta_j) &= \frac{1}{2m}\lVert\mathbf{r}^{(j)} - \mathbf{x}_j\theta_j\rVert^2 + \lambda|\theta_j| + \text{const} && \text{terms without } \theta_j \text{ are constants}\\
-&= \frac{a_j}{2}\theta_j^2 - z_j\theta_j + \lambda|\theta_j| + \text{const} && \text{expand the square, divide by } m\\
-&= a_j\Big[\tfrac12\big(\theta_j - z_j/a_j\big)^2 + \tfrac{\lambda}{a_j}|\theta_j|\Big] + \text{const} && \text{complete the square}\\
-\Rightarrow\quad \theta_j &= S\big(z_j/a_j,\ \lambda/a_j\big) = \frac{S(z_j, \lambda)}{a_j} . && \text{section 4.1; } S(z/a, \lambda/a) = S(z,\lambda)/a \text{ for } a > 0
+J(\theta_j) &= \frac{1}{2m}\lVert\mathbf{r}^{(j)} - \mathbf{x}_j\theta_j\rVert^2 + \lambda|\theta_j| + \text{const} \\
+&\quad\small \text{terms without } \theta_j \text{ are constants}\\
+&= \frac{a_j}{2}\theta_j^2 - z_j\theta_j + \lambda|\theta_j| + \text{const} \\
+&\quad\small \text{expand the square, divide by } m\\
+&= a_j\Big[\tfrac12\big(\theta_j - z_j/a_j\big)^2 + \tfrac{\lambda}{a_j}|\theta_j|\Big] + \text{const} \\
+&\quad\small \text{complete the square}\\
+\Rightarrow\quad \theta_j &= S\big(z_j/a_j,\ \lambda/a_j\big) = \frac{S(z_j, \lambda)}{a_j} . \\
+&\quad\small \text{section 4.1; } S(z/a, \lambda/a) = S(z,\lambda)/a \text{ for } a > 0
 \end{aligned}
 $$
 
@@ -522,8 +534,10 @@ $$
 
 $$
 \begin{aligned}
--\log p(\boldsymbol{\theta}\mid\mathcal{D}) &= \frac{1}{2\sigma^2}\lVert\mathbf{X}\boldsymbol{\theta} - \mathbf{y}\rVert^2 + \frac{1}{2\tau^2}\sum_{j\ge1}\theta_j^2 + \text{const} && \text{loss + penalty (flat prior on } \theta_0)\\
-&\propto \lVert\mathbf{X}\boldsymbol{\theta} - \mathbf{y}\rVert^2 + \frac{\sigma^2}{\tau^2}\sum_{j\ge1}\theta_j^2 && \text{multiply by } 2\sigma^2 > 0\text{: same arg-min}
+-\log p(\boldsymbol{\theta}\mid\mathcal{D}) &= \frac{1}{2\sigma^2}\lVert\mathbf{X}\boldsymbol{\theta} - \mathbf{y}\rVert^2 + \frac{1}{2\tau^2}\sum_{j\ge1}\theta_j^2 + \text{const} \\
+&\quad\small \text{loss + penalty (flat prior on } \theta_0)\\
+&\propto \lVert\mathbf{X}\boldsymbol{\theta} - \mathbf{y}\rVert^2 + \frac{\sigma^2}{\tau^2}\sum_{j\ge1}\theta_j^2 \\
+&\quad\small \text{multiply by } 2\sigma^2 > 0\text{: same arg-min}
 \end{aligned}
 $$
 

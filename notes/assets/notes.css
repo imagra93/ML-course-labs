@@ -86,3 +86,19 @@ img.figure-img,.cell-output-display img{max-width:100%;height:auto}
 
 /* ---- notes only: printed output of code cells wraps like the code does (code-overflow: wrap covers the source only) ---- */
 .cell-output pre,.cell-output pre code{white-space:pre-wrap;overflow-wrap:anywhere}
+
+/* ---- notes only: tables wrap their text instead of running past the column ---- */
+main table{max-width:100%}
+main table td,main table th{overflow-wrap:break-word}
+/* phones: a table that is still too wide for the screen (many columns) scrolls inside itself, not the whole page */
+@media (max-width:760px){
+  main table{display:block;overflow-x:auto}
+  /* a long inline formula scrolls in its own box */
+  mjx-container:not([display="true"]){max-width:100%;overflow-x:auto;overflow-y:hidden}
+  span.math.inline{display:inline-block;max-width:100%;overflow-x:auto;overflow-y:hidden;vertical-align:middle}
+}
+/* inline code in running text may break anywhere */
+main p code,main li code,main td code,main th code{overflow-wrap:anywhere}
+/* display equations that are wider than the screen (phones) scroll inside their own box, never the page */
+mjx-container[display="true"]{max-width:100%;overflow-x:auto;overflow-y:hidden}
+main :not(pre)>code{white-space:pre-wrap}

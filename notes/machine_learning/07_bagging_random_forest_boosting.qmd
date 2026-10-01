@@ -582,11 +582,16 @@ $$
 
 $$
 \begin{aligned}
-L(F_{t-1} + \alpha h) &= \sum_i e^{-y^{(i)}F_{t-1}(\mathbf{x}^{(i)})}\,e^{-\alpha y^{(i)}h(\mathbf{x}^{(i)})} && e^{a+b} = e^ae^b\\
-&= \sum_iw_i\,e^{-\alpha y^{(i)}h(\mathbf{x}^{(i)})} && w_i = e^{-y^{(i)}F_{t-1}(\mathbf{x}^{(i)})} \text{ does not depend on } \alpha, h\\
-&= e^{-\alpha}\sum_{i:\,h = y}w_i + e^{\alpha}\sum_{i:\,h \ne y}w_i && y\,h = +1 \text{ if right}, -1 \text{ if wrong}\\
-&= W\big[(1-\varepsilon)e^{-\alpha} + \varepsilon\,e^{\alpha}\big] && W = \textstyle\sum_iw_i,\ \varepsilon = \frac{1}{W}\sum_{h\ne y}w_i\\
-&= W\big[e^{-\alpha} + \varepsilon\,(e^{\alpha} - e^{-\alpha})\big] && \text{expand.}
+L(F_{t-1} + \alpha h) &= \sum_i e^{-y^{(i)}F_{t-1}(\mathbf{x}^{(i)})}\,e^{-\alpha y^{(i)}h(\mathbf{x}^{(i)})} \\
+&\quad\small e^{a+b} = e^ae^b\\
+&= \sum_iw_i\,e^{-\alpha y^{(i)}h(\mathbf{x}^{(i)})} \\
+&\quad\small w_i = e^{-y^{(i)}F_{t-1}(\mathbf{x}^{(i)})} \text{ does not depend on } \alpha, h\\
+&= e^{-\alpha}\sum_{i:\,h = y}w_i + e^{\alpha}\sum_{i:\,h \ne y}w_i \\
+&\quad\small y\,h = +1 \text{ if right}, -1 \text{ if wrong}\\
+&= W\big[(1-\varepsilon)e^{-\alpha} + \varepsilon\,e^{\alpha}\big] \\
+&\quad\small W = \textstyle\sum_iw_i,\ \varepsilon = \frac{1}{W}\sum_{h\ne y}w_i\\
+&= W\big[e^{-\alpha} + \varepsilon\,(e^{\alpha} - e^{-\alpha})\big] \\
+&\quad\small \text{expand.}
 \end{aligned}
 $$
 

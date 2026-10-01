@@ -188,19 +188,26 @@ Each **row** of $\mathbf{A}$ is one query: a probability distribution over the s
 **Mean.**
 $$
 \begin{aligned}
-\mathbb{E}[\mathbf{q}^\top\mathbf{k}] &= \sum_{i=1}^{d_k}\mathbb{E}[q_ik_i] && \text{linearity of expectation}\\
-&= \sum_{i=1}^{d_k}\mathbb{E}[q_i]\,\mathbb{E}[k_i] && q_i, k_i\text{ independent (i)}\\
-&= 0 && \text{zero means (ii)}
+\mathbb{E}[\mathbf{q}^\top\mathbf{k}] &= \sum_{i=1}^{d_k}\mathbb{E}[q_ik_i] \\
+&\quad\small \text{linearity of expectation}\\
+&= \sum_{i=1}^{d_k}\mathbb{E}[q_i]\,\mathbb{E}[k_i] \\
+&\quad\small q_i, k_i\text{ independent (i)}\\
+&= 0 \\
+&\quad\small \text{zero means (ii)}
 \end{aligned}
 $$
 
 **Variance.**
 $$
 \begin{aligned}
-\mathrm{Var}(\mathbf{q}^\top\mathbf{k}) &= \sum_{i=1}^{d_k}\mathrm{Var}(q_ik_i) && \text{the terms }q_ik_i\text{ are independent across }i\text{ (i)}\\
-\mathrm{Var}(q_ik_i) &= \mathbb{E}[q_i^2k_i^2] - \big(\mathbb{E}[q_ik_i]\big)^2 && \text{definition of variance}\\
-&= \mathbb{E}[q_i^2]\,\mathbb{E}[k_i^2] - 0 && \text{independence (i); mean 0 from above}\\
-&= 1\cdot1 && \mathbb{E}[q_i^2] = \mathrm{Var}(q_i) + \mathbb{E}[q_i]^2 = 1\text{ (ii, iii)}\\
+\mathrm{Var}(\mathbf{q}^\top\mathbf{k}) &= \sum_{i=1}^{d_k}\mathrm{Var}(q_ik_i) \\
+&\quad\small \text{the terms }q_ik_i\text{ are independent across }i\text{ (i)}\\
+\mathrm{Var}(q_ik_i) &= \mathbb{E}[q_i^2k_i^2] - \big(\mathbb{E}[q_ik_i]\big)^2 \\
+&\quad\small \text{definition of variance}\\
+&= \mathbb{E}[q_i^2]\,\mathbb{E}[k_i^2] - 0 \\
+&\quad\small \text{independence (i); mean 0 from above}\\
+&= 1\cdot1 \\
+&\quad\small \mathbb{E}[q_i^2] = \mathrm{Var}(q_i) + \mathbb{E}[q_i]^2 = 1\text{ (ii, iii)}\\
 \Rightarrow\ \mathrm{Var}(\mathbf{q}^\top\mathbf{k}) &= d_k .
 \end{aligned}
 $$

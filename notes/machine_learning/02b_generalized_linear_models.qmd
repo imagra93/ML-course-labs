@@ -350,10 +350,14 @@ Section 11 adds confidence intervals to these rate ratios.
 
 $$
 \begin{aligned}
-\frac{\partial\log p}{\partial\vartheta} &= \frac{y - A'(\vartheta)}{\phi} = \frac{y-\mu}{\phi} && \text{(section 7: } A'(\vartheta) = \mu\text{)}\\
-\frac{d\vartheta}{d\mu} &= \frac{1}{d\mu/d\vartheta} = \frac{1}{A''(\vartheta)} = \frac{1}{V(\mu)} && \text{(inverse function; } \mu = A'(\vartheta)\text{)}\\
-\frac{d\mu}{dz} &= \frac{1}{g'(\mu)} && \text{(inverse of the link)}\\
-\frac{\partial\log p}{\partial\theta_j} &= \frac{y-\mu}{\phi\,V(\mu)\,g'(\mu)}\;x_j && \text{(chain rule, } \partial z/\partial\theta_j = x_j\text{)}
+\frac{\partial\log p}{\partial\vartheta} &= \frac{y - A'(\vartheta)}{\phi} = \frac{y-\mu}{\phi} \\
+&\quad\small \text{(section 7: } A'(\vartheta) = \mu\text{)}\\
+\frac{d\vartheta}{d\mu} &= \frac{1}{d\mu/d\vartheta} = \frac{1}{A''(\vartheta)} = \frac{1}{V(\mu)} \\
+&\quad\small \text{(inverse function; } \mu = A'(\vartheta)\text{)}\\
+\frac{d\mu}{dz} &= \frac{1}{g'(\mu)} \\
+&\quad\small \text{(inverse of the link)}\\
+\frac{\partial\log p}{\partial\theta_j} &= \frac{y-\mu}{\phi\,V(\mu)\,g'(\mu)}\;x_j \\
+&\quad\small \text{(chain rule, } \partial z/\partial\theta_j = x_j\text{)}
 \end{aligned}
 $$
 
@@ -684,10 +688,14 @@ The spline lowers the held-out deviance (printed above) and its binned partial r
 
 $$
 \begin{aligned}
-\mathbb{E}[y] &= \mathbb{E}\big[\mathbb{E}[y\mid u]\big] = \mathbb{E}[\mu u] = \mu && \text{(tower property; } \mathbb{E}[u] = 1\text{)}\\
-\mathrm{Var}(y) &= \mathbb{E}\big[\mathrm{Var}(y\mid u)\big] + \mathrm{Var}\big(\mathbb{E}[y\mid u]\big) && \text{(law of total variance)}\\
-&= \mathbb{E}[\mu u] + \mathrm{Var}(\mu u) && \text{(Poisson: conditional variance = conditional mean)}\\
-&= \mu + \frac{\mu^2}{k} && (\mathrm{Var}(\mu u) = \mu^2\,\mathrm{Var}(u))
+\mathbb{E}[y] &= \mathbb{E}\big[\mathbb{E}[y\mid u]\big] = \mathbb{E}[\mu u] = \mu \\
+&\quad\small \text{(tower property; } \mathbb{E}[u] = 1\text{)}\\
+\mathrm{Var}(y) &= \mathbb{E}\big[\mathrm{Var}(y\mid u)\big] + \mathrm{Var}\big(\mathbb{E}[y\mid u]\big) \\
+&\quad\small \text{(law of total variance)}\\
+&= \mathbb{E}[\mu u] + \mathrm{Var}(\mu u) \\
+&\quad\small \text{(Poisson: conditional variance = conditional mean)}\\
+&= \mu + \frac{\mu^2}{k} \\
+&\quad\small (\mathrm{Var}(\mu u) = \mu^2\,\mathrm{Var}(u))
 \end{aligned}
 $$
 
@@ -699,10 +707,14 @@ Any heterogeneity ($k < \infty$) makes the variance exceed the mean, and more so
 
 $$
 \begin{aligned}
-P(y) &= \int_0^\infty \frac{e^{-\mu u}(\mu u)^y}{y!}\cdot\frac{k^k}{\Gamma(k)}u^{k-1}e^{-ku}\,du && \text{(average the Poisson over } u\text{)}\\
-&= \frac{\mu^y k^k}{y!\,\Gamma(k)}\int_0^\infty u^{y+k-1}e^{-(\mu+k)u}\,du && \text{(collect the powers of } u \text{ and the exponentials)}\\
-&= \frac{\mu^y k^k}{y!\,\Gamma(k)}\cdot\frac{\Gamma(y+k)}{(\mu+k)^{y+k}} && \Big(\textstyle\int_0^\infty u^{a-1}e^{-bu}du = \frac{\Gamma(a)}{b^a}\Big)\\
-&= \frac{\Gamma(y+k)}{\Gamma(k)\,y!}\Big(\frac{k}{k+\mu}\Big)^{k}\Big(\frac{\mu}{k+\mu}\Big)^{y} && \text{(regroup)}
+P(y) &= \int_0^\infty \frac{e^{-\mu u}(\mu u)^y}{y!}\cdot\frac{k^k}{\Gamma(k)}u^{k-1}e^{-ku}\,du \\
+&\quad\small \text{(average the Poisson over } u\text{)}\\
+&= \frac{\mu^y k^k}{y!\,\Gamma(k)}\int_0^\infty u^{y+k-1}e^{-(\mu+k)u}\,du \\
+&\quad\small \text{(collect the powers of } u \text{ and the exponentials)}\\
+&= \frac{\mu^y k^k}{y!\,\Gamma(k)}\cdot\frac{\Gamma(y+k)}{(\mu+k)^{y+k}} \\
+&\quad\small \Big(\textstyle\int_0^\infty u^{a-1}e^{-bu}du = \frac{\Gamma(a)}{b^a}\Big)\\
+&= \frac{\Gamma(y+k)}{\Gamma(k)\,y!}\Big(\frac{k}{k+\mu}\Big)^{k}\Big(\frac{\mu}{k+\mu}\Big)^{y} \\
+&\quad\small \text{(regroup)}
 \end{aligned}
 $$
 
@@ -929,8 +941,10 @@ $$
 
 $$
 \begin{aligned}
-\mathbb{E}[S] &= \lambda\tau = \frac{\mu^{2-p}}{\phi(2-p)}\cdot\phi(2-p)\mu^{p-1} = \mu && \text{(powers of } \mu \text{ add up to 1)}\\
-\mathrm{Var}(S) &= \lambda\tau^2\Big(1+\frac1\alpha\Big) = \frac{\mu^{2-p}}{\phi(2-p)}\cdot\phi^2(2-p)^2\mu^{2p-2}\cdot\frac{1}{2-p} = \phi\,\mu^p && \Big(1 + \frac{p-1}{2-p} = \frac{1}{2-p}\Big)
+\mathbb{E}[S] &= \lambda\tau = \frac{\mu^{2-p}}{\phi(2-p)}\cdot\phi(2-p)\mu^{p-1} = \mu \\
+&\quad\small \text{(powers of } \mu \text{ add up to 1)}\\
+\mathrm{Var}(S) &= \lambda\tau^2\Big(1+\frac1\alpha\Big) = \frac{\mu^{2-p}}{\phi(2-p)}\cdot\phi^2(2-p)^2\mu^{2p-2}\cdot\frac{1}{2-p} = \phi\,\mu^p \\
+&\quad\small \Big(1 + \frac{p-1}{2-p} = \frac{1}{2-p}\Big)
 \end{aligned}
 $$
 

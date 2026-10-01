@@ -501,11 +501,16 @@ The **Long Short-Term Memory** (Hochreiter & Schmidhuber, 1997; the forget gate 
 
 $$
 \begin{aligned}
-\mathbf{f}_t &= \sigma\big([\mathbf{h}_{t-1},\mathbf{x}_t]\mathbf{W}_f + \mathbf{b}_f\big) && \text{forget gate: how much old memory to keep}\\
-\mathbf{i}_t &= \sigma\big([\mathbf{h}_{t-1},\mathbf{x}_t]\mathbf{W}_i + \mathbf{b}_i\big) && \text{input gate: how much new content to write}\\
-\tilde{\mathbf{c}}_t &= \tanh\big([\mathbf{h}_{t-1},\mathbf{x}_t]\mathbf{W}_c + \mathbf{b}_c\big) && \text{candidate content}\\
-\mathbf{c}_t &= \mathbf{f}_t\odot\mathbf{c}_{t-1} + \mathbf{i}_t\odot\tilde{\mathbf{c}}_t && \text{memory update (additive)}\\
-\mathbf{o}_t &= \sigma\big([\mathbf{h}_{t-1},\mathbf{x}_t]\mathbf{W}_o + \mathbf{b}_o\big) && \text{output gate: how much memory to expose}\\
+\mathbf{f}_t &= \sigma\big([\mathbf{h}_{t-1},\mathbf{x}_t]\mathbf{W}_f + \mathbf{b}_f\big) \\
+&\quad\small \text{forget gate: how much old memory to keep}\\
+\mathbf{i}_t &= \sigma\big([\mathbf{h}_{t-1},\mathbf{x}_t]\mathbf{W}_i + \mathbf{b}_i\big) \\
+&\quad\small \text{input gate: how much new content to write}\\
+\tilde{\mathbf{c}}_t &= \tanh\big([\mathbf{h}_{t-1},\mathbf{x}_t]\mathbf{W}_c + \mathbf{b}_c\big) \\
+&\quad\small \text{candidate content}\\
+\mathbf{c}_t &= \mathbf{f}_t\odot\mathbf{c}_{t-1} + \mathbf{i}_t\odot\tilde{\mathbf{c}}_t \\
+&\quad\small \text{memory update (additive)}\\
+\mathbf{o}_t &= \sigma\big([\mathbf{h}_{t-1},\mathbf{x}_t]\mathbf{W}_o + \mathbf{b}_o\big) \\
+&\quad\small \text{output gate: how much memory to expose}\\
 \mathbf{h}_t &= \mathbf{o}_t\odot\tanh(\mathbf{c}_t)
 \end{aligned}
 $$
@@ -770,10 +775,14 @@ The **Gated Recurrent Unit** (Cho et al., 2014) has 2 gates and no separate cell
 
 $$
 \begin{aligned}
-\Gamma_r &= \sigma\big([\mathbf{h}_{t-1},\mathbf{x}_t]\mathbf{W}_r + \mathbf{b}_r\big) && \text{reset (relevance) gate}\\
-\Gamma_u &= \sigma\big([\mathbf{h}_{t-1},\mathbf{x}_t]\mathbf{W}_u + \mathbf{b}_u\big) && \text{update gate}\\
-\tilde{\mathbf{h}}_t &= \tanh\big([\Gamma_r\odot\mathbf{h}_{t-1},\ \mathbf{x}_t]\mathbf{W} + \mathbf{b}\big) && \text{candidate, reading only the relevant part of the past}\\
-\mathbf{h}_t &= \Gamma_u\odot\tilde{\mathbf{h}}_t + (1-\Gamma_u)\odot\mathbf{h}_{t-1} && \text{interpolate between new and old}
+\Gamma_r &= \sigma\big([\mathbf{h}_{t-1},\mathbf{x}_t]\mathbf{W}_r + \mathbf{b}_r\big) \\
+&\quad\small \text{reset (relevance) gate}\\
+\Gamma_u &= \sigma\big([\mathbf{h}_{t-1},\mathbf{x}_t]\mathbf{W}_u + \mathbf{b}_u\big) \\
+&\quad\small \text{update gate}\\
+\tilde{\mathbf{h}}_t &= \tanh\big([\Gamma_r\odot\mathbf{h}_{t-1},\ \mathbf{x}_t]\mathbf{W} + \mathbf{b}\big) \\
+&\quad\small \text{candidate, reading only the relevant part of the past}\\
+\mathbf{h}_t &= \Gamma_u\odot\tilde{\mathbf{h}}_t + (1-\Gamma_u)\odot\mathbf{h}_{t-1} \\
+&\quad\small \text{interpolate between new and old}
 \end{aligned}
 $$
 

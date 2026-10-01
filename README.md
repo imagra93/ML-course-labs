@@ -50,6 +50,7 @@ Interactive HTML decks, one per topic: **<https://imagra93.github.io/ML-course-l
 
 | # | Deck |
 |---|---|
+| 00 | [Introduction · Python for ML](https://imagra93.github.io/ML-course-labs/slides/machine_learning/00_introduction.html) |
 | 01 | [Supervised learning · train, validation, test](https://imagra93.github.io/ML-course-labs/slides/machine_learning/01_supervised_learning.html) |
 | 02 | [Linear regression](https://imagra93.github.io/ML-course-labs/slides/machine_learning/02_linear_regression.html) |
 | 03 | [Logistic regression and classification metrics](https://imagra93.github.io/ML-course-labs/slides/machine_learning/03_logistic_regression.html) |

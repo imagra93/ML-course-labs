@@ -831,8 +831,10 @@ $$
 **Fix 2: learn the weights by maximum likelihood** (Kendall, Gal & Cipolla, 2018). Model regression task $k$ as Gaussian with its own noise level, $y_k\sim\mathcal{N}(\hat y_k,\sigma_k^2)$, with $\sigma_k$ a learnable parameter. The negative log-likelihood of one example is
 $$
 \begin{aligned}
--\log p(y_k) &= -\log\Big[\frac{1}{\sqrt{2\pi}\,\sigma_k}\exp\Big(-\frac{(y_k-\hat y_k)^2}{2\sigma_k^2}\Big)\Big] && \text{Gaussian density}\\
-&= \frac{(y_k-\hat y_k)^2}{2\sigma_k^2}+\log\sigma_k+\tfrac12\log(2\pi), && \log \text{ of a product and of } \exp
+-\log p(y_k) &= -\log\Big[\frac{1}{\sqrt{2\pi}\,\sigma_k}\exp\Big(-\frac{(y_k-\hat y_k)^2}{2\sigma_k^2}\Big)\Big] \\
+&\quad\small \text{Gaussian density}\\
+&= \frac{(y_k-\hat y_k)^2}{2\sigma_k^2}+\log\sigma_k+\tfrac12\log(2\pi), \\
+&\quad\small \log \text{ of a product and of } \exp
 \end{aligned}
 $$
 and averaging over the data and summing over independent tasks (the joint likelihood is a product),

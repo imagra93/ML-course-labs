@@ -69,11 +69,16 @@ Cosine 1 means the same direction (same meaning), 0 unrelated (orthogonal), −1
 **Proof.**
 $$
 \begin{aligned}
-\lVert\mathbf{a}-\mathbf{b}\rVert^2 &= (\mathbf{a}-\mathbf{b})^\top(\mathbf{a}-\mathbf{b}) && \text{definition of the squared norm}\\
-&= \mathbf{a}^\top\mathbf{a} - \mathbf{a}^\top\mathbf{b} - \mathbf{b}^\top\mathbf{a} + \mathbf{b}^\top\mathbf{b} && \text{expand the product}\\
-&= \lVert\mathbf{a}\rVert^2 + \lVert\mathbf{b}\rVert^2 - 2\,\mathbf{a}^\top\mathbf{b} && \mathbf{b}^\top\mathbf{a} = \mathbf{a}^\top\mathbf{b}\text{ (a scalar)}\\
-&= 2 - 2\,\mathbf{a}^\top\mathbf{b} && \lVert\mathbf{a}\rVert = \lVert\mathbf{b}\rVert = 1\\
-&= 2 - 2\cos(\mathbf{a},\mathbf{b}) && \cos = \mathbf{a}^\top\mathbf{b}/(1\cdot1)\qquad\blacksquare
+\lVert\mathbf{a}-\mathbf{b}\rVert^2 &= (\mathbf{a}-\mathbf{b})^\top(\mathbf{a}-\mathbf{b}) \\
+&\quad\small \text{definition of the squared norm}\\
+&= \mathbf{a}^\top\mathbf{a} - \mathbf{a}^\top\mathbf{b} - \mathbf{b}^\top\mathbf{a} + \mathbf{b}^\top\mathbf{b} \\
+&\quad\small \text{expand the product}\\
+&= \lVert\mathbf{a}\rVert^2 + \lVert\mathbf{b}\rVert^2 - 2\,\mathbf{a}^\top\mathbf{b} \\
+&\quad\small \mathbf{b}^\top\mathbf{a} = \mathbf{a}^\top\mathbf{b}\text{ (a scalar)}\\
+&= 2 - 2\,\mathbf{a}^\top\mathbf{b} \\
+&\quad\small \lVert\mathbf{a}\rVert = \lVert\mathbf{b}\rVert = 1\\
+&= 2 - 2\cos(\mathbf{a},\mathbf{b}) \\
+&\quad\small \cos = \mathbf{a}^\top\mathbf{b}/(1\cdot1)\qquad\blacksquare
 \end{aligned}
 $$
 

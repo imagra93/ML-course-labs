@@ -229,7 +229,7 @@ window.Quarto = {
 <p><strong>What you need.</strong> The MLP, softmax outputs and cross-entropy (<a href="00_neural_networks_mlp.html">NN note 00</a>, <a href="../machine_learning/04_softmax_regression.html">ML note 04</a>); backpropagation (<a href="01_backpropagation.html">NN note 01</a>); Adam, dropout, LayerNorm and gradient clipping (<a href="02_training_optimization_regularization.html">NN note 02</a>); residual connections (<a href="03_cnn_transfer_multitask.html">NN note 03</a>); embeddings, RNNs and the encoder–decoder bottleneck (<a href="04_rnn_lstm.html">NN note 04</a>).</p>
 <p><strong>After this note you can</strong> compute an attention output by hand; write self-attention, multi-head attention and a transformer block in PyTorch; explain why the scores are divided by <span class="math inline">\(\sqrt{d_k}\)</span>, why positions must be added and why the causal mask is needed; count the parameters and the cost of a transformer; choose a decoding strategy; compare language models with perplexity or bits per character; and diagnose leakage and overfitting in a small language model.</p>
 <p><strong>Notation.</strong> A sequence has <span class="math inline">\(n\)</span> tokens (also <span class="math inline">\(T\)</span> when we think of time); token <span class="math inline">\(i\)</span> is a row vector <span class="math inline">\(\mathbf{x}_i\in\mathbb{R}^{1\times d}\)</span> and the sequence is <span class="math inline">\(\mathbf{X}\in\mathbb{R}^{n\times d}\)</span> (<span class="math inline">\(d = d_{\text{model}}\)</span>). Queries, keys and values have sizes <span class="math inline">\(d_k\)</span> and <span class="math inline">\(d_v\)</span>; <span class="math inline">\(h\)</span> is the number of heads; <span class="math inline">\(|V|\)</span> the vocabulary size; <span class="math inline">\(N\)</span> the number of transformer blocks. The softmax of a vector <span class="math inline">\(\mathbf{s}\)</span> is <span class="math inline">\(\mathrm{softmax}(\mathbf{s})_j = e^{s_j}/\sum_l e^{s_l}\)</span>, applied row by row to a matrix. <span class="math inline">\(\log\)</span> is the natural logarithm.</p>
-<div id="79170005" class="cell" data-execution_count="1">
+<div id="960acf61" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> math, re</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
@@ -331,7 +331,7 @@ e^{\mathbf{s}} &amp;= (4.11,\ 2.03,\ 8.34),\quad \textstyle\sum = 14.48 \\
   <div class="ctl"><label for="an-s">step</label><input type="range" id="an-s" data-k="s" min="0" max="4" step="1" value="0"><span class="v" data-v="s"></span></div>
   <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#6">slide 6</a> of the Attention and Transformers deck.</p>
 </div>
-<div id="5c9dafcc" class="cell" data-execution_count="2">
+<div id="02f18a39" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>q <span class="op">=</span> torch.tensor([<span class="fl">2.</span>, <span class="fl">1.</span>])<span class="op">;</span> K <span class="op">=</span> torch.tensor([[<span class="fl">1.</span>, <span class="fl">0.</span>], [<span class="fl">0.</span>, <span class="fl">1.</span>], [<span class="fl">1.</span>, <span class="fl">1.</span>]])<span class="op">;</span> Vv <span class="op">=</span> torch.tensor([[<span class="fl">1.</span>, <span class="fl">0.</span>], [<span class="fl">0.</span>, <span class="fl">1.</span>], [<span class="fl">0.5</span>, <span class="fl">0.5</span>]])</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>s <span class="op">=</span> K <span class="op">@</span> q <span class="op">/</span> math.sqrt(<span class="dv">2</span>)<span class="op">;</span> alpha <span class="op">=</span> s.softmax(<span class="dv">0</span>)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"scores"</span>, s.numpy().<span class="bu">round</span>(<span class="dv">2</span>), <span class="st">" alpha"</span>, alpha.numpy().<span class="bu">round</span>(<span class="dv">2</span>), <span class="st">" output"</span>, (alpha <span class="op">@</span> Vv).numpy().<span class="bu">round</span>(<span class="dv">2</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -389,17 +389,24 @@ e^{\mathbf{s}} &amp;= (4.11,\ 2.03,\ 8.34),\quad \textstyle\sum = 14.48 \\
 <p><strong>Assumptions.</strong> Fix a query <span class="math inline">\(\mathbf{q}\)</span> and a key <span class="math inline">\(\mathbf{k}\)</span> in <span class="math inline">\(\mathbb{R}^{d_k}\)</span> and suppose (i) all <span class="math inline">\(2d_k\)</span> components <span class="math inline">\(q_1,\dots,q_{d_k},k_1,\dots,k_{d_k}\)</span> are independent, (ii) each has mean 0, and (iii) each has variance 1. This is roughly true at initialisation when the inputs are normalised (LayerNorm) and the projections preserve variance; after training it is not (section 18.3).</p>
 <p><strong>Mean.</strong> <span class="math display">\[
 \begin{aligned}
-\mathbb{E}[\mathbf{q}^\top\mathbf{k}] &amp;= \sum_{i=1}^{d_k}\mathbb{E}[q_ik_i] &amp;&amp; \text{linearity of expectation}\\
-&amp;= \sum_{i=1}^{d_k}\mathbb{E}[q_i]\,\mathbb{E}[k_i] &amp;&amp; q_i, k_i\text{ independent (i)}\\
-&amp;= 0 &amp;&amp; \text{zero means (ii)}
+\mathbb{E}[\mathbf{q}^\top\mathbf{k}] &amp;= \sum_{i=1}^{d_k}\mathbb{E}[q_ik_i] \\
+&amp;\quad\small \text{linearity of expectation}\\
+&amp;= \sum_{i=1}^{d_k}\mathbb{E}[q_i]\,\mathbb{E}[k_i] \\
+&amp;\quad\small q_i, k_i\text{ independent (i)}\\
+&amp;= 0 \\
+&amp;\quad\small \text{zero means (ii)}
 \end{aligned}
 \]</span></p>
 <p><strong>Variance.</strong> <span class="math display">\[
 \begin{aligned}
-\mathrm{Var}(\mathbf{q}^\top\mathbf{k}) &amp;= \sum_{i=1}^{d_k}\mathrm{Var}(q_ik_i) &amp;&amp; \text{the terms }q_ik_i\text{ are independent across }i\text{ (i)}\\
-\mathrm{Var}(q_ik_i) &amp;= \mathbb{E}[q_i^2k_i^2] - \big(\mathbb{E}[q_ik_i]\big)^2 &amp;&amp; \text{definition of variance}\\
-&amp;= \mathbb{E}[q_i^2]\,\mathbb{E}[k_i^2] - 0 &amp;&amp; \text{independence (i); mean 0 from above}\\
-&amp;= 1\cdot1 &amp;&amp; \mathbb{E}[q_i^2] = \mathrm{Var}(q_i) + \mathbb{E}[q_i]^2 = 1\text{ (ii, iii)}\\
+\mathrm{Var}(\mathbf{q}^\top\mathbf{k}) &amp;= \sum_{i=1}^{d_k}\mathrm{Var}(q_ik_i) \\
+&amp;\quad\small \text{the terms }q_ik_i\text{ are independent across }i\text{ (i)}\\
+\mathrm{Var}(q_ik_i) &amp;= \mathbb{E}[q_i^2k_i^2] - \big(\mathbb{E}[q_ik_i]\big)^2 \\
+&amp;\quad\small \text{definition of variance}\\
+&amp;= \mathbb{E}[q_i^2]\,\mathbb{E}[k_i^2] - 0 \\
+&amp;\quad\small \text{independence (i); mean 0 from above}\\
+&amp;= 1\cdot1 \\
+&amp;\quad\small \mathbb{E}[q_i^2] = \mathrm{Var}(q_i) + \mathbb{E}[q_i]^2 = 1\text{ (ii, iii)}\\
 \Rightarrow\ \mathrm{Var}(\mathbf{q}^\top\mathbf{k}) &amp;= d_k .
 \end{aligned}
 \]</span></p>
@@ -412,7 +419,7 @@ e^{\mathbf{s}} &amp;= (4.11,\ 2.03,\ 8.34),\quad \textstyle\sum = 14.48 \\
   <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#11">slide 11</a> of the Attention and Transformers deck.</p>
 </div>
 <p>The same experiment with 2,000 random queries against 16 keys each, where the assumptions hold by construction:</p>
-<div id="25306a36" class="cell" data-execution_count="3">
+<div id="407929da" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>T_, reps <span class="op">=</span> <span class="dv">16</span>, <span class="dv">2000</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> dk <span class="kw">in</span> [<span class="dv">4</span>, <span class="dv">64</span>, <span class="dv">512</span>]:</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    q <span class="op">=</span> torch.randn(reps, dk)<span class="op">;</span> k <span class="op">=</span> torch.randn(reps, T_, dk)</span>
@@ -459,7 +466,7 @@ d_k=512 scaled: std of scores   1.00   mean max attention weight 0.25</code></pr
 <li>Therefore <span class="math inline">\(\mathrm{softmax}\big(\tfrac{\mathbf{P}\mathbf{Q}\mathbf{K}^\top\mathbf{P}^\top}{\sqrt{d_k}}\big)\mathbf{P}\mathbf{V} = \mathbf{P}\,\mathrm{softmax}\big(\tfrac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d_k}}\big)\mathbf{P}^\top\mathbf{P}\mathbf{V} = \mathbf{P}\,\mathrm{Attention}(\mathbf{Q},\mathbf{K},\mathbf{V})\)</span>, because <span class="math inline">\(\mathbf{P}^\top\mathbf{P} = \mathbf{I}\)</span> (a permutation matrix is orthogonal). <span class="math inline">\(\blacksquare\)</span></li>
 </ol>
 <p>Shuffling the input only shuffles the output: attention treats the input as a <strong>set</strong>. In “dog bites man” and “man bites dog”, each word would get exactly the same representation. The MLP and LayerNorm act on each position separately, so the whole transformer block is permutation-equivariant too. Word order must be injected explicitly.</p>
-<div id="d1b83dad" class="cell" data-execution_count="4">
+<div id="bf814d70" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>T_, d, dk <span class="op">=</span> <span class="dv">5</span>, <span class="dv">8</span>, <span class="dv">4</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> torch.randn(T_, d)<span class="op">;</span> WQ, WK, WV <span class="op">=</span> (torch.randn(d, dk) <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">3</span>))</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>attn <span class="op">=</span> <span class="kw">lambda</span> X: torch.softmax((X <span class="op">@</span> WQ) <span class="op">@</span> (X <span class="op">@</span> WK).T <span class="op">/</span> np.sqrt(dk), <span class="op">-</span><span class="dv">1</span>) <span class="op">@</span> (X <span class="op">@</span> WV)</span>
@@ -492,7 +499,7 @@ d_k=512 scaled: std of scores   1.00   mean max attention weight 0.25</code></pr
 \]</span></p>
 <p><span class="math inline">\(PE(pos + k)\)</span> is a fixed rotation of <span class="math inline">\(PE(pos)\)</span>, the same for every <span class="math inline">\(pos\)</span>: a linear map that the attention projections can learn, which makes “<span class="math inline">\(k\)</span> tokens back” easy to express.</p>
 <p><strong>RoPE depends only on the offset.</strong> Rotate the query at position <span class="math inline">\(m\)</span> by <span class="math inline">\(\mathbf{R}(m\theta)\)</span> and the key at position <span class="math inline">\(n\)</span> by <span class="math inline">\(\mathbf{R}(n\theta)\)</span> (2-D rotations, one per pair of dimensions). Then <span class="math inline">\((\mathbf{R}(m\theta)\mathbf{q})^\top(\mathbf{R}(n\theta)\mathbf{k}) = \mathbf{q}^\top\mathbf{R}(m\theta)^\top\mathbf{R}(n\theta)\mathbf{k} = \mathbf{q}^\top\mathbf{R}((n-m)\theta)\mathbf{k}\)</span>, because <span class="math inline">\(\mathbf{R}(\phi)^\top = \mathbf{R}(-\phi)\)</span> and rotations compose by adding angles. The score depends on the positions only through <span class="math inline">\(n-m\)</span>.</p>
-<div id="6f021240" class="cell" data-execution_count="5">
+<div id="cb4c6d8e" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> sinusoidal(P, d):</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    pos, i <span class="op">=</span> np.arange(P)[:, <span class="va">None</span>], np.arange(d <span class="op">//</span> <span class="dv">2</span>)[<span class="va">None</span>, :]</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    ang <span class="op">=</span> pos <span class="op">/</span> <span class="dv">10000</span> <span class="op">**</span> (<span class="dv">2</span> <span class="op">*</span> i <span class="op">/</span> d)<span class="op">;</span> pe <span class="op">=</span> np.zeros((P, d))<span class="op">;</span> pe[:, <span class="dv">0</span>::<span class="dv">2</span>], pe[:, <span class="dv">1</span>::<span class="dv">2</span>] <span class="op">=</span> np.sin(ang), np.cos(ang)</span>
@@ -524,7 +531,7 @@ RoPE scores for (m, n) = (2, 5), (10, 13), (40, 43): [-0.0352, -0.0352, -0.0352]
 <p><span class="math inline">\(e^{-\infty} = 0\)</span>, so future tokens get exactly zero weight and each row is a distribution over the past only.</p>
 <div class="widget"><svg class="fig" data-fig="mask" style="max-height:270px" aria-label="Scores, the causal mask with minus infinity above the diagonal, and the resulting attention weights"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#15">slide 15</a> of the Attention and Transformers deck.</p></div>
 <p>This is what makes transformers fast to <strong>train</strong>: one forward pass over a sequence of length <span class="math inline">\(n\)</span> computes all <span class="math inline">\(n\)</span> next-token predictions <strong>in parallel</strong>, each seeing only its own past (<em>teacher forcing</em>, <a href="04_rnn_lstm.html">NN note 04</a>). An RNN has to run step by step. At <strong>generation</strong> time the model still produces one token at a time (section 13).</p>
-<div id="7645c9ac" class="cell" data-execution_count="6">
+<div id="03651827" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>T_ <span class="op">=</span> <span class="dv">6</span></span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>scores <span class="op">=</span> torch.randn(T_, T_)</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>mask <span class="op">=</span> torch.triu(torch.ones(T_, T_, dtype<span class="op">=</span>torch.<span class="bu">bool</span>), diagonal<span class="op">=</span><span class="dv">1</span>)</span>
@@ -545,7 +552,7 @@ RoPE scores for (m, n) = (2, 5), (10, 13), (40, 43): [-0.0352, -0.0352, -0.0352]
 <section id="self-attention-in-code" class="level3">
 <h3 class="anchored" data-anchor-id="self-attention-in-code">7.2 Self-attention in code</h3>
 <p>Everything so far fits in a handful of lines: three projections, one scaled product, an optional mask, a softmax per row, and a weighted average of the values.</p>
-<div id="f9604dd0" class="cell" data-execution_count="7">
+<div id="39cd44e6" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> self_attention(X, Wq, Wk, Wv, causal<span class="op">=</span><span class="va">False</span>):</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    Q, K, V <span class="op">=</span> X <span class="op">@</span> Wq, X <span class="op">@</span> Wk, X <span class="op">@</span> Wv       <span class="co"># [n, dk] each</span></span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    S <span class="op">=</span> Q <span class="op">@</span> K.T <span class="op">/</span> math.sqrt(K.shape[<span class="op">-</span><span class="dv">1</span>])   <span class="co"># [n, n] scores</span></span>
@@ -657,7 +664,7 @@ RoPE scores for (m, n) = (2, 5), (10, 13), (40, 43): [-0.0352, -0.0352, -0.0352]
 </table>
 <p>(The softmax, LayerNorm and residuals are <span class="math inline">\(O(hn^2 + nd)\)</span>, lower order.) The part that is linear in <span class="math inline">\(n\)</span> (<span class="math inline">\(24nd^2\)</span>: projections and MLP) and the part that is quadratic (<span class="math inline">\(4n^2d\)</span>: attention proper) are equal when <span class="math inline">\(4n^2d = 24nd^2\)</span>, i.e.&nbsp;at <span class="math inline">\(n = 6d\)</span>: 4,608 tokens for <span class="math inline">\(d = 768\)</span>. Below that, the MLP and projections dominate; above, attention does, and <strong>doubling the context quadruples the attention cost</strong>.</p>
 <p><strong>Memory.</strong> Training stores the attention weights <span class="math inline">\(\mathbf{A}\)</span> for the backward pass: <span class="math inline">\(h\,n^2\)</span> numbers per layer, against <span class="math inline">\(n\,d\)</span> for the layer’s input. Their ratio is <span class="math inline">\(h\,n^2/(n\,d) = n/d_k\)</span>: already 16 for GPT-2 small at <span class="math inline">\(n = 1024\)</span> (<span class="math inline">\(d_k = 64\)</span>). This quadratic memory is why context windows are limited and why long-context tricks exist: FlashAttention recomputes <span class="math inline">\(\mathbf{A}\)</span> block by block instead of storing it (exact, memory <span class="math inline">\(O(n)\)</span>), sparse or sliding-window attention computes only some pairs (approximate).</p>
-<div id="228c6222" class="cell" data-execution_count="8">
+<div id="c7dc38a6" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>d_model, h_heads <span class="op">=</span> <span class="dv">768</span>, <span class="dv">12</span></span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> np.logspace(np.log10(<span class="dv">128</span>), np.log10(<span class="dv">65536</span>), <span class="dv">60</span>)</span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>fig, axes <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize<span class="op">=</span>(<span class="dv">11</span>, <span class="fl">3.6</span>))</span>
@@ -792,7 +799,7 @@ J(\boldsymbol{\theta}) = -\frac{1}{T}\sum_{t=1}^{T}\log P_{\boldsymbol{\theta}}(
   <div class="ctl"><label for="bp-s">merges</label><input type="range" id="bp-s" data-k="s" min="0" max="4" step="1" value="0"><span class="v" data-v="s"></span></div>
   <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#20">slide 20</a> of the Attention and Transformers deck.</p>
 </div>
-<div id="58028f53" class="cell" data-execution_count="9">
+<div id="7e9e1655" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> collections <span class="im">import</span> Counter</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> merge_word(w, a, b):</span>
@@ -864,7 +871,7 @@ a second corpus, with an end-of-word marker '_'
 <section id="the-model" class="level3">
 <h3 class="anchored" data-anchor-id="the-model">12.1 The model</h3>
 <p>The model below implements every piece of this note: multi-head causal self-attention written out (so that we can switch the mask off and add a KV cache later), pre-LN blocks with residuals, learned position embeddings and weight tying. The embeddings are initialised with standard deviation 0.02, as in GPT-2 (section 16.3 explains why).</p>
-<div id="cf7cd3f5" class="cell" data-execution_count="10">
+<div id="a597678e" class="cell" data-execution_count="10">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> SelfAttention(nn.Module):</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, d, n_heads, causal<span class="op">=</span><span class="va">True</span>, dropout<span class="op">=</span><span class="fl">0.1</span>):</span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">super</span>().<span class="fu">__init__</span>()<span class="op">;</span> <span class="va">self</span>.h, <span class="va">self</span>.causal <span class="op">=</span> n_heads, causal</span>
@@ -922,7 +929,7 @@ GPT-2 small: 12 x 7,087,872 + 38,597,376 (tokens) + 786,432 (positions) + 1,536 
 <section id="the-data" class="level3">
 <h3 class="anchored" data-anchor-id="the-data">12.2 The data</h3>
 <p>To keep everything local and fast we train a <strong>character-level</strong> model (vocabulary = the characters of the text) on a synthetic corpus of 3,000 simple sentences, built from a tiny grammar: 8 subjects, 4 verbs, and 4 objects per verb. The model has to learn spelling, word boundaries and some grammar (which verbs go with which objects) from next-character prediction alone. Because the grammar is known, we can also check whether generated sentences are grammatical (section 13).</p>
-<div id="0f87a16d" class="cell" data-execution_count="11">
+<div id="df655a01" class="cell" data-execution_count="11">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>subjects <span class="op">=</span> [<span class="st">"the model"</span>, <span class="st">"the network"</span>, <span class="st">"a student"</span>, <span class="st">"the teacher"</span>, <span class="st">"the tree"</span>, <span class="st">"the forest"</span>, <span class="st">"a neuron"</span>, <span class="st">"the optimizer"</span>]</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>verbs <span class="op">=</span> {<span class="st">"learns"</span>: [<span class="st">"the weights"</span>, <span class="st">"a pattern"</span>, <span class="st">"the features"</span>, <span class="st">"from data"</span>],</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>         <span class="st">"predicts"</span>: [<span class="st">"the label"</span>, <span class="st">"the next word"</span>, <span class="st">"a probability"</span>, <span class="st">"the price"</span>],</span>
@@ -947,7 +954,7 @@ the tree predicts the price. the model splits the data. the optimizer splits the
 <section id="training" class="level3">
 <h3 class="anchored" data-anchor-id="training">12.3 Training</h3>
 <p>Each training step samples 32 random windows of 64 characters; the targets are the same windows shifted by one character, and the loss is the cross-entropy at all 64 positions at once. AdamW with learning rate <span class="math inline">\(3\times10^{-3}\)</span>, gradient clipping at 1, 1,500 steps; every 100 steps the loss is estimated on 20 fixed batches of the training and validation text.</p>
-<div id="a8d48427" class="cell" data-execution_count="12">
+<div id="0720e665" class="cell" data-execution_count="12">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>ctx, B <span class="op">=</span> <span class="dv">64</span>, <span class="dv">32</span></span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_batch(src, g<span class="op">=</span><span class="va">None</span>):</span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>    ix <span class="op">=</span> torch.randint(<span class="dv">0</span>, <span class="bu">len</span>(src) <span class="op">-</span> ctx <span class="op">-</span> <span class="dv">1</span>, (B,), generator<span class="op">=</span>g)</span>
@@ -995,7 +1002,7 @@ loss at step 0: 3.034 nats/char (log |V| = 3.258);  final validation loss 0.203 
 </section>
 <section id="what-the-heads-learned" class="level3">
 <h3 class="anchored" data-anchor-id="what-the-heads-learned">12.4 What the heads learned</h3>
-<div id="6f55c17c" class="cell" data-execution_count="13">
+<div id="c13cf5db" class="cell" data-execution_count="13">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="st">"the network predicts the next word."</span></span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>idx <span class="op">=</span> torch.tensor([[stoi[c] <span class="cf">for</span> c <span class="kw">in</span> prompt]])</span>
 <span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>model.<span class="bu">eval</span>()</span>
@@ -1066,7 +1073,7 @@ head 4: mean weight on itself 0.36, on the previous character 0.15, mean distanc
     <button type="button" data-k="go" hidden="">Sample a word</button></div>
   <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#23">slide 23</a> of the Attention and Transformers deck (without its "sample a word" button).</p>
 </div>
-<div id="e29e9988" class="cell" data-execution_count="14">
+<div id="a8608001" class="cell" data-execution_count="14">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>z <span class="op">=</span> torch.tensor([<span class="fl">3.0</span>, <span class="fl">2.2</span>, <span class="fl">1.7</span>, <span class="fl">1.2</span>, <span class="fl">0.9</span>, <span class="fl">0.7</span>, <span class="fl">0.5</span>, <span class="fl">0.1</span>])       <span class="co"># the widget's logits: here, back, home, over, in, now, soon, inside</span></span>
 <span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> tau <span class="kw">in</span> [<span class="fl">1.0</span>, <span class="fl">0.3</span>, <span class="fl">1.8</span>]: <span class="bu">print</span>(<span class="ss">f"tau = </span><span class="sc">{</span>tau<span class="sc">}</span><span class="ss">: p ="</span>, (z <span class="op">/</span> tau).softmax(<span class="dv">0</span>).numpy().<span class="bu">round</span>(<span class="dv">2</span>))</span>
 <span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>p <span class="op">=</span> z.softmax(<span class="dv">0</span>)<span class="op">;</span> <span class="bu">print</span>(<span class="st">"top-3 at tau = 1:"</span>, (p[:<span class="dv">3</span>] <span class="op">/</span> p[:<span class="dv">3</span>].<span class="bu">sum</span>()).numpy().<span class="bu">round</span>(<span class="dv">2</span>), <span class="st">"  cumulative p:"</span>, p.cumsum(<span class="dv">0</span>).numpy().<span class="bu">round</span>(<span class="dv">2</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -1082,7 +1089,7 @@ top-3 at tau = 1: [0.58 0.26 0.16]   cumulative p: [0.45 0.65 0.77 0.84 0.89 0.9
 <section id="decoding-the-tiny-gpt" class="level3">
 <h3 class="anchored" data-anchor-id="decoding-the-tiny-gpt">13.3 Decoding the tiny GPT</h3>
 <p><code>generate</code> implements greedy, temperature, top-<span class="math inline">\(k\)</span> and top-<span class="math inline">\(p\)</span>, with or without the KV cache; <code>beam</code> implements beam search. First a check that the cache changes nothing but the cost.</p>
-<div id="26593564" class="cell" data-execution_count="15">
+<div id="87fb680e" class="cell" data-execution_count="15">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="at">@torch.no_grad</span>()</span>
 <span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> generate(prompt, n_new<span class="op">=</span><span class="dv">120</span>, temperature<span class="op">=</span><span class="fl">1.0</span>, top_k<span class="op">=</span><span class="va">None</span>, top_p<span class="op">=</span><span class="va">None</span>, seed<span class="op">=</span><span class="dv">0</span>, use_cache<span class="op">=</span><span class="va">False</span>, m<span class="op">=</span><span class="va">None</span>):</span>
 <span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>    m <span class="op">=</span> m <span class="kw">or</span> model<span class="op">;</span> m.<span class="bu">eval</span>()<span class="op">;</span> g <span class="op">=</span> torch.Generator().manual_seed(seed)</span>
@@ -1116,7 +1123,7 @@ tokens processed for 50 new tokens after a 9-token prompt: without cache 1675, w
 </div>
 </div>
 <p>Next, each strategy generates 5 texts of 300 characters from “the model” (seeds 0–4; greedy and beam search are deterministic, so their 5 texts are identical). We collect the complete sentences after the prompt’s own and count the fraction that are <strong>grammatical</strong> (one of the 128 sentences of the grammar) and how many <strong>distinct</strong> sentences there are among all of them.</p>
-<div id="2a16884c" class="cell" data-execution_count="16">
+<div id="b8844087" class="cell" data-execution_count="16">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="at">@torch.no_grad</span>()</span>
 <span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> beam(prompt, n_new<span class="op">=</span><span class="dv">300</span>, width<span class="op">=</span><span class="dv">5</span>):</span>
 <span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>    beams <span class="op">=</span> [(<span class="fl">0.0</span>, [stoi[c] <span class="cf">for</span> c <span class="kw">in</span> prompt])]                           <span class="co"># (total log-probability, token ids)</span></span>
@@ -1157,7 +1164,7 @@ tokens processed for 50 new tokens after a 9-token prompt: without cache 1675, w
 <li>At <span class="math inline">\(\tau = 2\)</span> only 20 % of the sentences are grammatical: the flattened distribution samples letters the grammar never produces (“losuduces”, “preduces”).</li>
 <li><strong>Top-<span class="math inline">\(k\)</span></strong> and <strong>top-<span class="math inline">\(p\)</span></strong> at <span class="math inline">\(\tau = 1\)</span> keep the diversity and the grammar; top-<span class="math inline">\(p = 0.9\)</span> even rescues <span class="math inline">\(\tau = 2\)</span> (98 % grammatical), because the nucleus removes the unlikely letters before sampling.</li>
 </ul>
-<div id="e4422193" class="cell" data-execution_count="17">
+<div id="88baab80" class="cell" data-execution_count="17">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="co"># How temperature reshapes one next-token distribution</span></span>
 <span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> torch.no_grad():</span>
 <span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>    z <span class="op">=</span> model(torch.tensor([[stoi[c] <span class="cf">for</span> c <span class="kw">in</span> <span class="st">"the model predicts the "</span>]]))[<span class="dv">0</span>, <span class="op">-</span><span class="dv">1</span>]</span>
@@ -1229,7 +1236,7 @@ J = -\frac1T\sum_{t=1}^{T}\log p(x_t\mid x_{&lt;t}), \qquad \text{perplexity} = 
 \text{BPC} = \frac{\text{total bits for the text}}{\text{number of characters}} = \frac{T_{\text{tokens}}\cdot J_{\text{bits}}}{N_{\text{chars}}}.
 \]</span></p>
 <p>(This requires that the token sequence determines the text exactly, so both models are scoring the same thing.) The code scores the validation text with the tiny GPT (all positions of consecutive 64-character windows) and with a word-level bigram model fitted on the training text, <span class="math inline">\(P(w_t\mid w_{t-1}) = \frac{c(w_{t-1},w_t) + 0.1}{c(w_{t-1}) + 0.1\,|V_w|}\)</span> (add-0.1 smoothing), whose tokens are the words and the full stop.</p>
-<div id="d2a82d3d" class="cell" data-execution_count="18">
+<div id="32864bab" class="cell" data-execution_count="18">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="at">@torch.no_grad</span>()</span>
 <span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> token_losses(m, src):                                       <span class="co"># loss at every position of consecutive windows</span></span>
 <span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>    m.<span class="bu">eval</span>()<span class="op">;</span> nw <span class="op">=</span> (<span class="bu">len</span>(src) <span class="op">-</span> <span class="dv">1</span>) <span class="op">//</span> ctx</span>
@@ -1257,7 +1264,7 @@ word bigram, per word  : 1.221 nats, perplexity 3.39, 1.761 bits per word -&gt; 
 <section id="masking-correctness-what-happens-without-the-causal-mask" class="level2">
 <h2 class="anchored" data-anchor-id="masking-correctness-what-happens-without-the-causal-mask">15. Masking correctness: what happens without the causal mask</h2>
 <p>A classic bug: the mask is forgotten (or built with the wrong orientation). Then position <span class="math inline">\(t\)</span> can attend to position <span class="math inline">\(t+1\)</span>, whose token <em>is</em> the target at position <span class="math inline">\(t\)</span>. The model learns to copy it: the training loss becomes unrealistically low, and so does the validation loss if it is computed the same way. But at generation time the next token does not exist, so the model has learned nothing useful for the last position. The code trains the same model with <code>causal=False</code> for 400 steps.</p>
-<div id="b19023b5" class="cell" data-execution_count="19">
+<div id="0a870707" class="cell" data-execution_count="19">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>torch.manual_seed(<span class="dv">0</span>)<span class="op">;</span> leaky <span class="op">=</span> TinyGPT(<span class="bu">len</span>(chars), causal<span class="op">=</span><span class="va">False</span>)</span>
 <span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>st_l, tr_l, va_l <span class="op">=</span> train(leaky, <span class="dv">401</span>, train_data, val_data, every<span class="op">=</span><span class="dv">50</span>)</span>
 <span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"no mask, training / validation loss by step:"</span>, <span class="st">" "</span>.join(<span class="ss">f"</span><span class="sc">{</span>s<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>a<span class="sc">:.3f}</span><span class="ss">/</span><span class="sc">{</span>b<span class="sc">:.3f}</span><span class="ss">"</span> <span class="cf">for</span> s, a, b <span class="kw">in</span> <span class="bu">zip</span>(st_l, tr_l, va_l)))</span>
@@ -1280,7 +1287,7 @@ generation without the mask: 'the modeleeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
 </div>
 <p>Without the mask, both the training and the validation loss fall to about 0.02 nats per character, far below the 0.203 of the correct model, and far below the lowest loss any honest model can reach on this text: each sentence carries <span class="math inline">\(\log128\)</span> nats of genuinely random choices (subject, verb, object), which spread over its characters gives the floor printed above. A loss below the entropy of the data is impossible without cheating. The validation loss does not catch the bug, because it is computed with the same leaky forward pass. At the last position, which is the only one used at generation time, the leaky model is six times worse than the correct one, and its generations are garbage.</p>
 <p><strong>How to detect it.</strong> (1) A loss far below what the task allows: here the entropy of the next sentence’s subject alone puts a floor on the honest loss. (2) Evaluate the loss at the <strong>last position only</strong>, where no future exists, or compare with a model you trust. (3) A unit test: perturb token <span class="math inline">\(j\)</span> and check that the outputs at positions <span class="math inline">\(i&lt;j\)</span> don’t change (the code below). (4) Generate: garbage generation with a tiny training loss is the signature.</p>
-<div id="1c0ac028" class="cell" data-execution_count="20">
+<div id="ba9550f4" class="cell" data-execution_count="20">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> causality_test(m, n<span class="op">=</span><span class="dv">20</span>):</span>
 <span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>    m.<span class="bu">eval</span>()<span class="op">;</span> x <span class="op">=</span> torch.randint(<span class="dv">0</span>, <span class="bu">len</span>(chars), (<span class="dv">1</span>, n))<span class="op">;</span> x2 <span class="op">=</span> x.clone()<span class="op">;</span> x2[<span class="dv">0</span>, <span class="dv">10</span>] <span class="op">=</span> (x[<span class="dv">0</span>, <span class="dv">10</span>] <span class="op">+</span> <span class="dv">1</span>) <span class="op">%</span> <span class="bu">len</span>(chars)</span>
 <span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> torch.no_grad(): d <span class="op">=</span> (m(x) <span class="op">-</span> m(x2)).<span class="bu">abs</span>().amax(<span class="op">-</span><span class="dv">1</span>)[<span class="dv">0</span>]</span>
@@ -1296,7 +1303,7 @@ generation without the mask: 'the modeleeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
 <section id="train-and-validation-curves" class="level3">
 <h3 class="anchored" data-anchor-id="train-and-validation-curves">16.1 Train and validation curves</h3>
 <p>With 1,500 steps on 83,000 training characters, the train and validation curves of section 12.3 lie on top of each other: no overfitting. To see what overfitting looks like, train the same model on only the first 1,500 characters (about 50 sentences) for 600 steps.</p>
-<div id="e44dccee" class="cell" data-execution_count="21">
+<div id="ab74b594" class="cell" data-execution_count="21">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb38"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>torch.manual_seed(<span class="dv">0</span>)<span class="op">;</span> small <span class="op">=</span> TinyGPT(<span class="bu">len</span>(chars))</span>
 <span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>st_s, tr_s, va_s <span class="op">=</span> train(small, <span class="dv">601</span>, train_data[:<span class="dv">1500</span>], val_data)</span>
 <span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="fl">6.5</span>, <span class="fl">3.6</span>))</span>
@@ -1360,7 +1367,7 @@ generation without the mask: 'the modeleeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
 <section id="the-loss-at-step-0" class="level3">
 <h3 class="anchored" data-anchor-id="the-loss-at-step-0">16.3 The loss at step 0</h3>
 <p>A cheap check before any training: with random weights the model should be nearly uniform, so the initial loss should be close to <span class="math inline">\(\log|V|\)</span> (<span class="math inline">\(\log26 = 3.26\)</span> here). Section 12.3 printed about 3.0. With the embeddings left at PyTorch’s default <span class="math inline">\(\mathcal{N}(0,1)\)</span> initialisation, the tied output layer produces logits of standard deviation around <span class="math inline">\(\sqrt{d}\)</span>, and the initial loss is far larger:</p>
-<div id="be14824c" class="cell" data-execution_count="22">
+<div id="bc516ba5" class="cell" data-execution_count="22">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb40"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>torch.manual_seed(<span class="dv">0</span>)<span class="op">;</span> bad <span class="op">=</span> TinyGPT(<span class="bu">len</span>(chars))</span>
 <span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> torch.no_grad(): nn.init.normal_(bad.tok.weight, std<span class="op">=</span><span class="fl">1.0</span>)<span class="op">;</span> nn.init.normal_(bad.pos.weight, std<span class="op">=</span><span class="fl">1.0</span>)</span>
 <span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"initial loss with N(0, 1) embeddings: </span><span class="sc">{</span>estimate(bad, train_data)<span class="sc">:.1f}</span><span class="ss"> nats (log |V| = </span><span class="sc">{</span>np<span class="sc">.</span>log(<span class="bu">len</span>(chars))<span class="sc">:.2f}</span><span class="ss">);"</span></span>
@@ -1431,7 +1438,7 @@ generation without the mask: 'the modeleeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
 <p><strong>What it says.</strong> Self-attention and the position-wise MLP are permutation-equivariant (section 6.1); the model knows order only through <span class="math inline">\(PE(t)\)</span> (and, for decoders, through the causal mask, which reveals how many tokens precede each position).</p>
 <p><strong>Why it matters.</strong> Without positions, “dog bites man” = “man bites dog” for an encoder; a decoder could only count. Any damage is to <strong>prediction</strong> of anything order-dependent, which in language is almost everything.</p>
 <p><strong>How to check.</strong> Remove the position embeddings of the trained model and measure the loss; permute the tokens of an input and check whether the outputs change.</p>
-<div id="f45277b8" class="cell" data-execution_count="23">
+<div id="358c638f" class="cell" data-execution_count="23">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> torch.no_grad():</span>
 <span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>    saved <span class="op">=</span> model.pos.weight.clone()<span class="op">;</span> model.pos.weight.zero_()</span>
 <span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>    J_nopos <span class="op">=</span> token_losses(model, val_data).mean().item()<span class="op">;</span> model.pos.weight.copy_(saved)</span>
@@ -1448,7 +1455,7 @@ generation without the mask: 'the modeleeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
 <p><strong>What it says.</strong> The prediction at position <span class="math inline">\(t\)</span> depends only on the last <span class="math inline">\(n_{\text{ctx}}\)</span> tokens (64 characters here, 1,024 tokens for GPT-2).</p>
 <p><strong>Why it matters.</strong> Anything earlier is invisible, no matter how relevant. Learned position embeddings don’t exist beyond <span class="math inline">\(n_{\text{ctx}}\)</span> (our <code>generate</code> crops the input to the last 64 characters for this reason), and even models with sinusoidal or rotary positions degrade on lengths never seen in training. The damage is to <strong>prediction</strong>, silently: the model still answers.</p>
 <p><strong>How to check.</strong> Plot the loss by position within the context: the first positions have little context and a high loss; if the loss is still falling at the last position, more context would help. And compare the length of real inputs with <span class="math inline">\(n_{\text{ctx}}\)</span>.</p>
-<div id="2a9dd61c" class="cell" data-execution_count="24">
+<div id="c1c70fa0" class="cell" data-execution_count="24">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb44"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>per_pos <span class="op">=</span> L_val.mean(<span class="dv">0</span>).numpy()</span>
 <span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="fl">6.5</span>, <span class="fl">3.2</span>))<span class="op">;</span> plt.plot(np.arange(<span class="dv">1</span>, ctx <span class="op">+</span> <span class="dv">1</span>), per_pos, <span class="st">"o-"</span>, ms<span class="op">=</span><span class="dv">3</span>)</span>
 <span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"number of characters of context"</span>)<span class="op">;</span> plt.ylabel(<span class="st">"validation loss (nats)"</span>)<span class="op">;</span> plt.yscale(<span class="st">"log"</span>)<span class="op">;</span> plt.tight_layout()<span class="op">;</span> plt.show()</span>
@@ -1472,7 +1479,7 @@ generation without the mask: 'the modeleeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
 <p><strong>What it says.</strong> Section 4 assumed independent, zero-mean, unit-variance components of <span class="math inline">\(\mathbf{q}\)</span> and <span class="math inline">\(\mathbf{k}\)</span>, so that the scaled scores have variance 1.</p>
 <p><strong>Why it matters.</strong> It sets how “soft” attention is at the start of training. If the scaled scores have a standard deviation far above 1, the softmax saturates (one-hot attention, near-zero gradients, the instability behind “attention logit growth” in large models); far below 1, attention is nearly uniform and the first steps learn slowly. It matters for <strong>optimisation</strong>, not for what a trained model can represent: training is free to make the attention sharp.</p>
 <p><strong>How to check.</strong> Measure the standard deviation of the scaled scores per layer on real inputs, at initialisation and after training.</p>
-<div id="d5367313" class="cell" data-execution_count="25">
+<div id="b6f7ec6f" class="cell" data-execution_count="25">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="at">@torch.no_grad</span>()</span>
 <span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> scaled_score_std(m, x):</span>
 <span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>    m.<span class="bu">eval</span>()<span class="op">;</span> hdn <span class="op">=</span> m.tok(x) <span class="op">+</span> m.pos(torch.arange(x.shape[<span class="dv">1</span>]))<span class="op">;</span> out <span class="op">=</span> []</span>
@@ -1496,7 +1503,7 @@ generation without the mask: 'the modeleeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
 <p><strong>What it says.</strong> Training samples random windows from the training text; the validation loss estimates the loss on new text from the same source. That requires the two splits to be independent samples: no shared documents, no duplicates.</p>
 <p><strong>Why it matters.</strong> Language data is full of duplicates (the same boilerplate, quoted text, the same web page crawled twice). If validation text also appears in training, the validation loss measures memorisation, and benchmarks become <em>contaminated</em>: a model can “know” a test set it has seen. The damage is to the <strong>estimate of generalisation</strong>.</p>
 <p><strong>How to check.</strong> Measure the overlap: exact duplicates of sentences or documents, or the fraction of long <span class="math inline">\(n\)</span>-grams of the test set found in the training set.</p>
-<div id="b5d364ba" class="cell" data-execution_count="26">
+<div id="423ad7f3" class="cell" data-execution_count="26">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb48"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>train_sents <span class="op">=</span> <span class="bu">set</span>(s.strip() <span class="cf">for</span> s <span class="kw">in</span> text[:n_tr].split(<span class="st">"."</span>))</span>
 <span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>val_sents <span class="op">=</span> [s.strip() <span class="cf">for</span> s <span class="kw">in</span> text[n_tr:].split(<span class="st">"."</span>)[<span class="dv">1</span>:<span class="op">-</span><span class="dv">1</span>]]</span>
 <span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>np<span class="sc">.</span>mean([s <span class="kw">in</span> train_sents <span class="cf">for</span> s <span class="kw">in</span> val_sents])<span class="sc">:.0%}</span><span class="ss"> of the </span><span class="sc">{</span><span class="bu">len</span>(val_sents)<span class="sc">}</span><span class="ss"> validation sentences also occur in the training text"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -1512,7 +1519,7 @@ generation without the mask: 'the modeleeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
 <p><strong>What it says.</strong> A tokeniser learned on one kind of text (a language, a domain) is used on the text the model will see.</p>
 <p><strong>Why it matters.</strong> Text unlike the tokeniser’s training data is split into many short tokens. Then the same context window holds less text, generation costs more (section 8), the model has to spell out words from pieces, and per-token numbers (perplexity, cost per token, “context length”) mean different things for different texts (section 14.2). It matters for <strong>cost</strong> and <strong>prediction</strong> on the new domain, and for <strong>comparisons</strong>.</p>
 <p><strong>How to check.</strong> Count tokens per character on samples of each domain. The code learns 40 BPE merges on the training text and applies them to validation text (same source), to made-up insurance sentences and to Spanish versions of the grammar’s sentences.</p>
-<div id="5128cf3c" class="cell" data-execution_count="27">
+<div id="eeaf7135" class="cell" data-execution_count="27">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb50"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> encode(s, merges):                                       <span class="co"># apply the learned merges, in order, to each word</span></span>
 <span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>    out <span class="op">=</span> []</span>
 <span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> w <span class="kw">in</span> s.split(<span class="st">" "</span>):</span>

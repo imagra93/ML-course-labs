@@ -1,0 +1,830 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="author" content="Imanol Granada (imanolgranada@gmail.com)">
+<title>Introduction and Python for ML</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="../assets/deck.css">
+<link rel="stylesheet" href="../neural_networks/assets/nn.css">
+<style>
+pre.code{font-size:17px} pre.code.s{font-size:16px}
+.small p,.small li,p.small,li.small{font-size:21px} ul ul li{font-size:20px}
+.mx{font-size:20px} .cap{font-size:19px} table.t{font-size:21px}
+.shot{width:100%;height:100%;object-fit:cover;display:block}
+.frame{border:1px solid var(--line);overflow:hidden;background:#000}
+.who{display:grid;grid-template-columns:1fr 1.15fr;gap:36px;align-items:center}
+.cap{font-size:17px;color:var(--muted);margin-top:4px}
+.mx{border-collapse:collapse;font-family:var(--mono);font-size:18px}
+.mx td{border:1px solid #7f7f7f;padding:6px 14px;text-align:center}
+.mx td.h{background:var(--blue-soft)} .mx td.o{background:var(--orange-soft)} .mx td.g{background:var(--green-soft)} .mx td.y{background:var(--gold-soft)}
+.mx td.n{border:none;background:none;color:var(--muted);font-size:15px}
+</style>
+<script src="../assets/mathjax-config.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
+</head>
+<body data-deck="0 · Introduction and Python for ML" data-next="01_supervised_learning.html">
+<div id="viewport"><div id="stage">
+
+<section class="slide cover">
+  <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Introduction · Python for machine learning</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+
+<section class="slide">
+  <h2>Who is your teacher?</h2>
+  <div class="who">
+    <div class="stack" style="gap:14px">
+      <ul>
+        <li><b>Imanol Granada</b> (imanolgranada@gmail.com)</li>
+        <li>BSc in Telecommunication Engineering, 2015</li>
+        <li>MSc in Telecommunication Engineering, 2017</li>
+        <li>PhD in Telecommunication Engineering, 2021</li>
+        <li>Data Scientist at <b>Bdeo</b></li>
+        <li>My interests:
+          <ul><li>Machine Learning</li><li>Deep Learning</li></ul></li>
+      </ul>
+    </div>
+    <div><div class="frame" style="height:330px"><img class="shot" src="../assets/img/work-car.jpg" alt="A car with each body part segmented and labelled by a neural network"></div>
+      <p class="cap">Part segmentation and damage detection on a car photo.</p></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>What I have worked on: cars</h2>
+  <div class="cols">
+    <div class="stack">
+      <div class="frame" style="height:230px"><img class="shot" src="../assets/img/work-pair.jpg" alt="The same dented car wing in two photos, with the detected damage highlighted"></div>
+      <p class="cap">Find the damage in a photo of a vehicle (detection and segmentation).</p>
+    </div>
+    <div class="stack">
+      <div class="frame" style="height:230px"><img class="shot" style="object-position:center 30%" src="../assets/img/work-matching.jpg" alt="Photos of two red cars grouped by vehicle, with the damage matched across photos"></div>
+      <p class="cap">Decide which photos show the same vehicle and the same damage.</p>
+    </div>
+  </div>
+  <div class="note"><p>The models you will build in this course are the building blocks: a classifier that says <i>damaged or not</i> is logistic regression; one that finds <i>where</i> is a CNN (neural-network part, chapter 4).</p></div>
+</section>
+
+<section class="slide">
+  <h2>What I have worked on: roads and sport</h2>
+  <div class="cols">
+    <div class="stack">
+      <div class="frame" style="height:340px"><img class="shot" src="../assets/img/work-road.jpg" alt="Aerial view of a junction with detected elements coloured from red (poor) to green (good)"></div>
+      <p class="cap">Aerial images of roads: each detected element gets a condition from poor to good.</p>
+    </div>
+    <div class="stack">
+      <div class="frame" style="height:340px"><img class="shot" src="../assets/img/work-football.jpg" alt="A football match broadcast with an overlay showing a goal probability of 77.5 %"></div>
+      <p class="cap">Live football: the probability that a shot becomes a goal.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>What about you?</h2>
+  <div class="cols">
+    <div class="stack" style="gap:14px">
+      <p>Raise your hand if you have…</p>
+      <ul>
+        <li>written <b>Python</b> before? Used a notebook (Jupyter, Colab)?</li>
+        <li>used <b>NumPy</b> or <b>pandas</b>?</li>
+        <li>trained a machine learning model, with scikit-learn or anything else?</li>
+        <li>seen the maths of <b>gradient descent</b> or a derivative of a loss?</li>
+      </ul>
+    </div>
+    <div class="stack" style="gap:14px">
+      <p>And, in one sentence:</p>
+      <ul>
+        <li>What is your background?</li>
+        <li>What do you want to be able to do after the course?</li>
+        <li>What data or problem would you like to apply it to?</li>
+      </ul>
+      <div class="note"><p>There is no wrong answer. The next slides are for everyone: they fix the Python that all the labs use, so that in class we talk about machine learning and not about syntax.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Course overview: <a href="https://github.com/imagra93/ML-course-labs">ML-course-labs</a></h2>
+  <div class="cards c3">
+    <div class="card"><h3>Class slides</h3><p>One deck per topic, with the derivations step by step and interactive figures. → advances every step.</p><p class="small"><a href="index.html">slides/machine_learning</a></p></div>
+    <div class="card o"><h3>Course notes</h3><p>Web pages that go deeper than the slides: full derivations, the assumptions of each method, how to check them and what to do when they fail.</p><p class="small"><a href="../../notes/index.html">notes/</a></p></div>
+    <div class="card g"><h3>Lab notebooks</h3><p>Jupyter notebooks that open in Google Colab, nothing to install. You implement the algorithm and see it work.</p><p class="small"><code>notebooks/</code></p></div>
+  </div>
+  <table class="t" style="margin-top:6px">
+    <tr><th style="width:90px">Part</th><th>Topics</th><th style="width:330px">Labs</th></tr>
+    <tr><td><b>0</b></td><td>Python, NumPy, pandas, Matplotlib (<b>this deck</b>)</td><td>Lab 0</td></tr>
+    <tr><td><b>I</b></td><td>Supervised learning, linear and logistic regression, softmax, regularization, trees, ensembles, SVM</td><td>Labs 1–6 (scikit-learn, from scratch in NumPy)</td></tr>
+    <tr><td><b>II</b></td><td>MLP, backpropagation, training, CNN, RNN and LSTM, transformers, embeddings and RAG</td><td>Labs 7–15 (NumPy, then PyTorch)</td></tr>
+  </table>
+</section>
+
+<section class="slide">
+  <h2>Python: why?</h2>
+  <div class="cards c4">
+    <div class="card"><h3>Readable</h3><p>Fewer lines of code, high level: the code looks like the idea.</p></div>
+    <div class="card o"><h3>Free and open source</h3><p>Cross-platform: the same code on your laptop, Colab or a server.</p></div>
+    <div class="card g"><h3>Extensive libraries</h3><p>NumPy, pandas, scikit-learn, Matplotlib, PyTorch… the whole ML ecosystem is Python.</p></div>
+    <div class="card y"><h3>Object oriented</h3><p>Models are objects: <code>model.fit(X, y)</code>. Built-in data structures: list, dict, set.</p></div>
+  </div>
+  <div class="warnbox"><p><b>Drawback:</b> Python is an interpreted scripting language. That makes it convenient but slower than C or C++. The fix: the libraries do the heavy work in compiled C/C++ (and CUDA) under the hood, and we call them on whole arrays instead of looping in Python. We measure it on slide 22.</p></div>
+  <p class="small muted">This is the part of the language you need, not a complete Python course. Everything below is in <b>Lab 0</b>, which you should run before the first class.</p>
+</section>
+
+<section class="slide">
+  <h2>Python: fundamentals for ML</h2>
+  <table class="t">
+    <tr><th style="width:260px">Part of Lab 0</th><th>What it is</th><th style="width:360px">Why it matters in the labs</th></tr>
+    <tr><td><b>1</b> Python essentials</td><td>types, containers, control flow, functions, comprehensions</td><td>every notebook</td></tr>
+    <tr><td><b>2</b> Object-oriented programming</td><td>classes, <code>self</code>, inheritance</td><td>models are classes: <code>fit</code> / <code>predict</code>, PyTorch <code>nn.Module</code></td></tr>
+    <tr><td><b>3</b> NumPy</td><td>arrays, indexing, vectorisation, <code>axis</code>, broadcasting, <code>@</code></td><td>vectors, matrices and gradients: the from-scratch labs</td></tr>
+    <tr><td><b>4</b> pandas</td><td>Series, DataFrame, <code>loc</code> / <code>iloc</code>, <code>groupby</code>, NaN</td><td>loading and inspecting datasets</td></tr>
+    <tr><td><b>5</b> Matplotlib</td><td>scatter, line, histogram, subplots</td><td>every plot you will produce</td></tr>
+    <tr><td><b>6</b> Putting it together</td><td>load → split → scale → fit → evaluate → plot</td><td>the skeleton of every lab</td></tr>
+  </table>
+  <p class="small"><b>Docs you will use all the time:</b> <a href="https://numpy.org/doc/stable/reference/index.html">NumPy</a> · <a href="https://pandas.pydata.org/docs/reference/index.html">pandas</a> · <a href="https://scikit-learn.org/stable/index.html">scikit-learn</a> · <a href="https://matplotlib.org/">Matplotlib</a>. In a notebook, <code>help(np.mean)</code> or <code>np.mean?</code> shows the documentation.</p>
+</section>
+
+<section class="slide divider">
+  <div class="card blue"><h1>Python:<br><b>fundamentals for ML</b></h1><div class="stack center"><p>Part 1 of Lab 0</p><p class="small"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/lab 0 - Python for Machine Learning.ipynb" target="_blank" rel="noopener">Python – Notebook</a></p></div></div>
+</section>
+
+<section class="slide">
+  <h2>Variables and types</h2>
+  <div class="cols">
+    <div class="stack">
+      <pre class="code">n_samples = 150          <span class="c"># int</span>
+learning_rate = 0.01     <span class="c"># float</span>
+model_name = "logistic"  <span class="c"># str</span>
+is_fitted = False        <span class="c"># bool</span>
+nothing = None           <span class="c"># NoneType</span>
+
+epoch, loss, acc = 7, 0.03421, 0.9812
+print(f"epoch {epoch:3d}: loss = {loss:.4f}, "
+      f"accuracy = {acc:.2%}")</pre>
+      <pre class="code s"><span class="c"># output</span>
+epoch   7: loss = 0.0342, accuracy = 98.12%</pre>
+    </div>
+    <div class="stack">
+      <ul>
+        <li><b>Dynamically typed</b>: no declarations, a name just refers to an object.</li>
+        <li><b>Strongly typed</b>: <code>"3" + 4</code> is an error, Python never converts silently.</li>
+        <li><code>None</code> means "no value".</li>
+      </ul>
+      <p><b>f-strings</b> put expressions inside a string. You will use them to print training metrics:</p>
+      <table class="t" style="font-size:18px">
+        <tr><th>Format</th><th>Meaning</th></tr>
+        <tr><td><code>:3d</code></td><td>integer, width 3</td></tr>
+        <tr><td><code>:.4f</code></td><td>float, 4 decimals</td></tr>
+        <tr><td><code>:.2%</code></td><td>percentage, 2 decimals (0.9812 → 98.12%)</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The four containers</h2>
+  <table class="t" style="font-size:18px">
+    <tr><th>Type</th><th>Written</th><th>Ordered</th><th>Mutable</th><th>Typical use in ML</th></tr>
+    <tr><td><code>list</code></td><td><code>[1, 2, 3]</code></td><td>yes</td><td>yes</td><td>a sequence you modify, e.g. the loss history</td></tr>
+    <tr><td><code>tuple</code></td><td><code>(1, 2, 3)</code></td><td>yes</td><td><b>no</b></td><td>a fixed record: array shapes are tuples</td></tr>
+    <tr><td><code>dict</code></td><td><code>{"a": 1}</code></td><td>yes (insertion)</td><td>yes</td><td>named values: hyperparameters, config</td></tr>
+    <tr><td><code>set</code></td><td><code>{1, 2, 3}</code></td><td>no</td><td>yes</td><td>unique values: the set of class labels</td></tr>
+  </table>
+  <div class="cols">
+    <pre class="code s">losses = [0.9, 0.6, 0.4]
+losses.append(0.3)
+losses[0], losses[-1]     <span class="c"># 0.9  0.3</span>
+losses[1:3]               <span class="c"># [0.6, 0.4]</span>
+
+shape = (150, 4)
+n_rows, n_cols = shape    <span class="c"># unpacking</span></pre>
+    <pre class="code s">params = {"lr": 0.01, "epochs": 100}
+params["batch_size"] = 32
+params.get("momentum", 0.9)   <span class="c"># 0.9: default</span>
+
+labels = [0, 1, 1, 0, 2, 1, 2]
+set(labels)                   <span class="c"># {0, 1, 2}</span></pre>
+  </div>
+  <div class="warnbox"><p><b>Careful:</b> slicing is <code>[start:stop]</code> with <b>stop excluded</b>. <code>losses[1:3]</code> gives elements 1 and 2. The same convention holds in NumPy and in <code>df.iloc</code>.</p></div>
+</section>
+
+<section class="slide">
+  <h2>Control flow</h2>
+  <div class="cols">
+    <div class="stack">
+      <p class="small">Indentation (4 spaces) delimits blocks, there are no braces.</p>
+      <pre class="code s">accuracy = 0.87
+if accuracy > 0.95:
+    verdict = "excellent"
+elif accuracy > 0.80:
+    verdict = "acceptable"
+else:
+    verdict = "needs work"        <span class="c"># → "acceptable"</span>
+
+for loss in [0.9, 0.6, 0.4]:   <span class="c"># the elements</span>
+    print(f"loss={loss}")
+
+for i, loss in enumerate([0.9, 0.6, 0.4]):
+    print(f"epoch {i}: {loss}")   <span class="c"># index and value</span></pre>
+    </div>
+    <div class="stack">
+      <p class="small"><code>zip</code> walks two sequences in parallel: perfect for labels and predictions.</p>
+      <pre class="code s">y_true = [0, 1, 1, 0]
+y_pred = [0, 1, 0, 0]
+for true, pred in zip(y_true, y_pred):
+    mark = "ok" if true == pred else "WRONG"
+    print(f"true={true} pred={pred} {mark}")</pre>
+      <pre class="code s"><span class="c"># output</span>
+true=0 pred=0 ok
+true=1 pred=1 ok
+true=1 pred=0 WRONG
+true=0 pred=0 ok</pre>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Functions and docstrings</h2>
+  <div class="cols c64">
+    <div class="stack">
+      <pre class="code s">def accuracy_score(y_true, y_pred, as_percentage=False):
+    """Fraction of correct predictions."""
+    n_correct = sum(t == p
+                    for t, p in zip(y_true, y_pred))
+    score = n_correct / len(y_true)
+    return score * 100 if as_percentage else score
+
+y_true = [0, 1, 1, 0, 1]
+y_pred = [0, 1, 0, 0, 1]
+accuracy_score(y_true, y_pred)                      <span class="c"># 0.8</span>
+accuracy_score(y_true, y_pred,
+               as_percentage=True)   <span class="c"># 80.0</span></pre>
+      <p class="small">Check by hand: 4 of the 5 predictions match → 4/5 = 0.8.</p>
+    </div>
+    <div class="stack">
+      <ul class="small">
+        <li><code>def</code> defines a function; arguments with a <b>default value</b> are optional.</li>
+        <li>Pass by name (<code>as_percentage=True</code>) to make calls readable: scikit-learn does this everywhere.</li>
+        <li>The text in triple quotes is the <b>docstring</b>. <code>help(f)</code> or <code>f?</code> shows it: that is how you read the scikit-learn documentation.</li>
+      </ul>
+      <div class="idea"><p><b>Try it:</b> <code>help(np.mean)</code> prints every argument of a NumPy function.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Comprehensions</h2>
+  <p>Read it as: <b>[ expression &nbsp;|&nbsp; for each item &nbsp;|&nbsp; if condition ]</b></p>
+  <div class="cols">
+    <pre class="code s">values = [1, 2, 3, 4, 5, 6]
+
+squares = []                     <span class="c"># the verbose way</span>
+for v in values:
+    squares.append(v ** 2)
+
+squares = [v ** 2 for v in values]
+evens   = [v for v in values if v % 2 == 0]
+labels  = ["high" if v > 3 else "low"
+           for v in values]
+squared_map = {v: v ** 2 for v in values}</pre>
+    <pre class="code s"><span class="c"># results</span>
+squares     [1, 4, 9, 16, 25, 36]
+evens       [2, 4, 6]
+labels      ['low']*3 + ['high']*3   <span class="c"># 3 + 3</span>
+squared_map {1: 1, 2: 4, 3: 9, 4: 16, 5: 25, 6: 36}</pre>
+  </div>
+  <div class="hint"><div class="hd">Exercise 1: standardise a list (built-in Python only)</div><div class="bd">
+    <div class="eq" style="font-size:20px">$$z_i=\frac{x_i-\mu}{\sigma},\qquad \mu=\frac1n\sum_i x_i,\qquad \sigma=\sqrt{\frac1n\sum_i (x_i-\mu)^2}$$</div>
+    <p class="small step">Solution: <code>mu = sum(v)/n</code>, <code>sigma = (sum((x-mu)**2 for x in v)/n) ** 0.5</code>, return <code>[(x-mu)/sigma for x in v]</code>. For <code>[10, 12, 14, 16, 18]</code>: μ = 14, σ = √8 ≈ 2.83 → z = [−1.414, −0.707, 0, 0.707, 1.414], mean 0.</p></div></div>
+</section>
+
+<section class="slide divider">
+  <div class="card green"><h1>Object-oriented<br><b>programming</b></h1><div class="stack center"><p>Part 2 of Lab 0</p><p class="small">why <code>model.fit(X, y)</code> works</p></div></div>
+</section>
+
+<section class="slide">
+  <h2>Why you need classes</h2>
+  <div class="cols">
+    <div class="stack">
+      <p>Every model in this course is an <b>object</b>:</p>
+      <pre class="code s">model = LogisticRegression(C=1.0)  <span class="c"># create</span>
+model.fit(X_train, y_train)        <span class="c"># changes the state</span>
+y_pred = model.predict(X_test)     <span class="c"># uses that state</span>
+print(model.coef_)                 <span class="c"># learnt in fit</span></pre>
+      <p class="small">That <code>__init__</code> / <code>fit</code> / <code>predict</code> pattern <b>is</b> the scikit-learn API. PyTorch models follow the same idea with <code>nn.Module</code>.</p>
+    </div>
+    <div class="stack">
+      <dl class="gloss">
+        <dt>class</dt><dd>a blueprint</dd>
+        <dt>instance</dt><dd>one concrete object built from the class</dd>
+        <dt><code>__init__</code></dt><dd>the constructor: runs on creation, stores the configuration</dd>
+        <dt><code>self</code></dt><dd>the instance itself: first argument of every method, used to read and write attributes that survive between calls</dd>
+        <dt>attribute</dt><dd><code>data.name</code>: no parentheses</dd>
+        <dt>method</dt><dd><code>data.n_samples()</code>: with parentheses</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>A class, step by step</h2>
+  <div class="cols">
+    <pre class="code s">class Dataset:
+    """A tiny container for features and labels."""
+
+    def __init__(self, X, y, name="unnamed"):
+        self.X = X          <span class="c"># attributes of THIS one</span>
+        self.y = y
+        self.name = name
+
+    def n_samples(self):
+        return len(self.y)
+
+    def class_counts(self):
+        counts = {}
+        for label in self.y:
+            counts[label] = counts.get(label, 0) + 1
+        return counts</pre>
+    <div class="stack">
+      <pre class="code s">data = Dataset(X=[[1, 2], [3, 4], [5, 6], [7, 8]],
+               y=[0, 1, 1, 1], name="toy")
+
+data.name             <span class="c"># 'toy'</span>
+data.n_samples()      <span class="c"># 4</span>
+data.class_counts()   <span class="c"># {0: 1, 1: 3}</span></pre>
+      <p class="small"><b>Dunder methods</b> (<code>__like_this__</code>) hook into Python syntax. <code>__len__</code> gives <code>len(data)</code>; <code>__repr__</code> is what a notebook shows for the object: <code>Dataset(name='toy', n=4, n_features=2)</code>.</p>
+      <p class="small">PyTorch's <code>forward</code> runs through <code>__call__</code>, which is why you write <code>model(x)</code> and not <code>model.forward(x)</code>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Inheritance: the scikit-learn contract</h2>
+  <div class="cols">
+    <pre class="code s">class BaseEstimator:
+    def fit(self, X, y):
+        raise NotImplementedError
+    def predict(self, X):
+        raise NotImplementedError
+    def score(self, X, y):    <span class="c"># inherited for free</span>
+        preds = self.predict(X)
+        errors = [(p - t) ** 2
+                  for p, t in zip(preds, y)]
+        return sum(errors) / len(errors)  <span class="c"># MSE</span>
+
+class MeanRegressor(BaseEstimator):
+    """Predicts the training mean."""
+    def fit(self, X, y):
+        self.mean_ = sum(y) / len(y)
+        return self          <span class="c"># so calls chain</span>
+    def predict(self, X):
+        return [self.mean_ for _ in X]</pre>
+    <div class="stack">
+      <pre class="code s">X = [[1], [2], [3], [4], [5]]
+y = [2.0, 4.1, 5.9, 8.2, 9.8]
+model = MeanRegressor().fit(X, y)
+model.mean_            <span class="c"># 6.0</span>
+model.predict([[10]])  <span class="c"># [6.0]</span>
+model.score(X, y)      <span class="c"># 7.78 (MSE)</span></pre>
+      <ul class="small">
+        <li>A subclass <b>inherits</b> everything and can override it. <code>class Net(nn.Module)</code> in PyTorch works the same way.</li>
+        <li><code>self.mean_</code> with a <b>trailing underscore</b> = learnt from data in <code>fit</code>. Hyperparameters, set in <code>__init__</code>, have none.</li>
+        <li><code>fit</code> <b>returns self</b>, so <code>Model().fit(X, y).predict(X)</code> works.</li>
+        <li>A model is only good relative to a <b>baseline</b> like this one.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider">
+  <div class="card coral"><h1>NumPy</h1><div class="stack center"><p style="color:#fff">Part 3 of Lab 0</p><p class="small" style="color:#fff">vectors, matrices, gradients</p></div></div>
+</section>
+
+<section class="slide">
+  <h2>NumPy arrays: shape and dtype</h2>
+  <div class="cols">
+    <div class="stack">
+      <p>An array is <b>a contiguous block of memory of one type</b>: a vector, a matrix, or a stack of matrices. You operate on it as a whole.</p>
+      <pre class="code s">a = np.array([1, 2, 3, 4])             <span class="c"># shape (4,)</span>
+M = np.array([[1, 2, 3], [4, 5, 6]])   <span class="c"># shape (2, 3)</span>
+np.zeros(3)             <span class="c"># [0. 0. 0.]</span>
+np.arange(0, 10, 2)     <span class="c"># [0 2 4 6 8]  stop excluded</span>
+np.linspace(0, 1, 5)    <span class="c"># 5 points, both ends</span>
+np.eye(3)               <span class="c"># identity matrix</span></pre>
+      <div class="warnbox"><p>When a lab throws an error it is nearly always a <b>shape mismatch</b>: print <code>.shape</code> first.</p></div>
+    </div>
+    <div class="stack">
+      <h3>Shape conventions in ML</h3>
+      <ul class="small">
+        <li><code>X</code>: shape <b>(n_samples, n_features)</b>, one row per observation (our $m\times n$).</li>
+        <li><code>y</code>: shape <b>(n_samples,)</b>, a 1-D vector of targets.</li>
+      </ul>
+      <pre class="code s">X = np.array([[5.1, 3.5], [4.9, 3.0],
+              [4.7, 3.2], [4.6, 3.1]])
+y = np.array([0, 0, 1, 1])
+X.shape                <span class="c"># (4, 2): 4 samples, 2 features</span>
+y.shape                <span class="c"># (4,)</span>
+y_col = y.reshape(-1, 1)
+y_col.shape            <span class="c"># (4, 1): a column</span>
+y_col.reshape(-1).shape <span class="c"># (4,): flat again</span></pre>
+      <p class="small">A very common bug is <code>y</code> with shape <code>(n, 1)</code> instead of <code>(n,)</code>. <code>-1</code> means "work this dimension out for me".</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Indexing, slicing and boolean masks</h2>
+  <div class="cols">
+    <div class="stack">
+      <p class="small">For 2-D arrays: <code>array[rows, columns]</code>. Here <code>M = np.arange(12).reshape(3, 4)</code>:</p>
+      <table class="mx"><tr><td class="n"></td><td class="n">col 0</td><td class="n">col 1</td><td class="n">col 2</td><td class="n">col 3</td></tr>
+        <tr><td class="n">row 0</td><td>0</td><td class="h">1</td><td class="h">2</td><td>3</td></tr>
+        <tr><td class="n">row 1</td><td>4</td><td class="h">5</td><td class="h">6</td><td>7</td></tr>
+        <tr><td class="n">row 2</td><td>8</td><td>9</td><td>10</td><td>11</td></tr></table>
+      <pre class="code s">M[0, 0]       <span class="c"># 0</span>
+M[1]          <span class="c"># [4 5 6 7]    row 1</span>
+M[:, 2]       <span class="c"># [2 6 10]     column 2 (':' = all)</span>
+M[0:2, 1:3]   <span class="c"># [[1 2], [5 6]]   the blue block</span>
+M[-1]         <span class="c"># [8 9 10 11]  last row</span></pre>
+    </div>
+    <div class="stack">
+      <h3>Boolean masking: the most useful idiom</h3>
+      <pre class="code s">values = np.array([3.2, 7.8, 1.1, 9.4, 5.0])
+mask = values > 5       <span class="c"># [F  T  F  T  F]</span>
+values[mask]            <span class="c"># [7.8 9.4]</span>
+mask.sum()              <span class="c"># 2   (True counts as 1)</span>
+values[(values > 2) & (values < 6)]   <span class="c"># [3.2 5.]</span></pre>
+      <p class="small">Combine conditions with <code>&amp;</code> and <code>|</code>, <b>each one in parentheses</b>.</p>
+      <p class="small">You will do this in every classification lab: select the rows of one class.</p>
+      <pre class="code s">X[y == 1]    <span class="c"># [[4.7 3.2], [4.6 3.1]]</span></pre>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Vectorisation: no loops over elements</h2>
+  <div class="cols">
+    <div class="stack">
+      <p>Operations apply <b>elementwise to the whole array</b>, in compiled C code.</p>
+      <pre class="code s">a = np.array([1., 2., 3., 4.])
+b = np.array([10., 20., 30., 40.])
+a + b        <span class="c"># [11. 22. 33. 44.]</span>
+a * b        <span class="c"># [10. 40. 90. 160.]  elementwise!</span>
+a ** 2       <span class="c"># [1. 4. 9. 16.]</span>
+a * 3        <span class="c"># [3. 6. 9. 12.]</span>
+np.sqrt(a)   <span class="c"># [1. 1.414 1.732 2.]</span>
+np.exp(a)    <span class="c"># [2.72 7.39 20.09 54.6]</span></pre>
+      <p class="small"><code>a * b</code> is <b>not</b> a matrix product. That one is <code>@</code> (slide 25).</p>
+    </div>
+    <div class="stack">
+      <pre class="code s">big = np.random.rand(2_000_000)
+[v ** 2 for v in big]   <span class="c"># pure Python loop</span>
+big ** 2                <span class="c"># NumPy</span></pre>
+      <table class="t" style="font-size:19px">
+        <tr><th>Square 2 million numbers</th><th>Time</th></tr>
+        <tr><td>Python loop</td><td>806 ms</td></tr>
+        <tr><td>NumPy</td><td>25 ms</td></tr>
+        <tr><td><b>speed-up</b></td><td><b>32×</b></td></tr>
+      </table>
+      <p class="small">Measured in Lab 0 on one run (your machine will differ, the order of magnitude will not). The same reason is behind GPU training in the neural-network part.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Reductions and the <code style="font-size:.8em">axis</code> argument</h2>
+  <div class="cols">
+    <div class="stack">
+      <p class="small"><code>axis</code> is the dimension that gets <b>collapsed</b>.</p>
+      <table class="mx"><tr><td class="n"></td><td class="n">feature 0</td><td class="n">feature 1</td><td class="n">axis=1 →</td></tr>
+        <tr><td class="n">sample 0</td><td>1</td><td>10</td><td class="o">5.5</td></tr>
+        <tr><td class="n">sample 1</td><td>2</td><td>20</td><td class="o">11.0</td></tr>
+        <tr><td class="n">sample 2</td><td>3</td><td>30</td><td class="o">16.5</td></tr>
+        <tr><td class="n">sample 3</td><td>4</td><td>40</td><td class="o">22.0</td></tr>
+        <tr><td class="n">axis=0 ↓</td><td class="g">2.5</td><td class="g">25.0</td><td class="n"></td></tr></table>
+      <ul class="small">
+        <li><code>axis=0</code>: collapse the rows → <b>one value per column</b> (per feature).</li>
+        <li><code>axis=1</code>: collapse the columns → <b>one value per row</b> (per sample).</li>
+      </ul>
+    </div>
+    <div class="stack">
+      <pre class="code s">X.shape            <span class="c"># (4, 2)</span>
+X.mean()           <span class="c"># 13.75   everything → scalar</span>
+X.mean(axis=0)     <span class="c"># [ 2.5 25. ]        per feature</span>
+X.mean(axis=1)     <span class="c"># [5.5 11. 16.5 22.] per sample</span>
+X.sum(), X.min(), X.max()   <span class="c"># 110.0 1.0 40.0</span>
+X.std(axis=0)      <span class="c"># [1.118 11.180]</span>
+X.argmax(axis=1)   <span class="c"># [1 1 1 1]  index of the largest</span></pre>
+      <div class="note"><p>Say it aloud: <i>"axis=0 gives me a value per feature"</i>. Getting it backwards is a classic silent bug.</p><p class="small" style="margin-top:6px"><code>argmax(axis=1)</code> turns a matrix of class probabilities into predicted labels: the exact line you will use in the multiclass labs.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Broadcasting: standardise in one line</h2>
+  <div class="cols">
+    <div class="stack">
+      <pre class="code s">mu = X.mean(axis=0)     <span class="c"># shape (2,)</span>
+sd = X.std(axis=0)      <span class="c"># shape (2,)</span>
+X_scaled = (X - mu) / sd   <span class="c"># (4,2) - (2,) → (4,2)</span></pre>
+      <table class="mx"><tr><td class="n">X (4×2)</td><td class="n"></td><td class="n">mu stretched</td><td class="n"></td><td class="n">X_scaled</td></tr>
+        <tr><td>1 &nbsp;10</td><td class="n">−</td><td class="y">2.5 &nbsp;25</td><td class="n">→ ÷ sd →</td><td>−1.342 &nbsp;−1.342</td></tr>
+        <tr><td>2 &nbsp;20</td><td class="n">−</td><td class="y">2.5 &nbsp;25</td><td class="n"></td><td>−0.447 &nbsp;−0.447</td></tr>
+        <tr><td>3 &nbsp;30</td><td class="n">−</td><td class="y">2.5 &nbsp;25</td><td class="n"></td><td>0.447 &nbsp;0.447</td></tr>
+        <tr><td>4 &nbsp;40</td><td class="n">−</td><td class="y">2.5 &nbsp;25</td><td class="n"></td><td>1.342 &nbsp;1.342</td></tr></table>
+      <p class="small">Check row 0, feature 0: (1 − 2.5) / 1.118 = −1.342. New mean 0 and std 1 per feature.</p>
+    </div>
+    <div class="stack">
+      <div class="idea"><p><b>The rule:</b> compare the shapes <b>from the right</b>. Two dimensions are compatible if they are equal or one of them is 1.</p></div>
+      <p class="small">(4, 2) vs (2,): the (2,) is treated as (1, 2) → compatible → stretched to (4, 2). No data is copied.</p>
+      <pre class="code s">np.ones((4, 2)) + np.ones((3,))
+<span class="c"># ValueError: operands could not be broadcast</span>
+<span class="c"># together with shapes (4,2) (3,)</span></pre>
+      <p class="small">2 vs 3: neither equal nor 1, so it fails. The error message names the clashing shapes: read it.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Linear algebra: the OLS preview</h2>
+  <div class="cols">
+    <div class="stack">
+      <p class="small"><code>@</code> is the matrix product, the operation behind every linear model and every neural-network layer.</p>
+      <pre class="code s">A = np.array([[1, 2], [3, 4]]);  v = np.array([1, 1])
+A @ v          <span class="c"># [3 7]</span>
+A @ A          <span class="c"># [[ 7 10], [15 22]]</span>
+A.T            <span class="c"># [[1 3], [2 4]]  transpose</span>
+np.linalg.inv(A)  <span class="c"># [[-2. 1.], [1.5 -0.5]]</span></pre>
+      <p class="small">Check the first one: row (1, 2) · (1, 1) = 3 and row (3, 4) · (1, 1) = 7.</p>
+    </div>
+    <div class="stack">
+      <p class="small">Lab 1 solves least squares with the normal equation. The maths maps directly onto the code:</p>
+      <div class="eq">$$\hat{\bth}=(\bX^\top\bX)^{-1}\bX^\top\by$$</div>
+      <pre class="code s">X = np.column_stack([np.ones(n), x])   <span class="c"># (100, 2)</span>
+theta = np.linalg.inv(X.T @ X) @ X.T @ y</pre>
+      <p class="small">100 points from y = 3 + 2x plus noise (seed 0): estimated intercept <b>2.993</b> (true 3.0), slope <b>1.987</b> (true 2.0). The column of ones is the intercept.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Reproducible random numbers</h2>
+  <div class="cols">
+    <div class="stack">
+      <p><b>Always seed</b> your generator. Without a seed the results change on every run and nobody can reproduce yours.</p>
+      <pre class="code s">rng = np.random.default_rng(seed=42)
+rng.random(3)          <span class="c"># [0.774 0.439 0.859]</span>
+rng.normal(0, 1, 3)    <span class="c"># [ 0.941 -1.951 -1.302]</span>
+rng.integers(0, 10, 5) <span class="c"># [7 7 7 7 5]</span>
+rng.permutation(10)    <span class="c"># shuffled indices 0..9</span>
+
+np.random.default_rng(42).random(3)   <span class="c"># same first line</span></pre>
+    </div>
+    <div class="stack">
+      <ul class="small">
+        <li>Same seed → same numbers, on every machine.</li>
+        <li>Modern API: <code>np.random.default_rng(seed)</code>. In old code you will see <code>np.random.seed(42)</code>.</li>
+        <li>In scikit-learn the equivalent is <code>random_state=42</code>, e.g. in <code>train_test_split</code>.</li>
+      </ul>
+      <div class="hint"><div class="hd">Exercise 3</div><div class="bd"><p class="small">With <code>X = [[1,2],[3,6],[5,4],[7,8]]</code>: (1) mean of each column, (2) rows with first column &gt; 3, (3) standardise per column, (4) shape of <code>X @ X.T</code>.</p>
+        <p class="small step">Answers: (1) <code>X.mean(axis=0)</code> = [4, 5]; (2) <code>X[X[:, 0] &gt; 3]</code> = [[5,4],[7,8]]; (3) <code>(X - X.mean(axis=0)) / X.std(axis=0)</code>; (4) (4, 4).</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider">
+  <div class="card purple"><h1>pandas</h1><div class="stack center"><p>Part 4 of Lab 0</p><p class="small">tables with named columns</p></div></div>
+</section>
+
+<section class="slide">
+  <h2>pandas: Series and DataFrame</h2>
+  <div class="cols c46">
+    <div class="stack">
+      <p>NumPy arrays are homogeneous and anonymous. Real data has <b>named columns of different types</b>, text, and missing values.</p>
+      <ul class="small">
+        <li><b>Series</b>: one column, a 1-D array with an index.</li>
+        <li><b>DataFrame</b>: a table, a dict of Series sharing one index.</li>
+      </ul>
+      <div class="idea"><p>The workflow in every lab: <b>load with pandas → explore and clean → hand a NumPy array to the model.</b></p></div>
+    </div>
+    <div class="stack">
+      <pre class="code s">df = pd.DataFrame({
+    "sepal_length": [5.1, 4.9, 4.7, 4.6, 6.5, 6.0, 6.7, 5.8],
+    "sepal_width":  [3.5, 3.0, 3.2, 3.1, 3.0, 2.7, 3.1, 2.7],
+    "petal_length": [1.4, 1.4, 1.3, 1.5, 5.2, 5.1, 4.7, 5.1],
+    "species": ["setosa"]*4 + ["virginica"]*2
+               + ["versicolor", "virginica"]})
+
+df.shape          <span class="c"># (8, 4)</span>
+df.head(3)        <span class="c"># first rows</span>
+df.info()         <span class="c"># dtypes and non-null counts</span>
+df.describe()     <span class="c"># mean, std, quartiles</span>
+df["species"].value_counts()
+<span class="c"># setosa 4, virginica 3, versicolor 1</span></pre>
+      <p class="small">Those first commands are what you run on any dataset you have never seen. <code>value_counts()</code> shows the <b>class balance</b>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Selecting and filtering</h2>
+  <div class="cols">
+    <div class="stack">
+      <table class="t" style="font-size:18px">
+        <tr><th>Code</th><th>Returns</th></tr>
+        <tr><td><code>df["col"]</code></td><td>one column, a Series</td></tr>
+        <tr><td><code>df[["a", "b"]]</code></td><td>several columns, a DataFrame (double brackets)</td></tr>
+        <tr><td><code>df.loc[rows, cols]</code></td><td>selection by <b>label</b></td></tr>
+        <tr><td><code>df.iloc[rows, cols]</code></td><td>selection by integer <b>position</b></td></tr>
+      </table>
+      <div class="warnbox"><p><code>df.loc[0:2]</code> <b>includes</b> row 2 (3 rows); <code>df.iloc[0:2]</code> excludes position 2 (2 rows). <code>iloc</code> follows normal Python slicing, <code>loc</code> does not.</p></div>
+    </div>
+    <div class="stack">
+      <p class="small">Filtering is the NumPy mask again:</p>
+      <pre class="code s">df[df["petal_length"] > 5.0]        <span class="c"># 3 rows</span>
+
+df[(df["species"] == "virginica")
+   & (df["sepal_width"] < 3.0)]     <span class="c"># 2 rows</span>
+
+df[df["species"].isin(["setosa", "versicolor"])].shape
+<span class="c"># (5, 4)</span></pre>
+      <p class="small">As in NumPy: <code>&amp;</code> and <code>|</code>, each condition in parentheses.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>New columns, groups and missing values</h2>
+  <div class="cols">
+    <div class="stack">
+      <pre class="code s"><span class="c"># vectorised: the preferred way</span>
+df["petal_ratio"] = (df["petal_length"]
+                     / df["sepal_length"])
+<span class="c"># elementwise, if no vectorised version exists</span>
+df["size"] = df["petal_length"].apply(
+    lambda v: "large" if v > 4 else "small")
+<span class="c"># models need numbers, not strings</span>
+df["target"] = df["species"].map(
+    {"setosa": 0, "versicolor": 1, "virginica": 2})</pre>
+      <p class="small"><b>groupby</b> = split → apply → combine:</p>
+      <pre class="code s">df.groupby("species")["petal_length"].mean()
+<span class="c"># setosa 1.400   versicolor 4.700   virginica 5.133</span></pre>
+    </div>
+    <div class="stack">
+      <p class="small">Real data has holes (<code>NaN</code>). You must decide what to do: dropping and imputing are different modelling choices.</p>
+      <pre class="code s">dirty = df[["sepal_length", "sepal_width",
+            "petal_length"]].copy()
+dirty.loc[1, "sepal_width"] = np.nan
+dirty.loc[5, "petal_length"] = np.nan
+
+dirty.isna().sum()          <span class="c"># 0, 1, 1 per column</span>
+dirty.dropna().shape        <span class="c"># (6, 3): 2 rows lost</span>
+dirty.fillna(dirty.mean())  <span class="c"># NaN → column mean</span></pre>
+      <p class="small">Imputing with the mean of the whole dataset before splitting leaks test information: compute it on the training set only (slide 33).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>From a DataFrame to a model</h2>
+  <div class="cols">
+    <div class="stack">
+      <pre class="code s">feature_cols = ["sepal_length", "sepal_width",
+                "petal_length"]
+X = df[feature_cols].to_numpy()   <span class="c"># (8, 3)  float64</span>
+y = df["target"].to_numpy()       <span class="c"># (8,)    int64</span>
+
+<span class="c"># data usually comes from a file:</span>
+df = pd.read_csv("data/data.csv")
+df = pd.read_csv("https://.../data.csv")</pre>
+      <p class="small"><code>read_csv</code> options: <code>sep=";"</code>, <code>header=None</code>, <code>names=[...]</code>, <code>na_values=["?", "N/A"]</code>, <code>usecols=[...]</code>.</p>
+    </div>
+    <div class="hint"><div class="hd">Exercise 4, using the DataFrame above</div><div class="bd">
+      <ol class="small"><li>Samples of each <code>species</code>?</li><li>Mean <code>sepal_width</code> of virginica only?</li><li>A column <code>is_setosa</code> = 1 / 0?</li><li>Only the numeric columns, sorted by <code>petal_length</code> descending?</li></ol>
+      <p class="small step"><code>value_counts()</code> → 4 / 3 / 1 · <code>df.loc[df["species"]=="virginica", "sepal_width"].mean()</code> = 2.8 · <code>(df["species"]=="setosa").astype(int)</code> · <code>df.select_dtypes("number").sort_values("petal_length", ascending=False)</code></p></div></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Matplotlib in five minutes</h2>
+  <div class="cols">
+    <div class="stack">
+      <pre class="code s">x = np.linspace(0, 10, 50)
+y = 2 * x + 1 + rng.normal(0, 2, size=50)
+
+plt.figure(figsize=(6, 4))
+plt.scatter(x, y, alpha=0.7, label="observations")
+plt.plot(x, 2 * x + 1, color="red", linewidth=2,
+         label="true relationship")
+plt.xlabel("x");  plt.ylabel("y")
+plt.title("Always label your axes")
+plt.legend();  plt.grid(alpha=0.3)
+plt.show()</pre>
+    </div>
+    <div class="stack">
+      <p class="small">Three things are enough: a <b>scatter</b>, a <b>line</b>, and the <b>labels</b>.</p>
+      <pre class="code s">fig, axes = plt.subplots(1, 2, figsize=(10, 3.5))
+axes[0].hist(rng.normal(0, 1, 1000), bins=30)
+axes[0].set_title("Histogram")
+axes[1].plot(losses, marker="o")
+axes[1].set_title("Training loss")
+plt.tight_layout();  plt.show()</pre>
+      <p class="small"><code>fig</code> is the canvas, <code>axes</code> the individual plots. With <code>subplots</code> the methods change name: <code>plt.xlabel</code> → <code>ax.set_xlabel</code>, <code>plt.title</code> → <code>ax.set_title</code>.</p>
+      <p class="small">Training-loss curves like the right panel are how you will diagnose every model in the course.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Putting it together: an ML workflow in 5 steps</h2>
+  <div class="pipe">
+    <div class="pb b"><b>1 Load</b>load_diabetes<br>(442, 11)</div><span class="ar">→</span>
+    <div class="pb b"><b>2 Split</b>train_test_split<br>353 / 89</div><span class="ar">→</span>
+    <div class="pb o"><b>3 Scale</b>StandardScaler<br>fit on train</div><span class="ar">→</span>
+    <div class="pb g"><b>4 Fit</b>LinearRegression<br>predict, score</div><span class="ar">→</span>
+    <div class="pb y"><b>5 Look</b>Matplotlib<br>predicted vs true</div>
+  </div>
+  <div class="cols c64">
+    <pre class="code s">X = df.drop(columns="target").to_numpy()
+y = df["target"].to_numpy()
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42)
+
+scaler = StandardScaler().fit(X_train)       <span class="c"># TRAIN only</span>
+X_train_s = scaler.transform(X_train)
+X_test_s  = scaler.transform(X_test)
+
+model = LinearRegression().fit(X_train_s, y_train)
+y_pred = model.predict(X_test_s)
+rmse = mean_squared_error(y_test, y_pred) ** 0.5
+base = mean_squared_error(
+    y_test, np.full_like(y_test, y_train.mean())) ** 0.5</pre>
+    <div class="stack">
+      <table class="t" style="font-size:19px">
+        <tr><th>Test set (89 samples)</th><th>Value</th></tr>
+        <tr><td>Baseline RMSE (predict the mean)</td><td>73.22</td></tr>
+        <tr><td>Linear regression RMSE</td><td><b>53.85</b></td></tr>
+        <tr><td>R²</td><td>0.453</td></tr>
+      </table>
+      <p class="small">The model beats the baseline, so it learnt something. 0.453 means it explains under half the variance: good enough for a first model, not for a final one.</p>
+    </div>
+  </div>
+  <div class="warnbox"><p class="small"><b>Why fit the scaler on the training set only?</b> Fitting it on all the data lets information about the test set (its mean and std) leak into training, and the test score becomes optimistic. This is the <b>data leakage</b> of chapter 01.</p></div>
+</section>
+
+<section class="slide">
+  <h2>Before the first class: can you answer these?</h2>
+  <div class="cols">
+    <ul class="small" style="gap:9px">
+      <li>Difference between a <code>list</code> and a <code>dict</code>, and when to use each?</li>
+      <li>What does <code>self</code> refer to inside a method?</li>
+      <li>What do <code>fit</code> and <code>predict</code> do, and why does <code>fit</code> return <code>self</code>?</li>
+      <li>With <code>X.shape == (150, 4)</code>, how many samples and features?</li>
+      <li>What does <code>X.mean(axis=0)</code> return, and with what shape?</li>
+    </ul>
+    <ul class="small" style="gap:9px">
+      <li>Why is <code>(X - X.mean(axis=0)) / X.std(axis=0)</code> valid despite the shape mismatch?</li>
+      <li>How do you select the rows of <code>X</code> whose label is 1?</li>
+      <li>Difference between <code>df.loc</code> and <code>df.iloc</code>?</li>
+      <li>Why must the scaler be fitted on the training set only?</li>
+    </ul>
+  </div>
+  <div class="note"><p>If any is shaky, go back to that part of Lab 0: the labs assume all of them. In Colab: <b>Shift+Enter</b> runs a cell, <b>Tab</b> autocompletes, <b>Shift+Tab</b> shows a function's signature, <code>object?</code> its docstring.</p></div>
+  <p class="small"><b>More:</b> <a href="https://numpy.org/doc/stable/user/absolute_beginners.html">NumPy absolute basics</a> · <a href="https://pandas.pydata.org/docs/user_guide/10min.html">10 minutes to pandas</a> · <a href="https://scikit-learn.org/stable/getting_started.html">scikit-learn getting started</a> · Python Data Science Handbook (J. VanderPlas, free online)</p>
+</section>
+
+<section class="slide lab">
+  <div class="labtag">LAB 0</div>
+  <h2>Python for Machine Learning</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:10px">
+      <p>The shared starting point of the course: the subset of Python, NumPy and pandas that the labs use. About 60–90 minutes with the exercises.</p>
+      <ol class="todo">
+        <li>Python essentials: types, containers, control flow, functions, comprehensions (Exercise 1).</li>
+        <li>Object-oriented programming: classes, dunder methods, inheritance, the <code>fit</code> / <code>predict</code> contract.</li>
+        <li>NumPy: shapes, masks, vectorisation, <code>axis</code>, broadcasting, <code>@</code>, seeds (Exercise 3).</li>
+        <li>pandas: inspect, select, filter, group, missing values (Exercise 4).</li>
+        <li>Matplotlib, then a complete mini workflow: load, split, scale, fit, evaluate, plot.</li>
+      </ol>
+    </div>
+    <div class="labcard">
+      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/lab 0 - Python for Machine Learning.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <dl class="gloss">
+        <dt>notebook</dt><dd><code>lab 0 - Python for Machine Learning.ipynb</code></dd>
+        <dt>you need</dt><dd>nothing installed: a Google account for Colab</dd>
+        <dt>runs on</dt><dd>CPU</dd>
+        <dt>tip</dt><dd>run every cell, change things, break them. Each exercise has a solution cell: try first. <i>File → Save a copy in Drive</i> keeps your changes</dd>
+      </dl>
+      <p class="small"><b>Next:</b> chapter 01, supervised learning, then Lab 1 (OLS from scratch).</p>
+    </div>
+  </div>
+</section>
+
+</div></div>
+<script src="../assets/figures.js"></script>
+<script src="../assets/deck.js"></script>
+</body>
+</html>

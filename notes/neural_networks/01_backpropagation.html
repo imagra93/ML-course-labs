@@ -197,7 +197,7 @@ window.Quarto = {
 <li>use PyTorch’s autograd without its classic pitfalls, and write numerically stable losses;</li>
 <li>diagnose vanishing and exploding gradients layer by layer and choose the remedy (initialisation, ReLU, normalisation, residual connections, clipping).</li>
 </ul>
-<div id="582ee2af" class="cell" data-execution_count="1">
+<div id="807f0497" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>plt.rcParams.update({<span class="st">"figure.dpi"</span>: <span class="dv">90</span>, <span class="st">"axes.grid"</span>: <span class="va">True</span>, <span class="st">"grid.alpha"</span>: <span class="fl">0.3</span>,</span>
@@ -225,9 +225,12 @@ window.Quarto = {
 <p><strong>Worked example.</strong> <span class="math inline">\(u = 3x + 1\)</span>, <span class="math inline">\(y = u^2\)</span>, at <span class="math inline">\(x = 1\)</span>:</p>
 <p><span class="math display">\[
 \begin{aligned}
-u &amp;= 3\cdot1 + 1 = 4, \qquad y = 4^2 = 16 &amp;&amp; \text{forward: compute and keep every intermediate value}\\
-\frac{du}{dx} &amp;= 3, \qquad \frac{dy}{du} = 2u = 8 &amp;&amp; \text{each box knows its own local derivative}\\
-\frac{dy}{dx} &amp;= \frac{dy}{du}\cdot\frac{du}{dx} = 8\cdot3 = 24 &amp;&amp; \text{chain rule: multiply along the path}
+u &amp;= 3\cdot1 + 1 = 4, \qquad y = 4^2 = 16 \\
+&amp;\quad\small \text{forward: compute and keep every intermediate value}\\
+\frac{du}{dx} &amp;= 3, \qquad \frac{dy}{du} = 2u = 8 \\
+&amp;\quad\small \text{each box knows its own local derivative}\\
+\frac{dy}{dx} &amp;= \frac{dy}{du}\cdot\frac{du}{dx} = 8\cdot3 = 24 \\
+&amp;\quad\small \text{chain rule: multiply along the path}
 \end{aligned}
 \]</span></p>
 <p>Check with a nudge: <span class="math inline">\(x = 1.01\)</span> gives <span class="math inline">\(u = 4.03\)</span> and <span class="math inline">\(y = 16.2409\)</span>, a change of <span class="math inline">\(0.2409\approx 24\times0.01 = 0.24\)</span>. The derivative predicts what a small nudge does; the leftover <span class="math inline">\(0.0009\)</span> is the second-order term <span class="math inline">\(\frac12 y''(\Delta x)^2 = \frac12\cdot18\cdot0.0001\)</span> (here <span class="math inline">\(y = (3x+1)^2\)</span>, so <span class="math inline">\(y'' = 18\)</span>).</p>
@@ -237,7 +240,7 @@ u &amp;= 3\cdot1 + 1 = 4, \qquad y = 4^2 = 16 &amp;&amp; \text{forward: compute 
       <div class="ctl"><label for="cn-s">step</label><input type="range" id="cn-s" data-k="s" min="0" max="3" step="1" value="0"><span class="v" data-v="s"></span></div>
   <p class="from">Same figure as <a href="../../slides/neural_networks/02_backpropagation.html#3">slide 3</a> of the Backpropagation deck.</p>
 </div>
-<div id="94e0c5d4" class="cell" data-execution_count="2">
+<div id="4096ddc7" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>u_f <span class="op">=</span> <span class="kw">lambda</span> x: <span class="dv">3</span> <span class="op">*</span> x <span class="op">+</span> <span class="dv">1</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>y_f <span class="op">=</span> <span class="kw">lambda</span> x: u_f(x) <span class="op">**</span> <span class="dv">2</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"u = </span><span class="sc">{</span>u_f(<span class="fl">1.0</span>)<span class="sc">}</span><span class="ss">, y = </span><span class="sc">{</span>y_f(<span class="fl">1.0</span>)<span class="sc">}</span><span class="ss">, dy/dx = 2u * 3 = </span><span class="sc">{</span><span class="dv">2</span> <span class="op">*</span> u_f(<span class="fl">1.0</span>) <span class="op">*</span> <span class="dv">3</span><span class="sc">}</span><span class="ss">"</span>)</span>
@@ -258,8 +261,10 @@ x = 1.01: y = 16.2409, change 0.2409  (derivative predicts 24 * 0.01 = 0.24)</co
 <p><strong>Worked example.</strong> <span class="math inline">\(J = g_1g_2\)</span> with <span class="math inline">\(g_1 = \theta^2\)</span> and <span class="math inline">\(g_2 = 3\theta\)</span>, at <span class="math inline">\(\theta = 2\)</span> (so <span class="math inline">\(g_1 = 4\)</span>, <span class="math inline">\(g_2 = 6\)</span>):</p>
 <p><span class="math display">\[
 \begin{aligned}
-\frac{dJ}{d\theta} &amp;= \frac{\partial J}{\partial g_1}\frac{dg_1}{d\theta} + \frac{\partial J}{\partial g_2}\frac{dg_2}{d\theta} &amp;&amp; \text{two paths}\\
-&amp;= g_2\cdot2\theta + g_1\cdot3 = 6\cdot4 + 4\cdot3 = 24 + 12 = 36 . &amp;&amp; \text{local derivatives at } \theta = 2
+\frac{dJ}{d\theta} &amp;= \frac{\partial J}{\partial g_1}\frac{dg_1}{d\theta} + \frac{\partial J}{\partial g_2}\frac{dg_2}{d\theta} \\
+&amp;\quad\small \text{two paths}\\
+&amp;= g_2\cdot2\theta + g_1\cdot3 = 6\cdot4 + 4\cdot3 = 24 + 12 = 36 . \\
+&amp;\quad\small \text{local derivatives at } \theta = 2
 \end{aligned}
 \]</span></p>
 <p>Directly, <span class="math inline">\(J = 3\theta^3\)</span> and <span class="math inline">\(dJ/d\theta = 9\theta^2 = 36\)</span>. ✓</p>
@@ -274,10 +279,14 @@ x = 1.01: y = 16.2409, change 0.2409  (derivative predicts 24 * 0.01 = 0.24)</co
 <p>With <span class="math inline">\(a = 2\)</span>, <span class="math inline">\(b = 5\)</span>, <span class="math inline">\(c = -4\)</span> and the intermediate node <span class="math inline">\(q = a + b\)</span>:</p>
 <p><span class="math display">\[
 \begin{aligned}
-q &amp;= a + b = 2 + 5 = 7, \qquad f = q\cdot c = 7\cdot(-4) = -28 &amp;&amp; \text{forward}\\
-\frac{\partial f}{\partial f} &amp;= 1 &amp;&amp; \text{start of the backward pass}\\
-\frac{\partial f}{\partial q} &amp;= c = -4, \qquad \frac{\partial f}{\partial c} = q = 7 &amp;&amp; \text{multiply node: } \tfrac{\partial(qc)}{\partial q} = c,\ \tfrac{\partial(qc)}{\partial c} = q\\
-\frac{\partial f}{\partial a} &amp;= \frac{\partial f}{\partial q}\cdot\frac{\partial q}{\partial a} = (-4)\cdot1 = -4, \qquad \frac{\partial f}{\partial b} = -4 &amp;&amp; \text{add node: local derivative 1}
+q &amp;= a + b = 2 + 5 = 7, \qquad f = q\cdot c = 7\cdot(-4) = -28 \\
+&amp;\quad\small \text{forward}\\
+\frac{\partial f}{\partial f} &amp;= 1 \\
+&amp;\quad\small \text{start of the backward pass}\\
+\frac{\partial f}{\partial q} &amp;= c = -4, \qquad \frac{\partial f}{\partial c} = q = 7 \\
+&amp;\quad\small \text{multiply node: } \tfrac{\partial(qc)}{\partial q} = c,\ \tfrac{\partial(qc)}{\partial c} = q\\
+\frac{\partial f}{\partial a} &amp;= \frac{\partial f}{\partial q}\cdot\frac{\partial q}{\partial a} = (-4)\cdot1 = -4, \qquad \frac{\partial f}{\partial b} = -4 \\
+&amp;\quad\small \text{add node: local derivative 1}
 \end{aligned}
 \]</span></p>
 <p>Meaning of the result: increase <span class="math inline">\(a\)</span> by a tiny <span class="math inline">\(\epsilon\)</span> and <span class="math inline">\(f\)</span> changes by <span class="math inline">\(-4\epsilon\)</span>. Check: <span class="math inline">\(a = 2.01\Rightarrow f = 7.01\cdot(-4) = -28.04\)</span>. ✓ Each node needs only its <strong>own</strong> local derivative and the number coming from the right; no node has to know the whole formula. That is why the method scales to millions of parameters and to any architecture.</p>
@@ -287,7 +296,7 @@ q &amp;= a + b = 2 + 5 = 7, \qquad f = q\cdot c = 7\cdot(-4) = -28 &amp;&amp; \t
       <div class="ctl"><label for="gn-s">step</label><input type="range" id="gn-s" data-k="s" min="0" max="5" step="1" value="0"><span class="v" data-v="s"></span></div>
   <p class="from">Same figure as <a href="../../slides/neural_networks/02_backpropagation.html#5">slide 5</a> of the Backpropagation deck.</p>
 </div>
-<div id="3a903515" class="cell" data-execution_count="3">
+<div id="2a89bc6e" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>a, b, c <span class="op">=</span> <span class="fl">2.0</span>, <span class="fl">5.0</span>, <span class="op">-</span><span class="fl">4.0</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>q <span class="op">=</span> a <span class="op">+</span> b<span class="op">;</span> f <span class="op">=</span> q <span class="op">*</span> c                                   <span class="co"># forward</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>df_dq, df_dc <span class="op">=</span> c, q                                    <span class="co"># multiply node</span></span>
@@ -404,7 +413,7 @@ z &amp;= 0.168\cdot2 + 0.634 = 0.970, \qquad a = \sigma(0.970) = 0.725, \qquad J
       </div>
   <p class="from">Same figure as <a href="../../slides/neural_networks/02_backpropagation.html#7">slide 7</a> of the Backpropagation deck.</p>
 </div>
-<div id="3e322428" class="cell" data-execution_count="4">
+<div id="0c167914" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>x, w, b, y <span class="op">=</span> <span class="fl">2.0</span>, <span class="op">-</span><span class="fl">0.5</span>, <span class="fl">0.3</span>, <span class="fl">1.0</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>sig <span class="op">=</span> <span class="kw">lambda</span> z: <span class="dv">1</span> <span class="op">/</span> (<span class="dv">1</span> <span class="op">+</span> np.exp(<span class="op">-</span>z))</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>z <span class="op">=</span> w <span class="op">*</span> x <span class="op">+</span> b<span class="op">;</span> a <span class="op">=</span> sig(z)<span class="op">;</span> J <span class="op">=</span> <span class="op">-</span>np.log(a)</span>
@@ -556,7 +565,7 @@ b^{[2]} = 0.2 .
       </div>
   <p class="from">Same figure as <a href="../../slides/neural_networks/02_backpropagation.html#11">slide 11</a> of the Backpropagation deck.</p>
 </div>
-<div id="13486db1" class="cell" data-execution_count="5">
+<div id="6c25db04" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>X1, Y1 <span class="op">=</span> np.array([[<span class="fl">1.0</span>, <span class="fl">2.0</span>]]), np.array([[<span class="fl">1.0</span>]])</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>tiny <span class="op">=</span> {<span class="st">"W1"</span>: np.array([[<span class="fl">0.5</span>, <span class="op">-</span><span class="fl">0.3</span>], [<span class="fl">0.2</span>, <span class="fl">0.4</span>]]), <span class="st">"b1"</span>: np.array([[<span class="fl">0.1</span>, <span class="op">-</span><span class="fl">0.1</span>]]),</span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>        <span class="st">"W2"</span>: np.array([[<span class="fl">0.7</span>], [<span class="op">-</span><span class="fl">0.5</span>]]), <span class="st">"b2"</span>: np.array([[<span class="fl">0.2</span>]])}</span>
@@ -608,9 +617,12 @@ Z_{ik} = \sum_j A_{ij}W_{jk} + b_k .
 <p>The weight <span class="math inline">\(W_{jk}\)</span> appears in <span class="math inline">\(Z_{ik}\)</span> for <strong>every</strong> example <span class="math inline">\(i\)</span> (and in no other entry of <span class="math inline">\(\mathbf{Z}\)</span>), so by the multivariable chain rule (section 3)</p>
 <p><span class="math display">\[
 \begin{aligned}
-\frac{\partial J}{\partial W_{jk}} &amp;= \sum_{i=1}^m\frac{\partial J}{\partial Z_{ik}}\,\frac{\partial Z_{ik}}{\partial W_{jk}} &amp;&amp; \text{one path per example}\\
-&amp;= \sum_{i=1}^m\delta_{ik}\,A_{ij} &amp;&amp; \tfrac{\partial Z_{ik}}{\partial W_{jk}} = A_{ij} \text{ (multiply gate)}\\
-&amp;= \big(\mathbf{A}^\top\boldsymbol{\delta}\big)_{jk} &amp;&amp; \text{definition of the matrix product}
+\frac{\partial J}{\partial W_{jk}} &amp;= \sum_{i=1}^m\frac{\partial J}{\partial Z_{ik}}\,\frac{\partial Z_{ik}}{\partial W_{jk}} \\
+&amp;\quad\small \text{one path per example}\\
+&amp;= \sum_{i=1}^m\delta_{ik}\,A_{ij} \\
+&amp;\quad\small \tfrac{\partial Z_{ik}}{\partial W_{jk}} = A_{ij} \text{ (multiply gate)}\\
+&amp;= \big(\mathbf{A}^\top\boldsymbol{\delta}\big)_{jk} \\
+&amp;\quad\small \text{definition of the matrix product}
 \end{aligned}
 \qquad\Longrightarrow\qquad
 \boxed{\frac{\partial J}{\partial\mathbf{W}^{[l]}} = \mathbf{A}^{[l-1]\top}\boldsymbol{\delta}^{[l]}} .
@@ -623,8 +635,10 @@ Z_{ik} = \sum_j A_{ij}W_{jk} + b_k .
 <p><strong>(c) From <span class="math inline">\(\boldsymbol{\delta}^{[l]}\)</span> back to the previous layer.</strong> The activation <span class="math inline">\(A_{ij}\)</span> appears in <span class="math inline">\(Z_{ik}\)</span> for <strong>every</strong> unit <span class="math inline">\(k\)</span> of layer <span class="math inline">\(l\)</span>:</p>
 <p><span class="math display">\[
 \begin{aligned}
-\frac{\partial J}{\partial A_{ij}} &amp;= \sum_{k=1}^{n_l}\frac{\partial J}{\partial Z_{ik}}\,\frac{\partial Z_{ik}}{\partial A_{ij}} &amp;&amp; \text{one path per unit of layer } l\\
-&amp;= \sum_{k}\delta_{ik}W_{jk} = \big(\boldsymbol{\delta}\mathbf{W}^\top\big)_{ij} . &amp;&amp; \tfrac{\partial Z_{ik}}{\partial A_{ij}} = W_{jk}
+\frac{\partial J}{\partial A_{ij}} &amp;= \sum_{k=1}^{n_l}\frac{\partial J}{\partial Z_{ik}}\,\frac{\partial Z_{ik}}{\partial A_{ij}} \\
+&amp;\quad\small \text{one path per unit of layer } l\\
+&amp;= \sum_{k}\delta_{ik}W_{jk} = \big(\boldsymbol{\delta}\mathbf{W}^\top\big)_{ij} . \\
+&amp;\quad\small \tfrac{\partial Z_{ik}}{\partial A_{ij}} = W_{jk}
 \end{aligned}
 \]</span></p>
 <p>Then <span class="math inline">\(A^{[l-1]}_{ij} = g(Z^{[l-1]}_{ij})\)</span> depends only on <span class="math inline">\(Z^{[l-1]}_{ij}\)</span>, so each entry picks up its own local derivative:</p>
@@ -681,7 +695,7 @@ update:    W[l] -= α dW[l];   b[l] -= α db[l]</code></pre>
 <span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a>W1 <span class="op">-=</span> lr <span class="op">*</span> dW1<span class="op">;</span>  b1 <span class="op">-=</span> lr <span class="op">*</span> db1</span>
 <span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>W2 <span class="op">-=</span> lr <span class="op">*</span> dW2<span class="op">;</span>  b2 <span class="op">-=</span> lr <span class="op">*</span> db2</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Repeat these few lines on mini-batches and the network learns: that is Lab 7. The general version, for any number of ReLU hidden layers with a sigmoid output and BCE, is a small class used for the rest of this note:</p>
-<div id="ccc145d7" class="cell" data-execution_count="6">
+<div id="3a37277e" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> MLP:</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Fully connected net, ReLU hidden layers, sigmoid output, BCE loss. Row-major: Z = A W + b."""</span></span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, sizes, rng, init<span class="op">=</span><span class="st">"he"</span>):</span>
@@ -713,7 +727,7 @@ update:    W[l] -= α dW[l];   b[l] -= α db[l]</code></pre>
 <span id="cb12-29"><a href="#cb12-29" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> dW, db</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p><strong>The cost, counted and timed.</strong> A 20-30-30-1 network on a batch of <span class="math inline">\(m = 64\)</span>: the multiply–adds of the forward and backward products (section 7), and the time of one forward pass, one backward pass, and the full finite-difference gradient (<span class="math inline">\(2P\)</span> forward passes).</p>
-<div id="59775bda" class="cell" data-execution_count="7">
+<div id="aa1a5891" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> timeit, time</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>sizes_c, m_c <span class="op">=</span> [<span class="dv">20</span>, <span class="dv">30</span>, <span class="dv">30</span>, <span class="dv">1</span>], <span class="dv">64</span></span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>Xc <span class="op">=</span> rng.normal(size<span class="op">=</span>(m_c, <span class="dv">20</span>))<span class="op">;</span> Yc <span class="op">=</span> (rng.random((m_c, <span class="dv">1</span>)) <span class="op">&gt;</span> <span class="fl">0.5</span>).astype(<span class="bu">float</span>)</span>
@@ -739,7 +753,7 @@ update:    W[l] -= α dW[l];   b[l] -= α db[l]</code></pre>
 <div class="cell-output cell-output-stdout">
 <pre><code>P = 1591; multiply-adds: forward 97,920, backward 157,440 (ratio 1.61)
 time: forward 20 µs, backward 23 µs, finite differences (3182 forward passes) 67 ms
-finite differences / (forward + backward) = 1560</code></pre>
+finite differences / (forward + backward) = 1557</code></pre>
 </div>
 </div>
 <p>The multiply–add count of the backward pass is 1.61 times that of the forward pass here (the first layer’s error is never sent back to the input), and tends to 2 when the first layer is a small part of the network. On a network this small the measured times are dominated by Python overhead and differ from machine to machine, but the ratio between the finite-difference gradient and one forward + backward pass is always of the order of <span class="math inline">\(P\)</span> (<span class="math inline">\(P = 1{,}591\)</span> here): with <span class="math inline">\(10^8\)</span> parameters, finite differences are out of the question.</p>
@@ -771,7 +785,7 @@ E'(\varepsilon) = \frac{\varepsilon}{3}|J'''| - \frac{u|J|}{\varepsilon^2} = 0
 \varepsilon^* = \Big(\frac{3u|J|}{|J'''|}\Big)^{1/3}\approx(3u)^{1/3}
 \]</span></p>
 <p>(the last step for <span class="math inline">\(|J|\approx|J'''|\approx1\)</span>): <span class="math inline">\(\varepsilon^*\approx9\times10^{-6}\)</span> in float64 and <span class="math inline">\(7\times10^{-3}\)</span> in float32. Hence the usual <span class="math inline">\(\varepsilon\approx10^{-5}\)</span> in float64, and the rule that gradient checks are done in <strong>float64</strong>: in float32 the best achievable error is far larger (below: <span class="math inline">\(1.1\times10^{-6}\)</span> on a gradient of 0.19, a relative error of about <span class="math inline">\(6\times10^{-6}\)</span> against <span class="math inline">\(4\times10^{-12}\)</span> in float64), too large to separate small bugs from rounding. The sweep below measures the error of one weight’s numerical derivative against backprop.</p>
-<div id="ed8d040a" class="cell" data-execution_count="8">
+<div id="b00c9660" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>Xs <span class="op">=</span> rng.normal(size<span class="op">=</span>(<span class="dv">20</span>, <span class="dv">3</span>))<span class="op">;</span> Ys <span class="op">=</span> (rng.random((<span class="dv">20</span>, <span class="dv">1</span>)) <span class="op">&gt;</span> <span class="fl">0.5</span>).astype(<span class="bu">float</span>)</span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>net_s <span class="op">=</span> MLP([<span class="dv">3</span>, <span class="dv">5</span>, <span class="dv">4</span>, <span class="dv">1</span>], np.random.default_rng(<span class="dv">1</span>))</span>
 <span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>net_s.loss(Xs, Ys)<span class="op">;</span> dW_s, db_s <span class="op">=</span> net_s.backward(Ys)</span>
@@ -858,7 +872,7 @@ the weight's gradient is -0.1909; (3u)^(1/3): float64 8.7e-06, float32 7.1e-03</
 <li><strong>Cost.</strong> A full check needs <span class="math inline">\(2P\)</span> forward passes. Fix: a small network, a few examples, and a <strong>random subset</strong> of entries <strong>per tensor</strong> (so that a bug in any one tensor is caught and located).</li>
 </ul>
 <p>The existing check of our <code>MLP</code> on a small network, all weights:</p>
-<div id="4a98315e" class="cell" data-execution_count="9">
+<div id="a71f1b08" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>net <span class="op">=</span> MLP([<span class="dv">3</span>, <span class="dv">5</span>, <span class="dv">4</span>, <span class="dv">1</span>], rng)</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>net.loss(Xs, Ys)<span class="op">;</span> dW, db <span class="op">=</span> net.backward(Ys)</span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>num, ana, eps <span class="op">=</span> [], [], <span class="fl">1e-6</span></span>
@@ -879,7 +893,7 @@ the weight's gradient is -0.1909; (3u)^(1/3): float64 8.7e-06, float32 7.1e-03</
 <section id="a-check-that-catches-a-wrong-backward-pass" class="level3">
 <h3 class="anchored" data-anchor-id="a-check-that-catches-a-wrong-backward-pass">12.3 A check that catches a wrong backward pass</h3>
 <p>A reusable check, per tensor, optionally on a random subset of entries, run on the correct <code>MLP</code> and on two classic bugs: the bias gradients averaged a second time (<code>mean</code> instead of <code>sum</code>), and the ReLU derivative forgotten in (c).</p>
-<div id="69530647" class="cell" data-execution_count="10">
+<div id="290a1eb1" class="cell" data-execution_count="10">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>rel <span class="op">=</span> <span class="kw">lambda</span> a_, b_: np.linalg.norm(a_ <span class="op">-</span> b_) <span class="op">/</span> (np.linalg.norm(a_) <span class="op">+</span> np.linalg.norm(b_))</span>
 <span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> grad_check(net, X, Y, eps<span class="op">=</span><span class="fl">1e-5</span>, n_per_tensor<span class="op">=</span><span class="va">None</span>, rng_<span class="op">=</span><span class="va">None</span>):</span>
 <span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Relative error per tensor (W1, b1, W2, ...); optionally on a random subset of entries of each tensor."""</span></span>
@@ -919,7 +933,7 @@ BugNoMask    {'W1': '4e-01', 'b1': '2e-01', 'W2': '3e-01', 'b2': '5e-01', 'W3': 
 </div>
 </div>
 <p>The correct class is at <span class="math inline">\(10^{-10}\)</span>–<span class="math inline">\(10^{-11}\)</span> everywhere. The first bug is invisible in the weights and screams in every bias; the second leaves the last layer (which needs no ReLU derivative) intact and breaks everything below it. The per-tensor report says <strong>where</strong> to look. And the bugs are dangerous precisely because training still “works”:</p>
-<div id="b3c5d14b" class="cell" data-execution_count="11">
+<div id="77c88b8f" class="cell" data-execution_count="11">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.datasets <span class="im">import</span> make_moons</span>
 <span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>Xm, ym <span class="op">=</span> make_moons(n_samples<span class="op">=</span><span class="dv">600</span>, noise<span class="op">=</span><span class="fl">0.2</span>, random_state<span class="op">=</span><span class="dv">0</span>)<span class="op">;</span> Ym <span class="op">=</span> ym[:, <span class="va">None</span>].astype(<span class="bu">float</span>)</span>
 <span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> cls <span class="kw">in</span> [MLP, BugNoMask]:</span>
@@ -935,7 +949,7 @@ BugNoMask  loss 0.755 -&gt; 0.264, training accuracy 0.883</code></pre>
 </div>
 <p>The buggy network’s loss goes down and its accuracy is respectable, so nothing looks broken; only the comparison with the correct gradient reveals that it trains far worse than it should.</p>
 <p><strong>A kink in a larger network.</strong> A 50-200-200-1 network, 64 examples, 20 random entries per tensor, and the smallest distance of any pre-activation to the kink:</p>
-<div id="1a65d1dd" class="cell" data-execution_count="12">
+<div id="cefb16b5" class="cell" data-execution_count="12">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>big <span class="op">=</span> MLP([<span class="dv">50</span>, <span class="dv">200</span>, <span class="dv">200</span>, <span class="dv">1</span>], np.random.default_rng(<span class="dv">2</span>))</span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>rng_k <span class="op">=</span> np.random.default_rng(<span class="dv">4</span>)</span>
 <span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>Xb <span class="op">=</span> rng_k.normal(size<span class="op">=</span>(<span class="dv">64</span>, <span class="dv">50</span>))<span class="op">;</span> Yb <span class="op">=</span> (rng_k.random((<span class="dv">64</span>, <span class="dv">1</span>)) <span class="op">&gt;</span> <span class="fl">0.5</span>).astype(<span class="bu">float</span>)</span>
@@ -948,7 +962,7 @@ smallest |Z| in layer 1: 2.5e-04, in layer 2: 1.2e-04</code></pre>
 </div>
 </div>
 <p>Every tensor passes: no pre-activation is within <span class="math inline">\(\varepsilon = 10^{-5}\)</span> of zero here. A kink is hit by chance, when some <span class="math inline">\(|Z|\)</span> is smaller than the change that the perturbation causes in it. To see one reliably, move one: shift the bias of unit 0 of layer 2 so that its pre-activation on one example sits <span class="math inline">\(10^{-6}\)</span> above zero, and compare the numerical and the backprop derivative with respect to that bias for three values of ε.</p>
-<div id="3a9c3731" class="cell" data-execution_count="13">
+<div id="0cfe478d" class="cell" data-execution_count="13">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>big.loss(Xb, Yb)<span class="op">;</span> j_k <span class="op">=</span> <span class="dv">0</span><span class="op">;</span> i_k <span class="op">=</span> <span class="bu">int</span>(np.<span class="bu">abs</span>(big.Z[<span class="dv">1</span>][:, j_k]).argmin())</span>
 <span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>big.b[<span class="dv">1</span>][<span class="dv">0</span>, j_k] <span class="op">-=</span> big.Z[<span class="dv">1</span>][i_k, j_k] <span class="op">-</span> <span class="fl">1e-6</span>            <span class="co"># example i_k now has Z = 1e-6 at unit j_k of layer 2</span></span>
 <span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>big.loss(Xb, Yb)<span class="op">;</span> _, db_big <span class="op">=</span> big.backward(Yb)</span>
@@ -970,7 +984,7 @@ eps = 1e-07: numerical -0.002142   backprop -0.002142   relative error 3e-07</co
 <section id="training-with-our-backprop" class="level3">
 <h3 class="anchored" data-anchor-id="training-with-our-backprop">12.4 Training with our backprop</h3>
 <p>Once the gradients pass the check, training is the loop of section 11. Full-batch gradient descent on the two-moons data:</p>
-<div id="fa8f7668" class="cell" data-execution_count="14">
+<div id="f5fafb7c" class="cell" data-execution_count="14">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>net <span class="op">=</span> MLP([<span class="dv">2</span>, <span class="dv">32</span>, <span class="dv">32</span>, <span class="dv">1</span>], rng)</span>
 <span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>alpha, costs <span class="op">=</span> <span class="fl">0.5</span>, []</span>
 <span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> epoch <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">3000</span>):                           <span class="co"># full-batch gradient descent</span></span>
@@ -1009,7 +1023,7 @@ eps = 1e-07: numerical -0.002142   backprop -0.002142   relative error 3e-07</co
 <li>walks the order backwards, and for each node adds “its gradient × local derivative” to each parent’s gradient (the <code>+=</code> implements the sum over paths of section 3).</li>
 </ol>
 <p>That is the whole algorithm. A complete scalar version in about twenty lines, tested on the graph of section 4, the neuron of section 6 and the two-path example of section 3:</p>
-<div id="ea147a59" class="cell" data-execution_count="15">
+<div id="eedf8fa0" class="cell" data-execution_count="15">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> math</span>
 <span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Value:</span>
 <span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""A scalar that records how it was computed (the tape), so that backward() can run the chain rule."""</span></span>
@@ -1066,7 +1080,7 @@ two paths: J = 24.0, dJ/dtheta = 36.0</code></pre>
 <span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>loss.backward()            <span class="co"># backward: fills p.grad</span></span>
 <span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>optimizer.step()           <span class="co"># update</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Below: the same network and data as our NumPy <code>MLP</code>, with gradients compared.</p>
-<div id="70495113" class="cell" data-execution_count="16">
+<div id="73d3ef2b" class="cell" data-execution_count="16">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch, torch.nn <span class="im">as</span> nn</span>
 <span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>torch.manual_seed(<span class="dv">0</span>)</span>
 <span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>net_np <span class="op">=</span> MLP([<span class="dv">3</span>, <span class="dv">5</span>, <span class="dv">4</span>, <span class="dv">1</span>], np.random.default_rng(<span class="dv">1</span>))</span>
@@ -1093,7 +1107,7 @@ layer 3: max |dW_numpy - dW_torch| = 2.78e-17</code></pre>
 <section id="four-pitfalls-each-with-a-demonstration" class="level3">
 <h3 class="anchored" data-anchor-id="four-pitfalls-each-with-a-demonstration">13.3 Four pitfalls, each with a demonstration</h3>
 <p><strong>1. Gradients accumulate.</strong> <code>backward()</code> <strong>adds</strong> into <code>.grad</code> (that is how the sum over paths works across several <code>backward</code> calls). Without a reset, the gradients of successive batches pile up: that is why the training loop calls <code>optimizer.zero_grad()</code> before each <code>backward()</code> (<a href="02_training_optimization_regularization.html">NN note 02</a>). Accumulation is also a feature: summing the gradients of several small batches before one <code>step()</code> simulates a larger batch.</p>
-<div id="296e217c" class="cell" data-execution_count="17">
+<div id="04efce70" class="cell" data-execution_count="17">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>w_acc <span class="op">=</span> torch.tensor(<span class="fl">2.0</span>, requires_grad<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">3</span>):</span>
 <span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>    (w_acc <span class="op">**</span> <span class="dv">2</span>).backward()                              <span class="co"># d(w^2)/dw = 2w = 4 every time</span></span>
@@ -1107,7 +1121,7 @@ after zeroing and one more call: w.grad = 4.0</code></pre>
 </div>
 </div>
 <p><strong>2. In-place operations can destroy what backward needs.</strong> The backward pass reuses stored forward values (the sigmoid’s derivative uses its output <span class="math inline">\(a\)</span>). Modifying such a tensor in place (<code>a.mul_(2)</code>, <code>a += 1</code>, <code>a[0] = 0</code>) after it has been saved makes the stored value wrong; PyTorch detects it with a version counter and refuses.</p>
-<div id="f423e9c8" class="cell" data-execution_count="18">
+<div id="24b06a56" class="cell" data-execution_count="18">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>x_ip <span class="op">=</span> torch.tensor([<span class="fl">1.0</span>, <span class="fl">2.0</span>], requires_grad<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>a_ip <span class="op">=</span> torch.sigmoid(x_ip)                               <span class="co"># sigmoid saves its output for the backward pass</span></span>
 <span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>a_ip.mul_(<span class="dv">2</span>)                                             <span class="co"># in-place change of that saved output</span></span>
@@ -1123,7 +1137,7 @@ out-of-place version works, x.grad = tensor([0.3932, 0.2100])</code></pre>
 </div>
 </div>
 <p><strong>3. <code>.detach()</code> and <code>torch.no_grad()</code> cut the graph.</strong> <code>t.detach()</code> returns the same values with no history, so no gradient flows through it: correct for a fixed target (a “teacher” value), a silent bug if you did not mean it. <code>with torch.no_grad():</code> records nothing at all: use it for evaluation, inference and manual weight updates, where it also saves the memory of the stored activations.</p>
-<div id="a3f79757" class="cell" data-execution_count="19">
+<div id="0d1a0a53" class="cell" data-execution_count="19">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>x_d <span class="op">=</span> torch.tensor(<span class="fl">3.0</span>, requires_grad<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>y_d <span class="op">=</span> x_d <span class="op">**</span> <span class="dv">2</span></span>
 <span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>(y_d <span class="op">*</span> x_d).backward(retain_graph<span class="op">=</span><span class="va">True</span>)<span class="op">;</span> full <span class="op">=</span> x_d.grad.item()<span class="op">;</span> x_d.grad.zero_()</span>
@@ -1138,7 +1152,7 @@ inside no_grad: requires_grad = False</code></pre>
 </div>
 </div>
 <p><strong>4. <code>requires_grad</code> on the wrong tensor.</strong> Parameters must be <strong>leaf</strong> tensors (created by you, not by an operation) with <code>requires_grad=True</code>. A common mistake is <code>W = torch.randn(3, 2, requires_grad=True) * 0.1</code>: the tracked leaf is the hidden <code>randn</code> tensor, <code>W</code> is the output of a multiplication, and it cannot be optimised. The fix is to scale first and switch tracking on afterwards (or use <code>nn.Parameter</code> / <code>nn.Linear</code>). The opposite mistake, <code>requires_grad=True</code> on the input data, wastes memory and time computing <span class="math inline">\(\partial J/\partial\mathbf{X}\)</span>.</p>
-<div id="94a9b162" class="cell" data-execution_count="20">
+<div id="6bb6f2d6" class="cell" data-execution_count="20">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>torch.manual_seed(<span class="dv">0</span>)</span>
 <span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>W_bad <span class="op">=</span> torch.randn(<span class="dv">3</span>, <span class="dv">2</span>, requires_grad<span class="op">=</span><span class="va">True</span>) <span class="op">*</span> <span class="fl">0.1</span></span>
 <span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"W_bad is a leaf:"</span>, W_bad.is_leaf, <span class="st">"| created by:"</span>, <span class="bu">type</span>(W_bad.grad_fn).<span class="va">__name__</span>)</span>
@@ -1165,8 +1179,10 @@ W_good is a leaf: True | requires_grad: True</code></pre>
 <p><strong>Softmax + cross-entropy: log-sum-exp.</strong> For logits <span class="math inline">\(\mathbf{z}\)</span> and true class <span class="math inline">\(t\)</span>, <span class="math inline">\(L = -z_t + \log\sum_k e^{z_k}\)</span> (<a href="00_neural_networks_mlp.html">NN note 00</a>, section 20). With large logits <span class="math inline">\(e^{z_k}\)</span> overflows. For any constant <span class="math inline">\(c\)</span>,</p>
 <p><span class="math display">\[
 \begin{aligned}
-\log\sum_k e^{z_k} &amp;= \log\Big(e^{c}\sum_k e^{z_k - c}\Big) &amp;&amp; \text{factor out } e^{c}\\
-&amp;= c + \log\sum_k e^{z_k - c}, &amp;&amp; \log(ab) = \log a + \log b
+\log\sum_k e^{z_k} &amp;= \log\Big(e^{c}\sum_k e^{z_k - c}\Big) \\
+&amp;\quad\small \text{factor out } e^{c}\\
+&amp;= c + \log\sum_k e^{z_k - c}, \\
+&amp;\quad\small \log(ab) = \log a + \log b
 \end{aligned}
 \]</span></p>
 <p>and with <span class="math inline">\(c = \max_k z_k\)</span> every exponent is <span class="math inline">\(\le 0\)</span> and the largest term is <span class="math inline">\(e^0 = 1\)</span>, so the sum lies in <span class="math inline">\([1, K]\)</span>: no overflow, and its logarithm is between 0 and <span class="math inline">\(\log K\)</span>. <code>nn.CrossEntropyLoss</code> computes <span class="math inline">\(-z_t + \operatorname{logsumexp}(\mathbf{z})\)</span> this way, which is why it takes <strong>logits</strong>.</p>
@@ -1175,7 +1191,7 @@ W_good is a leaf: True | requires_grad: True</code></pre>
 L(z, y) = \max(z, 0) - yz + \log\big(1 + e^{-|z|}\big),
 \]</span></p>
 <p>whose exponent is never positive. Its derivative is the familiar <span class="math inline">\(\sigma(z) - y\)</span>: for <span class="math inline">\(z &gt; 0\)</span>, <span class="math inline">\(\frac{d}{dz}\big[z - yz + \log(1 + e^{-z})\big] = 1 - y - \frac{e^{-z}}{1+e^{-z}} = 1 - y - (1 - \sigma(z)) = \sigma(z) - y\)</span>, and the case <span class="math inline">\(z &lt; 0\)</span> is the same computation with <span class="math inline">\(\log(1+e^{z})\)</span>. The unstable route applies the sigmoid first: for <span class="math inline">\(z = 120\)</span> in float32, <span class="math inline">\(\sigma(z)\)</span> rounds to exactly 1, <span class="math inline">\(\log(1 - \sigma(z)) = \log 0 = -\infty\)</span> (PyTorch’s <code>BCELoss</code> clamps the log at <span class="math inline">\(-100\)</span>), and the gradient through the saturated sigmoid is exactly 0.</p>
-<div id="5f3299fd" class="cell" data-execution_count="21">
+<div id="854352d5" class="cell" data-execution_count="21">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>z_big <span class="op">=</span> torch.tensor([<span class="fl">120.0</span>])<span class="op">;</span> y0 <span class="op">=</span> torch.tensor([<span class="fl">0.0</span>])</span>
 <span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>z1_ <span class="op">=</span> z_big.clone().requires_grad_()<span class="op">;</span> L1_ <span class="op">=</span> nn.BCELoss()(torch.sigmoid(z1_), y0)<span class="op">;</span> L1_.backward()</span>
 <span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>z2_ <span class="op">=</span> z_big.clone().requires_grad_()<span class="op">;</span> L2_ <span class="op">=</span> nn.BCEWithLogitsLoss()(z2_, y0)<span class="op">;</span> L2_.backward()</span>
@@ -1233,7 +1249,7 @@ CrossEntropyLoss for class 2: 0.4076   by hand log(1 + e^-1 + e^-2) = 0.4076</co
   <p class="from">Same figure as <a href="../../slides/neural_networks/02_backpropagation.html#16">slide 16</a> of the Backpropagation deck.</p>
 </div>
 <p>The same experiment in NumPy, 30 layers of width 256:</p>
-<div id="b42a5b03" class="cell" data-execution_count="22">
+<div id="e7e1ee73" class="cell" data-execution_count="22">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> activation_stds(init_std_fn, act, depth<span class="op">=</span><span class="dv">30</span>, width<span class="op">=</span><span class="dv">256</span>, m<span class="op">=</span><span class="dv">1000</span>):</span>
 <span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>    A <span class="op">=</span> rng.normal(size<span class="op">=</span>(m, width))<span class="op">;</span> stds <span class="op">=</span> []</span>
 <span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(depth):</span>
@@ -1285,17 +1301,21 @@ CrossEntropyLoss for class 2: 0.4076   by hand log(1 + e^-1 + e^-2) = 0.4076</co
 <p><strong>Proof.</strong> One layer:</p>
 <p><span class="math display">\[
 \begin{aligned}
-\lVert\boldsymbol{\delta}^{[k-1]}\rVert &amp;= \lVert(\boldsymbol{\delta}^{[k]}\mathbf{W}^{[k]\top})\odot g'(\mathbf{z}^{[k-1]})\rVert &amp;&amp; \text{fact (c)}\\
-&amp;\le \gamma\,\lVert\boldsymbol{\delta}^{[k]}\mathbf{W}^{[k]\top}\rVert &amp;&amp; \text{each entry is multiplied by a number of size} \le\gamma\\
-&amp;\le \gamma\,\lVert\mathbf{W}^{[k]\top}\rVert_2\,\lVert\boldsymbol{\delta}^{[k]}\rVert &amp;&amp; \text{definition of the spectral norm: } \lVert\mathbf{u}\mathbf{M}\rVert\le\lVert\mathbf{M}\rVert_2\lVert\mathbf{u}\rVert\\
-&amp;= \gamma\,\lVert\mathbf{W}^{[k]}\rVert_2\,\lVert\boldsymbol{\delta}^{[k]}\rVert . &amp;&amp; \mathbf{M} \text{ and } \mathbf{M}^\top \text{ have the same singular values}
+\lVert\boldsymbol{\delta}^{[k-1]}\rVert &amp;= \lVert(\boldsymbol{\delta}^{[k]}\mathbf{W}^{[k]\top})\odot g'(\mathbf{z}^{[k-1]})\rVert \\
+&amp;\quad\small \text{fact (c)}\\
+&amp;\le \gamma\,\lVert\boldsymbol{\delta}^{[k]}\mathbf{W}^{[k]\top}\rVert \\
+&amp;\quad\small \text{each entry is multiplied by a number of size} \le\gamma\\
+&amp;\le \gamma\,\lVert\mathbf{W}^{[k]\top}\rVert_2\,\lVert\boldsymbol{\delta}^{[k]}\rVert \\
+&amp;\quad\small \text{definition of the spectral norm: } \lVert\mathbf{u}\mathbf{M}\rVert\le\lVert\mathbf{M}\rVert_2\lVert\mathbf{u}\rVert\\
+&amp;= \gamma\,\lVert\mathbf{W}^{[k]}\rVert_2\,\lVert\boldsymbol{\delta}^{[k]}\rVert . \\
+&amp;\quad\small \mathbf{M} \text{ and } \mathbf{M}^\top \text{ have the same singular values}
 \end{aligned}
 \]</span></p>
 <p>Apply it for <span class="math inline">\(k = L, L-1, \dots, l+1\)</span> and chain the inequalities. <span class="math inline">\(\blacksquare\)</span> (Summing the squares over the examples, the same bound holds for the Frobenius norm of the batch matrix <span class="math inline">\(\boldsymbol{\delta}^{[l]}\)</span>.) The weight gradient of one example is the outer product <span class="math inline">\(\mathbf{a}^{[l-1]\top}\boldsymbol{\delta}^{[l]}\)</span> (fact (b)), whose Frobenius norm is <span class="math inline">\(\lVert\mathbf{a}^{[l-1]}\rVert\,\lVert\boldsymbol{\delta}^{[l]}\rVert\)</span>: small <span class="math inline">\(\boldsymbol{\delta}\)</span> means small updates for that layer.</p>
 <p><strong>Consequences.</strong> The sigmoid has <span class="math inline">\(\gamma = \frac14\)</span>: if every <span class="math inline">\(\lVert\mathbf{W}^{[k]}\rVert_2 &lt; 4\)</span>, the gradient shrinks at least geometrically, by <span class="math inline">\((\lVert\mathbf{W}\rVert_2/4)\)</span> per layer. With <span class="math inline">\(\lVert\mathbf{W}\rVert_2\approx1\)</span>, after 10 layers it can be <span class="math inline">\(4^{-10}\approx10^{-6}\)</span>: early layers barely learn. These are <strong>vanishing gradients</strong>, the reason why deep sigmoid/tanh networks were hard to train before about 2010. Large weights make the factors <span class="math inline">\(&gt; 1\)</span> and allow <strong>exploding gradients</strong> (the loss becomes <code>inf</code>, then <code>nan</code>), very common in recurrent networks (<a href="04_rnn_lstm.html">NN note 04</a>). The bound is a worst case: the <em>typical</em> factor per layer is governed by the variances of section 14 (for a random <span class="math inline">\(n\times n\)</span> matrix with entries of standard deviation <span class="math inline">\(s\)</span>, <span class="math inline">\(\lVert\mathbf{W}\rVert_2\approx2s\sqrt n\)</span>, about twice the typical stretch <span class="math inline">\(s\sqrt n\)</span>), so a layer can be well initialised and still have <span class="math inline">\(\gamma\lVert\mathbf{W}\rVert_2 &gt; 1\)</span>.</p>
 <div class="widget"><svg class="fig" data-fig="vanish-chain" style="max-height:190px" aria-label="Two chains of ten layers ending at the loss, with lines whose width shows the gradient size, shrinking towards layer 1 for sigmoid and constant for ReLU"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/02_backpropagation.html#17">slide 17</a> of the Backpropagation deck.</p></div>
 <p>The weight-gradient norms of a 12-hidden-layer network with PyTorch’s default initialisation, for three activations:</p>
-<div id="34cad6d0" class="cell" data-execution_count="23">
+<div id="8558d506" class="cell" data-execution_count="23">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a>torch.manual_seed(<span class="dv">0</span>)</span>
 <span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>Xt <span class="op">=</span> torch.tensor(Xm, dtype<span class="op">=</span>torch.float32)<span class="op">;</span> Yt <span class="op">=</span> torch.tensor(Ym, dtype<span class="op">=</span>torch.float32)</span>
 <span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -1324,7 +1344,7 @@ CrossEntropyLoss for class 2: 0.4076   by hand log(1 + e^-1 + e^-2) = 0.4076</co
 <section id="diagnostics-gradient-norms-and-activation-statistics-per-layer" class="level3">
 <h3 class="anchored" data-anchor-id="diagnostics-gradient-norms-and-activation-statistics-per-layer">15.3 Diagnostics: gradient norms and activation statistics per layer</h3>
 <p>Two numbers per layer tell you what is going on: the norm of the error signal <span class="math inline">\(\lVert\boldsymbol{\delta}^{[l]}\rVert = \lVert\partial J/\partial\mathbf{Z}^{[l]}\rVert\)</span> (comparable across layers of equal width, unlike the weight-gradient norms, whose matrices differ in shape), and the statistics of the activations: their standard deviation, and the fraction of saturated sigmoid/tanh units (output within 0.01 of a flat end) or of ReLU units that are zero. In PyTorch, <code>Z.retain_grad()</code> keeps <span class="math inline">\(\partial J/\partial\mathbf{Z}\)</span> of an intermediate tensor. Six configurations of the same 12-hidden-layer, width-64 network on the moons data:</p>
-<div id="a285ea56" class="cell" data-execution_count="24">
+<div id="ace5e1c8" class="cell" data-execution_count="24">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> diagnose(act, init, depth<span class="op">=</span><span class="dv">12</span>, width<span class="op">=</span><span class="dv">64</span>, seed<span class="op">=</span><span class="dv">0</span>):</span>
 <span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>    torch.manual_seed(seed)</span>
 <span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>    lins <span class="op">=</span> [nn.Linear(<span class="dv">2</span> <span class="cf">if</span> l <span class="op">==</span> <span class="dv">0</span> <span class="cf">else</span> width, width) <span class="cf">for</span> l <span class="kw">in</span> <span class="bu">range</span>(depth)] <span class="op">+</span> [nn.Linear(width, <span class="dv">1</span>)]</span>
@@ -1391,8 +1411,10 @@ ReLU, 1.5 x He std         |delta| layer 1 / layer 12 = 5.3e+01;  activation std
 <li><strong>Normalisation layers</strong> (BatchNorm, LayerNorm; <a href="02_training_optimization_regularization.html">NN note 02</a>): they re-standardise the pre-activations of each layer, <span class="math inline">\(\hat z = (z - \mu)/\sqrt{s^2 + \epsilon}\)</span> followed by a learned scale and shift, so the scale cannot drift over depth and saturation is avoided.</li>
 <li><strong>Residual connections</strong> (<a href="03_cnn_transfer_multitask.html">NN note 03</a>, and every transformer): <span class="math inline">\(\mathbf{h}^{[l+1]} = \mathbf{h}^{[l]} + F(\mathbf{h}^{[l]})\)</span>, where <span class="math inline">\(F\)</span> is a small block of layers. Its Jacobian always contains the identity: <span class="math display">\[
 \begin{aligned}
-\frac{\partial\mathbf{h}^{[l+1]}}{\partial\mathbf{h}^{[l]}} &amp;= \frac{\partial\mathbf{h}^{[l]}}{\partial\mathbf{h}^{[l]}} + \frac{\partial F(\mathbf{h}^{[l]})}{\partial\mathbf{h}^{[l]}} = \mathbf{I} + \mathbf{J}_F &amp;&amp; \text{derivative of a sum; } \partial\mathbf{h}/\partial\mathbf{h} = \mathbf{I}\\
-\boldsymbol{\delta}_{\mathbf{h}^{[l]}} &amp;= \boldsymbol{\delta}_{\mathbf{h}^{[l+1]}}(\mathbf{I} + \mathbf{J}_F) = \boldsymbol{\delta}_{\mathbf{h}^{[l+1]}} + \boldsymbol{\delta}_{\mathbf{h}^{[l+1]}}\mathbf{J}_F . &amp;&amp; \text{chain rule (row vectors)}
+\frac{\partial\mathbf{h}^{[l+1]}}{\partial\mathbf{h}^{[l]}} &amp;= \frac{\partial\mathbf{h}^{[l]}}{\partial\mathbf{h}^{[l]}} + \frac{\partial F(\mathbf{h}^{[l]})}{\partial\mathbf{h}^{[l]}} = \mathbf{I} + \mathbf{J}_F \\
+&amp;\quad\small \text{derivative of a sum; } \partial\mathbf{h}/\partial\mathbf{h} = \mathbf{I}\\
+\boldsymbol{\delta}_{\mathbf{h}^{[l]}} &amp;= \boldsymbol{\delta}_{\mathbf{h}^{[l+1]}}(\mathbf{I} + \mathbf{J}_F) = \boldsymbol{\delta}_{\mathbf{h}^{[l+1]}} + \boldsymbol{\delta}_{\mathbf{h}^{[l+1]}}\mathbf{J}_F . \\
+&amp;\quad\small \text{chain rule (row vectors)}
 \end{aligned}
 \]</span> The first term passes the gradient back <strong>unchanged</strong> (the add gate copies it, section 5), so even if every <span class="math inline">\(\mathbf{J}_F\)</span> is small the gradient has a direct path to the early layers; the product <span class="math inline">\(\prod_k(\mathbf{I} + \mathbf{J}_{F_k})\)</span> does not collapse the way <span class="math inline">\(\prod_k\mathbf{W}^{[k]\top}\mathbf{D}^{[k-1]}\)</span> can.</li>
 <li><strong>Gradient clipping</strong> for explosions (<a href="04_rnn_lstm.html">NN note 04</a>): before the update, rescale the whole gradient vector <span class="math inline">\(\mathbf{g}\)</span> when its norm exceeds a threshold <span class="math inline">\(c\)</span>, <span class="math display">\[
@@ -1400,7 +1422,7 @@ ReLU, 1.5 x He std         |delta| layer 1 / layer 12 = 5.3e+01;  activation std
 \]</span> which keeps its <strong>direction</strong> and caps its length at <span class="math inline">\(c\)</span>, so no single step can move the parameters by more than <span class="math inline">\(\alpha c\)</span>.</li>
 </ol>
 <p>A 30-block network with small tanh blocks (weight standard deviation <span class="math inline">\(0.5/\sqrt{64}\)</span>, so each block shrinks its input), with and without the skip connection:</p>
-<div id="96203644" class="cell" data-execution_count="25">
+<div id="1eee58ae" class="cell" data-execution_count="25">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb49"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> block_grads(residual, depth<span class="op">=</span><span class="dv">30</span>, width<span class="op">=</span><span class="dv">64</span>, seed<span class="op">=</span><span class="dv">0</span>):</span>
 <span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>    torch.manual_seed(seed)</span>
 <span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>    inp <span class="op">=</span> nn.Linear(<span class="dv">2</span>, width)<span class="op">;</span> blocks <span class="op">=</span> [nn.Linear(width, width) <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(depth)]<span class="op">;</span> out <span class="op">=</span> nn.Linear(width, <span class="dv">1</span>)</span>
@@ -1488,7 +1510,7 @@ clipping: norm 2.566 -&gt; 1.000; equals the formula: True; cosine(before, after
 <p><strong>What it says.</strong> Every operation between a parameter and the loss has a derivative except on a set of measure zero (the kink of ReLU at 0, ties in max), and those derivatives are not zero almost everywhere.</p>
 <p><strong>Why it matters.</strong> Backpropagation multiplies local derivatives (sections 4–5). At a kink autograd uses a sub-derivative (PyTorch: <span class="math inline">\(\mathrm{ReLU}'(0) = 0\)</span>), which is harmless because an exact 0 almost never occurs. But an operation that is <strong>flat almost everywhere</strong> (a step function, rounding, <code>argmax</code>, thresholding a probability) has derivative 0 wherever it is defined: every gradient that passes through it is exactly 0, and the parameters before it never learn. That was the problem with the step units of <a href="00_neural_networks_mlp.html">NN note 00</a>, section 8.</p>
 <p><strong>How to check.</strong> After one <code>backward()</code>, list the parameters whose <code>.grad</code> is exactly zero (or <code>None</code>: not connected to the loss at all). Look at the gradient norm per layer (section 15.3). Gradient-check custom operations.</p>
-<div id="8c0f5134" class="cell" data-execution_count="26">
+<div id="3a64f4b3" class="cell" data-execution_count="26">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb51"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>x_r <span class="op">=</span> torch.tensor([<span class="fl">0.3</span>, <span class="fl">1.7</span>], requires_grad<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>torch.<span class="bu">round</span>(<span class="dv">2</span> <span class="op">*</span> x_r).<span class="bu">sum</span>().backward()</span>
 <span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"gradient through round():"</span>, x_r.grad)</span>
@@ -1507,7 +1529,7 @@ gradient through a steep sigmoid instead: tensor([0.3533, 0.3533])</code></pre>
 <p><strong>What it says.</strong> <span class="math inline">\(\mathbf{A}^{[L]}\)</span> and <span class="math inline">\(\mathbf{Y}\)</span> have the same shape, <span class="math inline">\((m, n_L)\)</span>, and every broadcast (a bias added to all rows, a sum over the batch) happens along the axis you intend.</p>
 <p><strong>Why it matters.</strong> NumPy and PyTorch broadcast silently. The classic case: predictions of shape <span class="math inline">\((m, 1)\)</span> and targets of shape <span class="math inline">\((m,)\)</span>. Then <code>A - Y</code> is an <span class="math inline">\(m\times m\)</span> matrix (every prediction minus every target), the loss is an average over <span class="math inline">\(m^2\)</span> wrong pairs, and the gradient is garbage, with no error raised.</p>
 <p><strong>How to check.</strong> Assert shapes in the code (<code>assert A.shape == Y.shape</code>); the shape sanity check of section 10 for every gradient; a gradient check (the loss itself is wrong, so the check agrees with it: compare the loss with a hand computation on 2–3 examples too).</p>
-<div id="fd25912f" class="cell" data-execution_count="27">
+<div id="6f61d405" class="cell" data-execution_count="27">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb53"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>y_flat <span class="op">=</span> (rng.random(<span class="dv">20</span>) <span class="op">&gt;</span> <span class="fl">0.5</span>).astype(<span class="bu">float</span>)                 <span class="co"># targets of shape (20,), not (20, 1)</span></span>
 <span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>net_shape <span class="op">=</span> MLP([<span class="dv">3</span>, <span class="dv">5</span>, <span class="dv">4</span>, <span class="dv">1</span>], np.random.default_rng(<span class="dv">1</span>))<span class="op">;</span> P_s <span class="op">=</span> net_shape.forward(Xs)</span>
 <span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"A:"</span>, P_s.shape, <span class="st">" Y:"</span>, y_flat.shape, <span class="st">" A - Y:"</span>, (P_s <span class="op">-</span> y_flat).shape)</span>
@@ -1527,7 +1549,7 @@ loss with the broadcasting bug 0.7011, correct loss 0.7130</code></pre>
 <p><strong>What it says.</strong> The shortcut <span class="math inline">\(\boldsymbol{\delta}^{[L]} = \frac1m(\mathbf{A}^{[L]} - \mathbf{Y})\)</span> is only valid for the canonical pairs (linear + ½MSE, sigmoid + BCE, softmax + CE, exponential + Poisson). In general <span class="math inline">\(\boldsymbol{\delta}^{[L]} = \frac{\partial J}{\partial\mathbf{A}^{[L]}}\odot g^{[L]\prime}(\mathbf{Z}^{[L]})\)</span>.</p>
 <p><strong>Why it matters.</strong> Every other gradient is computed from <span class="math inline">\(\boldsymbol{\delta}^{[L]}\)</span>; if it is wrong, all of them are. With a sigmoid output and the loss <span class="math inline">\(\frac1{2m}\sum(\hat y - y)^2\)</span> the correct output error has the extra factor <span class="math inline">\(\hat y(1-\hat y)\)</span> (<a href="00_neural_networks_mlp.html">NN note 00</a>, section 24.5); a backward pass that reuses the BCE shortcut computes the gradient of a different loss.</p>
 <p><strong>How to check.</strong> A gradient check against the loss actually minimised:</p>
-<div id="b2a527c9" class="cell" data-execution_count="28">
+<div id="c636f57c" class="cell" data-execution_count="28">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb55"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> MSEOutput(MLP):</span>
 <span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> loss(<span class="va">self</span>, X, Y, eps<span class="op">=</span><span class="fl">0.0</span>):</span>
 <span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="fl">0.5</span> <span class="op">*</span> np.mean((<span class="va">self</span>.forward(X) <span class="op">-</span> Y) <span class="op">**</span> <span class="dv">2</span>)                    <span class="co"># sigmoid output with the squared error</span></span>
@@ -1555,7 +1577,7 @@ MSECorrect   {'W1': '2e-11', 'b1': '2e-11', 'W2': '3e-11', 'b2': '3e-11', 'W3': 
 <p><strong>What it says.</strong> Every activation, loss value and gradient is a finite floating-point number.</p>
 <p><strong>Why it matters.</strong> One <code>inf</code> or <code>nan</code> spreads: <span class="math inline">\(\infty - \infty\)</span>, <span class="math inline">\(0\cdot\infty\)</span> and anything combined with <code>nan</code> give <code>nan</code>, which after one update is in every parameter that the gradient touched. The usual causes are an exploding forward pass or gradient (a learning rate too large for the scale of the target, section 15), and <span class="math inline">\(\log 0\)</span> or a division by 0 in a hand-written loss (section 13.5).</p>
 <p><strong>How to check.</strong> Test <code>torch.isfinite</code> (or <code>np.isfinite</code>) on the loss and on the total gradient norm at every step, and stop at the first failure with the step number; log the gradient norm, since it usually grows for a few steps before the overflow. (<code>torch.autograd.set_detect_anomaly(True)</code> also points at the operation that produced a <code>nan</code> in the backward pass, at a large cost in speed; use it only while debugging.)</p>
-<div id="f1c800d5" class="cell" data-execution_count="29">
+<div id="2f4e5011" class="cell" data-execution_count="29">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb57"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a>torch.manual_seed(<span class="dv">0</span>)</span>
 <span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>X_nan <span class="op">=</span> torch.randn(<span class="dv">200</span>, <span class="dv">5</span>)<span class="op">;</span> y_nan <span class="op">=</span> (X_nan <span class="op">@</span> torch.tensor([<span class="fl">1.0</span>, <span class="op">-</span><span class="fl">2.0</span>, <span class="fl">3.0</span>, <span class="fl">0.0</span>, <span class="fl">0.5</span>]))[:, <span class="va">None</span>] <span class="op">*</span> <span class="dv">100</span>   <span class="co"># target not scaled</span></span>
 <span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a>net_nan <span class="op">=</span> nn.Sequential(nn.Linear(<span class="dv">5</span>, <span class="dv">32</span>), nn.ReLU(), nn.Linear(<span class="dv">32</span>, <span class="dv">1</span>))<span class="op">;</span> opt_nan <span class="op">=</span> torch.optim.SGD(net_nan.parameters(), lr<span class="op">=</span><span class="fl">0.01</span>)</span>
@@ -1586,7 +1608,7 @@ log(0) = -inf ; 0 * log(0) = nan</code></pre>
 <p><strong>What it says.</strong> The function evaluated in the forward pass is the one being differentiated: no randomness changes between the evaluations you compare, and no tensor saved for the backward pass is modified in between.</p>
 <p><strong>Why it matters.</strong> Backpropagation differentiates the recorded computation, including the particular dropout mask used (<a href="02_training_optimization_regularization.html">NN note 02</a>). That is correct for training, but a finite-difference check that draws a new mask for <span class="math inline">\(J(\theta+\varepsilon)\)</span> and <span class="math inline">\(J(\theta-\varepsilon)\)</span> compares two different functions and reports nonsense. And an in-place edit of a saved tensor (section 13.3) would make autograd use a value that was never part of the forward computation; PyTorch refuses rather than return a wrong gradient.</p>
 <p><strong>How to check.</strong> Run gradient checks with dropout off or with a fixed mask; heed PyTorch’s in-place error instead of working around it with <code>.clone()</code> in the wrong place.</p>
-<div id="ddd51ef6" class="cell" data-execution_count="30">
+<div id="20ee08c5" class="cell" data-execution_count="30">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb59"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> DropoutMLP(MLP):</span>
 <span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""ReLU hidden layers with dropout (keep probability 0.5); a new random mask at every forward pass unless one is fixed."""</span></span>
 <span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, sizes, rng, seed<span class="op">=</span><span class="dv">0</span>, fixed<span class="op">=</span><span class="va">False</span>):</span>

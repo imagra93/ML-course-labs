@@ -543,10 +543,14 @@ $$
 
 $$
 \begin{aligned}
-D(\boldsymbol{\alpha}) &= \min_{\boldsymbol{\theta}}\ \mathcal{L}(\boldsymbol{\theta}, \boldsymbol{\alpha}) && \text{definition of } D\\
-&\le \mathcal{L}(\tilde{\boldsymbol{\theta}}, \boldsymbol{\alpha}) && \text{a minimum is} \le \text{any particular value}\\
-&= J(\tilde{\boldsymbol{\theta}}) - \textstyle\sum_i\alpha_i\,g_i(\tilde{\boldsymbol{\theta}}) && \text{definition of } \mathcal{L}\\
-&\le J(\tilde{\boldsymbol{\theta}}) && \alpha_i \ge 0 \text{ and } g_i(\tilde{\boldsymbol{\theta}}) \ge 0, \text{ so the sum is} \ge 0 .
+D(\boldsymbol{\alpha}) &= \min_{\boldsymbol{\theta}}\ \mathcal{L}(\boldsymbol{\theta}, \boldsymbol{\alpha}) \\
+&\quad\small \text{definition of } D\\
+&\le \mathcal{L}(\tilde{\boldsymbol{\theta}}, \boldsymbol{\alpha}) \\
+&\quad\small \text{a minimum is} \le \text{any particular value}\\
+&= J(\tilde{\boldsymbol{\theta}}) - \textstyle\sum_i\alpha_i\,g_i(\tilde{\boldsymbol{\theta}}) \\
+&\quad\small \text{definition of } \mathcal{L}\\
+&\le J(\tilde{\boldsymbol{\theta}}) \\
+&\quad\small \alpha_i \ge 0 \text{ and } g_i(\tilde{\boldsymbol{\theta}}) \ge 0, \text{ so the sum is} \ge 0 .
 \end{aligned}
 $$
 
@@ -578,11 +582,16 @@ Suppose strong duality holds and $\boldsymbol{\theta}^*$, $\boldsymbol{\alpha}^*
 
 $$
 \begin{aligned}
-J(\boldsymbol{\theta}^*) &= D(\boldsymbol{\alpha}^*) && \text{strong duality}\\
-&= \min_{\boldsymbol{\theta}}\ \mathcal{L}(\boldsymbol{\theta}, \boldsymbol{\alpha}^*) && \text{definition of } D\\
-&\le \mathcal{L}(\boldsymbol{\theta}^*, \boldsymbol{\alpha}^*) && \text{a minimum is} \le \text{any value}\\
-&= J(\boldsymbol{\theta}^*) - \textstyle\sum_i\alpha^*_i\,g_i(\boldsymbol{\theta}^*) && \text{definition of } \mathcal{L}\\
-&\le J(\boldsymbol{\theta}^*) && \alpha^*_i \ge 0,\ g_i(\boldsymbol{\theta}^*) \ge 0 .
+J(\boldsymbol{\theta}^*) &= D(\boldsymbol{\alpha}^*) \\
+&\quad\small \text{strong duality}\\
+&= \min_{\boldsymbol{\theta}}\ \mathcal{L}(\boldsymbol{\theta}, \boldsymbol{\alpha}^*) \\
+&\quad\small \text{definition of } D\\
+&\le \mathcal{L}(\boldsymbol{\theta}^*, \boldsymbol{\alpha}^*) \\
+&\quad\small \text{a minimum is} \le \text{any value}\\
+&= J(\boldsymbol{\theta}^*) - \textstyle\sum_i\alpha^*_i\,g_i(\boldsymbol{\theta}^*) \\
+&\quad\small \text{definition of } \mathcal{L}\\
+&\le J(\boldsymbol{\theta}^*) \\
+&\quad\small \alpha^*_i \ge 0,\ g_i(\boldsymbol{\theta}^*) \ge 0 .
 \end{aligned}
 $$
 
@@ -1138,9 +1147,12 @@ $$
 
 $$
 \begin{aligned}
-e^{-\gamma(x-z)^2} &= e^{-\gamma x^2}\,e^{-\gamma z^2}\,e^{2\gamma xz} && (x - z)^2 = x^2 - 2xz + z^2\\
-&= e^{-\gamma x^2}\,e^{-\gamma z^2}\sum_{k=0}^{\infty}\frac{(2\gamma xz)^k}{k!} && \text{Taylor series } e^u = \textstyle\sum_k u^k/k!\\
-&= \sum_{k=0}^{\infty}\underbrace{\Big(e^{-\gamma x^2}\sqrt{\tfrac{(2\gamma)^k}{k!}}\,x^k\Big)}_{\phi_k(x)}\underbrace{\Big(e^{-\gamma z^2}\sqrt{\tfrac{(2\gamma)^k}{k!}}\,z^k\Big)}_{\phi_k(z)} && \text{split each term in two equal factors.}
+e^{-\gamma(x-z)^2} &= e^{-\gamma x^2}\,e^{-\gamma z^2}\,e^{2\gamma xz} \\
+&\quad\small (x - z)^2 = x^2 - 2xz + z^2\\
+&= e^{-\gamma x^2}\,e^{-\gamma z^2}\sum_{k=0}^{\infty}\frac{(2\gamma xz)^k}{k!} \\
+&\quad\small \text{Taylor series } e^u = \textstyle\sum_k u^k/k!\\
+&= \sum_{k=0}^{\infty}\underbrace{\Big(e^{-\gamma x^2}\sqrt{\tfrac{(2\gamma)^k}{k!}}\,x^k\Big)}_{\phi_k(x)}\underbrace{\Big(e^{-\gamma z^2}\sqrt{\tfrac{(2\gamma)^k}{k!}}\,z^k\Big)}_{\phi_k(z)} \\
+&\quad\small \text{split each term in two equal factors.}
 \end{aligned}
 $$
 
