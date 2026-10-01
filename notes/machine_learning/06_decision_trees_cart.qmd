@@ -554,7 +554,8 @@ $$
 \begin{aligned}
 \sum_{i\in L}(y^{(i)}-\bar y)^2 &= \sum_{i\in L}\big((y^{(i)}-\bar y_L) + (\bar y_L - \bar y)\big)^2 \\
 &\quad\small \text{add and subtract $\bar y_L$}\\
-&= \mathrm{SSE}(L) + 2(\bar y_L-\bar y)\sum_{i\in L}(y^{(i)}-\bar y_L) + N_L(\bar y_L-\bar y)^2 = \mathrm{SSE}(L) + N_L(\bar y_L-\bar y)^2 \\
+&= \mathrm{SSE}(L) + 2(\bar y_L-\bar y)\sum_{i\in L}(y^{(i)}-\bar y_L) + N_L(\bar y_L-\bar y)^2 \\
+&= \mathrm{SSE}(L) + N_L(\bar y_L-\bar y)^2 \\
 &\quad\small \text{expand; deviations from $\bar y_L$ sum to 0}\\
 \mathrm{SSE}(\text{parent}) &= \mathrm{SSE}(L) + \mathrm{SSE}(R) + N_L(\bar y_L-\bar y)^2 + N_R(\bar y_R-\bar y)^2 \\
 &\quad\small \text{same for $R$, and add}\\
@@ -668,10 +669,14 @@ where $R(T)$ is the training error and $|T|$ the number of leaves. In the origin
 
 $$
 \begin{aligned}
-\text{keep: }&\; R(T_t) + \alpha\,|T_t|, \qquad \text{collapse: }\; R(t) + \alpha\cdot 1 && \text{only the branch's own terms change}\\
-\text{collapse} \iff&\; R(t) + \alpha \le R(T_t) + \alpha|T_t| && \text{the smaller cost wins}\\
-\iff&\; R(t) - R(T_t) \le \alpha\,(|T_t| - 1) && \text{move the $\alpha$ terms to the right}\\
-\iff&\; \alpha \;\ge\; g(t) = \frac{R(t) - R(T_t)}{|T_t| - 1} && \text{divide by $|T_t| - 1 > 0$}
+\text{keep: }&\; R(T_t) + \alpha\,|T_t|, \qquad \text{collapse: }\; R(t) + \alpha\cdot 1 \\
+&\quad\small \text{only the branch's own terms change}\\
+\text{collapse} \iff&\; R(t) + \alpha \le R(T_t) + \alpha|T_t| \\
+&\quad\small \text{the smaller cost wins}\\
+\iff&\; R(t) - R(T_t) \le \alpha\,(|T_t| - 1) \\
+&\quad\small \text{move the $\alpha$ terms to the right}\\
+\iff&\; \alpha \;\ge\; g(t) = \frac{R(t) - R(T_t)}{|T_t| - 1} \\
+&\quad\small \text{divide by $|T_t| - 1 > 0$}
 \end{aligned}
 $$
 
@@ -937,7 +942,8 @@ For $k = 6$ that is 31; for $k = 30$ over 500 million; for 200 repair shops abou
 
 $$
 \begin{aligned}
-\sum_{i\in c}(y^{(i)} - \mu)^2 &= \mathrm{SSE}_c + N_c(\bar y_c - \mu)^2 && \text{the within + between decomposition of section 11}
+\sum_{i\in c}(y^{(i)} - \mu)^2 &= \mathrm{SSE}_c + N_c(\bar y_c - \mu)^2 \\
+&\quad\small \text{the within + between decomposition of section 11}
 \end{aligned}
 $$
 

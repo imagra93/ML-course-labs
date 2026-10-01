@@ -83,3 +83,6 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(-
 
 /* ---- notes only: code-cell figures (matplotlib PNGs) are wider than the text column; scale them down, keep the ratio ---- */
 img.figure-img,.cell-output-display img{max-width:100%;height:auto}
+
+/* ---- notes only: printed output of code cells wraps like the code does (code-overflow: wrap covers the source only) ---- */
+.cell-output pre,.cell-output pre code{white-space:pre-wrap;overflow-wrap:anywhere}

@@ -534,8 +534,11 @@ A fact spans 20–33 words (a 6-word heading, 6–17 filler words, an 8- to 10-w
 An LLM only knows what was in its training data (up to a cut-off date, never your internal documents), and it can produce fluent but wrong answers (*hallucinations*). **RAG** retrieves relevant passages at question time and gives them to the LLM as context:
 
 ```
-offline (indexing):   documents → split into chunks → embed each chunk → store vectors (+ text, metadata) in an index
-online  (answering):  question  → embed → retrieve top-k chunks (→ re-rank) → prompt = instructions + chunks + question → LLM → answer (+ citations)
+offline (indexing):   documents → split into chunks → embed each chunk
+                      → store vectors (+ text, metadata) in an index
+online  (answering):  question  → embed → retrieve top-k chunks (→ re-rank)
+                      → prompt = instructions + chunks + question
+                      → LLM → answer (+ citations)
 ```
 
 **Design choices that matter most**
