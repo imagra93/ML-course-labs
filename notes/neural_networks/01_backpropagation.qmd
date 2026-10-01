@@ -451,7 +451,8 @@ In pseudo-code:
 
 ```
 forward:   A[0] = X
-           for l = 1..L:  Z[l] = A[l-1] W[l] + b[l];   A[l] = g[l](Z[l])      (store Z[l], A[l])
+           for l = 1..L:  Z[l] = A[l-1] W[l] + b[l];   A[l] = g[l](Z[l])
+                          (store Z[l], A[l])
            J = loss(A[L], Y)
 backward:  δ[L] = (A[L] - Y) / m
            for l = L..1:
