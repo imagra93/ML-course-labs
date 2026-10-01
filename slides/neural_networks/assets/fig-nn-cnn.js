@@ -151,7 +151,7 @@ FIG['seg-pix']=root=>{const svg=svgOf(root);const N=8;const lab=[];for(let i=0;i
   const inp=q(root,'k');function draw(){const k=+inp.value;setV(root,'k',names[k]);initSvg(svg,620,280);const cs=18;
     T(svg,90,18,'input pixels','lab');grid(svg,18,28,lab,cs,(i,j,v)=>['#cfe2f3','#8ea9db','#f4b183'][v],null,{sw:0.5,stroke:'#bfbfbf'});
     arrowPx(svg,170,100,205,100,'ln thin sk','fk');T(svg,300,18,'K = 3 score maps (logits)','lab');
-    [2,1,0].forEach(m=>{const off=(2-m)*14;for(let i=0;i<N;i++)for(let j=0;j<N;j++){const v=S[m][i][j];E('rect',{x:215+off+j*cs*0.8,y:28+off*0.6+i*cs*0.8,width:cs*0.8,height:cs*0.8,fill:heat(v/3),stroke:m===k?'#c00000':'#d0d0d0','stroke-width':m===k?1.2:0.4},svg)}T(svg,215+off+N*cs*0.8+4,28+off*0.6+10,names[m],'','start')});
+    [2,1,0].forEach(m=>{const off=(2-m)*14;for(let i=0;i<N;i++)for(let j=0;j<N;j++){const v=S[m][i][j];E('rect',{x:215+off+j*cs*0.8,y:28+off*0.6+i*cs*0.8,width:cs*0.8,height:cs*0.8,fill:heat(v/3),stroke:m===k?'#c00000':'#d0d0d0','stroke-width':m===k?1.2:0.4},svg)}});[2,1,0].forEach(m=>{const off=(2-m)*14;const cy=28+off*0.6+7,ly=42+(2-m)*17;E('line',{x1:215+off+N*cs*0.8,y1:cy,x2:370,y2:ly-4,stroke:'#bfbfbf','stroke-width':0.6},svg);T(svg,372,ly,names[m],'','start')});
     arrowPx(svg,420,100,455,100,'ln thin sk','fk');T(svg,540,18,'argmax per pixel → mask','lab');
     for(let i=0;i<N;i++)for(let j=0;j<N;j++){const p=soft(i,j);let a=0;p.forEach((v,m)=>{if(v>p[a])a=m});E('rect',{x:465+j*cs,y:28+i*cs,width:cs,height:cs,fill:cols[a],stroke:'#fff','stroke-width':0.6},svg)}
     T(svg,320,215,'output tensor [K, H, W]: for each pixel a softmax over the K classes, trained with cross-entropy on every pixel','','middle');

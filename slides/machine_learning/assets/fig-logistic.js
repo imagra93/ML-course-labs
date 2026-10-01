@@ -36,7 +36,7 @@ FIG['ce-mse']=root=>{const P=Plot(svgOf(root),{w:500,h:300,x:[-8,8],y:[0,1.05],m
 FIG['logit-gd']=root=>{const r=rng(15);const D=[];for(let i=0;i<60;i++){const x=r()*8;D.push([x,r()<sig(1.4*(x-4))?1:0])}const mu=4,sd=2.3;const Z=D.map(d=>[(d[0]-mu)/sd,d[1]]);
   let w0=0,w1=0;const H=[[0,0]];const J=(a,b)=>-Z.reduce((s,[x,y])=>{const p=Math.min(1-1e-12,Math.max(1e-12,sig(a+b*x)));return s+y*Math.log(p)+(1-y)*Math.log(1-p)},0)/Z.length;
   for(let k=0;k<200;k++){let g0=0,g1=0;Z.forEach(([x,y])=>{const e=sig(w0+w1*x)-y;g0+=e;g1+=e*x});w0-=0.5*g0/Z.length;w1-=0.5*g1/Z.length;H.push([w0,w1])}
-  const svg=initSvg(svgOf(root),560,300);const P=Plot(svg,{at:[0,0],w:340,h:300,x:[0,8],y:[-0.1,1.1],m:{l:36,r:8,t:12,b:36}});P.axes({xt:[0,2,4,6,8],yt:[0,0.5,1],xl:'x',yl:'P(y = 1 | x)'});
+  const svg=initSvg(svgOf(root),560,300);const P=Plot(svg,{at:[0,0],w:340,h:300,x:[0,8],y:[-0.1,1.1],m:{l:44,r:8,t:12,b:36}});P.axes({xt:[0,2,4,6,8],yt:[0,0.5,1],xl:'x',yl:'P(y = 1 | x)'});
   D.forEach(([x,y])=>P.dot(x,y+0.03*randn(r),4,'pt '+(y?'fb':'fo'),P.bg));const Js=H.map(h=>J(h[0],h[1]));
   const Q=Plot(svg,{at:[340,0],w:220,h:300,x:[0,200],y:[0,0.75],m:{l:40,r:8,t:12,b:36}});Q.axes({xt:[0,100,200],yt:[0,0.25,0.5,0.75],xl:'iteration',yl:'J(θ)'});Q.path(Js.map((v,i)=>[i,v]),'ln sb',Q.bg);
   const inp=q(root,'k');function draw(){const k=+inp.value;setV(root,'k',k);const [a,b]=H[k];P.clear();P.fn(x=>sig(a+b*(x-mu)/sd),'ln sr');Q.clear();Q.dot(k,Js[k],5,'fr');setR(root,'j',fmt(Js[k],3))}
@@ -66,7 +66,7 @@ FIG['pr']=root=>{const {neg,pos}=thrData();const all=neg.map(s=>[s,0]).concat(po
   all.forEach(x=>{if(x[1])tp++;else fp++;const R=tp/100,Pp=tp/(tp+fp);pr.push([R,Pp]);ap+=(R-prevR)*Pp;prevR=R});
   const P=Plot(svgOf(root),{w:520,h:320,x:[0,1],y:[0,1.02],m:{l:44,r:14,t:14,b:36}});P.axes({xt:[0,0.25,0.5,0.75,1],yt:[0,0.25,0.5,0.75,1],xl:'recall',yl:'precision'});
   P.path(pr,'ln sb');P.line(0,0.1,1,0.1,'ln thin sm dash');P.text(0.98,0.1,'random classifier: precision = 10 % (the positive rate)','', 'end',0,-8);P.text(0.05,0.08,'','');P.text(0.55,0.92,'AP = '+fmt(ap,3),'lab','start')};
-FIG['roc-dist']=root=>{const svg=initSvg(svgOf(root),640,300);const P=Plot(svg,{at:[0,0],w:340,h:300,x:[-4,7],y:[0,0.45],m:{l:36,r:8,t:14,b:36}});P.axes({xt:[-4,-2,0,2,4,6],yt:[0,0.2,0.4],xl:'model score',yl:'density'});
+FIG['roc-dist']=root=>{const svg=initSvg(svgOf(root),640,300);const P=Plot(svg,{at:[0,0],w:340,h:300,x:[-4,7],y:[0,0.45],m:{l:44,r:8,t:14,b:36}});P.axes({xt:[-4,-2,0,2,4,6],yt:[0,0.2,0.4],xl:'model score',yl:'density'});
   const Q=Plot(svg,{at:[350,0],w:290,h:300,x:[0,1],y:[0,1],m:{l:40,r:8,t:14,b:36}});Q.axes({xt:[0,0.5,1],yt:[0,0.5,1],xl:'FPR',yl:'TPR'});Q.line(0,0,1,1,'ln thin sm dash',Q.bg);
   const id=q(root,'d'),it=q(root,'t');
   function draw(){const d=+id.value,t=+it.value;setV(root,'d',fmt(d,1));setV(root,'t',fmt(t,1));P.clear();Q.clear();

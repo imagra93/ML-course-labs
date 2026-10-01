@@ -193,7 +193,7 @@
       <div class="panels" style="min-height:210px">
         <div data-i="0"><p class="small">Forward values are stored: $\bz^{[1]}=(1.0,0.4)$, $\ba^{[1]}=(0.762,0.380)$, $z^{[2]}=0.543$, $\hat y=0.633$.</p></div>
         <div data-i="1"><p class="small">$\delta^{[2]}=\hat y-y=-0.367$. Negative: the output should go <b>up</b>.</p></div>
-        <div data-i="2"><p class="small">$\partial\bW^{[2]}=\ba^{[1]\top}\delta^{[2]}=(0.762,0.380)\cdot(-0.367)=(-0.280,-0.140)$. The unit with the larger activation gets the larger gradient.</p></div>
+        <div data-i="2"><p class="small">$\partial\bW^{[2]}=\ba^{[1]\top}\delta^{[2]}$ $=(0.762,0.380)\cdot(-0.367)=(-0.280,-0.140)$. The unit with the larger activation gets the larger gradient.</p></div>
         <div data-i="3"><p class="small">$\partial\ba^{[1]}=\delta^{[2]}\bW^{[2]\top}=(-0.257,\,0.184)$: hidden unit 1 (positive weight 0.7) should grow, unit 2 (weight −0.5) should shrink.</p></div>
         <div data-i="4"><p class="small">$\bdelta^{[1]}=(-0.257\cdot0.420,\ 0.184\cdot0.856)=(-0.108,\,0.157)$. Unit 1 is already fairly saturated ($a=0.76$), so its gradient is damped: $1-a^2=0.42$.</p></div>
         <div data-i="5"><p class="small">$\partial\bW^{[1]}=\bx^\top\bdelta^{[1]}=\begin{pmatrix}-0.108&amp;0.157\\-0.216&amp;0.314\end{pmatrix}$, $\ \partial\bb^{[1]}=(-0.108,0.157)$. Row 2 is twice row 1 because $x_2=2x_1$.</p></div>

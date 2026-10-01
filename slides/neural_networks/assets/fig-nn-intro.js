@@ -45,7 +45,7 @@ FIG['feat-map']=root=>{const svg=initSvg(svgOf(root),640,300);const r=rng(21);co
   const A=Plot(svg,{at:[0,0],w:280,h:290,x:[-1.05,1.05],y:[-1.05,1.05],m:{l:34,r:8,t:30,b:34}});A.axes({xt:[-1,0,1],yt:[-1,0,1],grid:false,xl:'x₁',yl:'x₂'});T(A.root,157,18,'original features: no line works','lab');
   A.path([...Array(121).keys()].map(k=>{const t=2*Math.PI*k/120;return [Math.sqrt(0.42)*Math.cos(t),Math.sqrt(0.42)*Math.sin(t)]}),'ln thin sm dash');
   pts.forEach(p=>A.dot(p[0],p[1],4,'pt '+(p[2]?'fb':'fo')));
-  arrowPx(svg,292,140,344,140,'ln sk','fk');T(svg,318,126,'square','','middle');T(svg,318,166,'each input','','middle');
+  arrowPx(svg,292,140,344,140,'ln sk','fk');T(svg,314,126,'square','','middle');T(svg,314,166,'each input','','middle');
   const B=Plot(svg,{at:[350,0],w:290,h:290,x:[-0.03,1.05],y:[-0.03,1.05],m:{l:44,r:8,t:30,b:34}});B.axes({xt:[0,0.5,1],yt:[0,0.5,1],grid:false,xl:'z₁ = x₁²',yl:'z₂ = x₂²'});T(B.root,167,18,'new features: a straight line works','lab');
   B.poly([[0,0],[0.42,0],[0,0.42]],'fbs');B.line(0.45,-0.03,-0.03,0.45,'ln sb');pts.forEach(p=>B.dot(p[0]*p[0],p[1]*p[1],4,'pt '+(p[2]?'fb':'fo')));B.text(0.4,0.12,'z₁ + z₂ = 0.42','', 'start',8,0).style.fill='#4472c4'};
 /* XOR with a hand-built 2-2-1 network of step units */

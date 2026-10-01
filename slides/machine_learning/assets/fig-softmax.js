@@ -3,8 +3,8 @@
 'use strict';
 const {FIG,lib}=window.MLFIG;const {E,T,initSvg,Plot,rng,randn,fmt,q,setV,setR,svgOf}=lib;
 FIG['soft']=root=>{const svg=initSvg(svgOf(root),540,260);
-  const P=Plot(svg,{at:[0,0],w:260,h:260,x:[0.4,3.6],y:[-4.5,4.5],m:{l:36,r:6,t:28,b:28}});P.axes({yt:[-4,0,4],grid:false});P.line(0.4,0,3.6,0,'ax',P.bg);T(P.root,140,16,'scores z (after scaling)','lab');
-  const Q=Plot(svg,{at:[280,0],w:260,h:260,x:[0.4,3.6],y:[0,1],m:{l:36,r:6,t:28,b:28}});Q.axes({yt:[0,0.5,1]});T(Q.root,140,16,'softmax probabilities','lab');
+  const P=Plot(svg,{at:[0,0],w:260,h:260,x:[0.4,3.6],y:[-4.5,4.5],m:{l:36,r:6,t:40,b:28}});P.axes({yt:[-4,0,4],grid:false});P.line(0.4,0,3.6,0,'ax',P.bg);T(P.root,140,16,'scores z (after scaling)','lab');
+  const Q=Plot(svg,{at:[280,0],w:260,h:260,x:[0.4,3.6],y:[0,1],m:{l:36,r:6,t:40,b:28}});Q.axes({yt:[0,0.5,1]});T(Q.root,140,16,'softmax probabilities','lab');
   const ins=[1,2,3].map(k=>q(root,'z'+k)),is=q(root,'s');const cls=['fb','fo','fgr'];
   function draw(){const s=+is.value;const z=ins.map(i=>+i.value*s);ins.forEach((i,k)=>setV(root,'z'+(k+1),fmt(+i.value,1)));setV(root,'s',fmt(s,1));
     const mx=Math.max(...z);const ex=z.map(v=>Math.exp(v-mx));const Z=ex.reduce((a,b)=>a+b,0);const p=ex.map(v=>v/Z);P.clear();Q.clear();

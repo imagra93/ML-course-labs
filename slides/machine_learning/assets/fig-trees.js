@@ -46,7 +46,7 @@ FIG['part-tree']=root=>{const svg=initSvg(svgOf(root),980,390);
   T(g,265,362,'Blue dots = sold, orange = not sold.','','middle')};
 
 /* Entropy, Gini and misclassification error for two classes */
-FIG['impurity']=root=>{const P=Plot(svgOf(root),{w:470,h:320,x:[0,1],y:[0,1.08],m:{l:46,r:14,t:12,b:40}});
+FIG['impurity']=root=>{const P=Plot(svgOf(root),{w:470,h:320,x:[0,1],y:[0,1.08],m:{l:56,r:14,t:12,b:40}});
   P.axes({xt:[0,0.25,0.5,0.75,1],yt:[0,0.25,0.5,0.75,1],xl:'p = fraction of class 1 in the node',yl:'impurity'});
   P.fn(Hp,'ln sb',0,1,400);P.fn(Gp,'ln sr dash',0,1,200);P.fn(Mp,'ln sm',0,1,200)};
 

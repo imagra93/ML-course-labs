@@ -171,3 +171,4 @@ table.cmx .mt{background:#fdf2f8}
 table.cmx .on{background:#8ea9db !important}
 table.cmx .blank{border:none;background:none;min-width:0}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:19px}
+body.flow .seg{flex-wrap:wrap;max-width:100%}

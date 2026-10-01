@@ -20,9 +20,9 @@ function Plot(svg,o){
     axes(opt){opt=opt||{};const xt=opt.xt||[],yt=opt.yt||[],fx=opt.fx||(v=>v),fy=opt.fy||(v=>v);
       if(opt.grid!==false){yt.forEach(v=>E('line',{x1:m.l,x2:w-m.r,y1:Y(v),y2:Y(v),class:'gr'},bg));xt.forEach(v=>E('line',{y1:m.t,y2:h-m.b,x1:X(v),x2:X(v),class:'gr'},bg))}
       if(opt.noaxes!==true){E('line',{x1:m.l,x2:w-m.r,y1:h-m.b,y2:h-m.b,class:'ax'},bg);E('line',{x1:m.l,x2:m.l,y1:m.t,y2:h-m.b,class:'ax'},bg)}
-      xt.forEach(v=>T(bg,X(v),h-m.b+18,fx(v)));yt.forEach(v=>T(bg,m.l-7,Y(v)+4,fy(v),'','end'));
-      if(opt.xl)T(bg,(m.l+w-m.r)/2,h-3,opt.xl,'lab');
-      if(opt.yl){const cy=(m.t+h-m.b)/2;const t=T(bg,13,cy,opt.yl,'lab');t.setAttribute('transform','rotate(-90 13 '+cy+')')}
+      xt.forEach(v=>T(bg,X(v),h-m.b+(opt.xl?Math.min(18,m.b-19):18),fx(v)));yt.forEach(v=>T(bg,m.l-7,Y(v)+4,fy(v),'','end'));
+      if(opt.xl)T(bg,(m.l+w-m.r)/2,h-2,opt.xl,'lab');
+      if(opt.yl){const cy=(m.t+h-m.b)/2;const tw=yt.reduce((a,v)=>Math.max(a,String(fy(v)).length),0)*6.3;const lx=Math.max(9,Math.min(13,m.l-7-tw-6));const t=T(bg,lx,cy,opt.yl,'lab');t.setAttribute('transform','rotate(-90 '+lx+' '+cy+')')}
       if(opt.title)T(bg,(m.l+w-m.r)/2,m.t-4,opt.title,'lab')},
     path(pts,cls,g){let d='';pts.forEach(p=>{if(!isFinite(p[1]))return;d+=(d?'L':'M')+X(p[0]).toFixed(1)+','+Y(p[1]).toFixed(1)});return E('path',{d:d,class:cls},g||dyn)},
     fn(f,cls,a,b,n,g){a=(a===undefined)?x0:a;b=(b===undefined)?x1:b;n=n||240;const pts=[];for(let i=0;i<=n;i++){const x=lx?Math.pow(10,Math.log10(a)+(Math.log10(b)-Math.log10(a))*i/n):a+(b-a)*i/n;pts.push([x,f(x)])}return P.path(pts,cls,g)},
@@ -186,7 +186,7 @@ FIG['cv-lambda']=root=>{const r=rng(7);const tr=[],va=[];for(let i=0;i<20;i++){c
   const pts=[];for(let le=-8;le<=1.01;le+=0.25){const lam=Math.pow(10,le);const A=[],bb=[];for(let i=0;i<=d;i++){A.push(new Array(d+1).fill(0));bb.push(0)}tr.forEach(([x,y])=>{const f=basis(x);for(let i=0;i<=d;i++){bb[i]+=f[i]*y;for(let j=0;j<=d;j++)A[i][j]+=f[i]*f[j]}});
     for(let i=1;i<=d;i++)A[i][i]+=lam;A[0][0]+=1e-9;const c=solve(A,bb);const pr=x=>basis(x).reduce((s,v,i)=>s+v*c[i],0);const rm=D=>Math.sqrt(D.reduce((s,p)=>s+(pr(p[0])-p[1])**2,0)/D.length);pts.push([lam,rm(tr),rm(va)])}
   const P=Plot(svgOf(root),{w:520,h:320,x:[1e-8,10],y:[0,1],logx:true,m:{l:44,r:14,t:14,b:40}});P.axes({xt:[1e-8,1e-6,1e-4,1e-2,1],fx:v=>'1e'+Math.round(Math.log10(v)),yt:[0,0.25,0.5,0.75,1],xl:'λ (log scale), degree-15 polynomial',yl:'RMSE'});
-  P.path(pts.map(p=>[p[0],p[1]]),'ln sb');P.path(pts.map(p=>[p[0],Math.min(p[2],1.2)]),'ln so');let b=pts[0];pts.forEach(p=>{if(p[2]<b[2])b=p});P.line(b[0],0,b[0],1,'ln thin sg dash');P.text(b[0],0.92,'best λ on validation','', 'start',6,0);
+  P.path(pts.map(p=>[p[0],p[1]]),'ln sb');P.path(pts.map(p=>[p[0],Math.min(p[2],1.2)]),'ln so');let b=pts[0];pts.forEach(p=>{if(p[2]<b[2])b=p});P.line(b[0],0,b[0],1,'ln thin sg dash');P.text(b[0],0.8,'best λ on validation','', 'end',-6,0);
   P.text(2e-8,0.9,'overfitting','', 'start');P.text(6,0.9,'underfitting','', 'end')};
 window.MLFIG={FIG:FIG,lib:{E,T,initSvg,Plot,arrowPx,arrow,rng,randn,solve,fmt,equalY,q,setV,setR,svgOf,sig,waveLabel,waveData,buildTree,treeProb,treeBoxes,halfPlane,fitLogit},init:function(){document.querySelectorAll('[data-fig]').forEach(el=>{const f=FIG[el.dataset.fig];if(!f){console.warn('unknown figure',el.dataset.fig);return}try{f(el)}catch(err){console.error('figure '+el.dataset.fig+' failed',err)}})}};
 })();
