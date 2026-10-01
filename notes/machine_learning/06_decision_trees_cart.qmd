@@ -69,9 +69,12 @@ A leaf predicts **one constant** $c$ for all its $N$ examples. The best $c$ depe
 
 $$
 \begin{aligned}
-\frac{d}{dc}\sum_{i=1}^N\big(y^{(i)}-c\big)^2 &= \sum_{i=1}^N 2\big(y^{(i)}-c\big)\cdot(-1) = 0 && \text{chain rule: the derivative of $(y-c)^2$ with respect to $c$ is $2(y-c)\cdot(-1)$}\\
-\sum_{i=1}^N y^{(i)} - Nc &= 0 && \text{divide by $-2$, and $\textstyle\sum_{i=1}^N c = Nc$}\\
-c &= \frac1N\sum_{i=1}^N y^{(i)} = \bar y && \text{solve for $c$}
+\frac{d}{dc}\sum_{i=1}^N\big(y^{(i)}-c\big)^2 &= \sum_{i=1}^N 2\big(y^{(i)}-c\big)\cdot(-1) = 0 \\
+&\quad\small \text{chain rule: the derivative of $(y-c)^2$ with respect to $c$ is $2(y-c)\cdot(-1)$}\\
+\sum_{i=1}^N y^{(i)} - Nc &= 0 \\
+&\quad\small \text{divide by $-2$, and $\textstyle\sum_{i=1}^N c = Nc$}\\
+c &= \frac1N\sum_{i=1}^N y^{(i)} = \bar y \\
+&\quad\small \text{solve for $c$}
 \end{aligned}
 $$
 
@@ -143,10 +146,14 @@ The values of $-\log_2 p$ we need: $p = 1/2 \to 1$; $1/4 \to 2$; $3/4 \to 0.415$
 
 $$
 \begin{aligned}
-(8,8):&\quad H = \tfrac12\cdot 1 + \tfrac12\cdot 1 = 1 && \text{the root: } p = \tfrac{8}{16} = \tfrac12 \text{ for each class}\\
-(6,2):&\quad H = \tfrac34\cdot 0.415 + \tfrac14\cdot 2 = 0.311 + 0.5 = 0.811 && p_{\text{sold}} = \tfrac68 = \tfrac34,\ p_{\text{not}} = \tfrac28 = \tfrac14;\ \text{the same for } (2,6)\\
-(8,4):&\quad H = \tfrac23\cdot 0.585 + \tfrac13\cdot 1.585 = 0.390 + 0.528 = 0.918 && p_{\text{sold}} = \tfrac{8}{12} = \tfrac23,\ p_{\text{not}} = \tfrac{4}{12} = \tfrac13\\
-(0,4):&\quad H = 0 && \text{pure}
+(8,8):&\quad H = \tfrac12\cdot 1 + \tfrac12\cdot 1 = 1 \\
+&\quad\small \text{the root: } p = \tfrac{8}{16} = \tfrac12 \text{ for each class}\\
+(6,2):&\quad H = \tfrac34\cdot 0.415 + \tfrac14\cdot 2 = 0.311 + 0.5 = 0.811 \\
+&\quad\small p_{\text{sold}} = \tfrac68 = \tfrac34,\ p_{\text{not}} = \tfrac28 = \tfrac14;\ \text{the same for } (2,6)\\
+(8,4):&\quad H = \tfrac23\cdot 0.585 + \tfrac13\cdot 1.585 = 0.390 + 0.528 = 0.918 \\
+&\quad\small p_{\text{sold}} = \tfrac{8}{12} = \tfrac23,\ p_{\text{not}} = \tfrac{4}{12} = \tfrac13\\
+(0,4):&\quad H = 0 \\
+&\quad\small \text{pure}
 \end{aligned}
 $$
 
@@ -160,8 +167,10 @@ where $N_c/N$ is the fraction of the parent's examples that go to child $c$. CAR
 
 $$
 \begin{aligned}
-IG_A &= 1 - \Big(\tfrac{8}{16}\cdot 0.811 + \tfrac{8}{16}\cdot 0.811\Big) = 1 - 0.811 = 0.189 && \text{A: children $(6,2)$ and $(2,6)$, 8 cars each}\\
-IG_B &= 1 - \Big(\tfrac{12}{16}\cdot 0.918 + \tfrac{4}{16}\cdot 0\Big) = 1 - 0.689 = 0.311 && \text{B: children $(8,4)$ with 12 cars and $(0,4)$ with 4}
+IG_A &= 1 - \Big(\tfrac{8}{16}\cdot 0.811 + \tfrac{8}{16}\cdot 0.811\Big) = 1 - 0.811 = 0.189 \\
+&\quad\small \text{A: children $(6,2)$ and $(2,6)$, 8 cars each}\\
+IG_B &= 1 - \Big(\tfrac{12}{16}\cdot 0.918 + \tfrac{4}{16}\cdot 0\Big) = 1 - 0.689 = 0.311 \\
+&\quad\small \text{B: children $(8,4)$ with 12 cars and $(0,4)$ with 4}
 \end{aligned}
 $$
 
@@ -192,9 +201,13 @@ Draw two examples from the node at random, with replacement. The **Gini impurity
 
 $$
 \begin{aligned}
-P(\text{same}) &= \sum_{k=1}^K p_k\cdot p_k && \text{both draws are of class $k$ with probability $p_k\cdot p_k$ (independent draws); add over the classes}\\
-\text{Gini} &= 1 - \sum_{k=1}^K p_k^2 = \sum_{k=1}^K p_k(1-p_k) && \text{complement; and $\textstyle\sum_k p_k = 1$ gives the second form}\\
-\text{two classes: } \ \text{Gini} &= 1 - p^2 - (1-p)^2 = 1 - p^2 - 1 + 2p - p^2 = 2p(1-p) && \text{with $p$ = fraction of class 1; expand $(1-p)^2$}
+P(\text{same}) &= \sum_{k=1}^K p_k\cdot p_k \\
+&\quad\small \text{both draws are of class $k$ with probability $p_k\cdot p_k$ (independent draws);}\\
+&\quad\small \text{add over the classes}\\
+\text{Gini} &= 1 - \sum_{k=1}^K p_k^2 = \sum_{k=1}^K p_k(1-p_k) \\
+&\quad\small \text{complement; and $\textstyle\sum_k p_k = 1$ gives the second form}\\
+\text{two classes: } \ \text{Gini} &= 1 - p^2 - (1-p)^2 = 1 - p^2 - 1 + 2p - p^2 = 2p(1-p) \\
+&\quad\small \text{with $p$ = fraction of class 1; expand $(1-p)^2$}
 \end{aligned}
 $$
 
@@ -204,8 +217,9 @@ The second form has another reading: a classifier that predicts at random with t
 
 $$
 \begin{aligned}
-A:&\quad 2\cdot\tfrac34\cdot\tfrac14 = 0.375 \ \text{(both children)} \;\Rightarrow\; \Delta = 0.5 - 0.375 = 0.125\\
-B:&\quad (8,4)\to 2\cdot\tfrac23\cdot\tfrac13 = 0.444,\qquad (0,4)\to 0 \;\Rightarrow\; \Delta = 0.5 - \Big(\tfrac{12}{16}\cdot 0.444 + \tfrac{4}{16}\cdot 0\Big) = 0.5 - 0.333 = 0.167
+A:&\quad 2\cdot\tfrac34\cdot\tfrac14 = 0.375 \ \text{(both children)} \;\Rightarrow\; \Delta = 0.5 - 0.375 = 0.125 \\
+B:&\quad (8,4)\to 2\cdot\tfrac23\cdot\tfrac13 = 0.444,\qquad (0,4)\to 0 \\
+&\quad \Rightarrow\; \Delta = 0.5 - \Big(\tfrac{12}{16}\cdot 0.444 + \tfrac{4}{16}\cdot 0\Big) = 0.5 - 0.333 = 0.167
 \end{aligned}
 $$
 
@@ -243,9 +257,12 @@ plt.tight_layout(); plt.show()
 
 $$
 \begin{aligned}
--\ln p_k &= -\ln(1-u) = u + \frac{u^2}{2} + \frac{u^3}{3} + \cdots && \text{Taylor series of $-\ln(1-u)$, valid for $0 \le u < 1$}\\
-H_e &= \sum_k p_k(-\ln p_k) = \sum_k p_k(1-p_k) + \sum_k \frac{p_k(1-p_k)^2}{2} + \cdots && \text{multiply by $p_k$ and add over $k$}\\
-&= \text{Gini} + \underbrace{\sum_k \frac{p_k(1-p_k)^2}{2} + \cdots}_{\ge 0} && \text{the first term is Gini (section 6)}
+-\ln p_k &= -\ln(1-u) = u + \frac{u^2}{2} + \frac{u^3}{3} + \cdots \\
+&\quad\small \text{Taylor series of $-\ln(1-u)$, valid for $0 \le u < 1$}\\
+H_e &= \sum_k p_k(-\ln p_k) = \sum_k p_k(1-p_k) + \sum_k \frac{p_k(1-p_k)^2}{2} + \cdots \\
+&\quad\small \text{multiply by $p_k$ and add over $k$}\\
+&= \text{Gini} + \underbrace{\sum_k \frac{p_k(1-p_k)^2}{2} + \cdots}_{\ge 0} \\
+&\quad\small \text{the first term is Gini (section 6)}
 \end{aligned}
 $$
 
@@ -255,10 +272,14 @@ So $H_e \ge \text{Gini}$, with equality only for a pure node, and the two are cl
 
 $$
 \begin{aligned}
-\text{Gini} &= 2\big(\tfrac12+\delta\big)\big(\tfrac12-\delta\big) = 2\big(\tfrac14-\delta^2\big) = \tfrac12 - 2\delta^2 && \text{difference of squares}\\
-H(p) &= H(\tfrac12) + H'(\tfrac12)\,\delta + \tfrac12 H''(\tfrac12)\,\delta^2 + O(\delta^4) && \text{Taylor expansion of $H(p) = -p\log_2p-(1-p)\log_2(1-p)$ around $\tfrac12$}\\
-H'(p) &= \log_2\frac{1-p}{p},\qquad H''(p) = -\frac{1}{p(1-p)\ln 2} && \text{differentiate; so $H'(\tfrac12)=0$, $H''(\tfrac12) = -\tfrac{4}{\ln 2}$}\\
-H &\approx 1 - \frac{2}{\ln 2}\,\delta^2 = 1 - \frac{1}{\ln 2}\Big(\frac12 - \text{Gini}\Big) && \text{substitute; then $\delta^2 = (\tfrac12 - \text{Gini})/2$ from the first line}
+\text{Gini} &= 2\big(\tfrac12+\delta\big)\big(\tfrac12-\delta\big) = 2\big(\tfrac14-\delta^2\big) = \tfrac12 - 2\delta^2 \\
+&\quad\small \text{difference of squares}\\
+H(p) &= H(\tfrac12) + H'(\tfrac12)\,\delta + \tfrac12 H''(\tfrac12)\,\delta^2 + O(\delta^4) \\
+&\quad\small \text{Taylor expansion of $H(p) = -p\log_2p-(1-p)\log_2(1-p)$ around $\tfrac12$}\\
+H'(p) &= \log_2\frac{1-p}{p},\qquad H''(p) = -\frac{1}{p(1-p)\ln 2} \\
+&\quad\small \text{differentiate; so $H'(\tfrac12)=0$, $H''(\tfrac12) = -\tfrac{4}{\ln 2}$}\\
+H &\approx 1 - \frac{2}{\ln 2}\,\delta^2 = 1 - \frac{1}{\ln 2}\Big(\frac12 - \text{Gini}\Big) \\
+&\quad\small \text{substitute; then $\delta^2 = (\tfrac12 - \text{Gini})/2$ from the first line}
 \end{aligned}
 $$
 
@@ -324,9 +345,12 @@ $$
 
 $$
 \begin{aligned}
-p &= \frac{N_L p_L + N_R p_R}{N} = w_L\,p_L + w_R\,p_R && \text{class-1 count of the parent = sum of the children's; divide by $N$}\\
-I(p) &= I(w_L p_L + w_R p_R) \;\ge\; w_L\,I(p_L) + w_R\,I(p_R) && \text{definition of a concave $I$: the curve is above its chords}\\
-\Delta I &= I(p) - \big(w_L I(p_L) + w_R I(p_R)\big) \;\ge\; 0 && \text{rearrange: no split increases a concave impurity}
+p &= \frac{N_L p_L + N_R p_R}{N} = w_L\,p_L + w_R\,p_R \\
+&\quad\small \text{class-1 count of the parent = sum of the children's; divide by $N$}\\
+I(p) &= I(w_L p_L + w_R p_R) \;\ge\; w_L\,I(p_L) + w_R\,I(p_R) \\
+&\quad\small \text{definition of a concave $I$: the curve is above its chords}\\
+\Delta I &= I(p) - \big(w_L I(p_L) + w_R I(p_R)\big) \;\ge\; 0 \\
+&\quad\small \text{rearrange: no split increases a concave impurity}
 \end{aligned}
 $$
 
@@ -528,11 +552,16 @@ so maximising the variance decrease is **exactly** choosing the split that most 
 
 $$
 \begin{aligned}
-\sum_{i\in L}(y^{(i)}-\bar y)^2 &= \sum_{i\in L}\big((y^{(i)}-\bar y_L) + (\bar y_L - \bar y)\big)^2 && \text{add and subtract $\bar y_L$}\\
-&= \mathrm{SSE}(L) + 2(\bar y_L-\bar y)\sum_{i\in L}(y^{(i)}-\bar y_L) + N_L(\bar y_L-\bar y)^2 = \mathrm{SSE}(L) + N_L(\bar y_L-\bar y)^2 && \text{expand; deviations from $\bar y_L$ sum to 0}\\
-\mathrm{SSE}(\text{parent}) &= \mathrm{SSE}(L) + \mathrm{SSE}(R) + N_L(\bar y_L-\bar y)^2 + N_R(\bar y_R-\bar y)^2 && \text{same for $R$, and add}\\
-\bar y_L - \bar y &= \frac{N_R}{N}(\bar y_L - \bar y_R), \quad \bar y_R - \bar y = \frac{N_L}{N}(\bar y_R - \bar y_L) && \text{because } \bar y = (N_L\bar y_L + N_R\bar y_R)/N\\
-N\,\Delta I_V &= \frac{N_L N_R^2 + N_R N_L^2}{N^2}(\bar y_L-\bar y_R)^2 = \frac{N_L N_R}{N}(\bar y_L-\bar y_R)^2 && \text{substitute, and } N_L + N_R = N
+\sum_{i\in L}(y^{(i)}-\bar y)^2 &= \sum_{i\in L}\big((y^{(i)}-\bar y_L) + (\bar y_L - \bar y)\big)^2 \\
+&\quad\small \text{add and subtract $\bar y_L$}\\
+&= \mathrm{SSE}(L) + 2(\bar y_L-\bar y)\sum_{i\in L}(y^{(i)}-\bar y_L) + N_L(\bar y_L-\bar y)^2 = \mathrm{SSE}(L) + N_L(\bar y_L-\bar y)^2 \\
+&\quad\small \text{expand; deviations from $\bar y_L$ sum to 0}\\
+\mathrm{SSE}(\text{parent}) &= \mathrm{SSE}(L) + \mathrm{SSE}(R) + N_L(\bar y_L-\bar y)^2 + N_R(\bar y_R-\bar y)^2 \\
+&\quad\small \text{same for $R$, and add}\\
+\bar y_L - \bar y &= \frac{N_R}{N}(\bar y_L - \bar y_R), \quad \bar y_R - \bar y = \frac{N_L}{N}(\bar y_R - \bar y_L) \\
+&\quad\small \text{because } \bar y = (N_L\bar y_L + N_R\bar y_R)/N\\
+N\,\Delta I_V &= \frac{N_L N_R^2 + N_R N_L^2}{N^2}(\bar y_L-\bar y_R)^2 = \frac{N_L N_R}{N}(\bar y_L-\bar y_R)^2 \\
+&\quad\small \text{substitute, and } N_L + N_R = N
 \end{aligned}
 $$
 
@@ -761,11 +790,16 @@ Trees make very few assumptions, which is why they are so popular. The assumptio
 
 $$
 \begin{aligned}
-&x^{(a)}_j \le x^{(b)}_j \iff g(x^{(a)}_j) \le g(x^{(b)}_j) && \text{$g$ strictly increasing preserves order}\\
-&\{i\in S_t:\ x^{(i)}_j \le s\} = \{i\in S_t:\ g(x^{(i)}_j) \le s'\} && \text{for $s$ between two consecutive sorted values and $s'$ between their images}\\
-&\text{the candidate partitions of every node are the same sets} && \text{the thresholds are the gaps between consecutive values, in the same order}\\
-&\Delta I \text{ of each candidate partition is the same} && \text{$\Delta I$ depends only on which labels go left and right}\\
-&\text{the best split at the root, then (by induction on depth) at every node, is the same} && \text{same data reach each child} \qquad\blacksquare
+&x^{(a)}_j \le x^{(b)}_j \iff g(x^{(a)}_j) \le g(x^{(b)}_j) \\
+&\quad\small \text{$g$ strictly increasing preserves order}\\
+&\{i\in S_t:\ x^{(i)}_j \le s\} = \{i\in S_t:\ g(x^{(i)}_j) \le s'\} \\
+&\quad\small \text{for $s$ between two consecutive sorted values and $s'$ between their images}\\
+&\text{the candidate partitions of every node are the same sets} \\
+&\quad\small \text{the thresholds are the gaps between consecutive values, in the same order}\\
+&\Delta I \text{ of each candidate partition is the same} \\
+&\quad\small \text{$\Delta I$ depends only on which labels go left and right}\\
+&\text{the best split at the root, then (by induction on depth) at every node, is the same} \\
+&\quad\small \text{same data reach each child} \qquad\blacksquare
 \end{aligned}
 $$
 

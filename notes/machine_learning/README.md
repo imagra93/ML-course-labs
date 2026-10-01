@@ -21,7 +21,7 @@ page next to it.
 | 06 | [Decision trees and CART](https://imagra93.github.io/ML-course-labs/notes/machine_learning/06_decision_trees_cart.html) | [.qmd](06_decision_trees_cart.qmd) | entropy and Gini, CART from scratch, regression trees, pruning, instability; what trees assume, categorical and missing values, feature-importance bias |
 | 07 | [Bagging, random forests and boosting](https://imagra93.github.io/ML-course-labs/notes/machine_learning/07_bagging_random_forest_boosting.html) | [.qmd](07_bagging_random_forest_boosting.qmd) | variance of an average, bootstrap and OOB, random forests, AdaBoost, gradient boosting, XGBoost's second-order derivation, boosting in practice |
 
-Original class notes (PDF): [ML_classNotes.pptx.pdf](ML_classNotes.pptx.pdf)
+Original class notes (PDF): [ML_classNotes.pptx.pdf](../../ML_classNotes.pptx.pdf)
 
 ## Notation (all notes)
 

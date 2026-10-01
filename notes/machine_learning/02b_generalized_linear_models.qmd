@@ -200,10 +200,14 @@ with a *natural parameter* $\vartheta$, a *dispersion* $\phi > 0$, the function 
 
 $$
 \begin{aligned}
-0 &= \int \frac{y - A'(\vartheta)}{\phi}\,p(y)\,dy && \text{(derivative of the exponent is } (y - A'(\vartheta))/\phi\text{)}\\
-\Rightarrow\ \mathbb{E}[y] &= A'(\vartheta) = \mu && \text{(multiply by } \phi\text{; } \textstyle\int p = 1\text{)}\\
-0 &= \int\Big[-\frac{A''(\vartheta)}{\phi} + \frac{(y - A'(\vartheta))^2}{\phi^2}\Big]p(y)\,dy && \text{(differentiate again: product rule)}\\
-\Rightarrow\ \mathrm{Var}(y) &= \mathbb{E}\big[(y-\mu)^2\big] = \phi\,A''(\vartheta) && \text{(multiply by } \phi^2\text{)}
+0 &= \int \frac{y - A'(\vartheta)}{\phi}\,p(y)\,dy \\
+&\quad\small \text{(derivative of the exponent is } (y - A'(\vartheta))/\phi\text{)}\\
+\Rightarrow\ \mathbb{E}[y] &= A'(\vartheta) = \mu \\
+&\quad\small \text{(multiply by } \phi\text{; } \textstyle\int p = 1\text{)}\\
+0 &= \int\Big[-\frac{A''(\vartheta)}{\phi} + \frac{(y - A'(\vartheta))^2}{\phi^2}\Big]p(y)\,dy \\
+&\quad\small \text{(differentiate again: product rule)}\\
+\Rightarrow\ \mathrm{Var}(y) &= \mathbb{E}\big[(y-\mu)^2\big] = \phi\,A''(\vartheta) \\
+&\quad\small \text{(multiply by } \phi^2\text{)}
 \end{aligned}
 $$
 
@@ -772,8 +776,10 @@ The term $\log t_i$ is added to the linear score with a **fixed coefficient of 1
 $$
 \begin{aligned}
 \sum_i t_i\Big(e^{\boldsymbol\theta^\top\mathbf{x}^{(i)}} - \frac{y_i}{t_i}\,\boldsymbol\theta^\top\mathbf{x}^{(i)}\Big)
-&= \sum_i\Big(t_ie^{\boldsymbol\theta^\top\mathbf{x}^{(i)}} - y_i\,\boldsymbol\theta^\top\mathbf{x}^{(i)}\Big) && \text{(multiply out)}\\
-&= \sum_i\Big(\mu_i - y_i\log\mu_i\Big) + \sum_i y_i\log t_i && (\mu_i = t_ie^{\boldsymbol\theta^\top\mathbf{x}^{(i)}},\ \log\mu_i = \log t_i + \boldsymbol\theta^\top\mathbf{x}^{(i)})
+&= \sum_i\Big(t_ie^{\boldsymbol\theta^\top\mathbf{x}^{(i)}} - y_i\,\boldsymbol\theta^\top\mathbf{x}^{(i)}\Big) \\
+&\quad\small \text{(multiply out)}\\
+&= \sum_i\Big(\mu_i - y_i\log\mu_i\Big) + \sum_i y_i\log t_i \\
+&\quad\small (\mu_i = t_ie^{\boldsymbol\theta^\top\mathbf{x}^{(i)}},\ \log\mu_i = \log t_i + \boldsymbol\theta^\top\mathbf{x}^{(i)})
 \end{aligned}
 $$
 
@@ -910,9 +916,12 @@ The **pure premium** is the expected total claim cost per policy-year: frequency
 
 $$
 \begin{aligned}
-\mathbb{E}[S] &= \mathbb{E}\big[\mathbb{E}[S\mid N]\big] = \mathbb{E}[N\tau] = \lambda\tau && \text{(tower property)}\\
-\mathrm{Var}(S) &= \mathbb{E}\big[\mathrm{Var}(S\mid N)\big] + \mathrm{Var}\big(\mathbb{E}[S\mid N]\big) = \mathbb{E}[N]\,\frac{\tau^2}{\alpha} + \mathrm{Var}(N)\,\tau^2 && \text{(total variance; } \mathrm{Var}(Z) = \tau^2/\alpha\text{)}\\
-&= \lambda\tau^2\Big(1 + \frac1\alpha\Big) && (\mathrm{Var}(N) = \mathbb{E}[N] = \lambda)
+\mathbb{E}[S] &= \mathbb{E}\big[\mathbb{E}[S\mid N]\big] = \mathbb{E}[N\tau] = \lambda\tau \\
+&\quad\small \text{(tower property)}\\
+\mathrm{Var}(S) &= \mathbb{E}\big[\mathrm{Var}(S\mid N)\big] + \mathrm{Var}\big(\mathbb{E}[S\mid N]\big) = \mathbb{E}[N]\,\frac{\tau^2}{\alpha} + \mathrm{Var}(N)\,\tau^2 \\
+&\quad\small \text{(total variance; } \mathrm{Var}(Z) = \tau^2/\alpha\text{)}\\
+&= \lambda\tau^2\Big(1 + \frac1\alpha\Big) \\
+&\quad\small (\mathrm{Var}(N) = \mathbb{E}[N] = \lambda)
 \end{aligned}
 $$
 

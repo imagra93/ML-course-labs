@@ -27,7 +27,7 @@ The full YOLO pipeline (fine-tuning YOLO11n, ONNX export, a Gradio app) is a lab
 [`notebooks/neural_networks/lab 10b - Object detection with YOLO.ipynb`](../../notebooks/neural_networks/lab 10b - Object detection with YOLO.ipynb).
 The detection concepts it builds on (boxes, IoU, NMS, precision–recall and AP) are in note 03.
 
-Original class notes (PDF): [ML_notes_NN.pptx.pdf](ML_notes_NN.pptx.pdf)
+Original class notes (PDF): [ML_notes_NN.pptx.pdf](../../ML_notes_NN.pptx.pdf)
 
 ## Notation
 

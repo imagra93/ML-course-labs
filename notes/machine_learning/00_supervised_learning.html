@@ -197,7 +197,7 @@ window.Quarto = {
 <li>separate hyperparameter selection from model assessment with nested cross-validation;</li>
 <li>state the assumptions that make an evaluation valid (independent examples from one distribution, deployment data from that same distribution, no leakage), check them with code, and know what to do when they fail (covariate shift, label shift, concept drift).</li>
 </ul>
-<div id="628cd55e" class="cell" data-execution_count="1">
+<div id="4fb70798" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy <span class="im">import</span> stats</span>
@@ -371,11 +371,16 @@ J(\boldsymbol{\theta}) = \frac{1}{m}\sum_{i=1}^{m} \ell\big(h_{\boldsymbol{\thet
 <p><strong>Proof.</strong></p>
 <p><span class="math display">\[
 \begin{aligned}
-J(\hat{\boldsymbol{\theta}}) &amp;\le J(\boldsymbol{\theta}^\star) &amp;&amp; \text{$\hat{\boldsymbol{\theta}}$ minimises $J$, so it beats any other $\boldsymbol{\theta}$ on the training set}\\
-\mathbb{E}_{\mathcal{D}}\big[J(\hat{\boldsymbol{\theta}})\big] &amp;\le \mathbb{E}_{\mathcal{D}}\big[J(\boldsymbol{\theta}^\star)\big] &amp;&amp; \text{take expectations of both sides}\\
-\mathbb{E}_{\mathcal{D}}\big[J(\boldsymbol{\theta}^\star)\big] &amp;= \frac1m\sum_{i=1}^m \mathbb{E}\big[\ell(h_{\boldsymbol{\theta}^\star}(\mathbf{x}^{(i)}),y^{(i)})\big] = R(h_{\boldsymbol{\theta}^\star}) &amp;&amp; \text{$\boldsymbol{\theta}^\star$ is fixed and each pair is drawn from $P$}\\
-R(h_{\boldsymbol{\theta}^\star}) &amp;\le R(h_{\hat{\boldsymbol{\theta}}}) \ \text{ for every } \mathcal{D} &amp;&amp; \text{$\boldsymbol{\theta}^\star$ minimises $R$}\\
-R(h_{\boldsymbol{\theta}^\star}) &amp;\le \mathbb{E}_{\mathcal{D}}\big[R(h_{\hat{\boldsymbol{\theta}}})\big] &amp;&amp; \text{take expectations} \qquad\blacksquare
+J(\hat{\boldsymbol{\theta}}) &amp;\le J(\boldsymbol{\theta}^\star) \\
+&amp;\quad\small \text{$\hat{\boldsymbol{\theta}}$ minimises $J$, so it beats any other $\boldsymbol{\theta}$ on the training set}\\
+\mathbb{E}_{\mathcal{D}}\big[J(\hat{\boldsymbol{\theta}})\big] &amp;\le \mathbb{E}_{\mathcal{D}}\big[J(\boldsymbol{\theta}^\star)\big] \\
+&amp;\quad\small \text{take expectations of both sides}\\
+\mathbb{E}_{\mathcal{D}}\big[J(\boldsymbol{\theta}^\star)\big] &amp;= \frac1m\sum_{i=1}^m \mathbb{E}\big[\ell(h_{\boldsymbol{\theta}^\star}(\mathbf{x}^{(i)}),y^{(i)})\big] = R(h_{\boldsymbol{\theta}^\star}) \\
+&amp;\quad\small \text{$\boldsymbol{\theta}^\star$ is fixed and each pair is drawn from $P$}\\
+R(h_{\boldsymbol{\theta}^\star}) &amp;\le R(h_{\hat{\boldsymbol{\theta}}}) \ \text{ for every } \mathcal{D} \\
+&amp;\quad\small \text{$\boldsymbol{\theta}^\star$ minimises $R$}\\
+R(h_{\boldsymbol{\theta}^\star}) &amp;\le \mathbb{E}_{\mathcal{D}}\big[R(h_{\hat{\boldsymbol{\theta}}})\big] \\
+&amp;\quad\small \text{take expectations} \qquad\blacksquare
 \end{aligned}
 \]</span></p>
 <p>The third line is the key: an average of losses is an <strong>unbiased</strong> estimate of the risk <em>only if the model was chosen without looking at those examples</em>. <span class="math inline">\(\hat{\boldsymbol{\theta}}\)</span> was chosen by looking at them, so the training error is biased downwards.</p>
@@ -385,10 +390,14 @@ R(h_{\boldsymbol{\theta}^\star}) &amp;\le \mathbb{E}_{\mathcal{D}}\big[R(h_{\hat
 <p>Now take a model <span class="math inline">\(h\)</span> that is <strong>already fixed</strong>, and <span class="math inline">\(m_{\text{test}}\)</span> new pairs <span class="math inline">\((\mathbf{x}^{(i)},y^{(i)})\)</span> that played no part in choosing <span class="math inline">\(h\)</span>. Their average loss is the <strong>test error</strong> <span class="math inline">\(\hat R_{\text{test}}(h)=\frac{1}{m_{\text{test}}}\sum_i \ell(h(\mathbf{x}^{(i)}),y^{(i)})\)</span>. If the pairs are drawn independently from the same <span class="math inline">\(P\)</span>:</p>
 <p><span class="math display">\[
 \begin{aligned}
-\mathbb{E}\big[\hat R_{\text{test}}(h)\big] &amp;= \frac{1}{m_{\text{test}}}\sum_{i=1}^{m_{\text{test}}}\mathbb{E}\big[\ell(h(\mathbf{x}^{(i)}),y^{(i)})\big] &amp;&amp; \text{linearity of expectation}\\
-&amp;= \frac{1}{m_{\text{test}}}\cdot m_{\text{test}}\cdot R(h) = R(h) &amp;&amp; \text{each pair has distribution $P$ and $h$ does not depend on it}\\
-\mathrm{Var}\big[\hat R_{\text{test}}(h)\big] &amp;= \frac{1}{m_{\text{test}}^2}\sum_{i=1}^{m_{\text{test}}}\mathrm{Var}\big[\ell(h(\mathbf{x}^{(i)}),y^{(i)})\big] &amp;&amp; \text{independent terms: variances add}\\
-&amp;= \frac{\sigma_\ell^2}{m_{\text{test}}} &amp;&amp; \sigma_\ell^2 = \text{variance of the loss of one example}
+\mathbb{E}\big[\hat R_{\text{test}}(h)\big] &amp;= \frac{1}{m_{\text{test}}}\sum_{i=1}^{m_{\text{test}}}\mathbb{E}\big[\ell(h(\mathbf{x}^{(i)}),y^{(i)})\big] \\
+&amp;\quad\small \text{linearity of expectation}\\
+&amp;= \frac{1}{m_{\text{test}}}\cdot m_{\text{test}}\cdot R(h) = R(h) \\
+&amp;\quad\small \text{each pair has distribution $P$ and $h$ does not depend on it}\\
+\mathrm{Var}\big[\hat R_{\text{test}}(h)\big] &amp;= \frac{1}{m_{\text{test}}^2}\sum_{i=1}^{m_{\text{test}}}\mathrm{Var}\big[\ell(h(\mathbf{x}^{(i)}),y^{(i)})\big] \\
+&amp;\quad\small \text{independent terms: variances add}\\
+&amp;= \frac{\sigma_\ell^2}{m_{\text{test}}} \\
+&amp;\quad\small \sigma_\ell^2 = \text{variance of the loss of one example}
 \end{aligned}
 \]</span></p>
 <p>So the test error is unbiased and its standard deviation shrinks like <span class="math inline">\(1/\sqrt{m_{\text{test}}}\)</span>. Three assumptions were used, and they are the subject of section 13: the pairs are <strong>independent</strong>, they come from the <strong>same distribution</strong> <span class="math inline">\(P\)</span> as the data the model will meet in use, and <span class="math inline">\(h\)</span> <strong>did not depend on them</strong>. Every splitting rule of this note exists to protect one of the three.</p>
@@ -408,7 +417,7 @@ R(h_{\boldsymbol{\theta}^\star}) &amp;\le \mathbb{E}_{\mathcal{D}}\big[R(h_{\hat
   <p class="from">Same figure as <a href="../../slides/machine_learning/01_supervised_learning.html#4">slide 4</a> of the Supervised Learning deck.</p>
 </div>
 <p>The same experiment in Python, with 30 training points and noise <span class="math inline">\(\sigma = 0.25\)</span>. A polynomial of degree <span class="math inline">\(d\)</span> is linear regression on the features <span class="math inline">\(1, x, x^2, \dots, x^d\)</span> (<a href="01_linear_regression.html">note 01</a>); <code>poly_fit</code> solves the least-squares problem.</p>
-<div id="c05f1cc5" class="cell" data-execution_count="2">
+<div id="13093749" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>f_true <span class="op">=</span> <span class="kw">lambda</span> x: np.sin(<span class="dv">2</span> <span class="op">*</span> np.pi <span class="op">*</span> x)</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>x_tr <span class="op">=</span> np.sort(rng.uniform(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">30</span>))<span class="op">;</span> y_tr <span class="op">=</span> f_true(x_tr) <span class="op">+</span> rng.normal(<span class="dv">0</span>, <span class="fl">0.25</span>, <span class="dv">30</span>)</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>x_te <span class="op">=</span> np.sort(rng.uniform(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">200</span>))<span class="op">;</span> y_te <span class="op">=</span> f_true(x_te) <span class="op">+</span> rng.normal(<span class="dv">0</span>, <span class="fl">0.25</span>, <span class="dv">200</span>)</span>
@@ -438,7 +447,7 @@ R(h_{\boldsymbol{\theta}^\star}) &amp;\le \mathbb{E}_{\mathcal{D}}\big[R(h_{\hat
 </div>
 </div>
 </div>
-<div id="48631f0e" class="cell" data-execution_count="3">
+<div id="a089a383" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>degrees <span class="op">=</span> <span class="bu">range</span>(<span class="dv">0</span>, <span class="dv">16</span>)</span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>tr_err, te_err <span class="op">=</span> [], []</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> d <span class="kw">in</span> degrees:</span>
@@ -470,12 +479,18 @@ R(h_{\boldsymbol{\theta}^\star}) &amp;\le \mathbb{E}_{\mathcal{D}}\big[R(h_{\hat
 <p><strong>Proof.</strong> Write <span class="math inline">\(a = y - f(\mathbf{x}) = \varepsilon\)</span>, <span class="math inline">\(b = f(\mathbf{x}) - \bar f\)</span> and <span class="math inline">\(c = \bar f - \hat f(\mathbf{x})\)</span>.</p>
 <p><span class="math display">\[
 \begin{aligned}
-y - \hat f &amp;= (y - f) + (f - \bar f) + (\bar f - \hat f) = a + b + c &amp;&amp; \text{add and subtract $f$ and $\bar f$}\\
-(y - \hat f)^2 &amp;= a^2 + b^2 + c^2 + 2ab + 2ac + 2bc &amp;&amp; \text{square of a sum of three terms}\\
-\mathbb{E}[ab] &amp;= b\,\mathbb{E}[\varepsilon] = 0 &amp;&amp; \text{$b$ is a constant and $\mathbb{E}[\varepsilon]=0$}\\
-\mathbb{E}[ac] &amp;= \mathbb{E}[\varepsilon]\,\mathbb{E}[c] = 0 &amp;&amp; \text{the new noise is independent of $\mathcal{D}$, hence of $\hat f$}\\
-\mathbb{E}[bc] &amp;= b\,\big(\bar f - \mathbb{E}[\hat f]\big) = b\,(\bar f - \bar f) = 0 &amp;&amp; \text{definition of $\bar f$}\\
-\mathbb{E}\big[(y - \hat f)^2\big] &amp;= \mathbb{E}[\varepsilon^2] + b^2 + \mathbb{E}[c^2] = \sigma^2 + \big(f - \bar f\big)^2 + \mathbb{E}\big[(\hat f - \bar f)^2\big] &amp;&amp; \text{only the squares survive} \qquad\blacksquare
+y - \hat f &amp;= (y - f) + (f - \bar f) + (\bar f - \hat f) = a + b + c \\
+&amp;\quad\small \text{add and subtract $f$ and $\bar f$}\\
+(y - \hat f)^2 &amp;= a^2 + b^2 + c^2 + 2ab + 2ac + 2bc \\
+&amp;\quad\small \text{square of a sum of three terms}\\
+\mathbb{E}[ab] &amp;= b\,\mathbb{E}[\varepsilon] = 0 \\
+&amp;\quad\small \text{$b$ is a constant and $\mathbb{E}[\varepsilon]=0$}\\
+\mathbb{E}[ac] &amp;= \mathbb{E}[\varepsilon]\,\mathbb{E}[c] = 0 \\
+&amp;\quad\small \text{the new noise is independent of $\mathcal{D}$, hence of $\hat f$}\\
+\mathbb{E}[bc] &amp;= b\,\big(\bar f - \mathbb{E}[\hat f]\big) = b\,(\bar f - \bar f) = 0 \\
+&amp;\quad\small \text{definition of $\bar f$}\\
+\mathbb{E}\big[(y - \hat f)^2\big] &amp;= \mathbb{E}[\varepsilon^2] + b^2 + \mathbb{E}[c^2] = \sigma^2 + \big(f - \bar f\big)^2 + \mathbb{E}\big[(\hat f - \bar f)^2\big] \\
+&amp;\quad\small \text{only the squares survive} \qquad\blacksquare
 \end{aligned}
 \]</span></p>
 <ul>
@@ -487,7 +502,7 @@ y - \hat f &amp;= (y - f) + (f - \bar f) + (\bar f - \hat f) = a + b + c &amp;&a
 <section id="checking-the-decomposition-by-simulation" class="level3">
 <h3 class="anchored" data-anchor-id="checking-the-decomposition-by-simulation">5.2 Checking the decomposition by simulation</h3>
 <p>The three terms are expectations over training sets, so we can estimate them by drawing many training sets of <span class="math inline">\(m = 30\)</span> points from the same <span class="math inline">\(P\)</span> (the sine curve with <span class="math inline">\(\sigma = 0.25\)</span>), fitting a polynomial to each, and looking at the spread of the predictions at 50 points <span class="math inline">\(x_0 \in [0,1]\)</span>. The last column is a direct simulation of <span class="math inline">\(\mathbb{E}[(y-\hat f)^2]\)</span> with fresh targets; it should match the sum.</p>
-<div id="3295170d" class="cell" data-execution_count="4">
+<div id="c6163ae8" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>rs <span class="op">=</span> np.random.default_rng(<span class="dv">1</span>)</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>x0 <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">50</span>)                        <span class="co"># points where the fitted curves are compared</span></span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>sigma, n_sets <span class="op">=</span> <span class="fl">0.25</span>, <span class="dv">500</span>                         <span class="co"># noise sd, number of training sets</span></span>
@@ -556,7 +571,7 @@ smallest error at degree 3: 0.0188 above the noise floor 0.0625</code></pre>
 <p><strong>Parameters vs.&nbsp;hyperparameters.</strong> Parameters (<span class="math inline">\(\boldsymbol{\theta}\)</span>) are learned by minimising <span class="math inline">\(J\)</span> on the training set. Hyperparameters are choices made <em>before</em> training that <span class="math inline">\(J\)</span> cannot choose for you (minimising training error would always pick the most complex model, as the plot above shows). They are chosen by validation error.</p>
 <p><strong>Why a separate test set?</strong> If you pick the hyperparameter with the best validation score, that score is itself optimistically biased: you selected the winner of a contest on that very data (section 11 measures how much). The test set is an independent referee. If you change the model after looking at the test score, the test set has become a validation set.</p>
 <p><strong>What proportions?</strong> They depend on the number of examples and of hyperparameters: (70-15-15), (70-20-10), (80-10-10), (90-7-3) are all common. What matters is the <em>absolute</em> size of the validation and test sets, because the precision of a metric depends on <span class="math inline">\(m_{\text{test}}\)</span>, not on the percentage (section 10): with millions of rows, 1 % is plenty for validation and test; with a few hundred, use cross-validation (section 7). The three parts must come from the <strong>same distribution</strong> and share <strong>no information</strong> (sections 12–14).</p>
-<div id="a3318796" class="cell" data-execution_count="5">
+<div id="361698bb" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> train_test_split</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>x_all <span class="op">=</span> rng.uniform(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">150</span>)<span class="op">;</span> y_all <span class="op">=</span> f_true(x_all) <span class="op">+</span> rng.normal(<span class="dv">0</span>, <span class="fl">0.25</span>, <span class="dv">150</span>)</span>
@@ -601,7 +616,7 @@ test MSE (reported once)  = 0.056   (noise variance = 0.062)</code></pre>
 <li><span class="math inline">\(K=m\)</span> is <strong>leave-one-out</strong> (LOOCV): each model is trained on <span class="math inline">\(m-1\)</span> points, so it is nearly unbiased, but it costs <span class="math inline">\(m\)</span> fits, and because the <span class="math inline">\(m\)</span> training sets are almost identical, its estimate can have a larger variance than 10-fold CV.</li>
 <li>After choosing the hyperparameter by CV, <strong>refit on all the non-test data</strong>, then evaluate once on the test set.</li>
 </ul>
-<div id="1b3b45db" class="cell" data-execution_count="6">
+<div id="64722b25" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib.patches <span class="im">import</span> Rectangle</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>k <span class="op">=</span> <span class="dv">5</span></span>
 <span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="fl">2.6</span>))</span>
@@ -620,7 +635,7 @@ test MSE (reported once)  = 0.056   (noise variance = 0.062)</code></pre>
 </div>
 </div>
 </div>
-<div id="4ad5ec91" class="cell" data-execution_count="7">
+<div id="4ed5807b" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> KFold</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>X_rest <span class="op">=</span> x_rest  <span class="co"># train + validation data (test still untouched)</span></span>
@@ -660,7 +675,7 @@ test MSE (reported once)  = 0.056   (noise variance = 0.062)</code></pre>
 <li>classification: predict the most frequent class. Its accuracy is the proportion of that class.</li>
 </ul>
 <p>With rare events the baseline is deceptively strong. A made-up portfolio of 4,000 claims with about 5–6 % frauds:</p>
-<div id="7be0d8e0" class="cell" data-execution_count="8">
+<div id="24d47391" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.datasets <span class="im">import</span> make_classification</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.dummy <span class="im">import</span> DummyClassifier</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.linear_model <span class="im">import</span> LogisticRegression</span>
@@ -690,7 +705,7 @@ P(\text{no positive in the fold}) = \frac{\binom{190}{40}}{\binom{200}{40}}
 = \prod_{i=0}^{9}\frac{160 - i}{200 - i},
 \]</span></p>
 <p>(choose all 40 fold members among the 190 negatives; the product form follows by cancelling the factorials).</p>
-<div id="720ffd17" class="cell" data-execution_count="9">
+<div id="bd268820" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> StratifiedKFold</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>y_rare <span class="op">=</span> np.r_[np.ones(<span class="dv">10</span>), np.zeros(<span class="dv">190</span>)].astype(<span class="bu">int</span>)</span>
 <span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>p0 <span class="op">=</span> np.prod([(<span class="dv">160</span> <span class="op">-</span> i) <span class="op">/</span> (<span class="dv">200</span> <span class="op">-</span> i) <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">10</span>)])</span>
@@ -718,7 +733,7 @@ over 1000 random KFold splits: 0.095 of the folds have no positive; positives pe
 <li>a <strong>learning curve</strong>: training and validation error against the <strong>number of training examples</strong>, at fixed complexity.</li>
 </ul>
 <p>What to expect on a learning curve, as <span class="math inline">\(m\)</span> grows: the training error <em>increases</em> (it is harder to fit more points exactly) and the validation error <em>decreases</em> (the model is estimated better); both approach the same limit, the risk of the best model of the family, which is bias² + noise. The code draws the curves for a model that is too simple (degree 1) and one that is too flexible (degree 9), averaging over 30 random training sets per size and measuring the error on 2,000 fresh points.</p>
-<div id="161176d7" class="cell" data-execution_count="10">
+<div id="82c0ed14" class="cell" data-execution_count="10">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>rl <span class="op">=</span> np.random.default_rng(<span class="dv">3</span>)</span>
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>sizes <span class="op">=</span> [<span class="dv">15</span>, <span class="dv">20</span>, <span class="dv">30</span>, <span class="dv">50</span>, <span class="dv">80</span>, <span class="dv">130</span>, <span class="dv">200</span>]</span>
 <span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>x_big <span class="op">=</span> rl.uniform(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">2000</span>)<span class="op">;</span> y_big <span class="op">=</span> f_true(x_big) <span class="op">+</span> rl.normal(<span class="dv">0</span>, <span class="fl">0.25</span>, <span class="dv">2000</span>)</span>
@@ -804,11 +819,16 @@ degree 9: m = 15: train 0.020, val 7.768  |  m = 200: train 0.060, val 0.067</co
 <p>Let <span class="math inline">\(Z_i = \mathbb{1}[h(\mathbf{x}^{(i)}) = y^{(i)}]\)</span> be 1 if test example <span class="math inline">\(i\)</span> is classified correctly. For a fixed model and independent test examples from <span class="math inline">\(P\)</span>, the <span class="math inline">\(Z_i\)</span> are independent Bernoulli variables with success probability <span class="math inline">\(p\)</span> = the true accuracy.</p>
 <p><span class="math display">\[
 \begin{aligned}
-\widehat{\mathrm{acc}} &amp;= \frac{1}{m_{\text{test}}}\sum_{i=1}^{m_{\text{test}}} Z_i &amp;&amp; \text{the test accuracy is an average of 0/1 variables}\\
-\mathbb{E}[\widehat{\mathrm{acc}}] &amp;= \frac{1}{m_{\text{test}}}\cdot m_{\text{test}}\, p = p &amp;&amp; \mathbb{E}[Z_i] = 1\cdot p + 0\cdot(1-p)\\
-\mathrm{Var}(Z_i) &amp;= \mathbb{E}[Z_i^2] - \mathbb{E}[Z_i]^2 = p - p^2 = p(1-p) &amp;&amp; Z_i^2 = Z_i \text{ for a 0/1 variable}\\
-\mathrm{Var}(\widehat{\mathrm{acc}}) &amp;= \frac{1}{m_{\text{test}}^2}\cdot m_{\text{test}}\,p(1-p) = \frac{p(1-p)}{m_{\text{test}}} &amp;&amp; \text{independent terms: variances add; constants come out squared}\\
-\mathrm{SE}(\widehat{\mathrm{acc}}) &amp;= \sqrt{\frac{\widehat{\mathrm{acc}}\,(1-\widehat{\mathrm{acc}})}{m_{\text{test}}}} &amp;&amp; \text{square root, with the unknown $p$ replaced by its estimate}
+\widehat{\mathrm{acc}} &amp;= \frac{1}{m_{\text{test}}}\sum_{i=1}^{m_{\text{test}}} Z_i \\
+&amp;\quad\small \text{the test accuracy is an average of 0/1 variables}\\
+\mathbb{E}[\widehat{\mathrm{acc}}] &amp;= \frac{1}{m_{\text{test}}}\cdot m_{\text{test}}\, p = p \\
+&amp;\quad\small \mathbb{E}[Z_i] = 1\cdot p + 0\cdot(1-p)\\
+\mathrm{Var}(Z_i) &amp;= \mathbb{E}[Z_i^2] - \mathbb{E}[Z_i]^2 = p - p^2 = p(1-p) \\
+&amp;\quad\small Z_i^2 = Z_i \text{ for a 0/1 variable}\\
+\mathrm{Var}(\widehat{\mathrm{acc}}) &amp;= \frac{1}{m_{\text{test}}^2}\cdot m_{\text{test}}\,p(1-p) = \frac{p(1-p)}{m_{\text{test}}} \\
+&amp;\quad\small \text{independent terms: variances add; constants come out squared}\\
+\mathrm{SE}(\widehat{\mathrm{acc}}) &amp;= \sqrt{\frac{\widehat{\mathrm{acc}}\,(1-\widehat{\mathrm{acc}})}{m_{\text{test}}}} \\
+&amp;\quad\small \text{square root, with the unknown $p$ replaced by its estimate}
 \end{aligned}
 \]</span></p>
 <p>(The number of correct predictions, <span class="math inline">\(m_{\text{test}}\widehat{\mathrm{acc}}\)</span>, is Binomial<span class="math inline">\((m_{\text{test}},p)\)</span>.) For large <span class="math inline">\(m_{\text{test}}\)</span> the central limit theorem makes <span class="math inline">\(\widehat{\mathrm{acc}}\)</span> approximately normal, which gives the 95 % confidence interval</p>
@@ -817,7 +837,7 @@ degree 9: m = 15: train 0.020, val 7.768  |  m = 200: train 0.060, val 0.067</co
 \]</span></p>
 <p>(<span class="math inline">\(1.96\)</span> is the value that a standard normal exceeds in absolute value with probability 0.05).</p>
 <p><strong>Worked example.</strong> A fraud model is right on 900 of 1,000 test claims: <span class="math inline">\(\widehat{\mathrm{acc}} = 0.9\)</span>, <span class="math inline">\(\mathrm{SE} = \sqrt{0.9\cdot 0.1/1000} = \sqrt{0.00009} = 0.0095\)</span>, and the interval is <span class="math inline">\(0.9 \pm 1.96\cdot 0.0095 = 0.9 \pm 0.019\)</span>, i.e.&nbsp;<span class="math inline">\([0.881, 0.919]\)</span>. A second model with 0.91 accuracy on another test set of 1,000 is <em>not</em> shown to be better. The simulation checks that the interval covers the true accuracy 95 % of the time:</p>
-<div id="6a30dc69" class="cell" data-execution_count="11">
+<div id="8b23815e" class="cell" data-execution_count="11">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>p_true, m_test <span class="op">=</span> <span class="fl">0.9</span>, <span class="dv">1000</span></span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>se <span class="op">=</span> np.sqrt(p_true <span class="op">*</span> (<span class="dv">1</span> <span class="op">-</span> p_true) <span class="op">/</span> m_test)</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"SE = </span><span class="sc">{</span>se<span class="sc">:.4f}</span><span class="ss">, 95% CI = [</span><span class="sc">{</span>p_true <span class="op">-</span> <span class="fl">1.96</span><span class="op">*</span>se<span class="sc">:.3f}</span><span class="ss">, </span><span class="sc">{</span>p_true <span class="op">+</span> <span class="fl">1.96</span><span class="op">*</span>se<span class="sc">:.3f}</span><span class="ss">]"</span>)</span>
@@ -848,7 +868,7 @@ m_{\text{test}} &amp;\ge \frac{1.96^2\, p(1-p)}{E^2} &amp;&amp; \text{multiply b
 <section id="how-variable-is-a-cross-validation-estimate" class="level3">
 <h3 class="anchored" data-anchor-id="how-variable-is-a-cross-validation-estimate">10.3 How variable is a cross-validation estimate?</h3>
 <p>The <span class="math inline">\(K\)</span> fold errors <span class="math inline">\(E_k\)</span> are <em>not</em> independent: any two training sets share a fraction <span class="math inline">\((K-2)/(K-1)\)</span> of their examples. So the naive standard error <span class="math inline">\(\mathrm{sd}(E_1,\dots,E_K)/\sqrt{K}\)</span> ignores the correlation, and there is no unbiased estimator of the true variance of <span class="math inline">\(K\)</span>-fold CV (Bengio and Grandvalet, 2004). A simulation shows the size of the problem: 400 datasets of <span class="math inline">\(m = 40\)</span> points from the sine curve, a cubic polynomial, 5-fold CV on each, compared with the true risk of the model refitted on the whole dataset (estimated on 20,000 fresh points).</p>
-<div id="7107bdd3" class="cell" data-execution_count="12">
+<div id="e7aa4e6e" class="cell" data-execution_count="12">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>rc <span class="op">=</span> np.random.default_rng(<span class="dv">6</span>)</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>x_big <span class="op">=</span> rc.uniform(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">20000</span>)<span class="op">;</span> y_big <span class="op">=</span> f_true(x_big) <span class="op">+</span> rc.normal(<span class="dv">0</span>, <span class="fl">0.25</span>, <span class="dv">20000</span>)</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>cv_est, naive_se, true_risk <span class="op">=</span> [], [], []</span>
@@ -881,13 +901,15 @@ correlation between the CV estimate and the true risk of the fitted model = -0.0
 <p>Compare the two models <strong>on the same test examples</strong>. Let <span class="math inline">\(a_i, b_i \in\{0,1\}\)</span> say whether A and B are right on example <span class="math inline">\(i\)</span> and <span class="math inline">\(d_i = a_i - b_i\)</span>. Then</p>
 <p><span class="math display">\[
 \begin{aligned}
-\widehat{\mathrm{acc}}_A - \widehat{\mathrm{acc}}_B &amp;= \frac{1}{m_{\text{test}}}\sum_i d_i = \bar d &amp;&amp; \text{difference of two averages = average of differences}\\
-\mathrm{Var}(\bar d) &amp;= \frac{\mathrm{Var}(a_i - b_i)}{m_{\text{test}}} = \frac{\mathrm{Var}(a_i) + \mathrm{Var}(b_i) - 2\,\mathrm{Cov}(a_i,b_i)}{m_{\text{test}}} &amp;&amp; \text{variance of a difference}
+\widehat{\mathrm{acc}}_A - \widehat{\mathrm{acc}}_B &amp;= \frac{1}{m_{\text{test}}}\sum_i d_i = \bar d \\
+&amp;\quad\small \text{difference of two averages = average of differences}\\
+\mathrm{Var}(\bar d) &amp;= \frac{\mathrm{Var}(a_i - b_i)}{m_{\text{test}}} = \frac{\mathrm{Var}(a_i) + \mathrm{Var}(b_i) - 2\,\mathrm{Cov}(a_i,b_i)}{m_{\text{test}}} \\
+&amp;\quad\small \text{variance of a difference}
 \end{aligned}
 \]</span></p>
 <p>Two reasonable models are right and wrong on largely the same examples, so <span class="math inline">\(\mathrm{Cov}(a_i,b_i) &gt; 0\)</span> and the <strong>paired</strong> variance is much smaller than the unpaired <span class="math inline">\(\big(\mathrm{Var}(a_i)+\mathrm{Var}(b_i)\big)/m_{\text{test}}\)</span> that treats the two accuracies as independent. The paired standard error is simply the sample standard deviation of the <span class="math inline">\(d_i\)</span> divided by <span class="math inline">\(\sqrt{m_{\text{test}}}\)</span>.</p>
 <p><strong>McNemar’s test</strong> (in words): only the examples where the models <em>disagree</em> carry information about which is better. Let <span class="math inline">\(b\)</span> = number of examples A gets right and B wrong, <span class="math inline">\(c\)</span> = the reverse. If the two models had the same accuracy, each disagreement would be equally likely to go either way, so <span class="math inline">\(b\)</span> would be Binomial<span class="math inline">\((b+c, 1/2)\)</span>; the test asks whether the observed split is too lopsided for that. The usual large-sample version compares <span class="math inline">\((|b-c|-1)^2/(b+c)\)</span> with a <span class="math inline">\(\chi^2_1\)</span> distribution; with few disagreements use the exact binomial test.</p>
-<div id="f9957983" class="cell" data-execution_count="13">
+<div id="0322c8ef" class="cell" data-execution_count="13">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.tree <span class="im">import</span> DecisionTreeClassifier</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>Xc, yc <span class="op">=</span> make_classification(n_samples<span class="op">=</span><span class="dv">3000</span>, n_features<span class="op">=</span><span class="dv">10</span>, n_informative<span class="op">=</span><span class="dv">5</span>, flip_y<span class="op">=</span><span class="fl">0.1</span>, random_state<span class="op">=</span><span class="dv">0</span>)</span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>Xc_tr, Xc_te, yc_tr, yc_te <span class="op">=</span> train_test_split(Xc, yc, test_size<span class="op">=</span><span class="dv">1000</span>, stratify<span class="op">=</span>yc, random_state<span class="op">=</span><span class="dv">0</span>)</span>
@@ -923,7 +945,7 @@ McNemar: b = 59, c = 40, chi2 = 3.27, p = 0.070; exact binomial p = 0.070</code>
 \]</span></p>
 <p>and the gap grows with the number of candidates and with the noise of each score. If the <span class="math inline">\(M\)</span> scores were independent normal with the same mean <span class="math inline">\(\mu\)</span> and standard deviation <span class="math inline">\(s\)</span>, then <span class="math inline">\(\mathbb{E}[\max_j V_j] = \mu + s\,c_M\)</span>, where <span class="math inline">\(c_M\)</span> is the expected maximum of <span class="math inline">\(M\)</span> standard normals (<span class="math inline">\(c_{15} = 1.74\)</span>).</p>
 <p><strong>Demo on pure noise.</strong> <span class="math inline">\(m = 60\)</span> examples, 5 random features, balanced labels unrelated to the features, so every model has a true accuracy of exactly 0.5. The candidates are <span class="math inline">\(k\)</span>-nearest-neighbour classifiers (predict the majority label of the <span class="math inline">\(k\)</span> closest training points) with <span class="math inline">\(k = 1, 3, \dots, 29\)</span>: <span class="math inline">\(M = 15\)</span> settings. We repeat on 40 independent datasets.</p>
-<div id="af6af274" class="cell" data-execution_count="14">
+<div id="6d332ade" class="cell" data-execution_count="14">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> knn_predict(X_tr, y_tr, X_va, ks):</span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""k-nearest neighbours for several k at once: majority label of the k closest training points."""</span></span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>    D <span class="op">=</span> ((X_va[:, <span class="va">None</span>, :] <span class="op">-</span> X_tr[<span class="va">None</span>, :, :]) <span class="op">**</span> <span class="dv">2</span>).<span class="bu">sum</span>(<span class="op">-</span><span class="dv">1</span>)       <span class="co"># squared distances</span></span>
@@ -1041,7 +1063,7 @@ r_k = \frac{\sum_{t=k+1}^{m}(y_t-\bar y)(y_{t-k}-\bar y)}{\sum_{t=1}^{m}(y_t-\ba
 \]</span> the correlation between the series and itself shifted by <span class="math inline">\(k\)</span> steps. For independent data <span class="math inline">\(r_k \approx 0\)</span>, and each <span class="math inline">\(r_k\)</span> falls within <span class="math inline">\(\pm 1.96/\sqrt{m}\)</span> with probability about 0.95.</li>
 <li><em>The decisive check</em>: compare the CV score with a random split against the score with a grouped or time-based split (sections 14.2–14.3). A large gap means the random split was validating on dependent rows.</li>
 </ul>
-<div id="f9693109" class="cell" data-execution_count="15">
+<div id="ccf0c151" class="cell" data-execution_count="15">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> acf(z, max_lag<span class="op">=</span><span class="dv">20</span>):</span>
 <span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Autocorrelation r_k of a series, k = 1..max_lag, from the formula above."""</span></span>
 <span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>    z <span class="op">=</span> z <span class="op">-</span> z.mean()<span class="op">;</span> den <span class="op">=</span> np.<span class="bu">sum</span>(z <span class="op">**</span> <span class="dv">2</span>)</span>
@@ -1089,7 +1111,7 @@ time-dependent (AR(1), 0.7)  r_1 = 0.691, r_2 = 0.404, r_3 = 0.225</code></pre>
 \mathrm{AUC} = \frac{\sum_{i:\,z_i=1}\rho_i - m_1(m_1+1)/2}{m_1 m_0},
 \]</span> because <span class="math inline">\(\sum_{z_i=1}\rho_i\)</span> counts, for each test row, the rows ranked at or below it, and subtracting <span class="math inline">\(m_1(m_1+1)/2\)</span> removes the comparisons of test rows with each other (the Mann–Whitney statistic).</p>
 <p>A made-up policy file is sorted by start date; vehicle age and insured value drift with the date, engine power does not. We compare a split that takes the last 20 % of the file as test set with a shuffled split. The adversarial classifier is a logistic regression on the features and their squares (so that it can see changes in spread as well as in location).</p>
-<div id="e272796a" class="cell" data-execution_count="16">
+<div id="517c0dff" class="cell" data-execution_count="16">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> cross_val_predict</span>
 <span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> roc_auc_score</span>
 <span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -1126,7 +1148,7 @@ shuffled split                 adversarial AUC = 0.485  (sklearn: 0.485)</code><
 \mathrm{PSI} = \sum_{b=1}^{10}(q_b - p_b)\,\ln\frac{q_b}{p_b},
 \]</span> which is 0 for identical proportions and grows with the shift (it is a symmetrised Kullback–Leibler divergence). Rule of thumb: below 0.1 stable, 0.1–0.25 moderate shift, above 0.25 a major shift.</li>
 </ul>
-<div id="698d3ff9" class="cell" data-execution_count="17">
+<div id="ccff75b6" class="cell" data-execution_count="17">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> ks_stat(a, b):</span>
 <span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>    v <span class="op">=</span> np.r_[a, b]</span>
 <span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>    Fa <span class="op">=</span> np.searchsorted(np.sort(a), v, side<span class="op">=</span><span class="st">"right"</span>) <span class="op">/</span> <span class="bu">len</span>(a)</span>
@@ -1207,9 +1229,12 @@ P(\mathbf{x},y) = p(\mathbf{x})\,p(y\mid\mathbf{x}) = p(y)\,p(\mathbf{x}\mid y),
 <p><strong>What to do under covariate shift: importance weighting.</strong> We want the risk under the deployment distribution, but we have labelled data only from the training distribution. Under covariate shift <span class="math inline">\(p(y\mid\mathbf{x})\)</span> is common to both, so</p>
 <p><span class="math display">\[
 \begin{aligned}
-R_{\text{te}}(h) &amp;= \mathbb{E}_{\text{te}}\big[\ell(h(\mathbf{x}),y)\big] = \iint \ell(h(\mathbf{x}),y)\,p_{\text{te}}(\mathbf{x})\,p(y\mid\mathbf{x})\,dy\,d\mathbf{x} &amp;&amp; \text{definition; } P_{\text{te}}(\mathbf{x},y) = p_{\text{te}}(\mathbf{x})\,p(y\mid\mathbf{x})\\
-&amp;= \iint \ell(h(\mathbf{x}),y)\,\frac{p_{\text{te}}(\mathbf{x})}{p_{\text{tr}}(\mathbf{x})}\,p_{\text{tr}}(\mathbf{x})\,p(y\mid\mathbf{x})\,dy\,d\mathbf{x} &amp;&amp; \text{multiply and divide by $p_{\text{tr}}(\mathbf{x})$ (needs $p_{\text{tr}}&gt;0$ wherever $p_{\text{te}}&gt;0$)}\\
-&amp;= \mathbb{E}_{\text{tr}}\big[w(\mathbf{x})\,\ell(h(\mathbf{x}),y)\big], \qquad w(\mathbf{x}) = \frac{p_{\text{te}}(\mathbf{x})}{p_{\text{tr}}(\mathbf{x})} &amp;&amp; \text{the rest is the training joint density}
+R_{\text{te}}(h) &amp;= \mathbb{E}_{\text{te}}\big[\ell(h(\mathbf{x}),y)\big] = \iint \ell(h(\mathbf{x}),y)\,p_{\text{te}}(\mathbf{x})\,p(y\mid\mathbf{x})\,dy\,d\mathbf{x} \\
+&amp;\quad\small \text{definition; } P_{\text{te}}(\mathbf{x},y) = p_{\text{te}}(\mathbf{x})\,p(y\mid\mathbf{x})\\
+&amp;= \iint \ell(h(\mathbf{x}),y)\,\frac{p_{\text{te}}(\mathbf{x})}{p_{\text{tr}}(\mathbf{x})}\,p_{\text{tr}}(\mathbf{x})\,p(y\mid\mathbf{x})\,dy\,d\mathbf{x} \\
+&amp;\quad\small \text{multiply and divide by $p_{\text{tr}}(\mathbf{x})$ (needs $p_{\text{tr}}&gt;0$ wherever $p_{\text{te}}&gt;0$)}\\
+&amp;= \mathbb{E}_{\text{tr}}\big[w(\mathbf{x})\,\ell(h(\mathbf{x}),y)\big], \qquad w(\mathbf{x}) = \frac{p_{\text{te}}(\mathbf{x})}{p_{\text{tr}}(\mathbf{x})} \\
+&amp;\quad\small \text{the rest is the training joint density}
 \end{aligned}
 \]</span></p>
 <p><span class="math display">\[
@@ -1225,7 +1250,7 @@ w(\mathbf{x}) &amp;= \frac{P(z=1\mid\mathbf{x})}{1 - P(z=1\mid\mathbf{x})}\cdot\
 \end{aligned}
 \]</span></p>
 <p><strong>Demo.</strong> A classic textbook case (Shimodaira, 2000): <span class="math inline">\(y = \mathrm{sinc}(x) + \varepsilon\)</span> with <span class="math inline">\(\mathrm{sinc}(x) = \sin(\pi x)/(\pi x)\)</span>, training inputs <span class="math inline">\(x \sim N(1, 0.5^2)\)</span>, deployment inputs <span class="math inline">\(x \sim N(2, 0.25^2)\)</span>, and a straight line as model, which cannot follow the curve everywhere. Weighted least squares minimises <span class="math inline">\(\sum_i w_i(\theta_0+\theta_1x^{(i)}-y^{(i)})^2\)</span>, whose normal equation is <span class="math inline">\((\mathbf{X}^\top\mathbf{W}\mathbf{X})\boldsymbol{\theta} = \mathbf{X}^\top\mathbf{W}\mathbf{y}\)</span> with <span class="math inline">\(\mathbf{W} = \mathrm{diag}(w_i)\)</span> (the derivation of <a href="01_linear_regression.html">note 01</a> with each residual weighted).</p>
-<div id="f330462c" class="cell" data-execution_count="18">
+<div id="b57d90b6" class="cell" data-execution_count="18">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>rw <span class="op">=</span> np.random.default_rng(<span class="dv">0</span>)<span class="op">;</span> m_tr <span class="op">=</span> m_de <span class="op">=</span> <span class="dv">300</span></span>
 <span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>x_s <span class="op">=</span> rw.normal(<span class="fl">1.0</span>, <span class="fl">0.5</span>, m_tr)<span class="op">;</span> y_s <span class="op">=</span> np.sinc(x_s) <span class="op">+</span> rw.normal(<span class="dv">0</span>, <span class="fl">0.1</span>, m_tr)     <span class="co"># training data</span></span>
 <span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>x_d <span class="op">=</span> rw.normal(<span class="fl">2.0</span>, <span class="fl">0.25</span>, m_de)<span class="op">;</span> y_d <span class="op">=</span> np.sinc(x_d) <span class="op">+</span> rw.normal(<span class="dv">0</span>, <span class="fl">0.1</span>, m_de)    <span class="co"># deployment data (labels unknown in practice)</span></span>
@@ -1249,7 +1274,7 @@ true weights       deployment MSE = 0.0105   effective sample size = 19 of 300
 estimated weights  deployment MSE = 0.0105   effective sample size = 14 of 300</code></pre>
 </div>
 </div>
-<div id="b2623a29" class="cell" data-execution_count="19">
+<div id="86b5e1b8" class="cell" data-execution_count="19">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>gx <span class="op">=</span> np.linspace(<span class="op">-</span><span class="fl">0.5</span>, <span class="dv">3</span>, <span class="dv">300</span>)</span>
 <span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="fl">3.8</span>))</span>
 <span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>ax.scatter(x_s, y_s, s<span class="op">=</span><span class="dv">8</span>, color<span class="op">=</span><span class="st">"C0"</span>, alpha<span class="op">=</span><span class="fl">0.5</span>, label<span class="op">=</span><span class="st">"training data"</span>)</span>
@@ -1278,13 +1303,16 @@ estimated weights  deployment MSE = 0.0105   effective sample size = 14 of 300</
 <p><strong>What to do under label shift: correct the prior.</strong> If <span class="math inline">\(p(\mathbf{x}\mid y)\)</span> is unchanged and only the class proportions move from <span class="math inline">\(\pi_{\text{tr}}(y)\)</span> to <span class="math inline">\(\pi_{\text{te}}(y)\)</span>, Bayes’ rule gives the new posterior from the old one:</p>
 <p><span class="math display">\[
 \begin{aligned}
-p_{\text{te}}(y\mid\mathbf{x}) &amp;= \frac{p(\mathbf{x}\mid y)\,\pi_{\text{te}}(y)}{p_{\text{te}}(\mathbf{x})} &amp;&amp; \text{Bayes' rule in deployment; $p(\mathbf{x}\mid y)$ is shared}\\
-p(\mathbf{x}\mid y) &amp;= \frac{p_{\text{tr}}(y\mid\mathbf{x})\,p_{\text{tr}}(\mathbf{x})}{\pi_{\text{tr}}(y)} &amp;&amp; \text{Bayes' rule in training, solved for $p(\mathbf{x}\mid y)$}\\
-p_{\text{te}}(y\mid\mathbf{x}) &amp;= \frac{p_{\text{tr}}(y\mid\mathbf{x})\,\pi_{\text{te}}(y)/\pi_{\text{tr}}(y)}{\sum_{y'} p_{\text{tr}}(y'\mid\mathbf{x})\,\pi_{\text{te}}(y')/\pi_{\text{tr}}(y')} &amp;&amp; \text{substitute; the factor $p_{\text{tr}}(\mathbf{x})/p_{\text{te}}(\mathbf{x})$ cancels after normalising over $y$}
+p_{\text{te}}(y\mid\mathbf{x}) &amp;= \frac{p(\mathbf{x}\mid y)\,\pi_{\text{te}}(y)}{p_{\text{te}}(\mathbf{x})} \\
+&amp;\quad\small \text{Bayes' rule in deployment; $p(\mathbf{x}\mid y)$ is shared}\\
+p(\mathbf{x}\mid y) &amp;= \frac{p_{\text{tr}}(y\mid\mathbf{x})\,p_{\text{tr}}(\mathbf{x})}{\pi_{\text{tr}}(y)} \\
+&amp;\quad\small \text{Bayes' rule in training, solved for $p(\mathbf{x}\mid y)$}\\
+p_{\text{te}}(y\mid\mathbf{x}) &amp;= \frac{p_{\text{tr}}(y\mid\mathbf{x})\,\pi_{\text{te}}(y)/\pi_{\text{tr}}(y)}{\sum_{y'} p_{\text{tr}}(y'\mid\mathbf{x})\,\pi_{\text{te}}(y')/\pi_{\text{tr}}(y')} \\
+&amp;\quad\small \text{substitute; the factor $p_{\text{tr}}(\mathbf{x})/p_{\text{te}}(\mathbf{x})$ cancels after normalising over $y$}
 \end{aligned}
 \]</span></p>
 <p>Multiply each class probability by the ratio of priors and renormalise. The ranking of examples (and so the AUC) does not change; the probabilities and every thresholded decision do. When <span class="math inline">\(\pi_{\text{te}}\)</span> is unknown it can be estimated from <em>unlabelled</em> deployment data by alternating the correction with “new prior = average corrected probability” until it stops changing, an EM algorithm (Saerens et al., 2002).</p>
-<div id="6b9020e2" class="cell" data-execution_count="20">
+<div id="386474df" class="cell" data-execution_count="20">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> log_loss</span>
 <span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> sample_claims(m_, prior, r):</span>
 <span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>    y <span class="op">=</span> (r.uniform(size<span class="op">=</span>m_) <span class="op">&lt;</span> prior).astype(<span class="bu">int</span>)</span>
@@ -1314,7 +1342,7 @@ claims flagged at threshold 0.5: before 26.2%, after 0.7%;  EM prior estimate 0.
 </div>
 <p>Without correction the model believes a third of the claims are fraudulent and would send about a quarter of them to investigation; after correction the average probability matches the true 5 %, the log-loss falls by a factor of three, and the AUC is identical, as the derivation predicts. The EM estimate, 0.044, lands near the true 0.05 without seeing a single label (it is only as good as the calibration of the original probabilities).</p>
 <p><strong>What to do under concept drift: validate in time and retrain.</strong> No reweighting fixes a relation that has changed; the model must learn the new one. Validate with a time-based split so that the score includes the effect of ageing, monitor the metric in production, and retrain on a recent window (or weight recent data more). The simulation below makes the effect of one feature fade and another grow over 36 months; a model trained once on the first year is compared with one retrained every month on the previous 12 months.</p>
-<div id="701fccff" class="cell" data-execution_count="21">
+<div id="cdb9dd70" class="cell" data-execution_count="21">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> month_data(month, m_, r):</span>
 <span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>    X <span class="op">=</span> r.normal(size<span class="op">=</span>(m_, <span class="dv">3</span>))</span>
 <span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>    beta <span class="op">=</span> np.array([<span class="fl">1.5</span> <span class="op">-</span> <span class="fl">0.04</span> <span class="op">*</span> month, <span class="fl">0.5</span>, <span class="fl">0.04</span> <span class="op">*</span> month])          <span class="co"># the relation drifts</span></span>
@@ -1364,7 +1392,7 @@ claims flagged at threshold 0.5: before 26.2%, after 0.7%;  EM prior estimate 0.
 <p><strong>Symptom.</strong> A validation score far above what experts expect or far above the baseline; one feature dominates the model; production performance much lower than validation.</p>
 <p><strong>How to detect it.</strong> For each feature, ask <em>when</em> its value becomes known compared with the moment of prediction. Look at the most important features first. Run the label-permutation check. Compare with a time-based split.</p>
 <p><strong>Target leakage</strong> (a feature that is a consequence of the target). A made-up fraud file includes “days until the claim was paid”. Fraudulent claims are held for investigation, so they are paid late, but at the moment the model must decide, when the claim is opened, the claim has not been paid yet (0 days).</p>
-<div id="2deae496" class="cell" data-execution_count="22">
+<div id="4f4870e9" class="cell" data-execution_count="22">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> cross_val_score</span>
 <span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>rt <span class="op">=</span> np.random.default_rng(<span class="dv">1</span>)<span class="op">;</span> m_cl <span class="op">=</span> <span class="dv">2000</span></span>
 <span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>X_cl <span class="op">=</span> rt.normal(size<span class="op">=</span>(m_cl, <span class="dv">4</span>))</span>
@@ -1390,7 +1418,7 @@ leaky model in production: frauds caught 0.000, mean predicted probability 0.000
 </div>
 <p>Cross-validation cannot catch target leakage: the leaky feature is equally present in the training and validation folds. Only knowing when each value is recorded can. In production the model with the leaky feature catches essentially no fraud; the honest model’s AUC of about 0.79 was the real performance all along.</p>
 <p><strong>Preprocessing leakage.</strong> Any step whose parameters are computed from the data (scaling, imputation, feature selection, target encoding, oversampling of the minority class, PCA) is part of the model and must be fitted on the training part only. The effect is small for a scaler (a mean computed on <span class="math inline">\(m\)</span> rows moves by about <span class="math inline">\(\sigma/\sqrt{m}\)</span> when a fold is added) but can be enormous for feature selection. The demo: <span class="math inline">\(m = 60\)</span> examples, <span class="math inline">\(n = 5000\)</span> features of pure noise, balanced random labels. The wrong way picks the 20 features most correlated with <span class="math inline">\(y\)</span> <strong>on all the data</strong>, then cross-validates a logistic regression on them; the right way puts the selection inside a <code>Pipeline</code>, so it is redone on each training fold. The label-permutation check is run on both.</p>
-<div id="a77c1e68" class="cell" data-execution_count="23">
+<div id="45957f28" class="cell" data-execution_count="23">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.pipeline <span class="im">import</span> make_pipeline</span>
 <span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.feature_selection <span class="im">import</span> SelectKBest, f_classif</span>
 <span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> RepeatedStratifiedKFold</span>
@@ -1432,7 +1460,7 @@ chance correlations with y: largest 0.47, 20th largest 0.37; 1/sqrt(m) = 0.13</c
 <p><strong>How to detect it.</strong> Count rows per identifier (section 13.1); compare <code>KFold</code> with <code>GroupKFold</code>.</p>
 <p><strong>Why it happens.</strong> Rows of the same customer share things the features do not fully explain: a customer effect <span class="math inline">\(u_c\)</span>. Model the target of row <span class="math inline">\(i\)</span> of customer <span class="math inline">\(c\)</span> as <span class="math inline">\(y = g(\mathbf{x}) + u_c + \varepsilon\)</span>. With a random split, a validation row usually has siblings in the training folds; a flexible model recognises the customer from its customer-level features and predicts <span class="math inline">\(g(\mathbf{x}) + u_c\)</span>, so its validation error is only about <span class="math inline">\(\sigma_\varepsilon^2\)</span>. For a new customer <span class="math inline">\(u_c\)</span> is unknown, and the error is at least <span class="math inline">\(\sigma_u^2 + \sigma_\varepsilon^2\)</span>. The random split measures the wrong problem.</p>
 <p><strong>Demo.</strong> 80 made-up customers with 5 claims each; three customer-level features (constant over a customer’s rows), two row-level ones, and a customer effect with standard deviation 0.8. The model is a decision tree (<a href="06_decision_trees_cart.html">note 06</a>). The truth is measured on 2,000 new customers.</p>
-<div id="5e4b5fad" class="cell" data-execution_count="24">
+<div id="04c7529e" class="cell" data-execution_count="24">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb42"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> GroupKFold</span>
 <span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.tree <span class="im">import</span> DecisionTreeRegressor</span>
 <span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> make_customers(n_cust, rows, r):</span>
@@ -1459,7 +1487,7 @@ R² on 2,000 new customers  : 0.578</code></pre>
 </div>
 </div>
 <p>The random split promises an <span class="math inline">\(R^2\)</span> of about 0.73; new customers get about 0.58; <code>GroupKFold</code> says about 0.49, slightly pessimistic because each of its models is trained on 64 customers instead of 80, but closer to the truth and on the safe side. <strong>Duplicates</strong> are the extreme case of a group: the same row twice. Here half of 400 made-up claims are entered twice, and a fully grown tree (which memorises its training rows) is evaluated.</p>
-<div id="16aad526" class="cell" data-execution_count="25">
+<div id="278cd4a0" class="cell" data-execution_count="25">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb44"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> StratifiedGroupKFold</span>
 <span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>Xd_all, yd_all <span class="op">=</span> make_classification(n_samples<span class="op">=</span><span class="dv">4400</span>, n_features<span class="op">=</span><span class="dv">8</span>, n_informative<span class="op">=</span><span class="dv">4</span>, flip_y<span class="op">=</span><span class="fl">0.2</span>, random_state<span class="op">=</span><span class="dv">3</span>)</span>
 <span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>Xo, yo, X_fresh, y_fresh <span class="op">=</span> Xd_all[:<span class="dv">400</span>], yd_all[:<span class="dv">400</span>], Xd_all[<span class="dv">400</span>:], yd_all[<span class="dv">400</span>:]</span>
@@ -1487,7 +1515,7 @@ accuracy on 4,000 fresh claims   : 0.715</code></pre>
 <p><strong>Why it happens.</strong> Neighbouring time points are similar (section 13.1: autocorrelation). With a shuffled split, every validation month has its previous and next month in the training folds, so the model only has to <strong>interpolate</strong>; in deployment it has to <strong>extrapolate</strong> beyond the last training date, which is harder. Also, a shuffled split lets the model learn from the future to predict the past, which deployment never allows.</p>
 <p><strong>Remedy: forward chaining.</strong> Train on an initial period, validate on the next block, then extend the training period and repeat (<code>TimeSeriesSplit</code>): every validation block lies after all its training data. Use a gap between training and validation when the target is only known with delay (claims develop for months), and make the validation block as long as the forecasting horizon.</p>
 <p><strong>Demo.</strong> 240 months of a made-up claim-frequency index: seasonality plus a slowly wandering level. The model is a decision tree on (month counter, calendar month). The first 180 months are the data we have; the last 60 are the future.</p>
-<div id="e0608cc3" class="cell" data-execution_count="26">
+<div id="d1110c56" class="cell" data-execution_count="26">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb46"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> TimeSeriesSplit</span>
 <span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>rts <span class="op">=</span> np.random.default_rng(<span class="dv">2</span>)<span class="op">;</span> T_ <span class="op">=</span> <span class="dv">240</span></span>
 <span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>t_idx <span class="op">=</span> np.arange(T_)<span class="op">;</span> cal <span class="op">=</span> t_idx <span class="op">%</span> <span class="dv">12</span></span>

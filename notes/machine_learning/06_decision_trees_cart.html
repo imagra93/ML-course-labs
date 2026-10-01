@@ -181,7 +181,7 @@ window.Quarto = {
 <p><strong>What this note covers.</strong> The model (a partition of the feature space into boxes), what a leaf predicts and why, the impurity measures (entropy, Gini, and why not the misclassification error), the threshold search, the CART algorithm implemented from scratch, regression trees, overfitting and cost-complexity pruning, and the instability of a single tree. Then the assumptions trees make (and the many they don’t), and the practical situations: categorical features, missing values, imbalanced classes, feature importance and interpretation.</p>
 <p><strong>What you need.</strong> The supervised-learning vocabulary of <a href="00_supervised_learning.html">note 00</a>: training and test error, overfitting, the bias–variance trade-off (expected squared error = bias² + variance + noise), cross-validation. For the probabilistic leaves, the log-loss of <a href="02_logistic_regression.html">note 02</a>: <span class="math inline">\(-\sum_i \log \hat p(y^{(i)})\)</span>, minus the log-likelihood of the observed labels. Derivatives of one variable and the definition of a concave function are enough for the proofs.</p>
 <p><strong>After this note you will be able to</strong> grow a tree by hand and in code, explain every number in a split, choose between stopping rules and pruning, recognise the situations where a single tree fails (diagonal boundaries, extrapolation, interactions invisible to a greedy search, high variance) and fix them, and read feature importances without being fooled.</p>
-<div id="7a61d6d0" class="cell" data-execution_count="1">
+<div id="c7080a1c" class="cell" data-execution_count="1">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>plt.rcParams.update({<span class="st">"figure.dpi"</span>: <span class="dv">90</span>, <span class="st">"axes.grid"</span>: <span class="va">True</span>, <span class="st">"grid.alpha"</span>: <span class="fl">0.3</span>,</span>
@@ -242,9 +242,12 @@ h(\mathbf{x}) = \sum_{\ell=1}^L c_\ell\,\mathbb{1}[\mathbf{x}\in R_\ell],
 <p><strong>Proof for the mean.</strong> Set the derivative with respect to <span class="math inline">\(c\)</span> to zero:</p>
 <p><span class="math display">\[
 \begin{aligned}
-\frac{d}{dc}\sum_{i=1}^N\big(y^{(i)}-c\big)^2 &amp;= \sum_{i=1}^N 2\big(y^{(i)}-c\big)\cdot(-1) = 0 &amp;&amp; \text{chain rule: the derivative of $(y-c)^2$ with respect to $c$ is $2(y-c)\cdot(-1)$}\\
-\sum_{i=1}^N y^{(i)} - Nc &amp;= 0 &amp;&amp; \text{divide by $-2$, and $\textstyle\sum_{i=1}^N c = Nc$}\\
-c &amp;= \frac1N\sum_{i=1}^N y^{(i)} = \bar y &amp;&amp; \text{solve for $c$}
+\frac{d}{dc}\sum_{i=1}^N\big(y^{(i)}-c\big)^2 &amp;= \sum_{i=1}^N 2\big(y^{(i)}-c\big)\cdot(-1) = 0 \\
+&amp;\quad\small \text{chain rule: the derivative of $(y-c)^2$ with respect to $c$ is $2(y-c)\cdot(-1)$}\\
+\sum_{i=1}^N y^{(i)} - Nc &amp;= 0 \\
+&amp;\quad\small \text{divide by $-2$, and $\textstyle\sum_{i=1}^N c = Nc$}\\
+c &amp;= \frac1N\sum_{i=1}^N y^{(i)} = \bar y \\
+&amp;\quad\small \text{solve for $c$}
 \end{aligned}
 \]</span></p>
 <p>The second derivative is <span class="math inline">\(2N &gt; 0\)</span>, so this is a minimum.</p>
@@ -265,7 +268,7 @@ q_k &amp;= \frac{N_k}{N} &amp;&amp; \text{substitute $\mu$}
 \]</span></p>
 <p>The loss is convex in <span class="math inline">\(q\)</span> (each <span class="math inline">\(-\log q_k\)</span> is convex), so the stationary point is the minimum. This is the maximum-likelihood estimate of a categorical distribution, and it is what <code>predict_proba</code> returns.</p>
 <p><strong>Examples.</strong> A regression leaf with <span class="math inline">\(y=\{3,5,10\}\)</span>: mean <span class="math inline">\(6\)</span>, median <span class="math inline">\(5\)</span>. A classification leaf with 6 sold and 2 not sold predicts “sold”, with <span class="math inline">\(\hat p = 6/8 = 0.75\)</span>; check with the derivative: <span class="math inline">\(\frac{d}{dq}\big[-6\log q - 2\log(1-q)\big] = -\frac6q + \frac{2}{1-q} = 0 \Rightarrow 6(1-q) = 2q \Rightarrow q = 0.75\)</span>. The code checks the four answers by brute force on a grid:</p>
-<div id="7be9cae6" class="cell" data-execution_count="2">
+<div id="2e1605e0" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>yl <span class="op">=</span> np.array([<span class="fl">3.</span>, <span class="fl">5.</span>, <span class="fl">10.</span>])</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>cs <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">12</span>, <span class="dv">12001</span>)                                   <span class="co"># candidate constants, step 0.001</span></span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"squared error minimised at c = </span><span class="sc">{</span>cs[np.argmin([np.<span class="bu">sum</span>((yl <span class="op">-</span> c) <span class="op">**</span> <span class="dv">2</span>) <span class="cf">for</span> c <span class="kw">in</span> cs])]<span class="sc">:.3f}</span><span class="ss">  (mean </span><span class="sc">{</span>yl<span class="sc">.</span>mean()<span class="sc">:.3f}</span><span class="ss">)"</span>)</span>
@@ -303,10 +306,14 @@ H = -\sum_{k=1}^K p_k\log_2 p_k = \sum_{k=1}^K p_k\cdot\big(-\log_2 p_k\big).
 <p>The values of <span class="math inline">\(-\log_2 p\)</span> we need: <span class="math inline">\(p = 1/2 \to 1\)</span>; <span class="math inline">\(1/4 \to 2\)</span>; <span class="math inline">\(3/4 \to 0.415\)</span>; <span class="math inline">\(1/3 \to 1.585\)</span>; <span class="math inline">\(2/3 \to 0.585\)</span>. The nodes of the example, as (sold, not sold):</p>
 <p><span class="math display">\[
 \begin{aligned}
-(8,8):&amp;\quad H = \tfrac12\cdot 1 + \tfrac12\cdot 1 = 1 &amp;&amp; \text{the root: } p = \tfrac{8}{16} = \tfrac12 \text{ for each class}\\
-(6,2):&amp;\quad H = \tfrac34\cdot 0.415 + \tfrac14\cdot 2 = 0.311 + 0.5 = 0.811 &amp;&amp; p_{\text{sold}} = \tfrac68 = \tfrac34,\ p_{\text{not}} = \tfrac28 = \tfrac14;\ \text{the same for } (2,6)\\
-(8,4):&amp;\quad H = \tfrac23\cdot 0.585 + \tfrac13\cdot 1.585 = 0.390 + 0.528 = 0.918 &amp;&amp; p_{\text{sold}} = \tfrac{8}{12} = \tfrac23,\ p_{\text{not}} = \tfrac{4}{12} = \tfrac13\\
-(0,4):&amp;\quad H = 0 &amp;&amp; \text{pure}
+(8,8):&amp;\quad H = \tfrac12\cdot 1 + \tfrac12\cdot 1 = 1 \\
+&amp;\quad\small \text{the root: } p = \tfrac{8}{16} = \tfrac12 \text{ for each class}\\
+(6,2):&amp;\quad H = \tfrac34\cdot 0.415 + \tfrac14\cdot 2 = 0.311 + 0.5 = 0.811 \\
+&amp;\quad\small p_{\text{sold}} = \tfrac68 = \tfrac34,\ p_{\text{not}} = \tfrac28 = \tfrac14;\ \text{the same for } (2,6)\\
+(8,4):&amp;\quad H = \tfrac23\cdot 0.585 + \tfrac13\cdot 1.585 = 0.390 + 0.528 = 0.918 \\
+&amp;\quad\small p_{\text{sold}} = \tfrac{8}{12} = \tfrac23,\ p_{\text{not}} = \tfrac{4}{12} = \tfrac13\\
+(0,4):&amp;\quad H = 0 \\
+&amp;\quad\small \text{pure}
 \end{aligned}
 \]</span></p>
 <p>The <strong>information gain</strong> is <span class="math inline">\(\Delta I\)</span> with <span class="math inline">\(I = H\)</span>: the entropy before, minus the size-weighted entropy after,</p>
@@ -316,12 +323,14 @@ IG = H(\text{parent}) - \sum_{\text{children } c}\frac{N_c}{N}\,H(c),
 <p>where <span class="math inline">\(N_c/N\)</span> is the fraction of the parent’s examples that go to child <span class="math inline">\(c\)</span>. CART always asks yes/no questions: two children. (ID3, an older algorithm, splits a categorical feature into one child per value.)</p>
 <p><span class="math display">\[
 \begin{aligned}
-IG_A &amp;= 1 - \Big(\tfrac{8}{16}\cdot 0.811 + \tfrac{8}{16}\cdot 0.811\Big) = 1 - 0.811 = 0.189 &amp;&amp; \text{A: children $(6,2)$ and $(2,6)$, 8 cars each}\\
-IG_B &amp;= 1 - \Big(\tfrac{12}{16}\cdot 0.918 + \tfrac{4}{16}\cdot 0\Big) = 1 - 0.689 = 0.311 &amp;&amp; \text{B: children $(8,4)$ with 12 cars and $(0,4)$ with 4}
+IG_A &amp;= 1 - \Big(\tfrac{8}{16}\cdot 0.811 + \tfrac{8}{16}\cdot 0.811\Big) = 1 - 0.811 = 0.189 \\
+&amp;\quad\small \text{A: children $(6,2)$ and $(2,6)$, 8 cars each}\\
+IG_B &amp;= 1 - \Big(\tfrac{12}{16}\cdot 0.918 + \tfrac{4}{16}\cdot 0\Big) = 1 - 0.689 = 0.311 \\
+&amp;\quad\small \text{B: children $(8,4)$ with 12 cars and $(0,4)$ with 4}
 \end{aligned}
 \]</span></p>
 <p><span class="math inline">\(IG_B = 0.311 &gt; IG_A = 0.189\)</span>: ask about the mileage first. B wins even though its big child <span class="math inline">\((8,4)\)</span> is more mixed than A’s children (0.918 vs 0.811). The pure child is what pays off.</p>
-<div id="a8aab747" class="cell" data-execution_count="3">
+<div id="bc6ecbea" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> entropy_c(c):                        <span class="co"># entropy (bits) of a node given its class counts</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    p <span class="op">=</span> np.array(c, <span class="bu">float</span>) <span class="op">/</span> <span class="bu">sum</span>(c)<span class="op">;</span> p <span class="op">=</span> p[p <span class="op">&gt;</span> <span class="dv">0</span>]</span>
 <span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="op">-</span>np.<span class="bu">sum</span>(p <span class="op">*</span> np.log2(p)) <span class="op">+</span> <span class="fl">0.0</span>             <span class="co"># + 0.0 turns -0.0 into 0.0</span></span>
@@ -353,17 +362,22 @@ Gini decrease   : A 0.125, B 0.167</code></pre>
 <p>Draw two examples from the node at random, with replacement. The <strong>Gini impurity</strong> is the probability that their classes <strong>differ</strong>:</p>
 <p><span class="math display">\[
 \begin{aligned}
-P(\text{same}) &amp;= \sum_{k=1}^K p_k\cdot p_k &amp;&amp; \text{both draws are of class $k$ with probability $p_k\cdot p_k$ (independent draws); add over the classes}\\
-\text{Gini} &amp;= 1 - \sum_{k=1}^K p_k^2 = \sum_{k=1}^K p_k(1-p_k) &amp;&amp; \text{complement; and $\textstyle\sum_k p_k = 1$ gives the second form}\\
-\text{two classes: } \ \text{Gini} &amp;= 1 - p^2 - (1-p)^2 = 1 - p^2 - 1 + 2p - p^2 = 2p(1-p) &amp;&amp; \text{with $p$ = fraction of class 1; expand $(1-p)^2$}
+P(\text{same}) &amp;= \sum_{k=1}^K p_k\cdot p_k \\
+&amp;\quad\small \text{both draws are of class $k$ with probability $p_k\cdot p_k$ (independent draws);}\\
+&amp;\quad\small \text{add over the classes}\\
+\text{Gini} &amp;= 1 - \sum_{k=1}^K p_k^2 = \sum_{k=1}^K p_k(1-p_k) \\
+&amp;\quad\small \text{complement; and $\textstyle\sum_k p_k = 1$ gives the second form}\\
+\text{two classes: } \ \text{Gini} &amp;= 1 - p^2 - (1-p)^2 = 1 - p^2 - 1 + 2p - p^2 = 2p(1-p) \\
+&amp;\quad\small \text{with $p$ = fraction of class 1; expand $(1-p)^2$}
 \end{aligned}
 \]</span></p>
 <p>The second form has another reading: a classifier that predicts at random with the node’s class proportions is wrong on an example of class <span class="math inline">\(k\)</span> with probability <span class="math inline">\(1-p_k\)</span>, so Gini is its expected error rate.</p>
 <p><strong>Our example.</strong> Root: <span class="math inline">\(2\cdot\frac12\cdot\frac12 = 0.5\)</span>.</p>
 <p><span class="math display">\[
 \begin{aligned}
-A:&amp;\quad 2\cdot\tfrac34\cdot\tfrac14 = 0.375 \ \text{(both children)} \;\Rightarrow\; \Delta = 0.5 - 0.375 = 0.125\\
-B:&amp;\quad (8,4)\to 2\cdot\tfrac23\cdot\tfrac13 = 0.444,\qquad (0,4)\to 0 \;\Rightarrow\; \Delta = 0.5 - \Big(\tfrac{12}{16}\cdot 0.444 + \tfrac{4}{16}\cdot 0\Big) = 0.5 - 0.333 = 0.167
+A:&amp;\quad 2\cdot\tfrac34\cdot\tfrac14 = 0.375 \ \text{(both children)} \;\Rightarrow\; \Delta = 0.5 - 0.375 = 0.125 \\
+B:&amp;\quad (8,4)\to 2\cdot\tfrac23\cdot\tfrac13 = 0.444,\qquad (0,4)\to 0 \\
+&amp;\quad \Rightarrow\; \Delta = 0.5 - \Big(\tfrac{12}{16}\cdot 0.444 + \tfrac{4}{16}\cdot 0\Big) = 0.5 - 0.333 = 0.167
 \end{aligned}
 \]</span></p>
 <p><strong>B wins again</strong> (the code in section 5 printed the same numbers). Gini is the CART and scikit-learn default: no logarithm, and in practice almost the same trees as entropy (section 7).</p>
@@ -413,7 +427,7 @@ B:&amp;\quad (8,4)\to 2\cdot\tfrac23\cdot\tfrac13 = 0.444,\qquad (0,4)\to 0 \;\R
 </tr>
 </tbody>
 </table>
-<div id="afb408fd" class="cell" data-execution_count="4">
+<div id="39956dde" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>p <span class="op">=</span> np.linspace(<span class="fl">1e-6</span>, <span class="dv">1</span> <span class="op">-</span> <span class="fl">1e-6</span>, <span class="dv">400</span>)</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>gini <span class="op">=</span> <span class="dv">2</span> <span class="op">*</span> p <span class="op">*</span> (<span class="dv">1</span> <span class="op">-</span> p)<span class="op">;</span> ent <span class="op">=</span> <span class="op">-</span>(p <span class="op">*</span> np.log2(p) <span class="op">+</span> (<span class="dv">1</span> <span class="op">-</span> p) <span class="op">*</span> np.log2(<span class="dv">1</span> <span class="op">-</span> p))<span class="op">;</span> mis <span class="op">=</span> <span class="dv">1</span> <span class="op">-</span> np.maximum(p, <span class="dv">1</span> <span class="op">-</span> p)</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">6</span>, <span class="fl">3.6</span>))</span>
@@ -435,24 +449,31 @@ B:&amp;\quad (8,4)\to 2\cdot\tfrac23\cdot\tfrac13 = 0.444,\qquad (0,4)\to 0 \;\R
 <p><strong>Gini is the first-order approximation of entropy.</strong> Use natural logarithms, <span class="math inline">\(H_e = -\sum_k p_k\ln p_k = H\ln 2\)</span>. Expand <span class="math inline">\(-\ln p_k\)</span> around <span class="math inline">\(p_k = 1\)</span> with <span class="math inline">\(u = 1 - p_k\)</span>:</p>
 <p><span class="math display">\[
 \begin{aligned}
--\ln p_k &amp;= -\ln(1-u) = u + \frac{u^2}{2} + \frac{u^3}{3} + \cdots &amp;&amp; \text{Taylor series of $-\ln(1-u)$, valid for $0 \le u &lt; 1$}\\
-H_e &amp;= \sum_k p_k(-\ln p_k) = \sum_k p_k(1-p_k) + \sum_k \frac{p_k(1-p_k)^2}{2} + \cdots &amp;&amp; \text{multiply by $p_k$ and add over $k$}\\
-&amp;= \text{Gini} + \underbrace{\sum_k \frac{p_k(1-p_k)^2}{2} + \cdots}_{\ge 0} &amp;&amp; \text{the first term is Gini (section 6)}
+-\ln p_k &amp;= -\ln(1-u) = u + \frac{u^2}{2} + \frac{u^3}{3} + \cdots \\
+&amp;\quad\small \text{Taylor series of $-\ln(1-u)$, valid for $0 \le u &lt; 1$}\\
+H_e &amp;= \sum_k p_k(-\ln p_k) = \sum_k p_k(1-p_k) + \sum_k \frac{p_k(1-p_k)^2}{2} + \cdots \\
+&amp;\quad\small \text{multiply by $p_k$ and add over $k$}\\
+&amp;= \text{Gini} + \underbrace{\sum_k \frac{p_k(1-p_k)^2}{2} + \cdots}_{\ge 0} \\
+&amp;\quad\small \text{the first term is Gini (section 6)}
 \end{aligned}
 \]</span></p>
 <p>So <span class="math inline">\(H_e \ge \text{Gini}\)</span>, with equality only for a pure node, and the two are close when one class dominates. The largest gap is at the uniform node: with two classes, <span class="math inline">\(\ln 2 - 0.5 = 0.193\)</span>.</p>
 <p><strong>Near a balanced node, entropy is an increasing affine function of Gini.</strong> Two classes, <span class="math inline">\(p = \frac12 + \delta\)</span>. Then</p>
 <p><span class="math display">\[
 \begin{aligned}
-\text{Gini} &amp;= 2\big(\tfrac12+\delta\big)\big(\tfrac12-\delta\big) = 2\big(\tfrac14-\delta^2\big) = \tfrac12 - 2\delta^2 &amp;&amp; \text{difference of squares}\\
-H(p) &amp;= H(\tfrac12) + H'(\tfrac12)\,\delta + \tfrac12 H''(\tfrac12)\,\delta^2 + O(\delta^4) &amp;&amp; \text{Taylor expansion of $H(p) = -p\log_2p-(1-p)\log_2(1-p)$ around $\tfrac12$}\\
-H'(p) &amp;= \log_2\frac{1-p}{p},\qquad H''(p) = -\frac{1}{p(1-p)\ln 2} &amp;&amp; \text{differentiate; so $H'(\tfrac12)=0$, $H''(\tfrac12) = -\tfrac{4}{\ln 2}$}\\
-H &amp;\approx 1 - \frac{2}{\ln 2}\,\delta^2 = 1 - \frac{1}{\ln 2}\Big(\frac12 - \text{Gini}\Big) &amp;&amp; \text{substitute; then $\delta^2 = (\tfrac12 - \text{Gini})/2$ from the first line}
+\text{Gini} &amp;= 2\big(\tfrac12+\delta\big)\big(\tfrac12-\delta\big) = 2\big(\tfrac14-\delta^2\big) = \tfrac12 - 2\delta^2 \\
+&amp;\quad\small \text{difference of squares}\\
+H(p) &amp;= H(\tfrac12) + H'(\tfrac12)\,\delta + \tfrac12 H''(\tfrac12)\,\delta^2 + O(\delta^4) \\
+&amp;\quad\small \text{Taylor expansion of $H(p) = -p\log_2p-(1-p)\log_2(1-p)$ around $\tfrac12$}\\
+H'(p) &amp;= \log_2\frac{1-p}{p},\qquad H''(p) = -\frac{1}{p(1-p)\ln 2} \\
+&amp;\quad\small \text{differentiate; so $H'(\tfrac12)=0$, $H''(\tfrac12) = -\tfrac{4}{\ln 2}$}\\
+H &amp;\approx 1 - \frac{2}{\ln 2}\,\delta^2 = 1 - \frac{1}{\ln 2}\Big(\frac12 - \text{Gini}\Big) \\
+&amp;\quad\small \text{substitute; then $\delta^2 = (\tfrac12 - \text{Gini})/2$ from the first line}
 \end{aligned}
 \]</span></p>
 <p>(the odd powers of <span class="math inline">\(\delta\)</span> vanish because <span class="math inline">\(H\)</span> is symmetric around <span class="math inline">\(\frac12\)</span>). Since <span class="math inline">\(H \approx a + b\,\text{Gini}\)</span> with <span class="math inline">\(b = 1/\ln 2 &gt; 0\)</span>, and the gain is a weighted average of impurities minus the parent’s, the constant <span class="math inline">\(a\)</span> cancels and <strong>the information gain is approximately <span class="math inline">\(\Delta\text{Gini}/\ln 2\)</span></strong> when every node involved is close to 50/50: the two criteria rank such splits identically. They differ when a split produces a very pure or very small child, because entropy’s slope is infinite at <span class="math inline">\(p = 0\)</span> and <span class="math inline">\(p = 1\)</span> (<span class="math inline">\(H'(p)\to\pm\infty\)</span>): <strong>entropy rewards purity a little more</strong>. Question A of the example has children at <span class="math inline">\(p = \frac14, \frac34\)</span>, not far from <span class="math inline">\(\frac12\)</span>: <span class="math inline">\(0.125/\ln 2 = 0.180\)</span>, close to <span class="math inline">\(IG_A = 0.189\)</span>. Question B has a pure child: <span class="math inline">\(0.167/\ln 2 = 0.240\)</span>, far from <span class="math inline">\(IG_B = 0.311\)</span>.</p>
 <p><strong>When they disagree.</strong> Compare A with a third question C that isolates 3 sold cars: children <span class="math inline">\((3,0)\)</span> and <span class="math inline">\((5,8)\)</span>. The simulation then measures how often the two criteria choose a different split on random data (random node sizes and class-dependent features, three features per node), and how much entropy gain is lost by following Gini’s choice.</p>
-<div id="2dbe7660" class="cell" data-execution_count="5">
+<div id="ab2cd22f" class="cell" data-execution_count="5">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>C <span class="op">=</span> [(<span class="dv">3</span>, <span class="dv">0</span>), (<span class="dv">5</span>, <span class="dv">8</span>)]</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Gini: A </span><span class="sc">{</span>gain((<span class="dv">8</span>, <span class="dv">8</span>), A, gini_c)<span class="sc">:.3f}</span><span class="ss"> vs C </span><span class="sc">{</span>gain((<span class="dv">8</span>, <span class="dv">8</span>), C, gini_c)<span class="sc">:.3f}</span><span class="ss">   |   "</span></span>
 <span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"entropy: A </span><span class="sc">{</span>gain((<span class="dv">8</span>, <span class="dv">8</span>), A, entropy_c)<span class="sc">:.3f}</span><span class="ss"> vs C </span><span class="sc">{</span>gain((<span class="dv">8</span>, <span class="dv">8</span>), C, entropy_c)<span class="sc">:.3f}</span><span class="ss">"</span>)</span>
@@ -506,14 +527,17 @@ B:&amp;\quad \tfrac{12}{16}\cdot\tfrac13 + \tfrac{4}{16}\cdot 0 = 0.25
 <p><strong>The concavity argument.</strong> Take two classes, a split with weights <span class="math inline">\(w_L = N_L/N\)</span>, <span class="math inline">\(w_R = N_R/N\)</span> (both positive) and children fractions <span class="math inline">\(p_L\)</span>, <span class="math inline">\(p_R\)</span> of class 1. Then:</p>
 <p><span class="math display">\[
 \begin{aligned}
-p &amp;= \frac{N_L p_L + N_R p_R}{N} = w_L\,p_L + w_R\,p_R &amp;&amp; \text{class-1 count of the parent = sum of the children's; divide by $N$}\\
-I(p) &amp;= I(w_L p_L + w_R p_R) \;\ge\; w_L\,I(p_L) + w_R\,I(p_R) &amp;&amp; \text{definition of a concave $I$: the curve is above its chords}\\
-\Delta I &amp;= I(p) - \big(w_L I(p_L) + w_R I(p_R)\big) \;\ge\; 0 &amp;&amp; \text{rearrange: no split increases a concave impurity}
+p &amp;= \frac{N_L p_L + N_R p_R}{N} = w_L\,p_L + w_R\,p_R \\
+&amp;\quad\small \text{class-1 count of the parent = sum of the children's; divide by $N$}\\
+I(p) &amp;= I(w_L p_L + w_R p_R) \;\ge\; w_L\,I(p_L) + w_R\,I(p_R) \\
+&amp;\quad\small \text{definition of a concave $I$: the curve is above its chords}\\
+\Delta I &amp;= I(p) - \big(w_L I(p_L) + w_R I(p_R)\big) \;\ge\; 0 \\
+&amp;\quad\small \text{rearrange: no split increases a concave impurity}
 \end{aligned}
 \]</span></p>
 <p>If <span class="math inline">\(I\)</span> is <strong>strictly</strong> concave, the inequality in the second line is an equality only when <span class="math inline">\(p_L = p_R\)</span> (then both equal <span class="math inline">\(p\)</span>). So with Gini or entropy (both strictly concave: <span class="math inline">\(I_G'' = -4 &lt; 0\)</span> and <span class="math inline">\(H'' = -1/(p(1-p)\ln 2) &lt; 0\)</span>) <strong>every split that changes the class proportions has a strictly positive gain</strong>, and the more extreme the children, the further below the curve the chord lies: pure children are rewarded.</p>
 <p>The misclassification error <span class="math inline">\(\min(p, 1-p)\)</span> is concave but not strictly: it is a straight line on <span class="math inline">\([0,\frac12]\)</span> and on <span class="math inline">\([\frac12,1]\)</span>. If <span class="math inline">\(p_L\)</span> and <span class="math inline">\(p_R\)</span> lie on the same side of <span class="math inline">\(\frac12\)</span>, the chord lies <em>on</em> the curve and the gain is <strong>exactly zero</strong>, however much the split separates the classes. Example: the child <span class="math inline">\((8,4)\)</span> of question B, split into <span class="math inline">\((5,1)\)</span> and <span class="math inline">\((3,3)\)</span>. All three nodes have a majority of sold cars or a tie, so the minority count is <span class="math inline">\(4 = 1 + 3\)</span> before and after: gain 0. Gini sees the nearly pure child <span class="math inline">\((5,1)\)</span>:</p>
-<div id="3dde4a7b" class="cell" data-execution_count="6">
+<div id="29cc61e5" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>mis_c <span class="op">=</span> <span class="kw">lambda</span> c: <span class="dv">1</span> <span class="op">-</span> <span class="bu">max</span>(c) <span class="op">/</span> <span class="bu">sum</span>(c)</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>D <span class="op">=</span> [(<span class="dv">5</span>, <span class="dv">1</span>), (<span class="dv">3</span>, <span class="dv">3</span>)]</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, imp <span class="kw">in</span> [(<span class="st">"misclassification"</span>, mis_c), (<span class="st">"Gini"</span>, gini_c), (<span class="st">"entropy"</span>, entropy_c)]:</span>
@@ -545,7 +569,7 @@ I(p) &amp;= I(w_L p_L + w_R p_R) \;\ge\; w_L\,I(p_L) + w_R\,I(p_R) &amp;&amp; \t
   <p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#11">slide 11</a> of the Decision Trees deck.</p>
 </div>
 <p>The code checks every threshold with both impurities:</p>
-<div id="028a7c58" class="cell" data-execution_count="7">
+<div id="f75bee88" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> gini(y):</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="bu">len</span>(y) <span class="op">==</span> <span class="dv">0</span>: <span class="cf">return</span> <span class="fl">0.0</span></span>
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    _, counts <span class="op">=</span> np.unique(y, return_counts<span class="op">=</span><span class="va">True</span>)<span class="op">;</span> p <span class="op">=</span> counts <span class="op">/</span> <span class="bu">len</span>(y)</span>
@@ -575,7 +599,7 @@ split x &lt;= 7.5:  Gini decrease = 0.071   information gain = 0.138</code></pre
 </div>
 </div>
 <p><strong>One pass per feature.</strong> Recomputing the impurity of both children for every threshold costs <span class="math inline">\(O(N_t)\)</span> per threshold and <span class="math inline">\(O(N_t^2)\)</span> per feature. Sorting once and moving the examples one by one from right to left while updating the class counts (the cumulative sums in <code>all_gains</code>, section 7) scores all thresholds in <span class="math inline">\(O(N_t)\)</span> after an <span class="math inline">\(O(N_t\log N_t)\)</span> sort. The two methods agree:</p>
-<div id="40bd116b" class="cell" data-execution_count="8">
+<div id="9ed53f6e" class="cell" data-execution_count="8">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>yb01 <span class="op">=</span> (yw <span class="op">==</span> <span class="st">"B"</span>).astype(<span class="bu">int</span>)</span>
 <span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>fast <span class="op">=</span> all_gains(xw.astype(<span class="bu">float</span>), yb01, g2)           <span class="co"># one pass, cumulative counts</span></span>
 <span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>slow <span class="op">=</span> [gini(yw) <span class="op">-</span> (np.<span class="bu">sum</span>(xw <span class="op">&lt;=</span> s) <span class="op">*</span> gini(yw[xw <span class="op">&lt;=</span> s]) <span class="op">+</span> np.<span class="bu">sum</span>(xw <span class="op">&gt;</span> s) <span class="op">*</span> gini(yw[xw <span class="op">&gt;</span> s])) <span class="op">/</span> <span class="dv">8</span> <span class="cf">for</span> s <span class="kw">in</span> np.arange(<span class="fl">1.5</span>, <span class="dv">8</span>, <span class="fl">1.0</span>)]</span>
@@ -612,7 +636,7 @@ brute   : [0.071 0.167 0.3   0.125 0.3   0.167 0.071]</code></pre>
 <section id="implementation-from-scratch" class="level3">
 <h3 class="anchored" data-anchor-id="implementation-from-scratch">10.1 Implementation from scratch</h3>
 <p>A compact CART that handles classification (Gini/entropy, majority leaf) and regression (variance, mean leaf).</p>
-<div id="753e15f2" class="cell" data-execution_count="9">
+<div id="b00904d0" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Node:</span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, value, j<span class="op">=</span><span class="va">None</span>, s<span class="op">=</span><span class="va">None</span>, left<span class="op">=</span><span class="va">None</span>, right<span class="op">=</span><span class="va">None</span>, n<span class="op">=</span><span class="dv">0</span>, gain<span class="op">=</span><span class="fl">0.0</span>):</span>
 <span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.value, <span class="va">self</span>.j, <span class="va">self</span>.s, <span class="va">self</span>.left, <span class="va">self</span>.right, <span class="va">self</span>.n, <span class="va">self</span>.gain <span class="op">=</span> value, j, s, left, right, n, gain</span>
@@ -651,7 +675,7 @@ brute   : [0.071 0.167 0.3   0.125 0.3   0.167 0.071]</code></pre>
 <span id="cb16-36"><a href="#cb16-36" aria-hidden="true" tabindex="-1"></a>majority <span class="op">=</span> <span class="kw">lambda</span> y: np.bincount(y).argmax()</span>
 <span id="cb16-37"><a href="#cb16-37" aria-hidden="true" tabindex="-1"></a>predict <span class="op">=</span> <span class="kw">lambda</span> tree, X: np.array([predict_one(tree, x) <span class="cf">for</span> x <span class="kw">in</span> X])</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
-<div id="4527b34c" class="cell" data-execution_count="10">
+<div id="ae24a621" class="cell" data-execution_count="10">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.datasets <span class="im">import</span> make_blobs</span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.tree <span class="im">import</span> DecisionTreeClassifier</span>
 <span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -682,7 +706,7 @@ brute   : [0.071 0.167 0.3   0.125 0.3   0.167 0.071]</code></pre>
 </div>
 </div>
 </div>
-<div id="c83d1d70" class="cell" data-execution_count="11">
+<div id="f7f21c04" class="cell" data-execution_count="11">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> print_tree(node, names, indent<span class="op">=</span><span class="st">""</span>):</span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> node.is_leaf():</span>
 <span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>indent<span class="sc">}</span><span class="ss">predict </span><span class="sc">{</span>node<span class="sc">.</span>value<span class="sc">}</span><span class="ss">   (n=</span><span class="sc">{</span>node<span class="sc">.</span>n<span class="sc">}</span><span class="ss">)"</span>)<span class="op">;</span> <span class="cf">return</span></span>
@@ -722,16 +746,21 @@ N\,\Delta I_V = \mathrm{SSE}(\text{parent}) - \big[\mathrm{SSE}(L) + \mathrm{SSE
 <p><strong>A closed form for the reduction.</strong> Write <span class="math inline">\(\bar y\)</span>, <span class="math inline">\(\bar y_L\)</span>, <span class="math inline">\(\bar y_R\)</span> for the means of parent and children.</p>
 <p><span class="math display">\[
 \begin{aligned}
-\sum_{i\in L}(y^{(i)}-\bar y)^2 &amp;= \sum_{i\in L}\big((y^{(i)}-\bar y_L) + (\bar y_L - \bar y)\big)^2 &amp;&amp; \text{add and subtract $\bar y_L$}\\
-&amp;= \mathrm{SSE}(L) + 2(\bar y_L-\bar y)\sum_{i\in L}(y^{(i)}-\bar y_L) + N_L(\bar y_L-\bar y)^2 = \mathrm{SSE}(L) + N_L(\bar y_L-\bar y)^2 &amp;&amp; \text{expand; deviations from $\bar y_L$ sum to 0}\\
-\mathrm{SSE}(\text{parent}) &amp;= \mathrm{SSE}(L) + \mathrm{SSE}(R) + N_L(\bar y_L-\bar y)^2 + N_R(\bar y_R-\bar y)^2 &amp;&amp; \text{same for $R$, and add}\\
-\bar y_L - \bar y &amp;= \frac{N_R}{N}(\bar y_L - \bar y_R), \quad \bar y_R - \bar y = \frac{N_L}{N}(\bar y_R - \bar y_L) &amp;&amp; \text{because } \bar y = (N_L\bar y_L + N_R\bar y_R)/N\\
-N\,\Delta I_V &amp;= \frac{N_L N_R^2 + N_R N_L^2}{N^2}(\bar y_L-\bar y_R)^2 = \frac{N_L N_R}{N}(\bar y_L-\bar y_R)^2 &amp;&amp; \text{substitute, and } N_L + N_R = N
+\sum_{i\in L}(y^{(i)}-\bar y)^2 &amp;= \sum_{i\in L}\big((y^{(i)}-\bar y_L) + (\bar y_L - \bar y)\big)^2 \\
+&amp;\quad\small \text{add and subtract $\bar y_L$}\\
+&amp;= \mathrm{SSE}(L) + 2(\bar y_L-\bar y)\sum_{i\in L}(y^{(i)}-\bar y_L) + N_L(\bar y_L-\bar y)^2 = \mathrm{SSE}(L) + N_L(\bar y_L-\bar y)^2 \\
+&amp;\quad\small \text{expand; deviations from $\bar y_L$ sum to 0}\\
+\mathrm{SSE}(\text{parent}) &amp;= \mathrm{SSE}(L) + \mathrm{SSE}(R) + N_L(\bar y_L-\bar y)^2 + N_R(\bar y_R-\bar y)^2 \\
+&amp;\quad\small \text{same for $R$, and add}\\
+\bar y_L - \bar y &amp;= \frac{N_R}{N}(\bar y_L - \bar y_R), \quad \bar y_R - \bar y = \frac{N_L}{N}(\bar y_R - \bar y_L) \\
+&amp;\quad\small \text{because } \bar y = (N_L\bar y_L + N_R\bar y_R)/N\\
+N\,\Delta I_V &amp;= \frac{N_L N_R^2 + N_R N_L^2}{N^2}(\bar y_L-\bar y_R)^2 = \frac{N_L N_R}{N}(\bar y_L-\bar y_R)^2 \\
+&amp;\quad\small \text{substitute, and } N_L + N_R = N
 \end{aligned}
 \]</span></p>
 <p>The best split separates the means as much as possible, weighted by <span class="math inline">\(N_LN_R/N\)</span>, which favours balanced splits.</p>
 <p><strong>By hand:</strong> <span class="math inline">\(y=\{1,2,6,7\}\)</span>, mean 4: SSE <span class="math inline">\(=9+4+4+9=26\)</span>. Split into <span class="math inline">\(\{1,2\}\)</span> and <span class="math inline">\(\{6,7\}\)</span>: means 1.5 and 6.5, SSE <span class="math inline">\(=0.5+0.5=1\)</span>. The split removes <span class="math inline">\(25\)</span> of the <span class="math inline">\(26\)</span>; the closed form gives the same, <span class="math inline">\(\frac{2\cdot 2}{4}(6.5-1.5)^2 = 25\)</span>.</p>
-<div id="227e3401" class="cell" data-execution_count="12">
+<div id="28882219" class="cell" data-execution_count="12">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>yr4 <span class="op">=</span> np.array([<span class="fl">1.</span>, <span class="fl">2.</span>, <span class="fl">6.</span>, <span class="fl">7.</span>])<span class="op">;</span> L4, R4 <span class="op">=</span> yr4[:<span class="dv">2</span>], yr4[<span class="dv">2</span>:]</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>sse <span class="op">=</span> <span class="kw">lambda</span> v: np.<span class="bu">sum</span>((v <span class="op">-</span> v.mean()) <span class="op">**</span> <span class="dv">2</span>)</span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"SSE parent </span><span class="sc">{</span>sse(yr4)<span class="sc">:.1f}</span><span class="ss">, children </span><span class="sc">{</span>sse(L4) <span class="op">+</span> sse(R4)<span class="sc">:.1f}</span><span class="ss">, reduction </span><span class="sc">{</span>sse(yr4) <span class="op">-</span> sse(L4) <span class="op">-</span> sse(R4)<span class="sc">:.1f}</span><span class="ss">, "</span></span>
@@ -748,7 +777,7 @@ N\,\Delta I_V &amp;= \frac{N_L N_R^2 + N_R N_L^2}{N^2}(\bar y_L-\bar y_R)^2 = \f
   <p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#13">slide 13</a> of the Decision Trees deck.</p>
 </div>
 <p>The same with the from-scratch implementation:</p>
-<div id="b13e7882" class="cell" data-execution_count="13">
+<div id="1ae8219f" class="cell" data-execution_count="13">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>xr <span class="op">=</span> np.sort(rng.uniform(<span class="dv">0</span>, <span class="dv">5</span>, <span class="dv">150</span>))<span class="op">;</span> yr <span class="op">=</span> np.sin(xr) <span class="op">+</span> <span class="fl">0.3</span> <span class="op">*</span> xr <span class="op">+</span> rng.normal(<span class="dv">0</span>, <span class="fl">0.25</span>, <span class="dv">150</span>)</span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>gr <span class="op">=</span> np.linspace(<span class="dv">0</span>, <span class="dv">5</span>, <span class="dv">500</span>)</span>
 <span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">9</span>, <span class="fl">3.8</span>))<span class="op">;</span> plt.scatter(xr, yr, s<span class="op">=</span><span class="dv">10</span>, color<span class="op">=</span><span class="st">"k"</span>, alpha<span class="op">=</span><span class="fl">0.6</span>)</span>
@@ -788,7 +817,7 @@ N\,\Delta I_V &amp;= \frac{N_L N_R^2 + N_R N_L^2}{N^2}(\bar y_L-\bar y_R)^2 = \f
 <li><code>min_impurity_decrease</code>: skip splits whose size-weighted gain <span class="math inline">\(\frac{N_t}{m}\Delta I\)</span> is smaller. <code>max_leaf_nodes</code>: grow best-first up to this many leaves.</li>
 </ul>
 <p><code>max_depth</code> limits the tree <em>uniformly</em>: every branch stops at the same depth, dense and sparse regions alike. <code>min_samples_leaf</code> limits it <em>locally</em>: it stops where data become scarce, so a region with many examples can still be split finely; it also smooths the probability estimates (a leaf of 1 example says 0 % or 100 %). The validation curves below (training and 5-fold CV accuracy against each hyperparameter) use 400 points of the same wave problem, generated in Python with the formula of the widget: class 1 above <span class="math inline">\(x_2 = 0.5 + 0.22\sin(2\pi x_1)\)</span>, 12 % of the labels flipped.</p>
-<div id="4e98d74d" class="cell" data-execution_count="14">
+<div id="040156ce" class="cell" data-execution_count="14">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> validation_curve, StratifiedKFold</span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> wave(n, r, flip<span class="op">=</span><span class="fl">0.12</span>):</span>
 <span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    X <span class="op">=</span> r.uniform(<span class="dv">0</span>, <span class="dv">1</span>, (n, <span class="dv">2</span>))<span class="op">;</span> y <span class="op">=</span> (X[:, <span class="dv">1</span>] <span class="op">&gt;</span> <span class="fl">0.5</span> <span class="op">+</span> <span class="fl">0.22</span> <span class="op">*</span> np.sin(<span class="dv">2</span> <span class="op">*</span> np.pi <span class="op">*</span> X[:, <span class="dv">0</span>])).astype(<span class="bu">int</span>)</span>
@@ -839,7 +868,7 @@ min_samples_leaf: best 12 (CV 0.848); at the extreme 1: train 1.000, CV 0.765</c
 \]</span></p>
 <p><span class="math inline">\(g(t)\)</span> is the error reduction the branch buys <strong>per extra leaf</strong>. <strong>Example:</strong> a branch with 3 leaves lowers the error from 0.20 to 0.14; it is collapsed as soon as <span class="math inline">\(\alpha\ge\frac{0.20-0.14}{3-1} = 0.03\)</span>.</p>
 <p><strong>Weakest-link pruning.</strong> Start from <span class="math inline">\(T_0\)</span> at <span class="math inline">\(\alpha = 0\)</span>. Compute <span class="math inline">\(g(t)\)</span> for every internal node; the node with the smallest <span class="math inline">\(g(t)\)</span> is the <em>weakest link</em>; collapse it, which gives the optimal subtree for <span class="math inline">\(\alpha\)</span> just above that value. Recompute and repeat until only the root is left. This yields a finite, nested sequence of subtrees <span class="math inline">\(T_0 \supset T_1 \supset \cdots \supset \{\text{root}\}\)</span> and the values <span class="math inline">\(\alpha_1 &lt; \alpha_2 &lt; \cdots\)</span> at which each becomes optimal (Breiman et al.&nbsp;proved that the optimal subtree for any <span class="math inline">\(\alpha\)</span> is in this sequence). <code>cost_complexity_pruning_path</code> returns them. The code recomputes the first weakest link by hand on a fully grown tree and compares it with scikit-learn:</p>
-<div id="919d2920" class="cell" data-execution_count="15">
+<div id="f8957902" class="cell" data-execution_count="15">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb25"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.datasets <span class="im">import</span> load_breast_cancer</span>
 <span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> train_test_split, cross_val_score</span>
 <span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -862,7 +891,7 @@ scikit-learn's first non-zero alpha on the path: 0.002492</code></pre>
 </div>
 </div>
 <p><strong>Choosing <span class="math inline">\(\alpha\)</span> by cross-validation on the path.</strong> Each <span class="math inline">\(\alpha\)</span> of the path defines a subtree; score each by CV on the training data and keep the best. A common, more conservative variant is the <strong>one-standard-error rule</strong>: take the largest <span class="math inline">\(\alpha\)</span> (smallest tree) whose CV score is within one standard error of the best, because CV scores are noisy (<a href="00_supervised_learning.html">note 00</a>, section 10) and a smaller tree is easier to read and more stable.</p>
-<div id="97633a95" class="cell" data-execution_count="16">
+<div id="c2542b2f" class="cell" data-execution_count="16">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>alphas <span class="op">=</span> path.ccp_alphas[:<span class="op">-</span><span class="dv">1</span>]</span>
 <span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>tr_acc, cv_acc, cv_se, leaves <span class="op">=</span> [], [], [], []</span>
 <span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> a <span class="kw">in</span> alphas:</span>
@@ -911,7 +940,7 @@ one-SE rule α = 0.0265:   2 leaves, train acc 0.932, test acc 0.889</code></pre
   <p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#16">slide 16</a> of the Decision Trees deck.</p>
 </div>
 <p>Small changes in the data → big changes in the model: that is <strong>high variance</strong>. It comes from the hierarchy: when two candidate root splits have nearly equal gains, a few examples decide which one wins, and everything below the root is grown on a different partition. The same effect, measured: 100 bootstrap resamples (samples of size <span class="math inline">\(m\)</span> drawn with replacement, which imitate “another dataset from the same distribution”) of 300 wave points; for each, a fully grown tree and a tree with <code>min_samples_leaf=10</code>. We record the root threshold, the probability that two trees disagree at a point of the plane, and the accuracy on 5,000 noiseless test points of one tree and of the majority vote of the 100 trees.</p>
-<div id="044739fe" class="cell" data-execution_count="17">
+<div id="d7e06d16" class="cell" data-execution_count="17">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>rb <span class="op">=</span> np.random.default_rng(<span class="dv">0</span>)</span>
 <span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>Xw3, yw3 <span class="op">=</span> wave(<span class="dv">300</span>, rb)<span class="op">;</span> Xw_te, yw_te <span class="op">=</span> wave(<span class="dv">5000</span>, rb, flip<span class="op">=</span><span class="fl">0.0</span>)</span>
 <span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>pred_full, pred_leaf, root_thr <span class="op">=</span> [], [], []</span>
@@ -999,15 +1028,20 @@ min_samples_leaf=10: two trees disagree on 12.5% of the plane; one tree acc 0.90
 <p><strong>Proof.</strong></p>
 <p><span class="math display">\[
 \begin{aligned}
-&amp;x^{(a)}_j \le x^{(b)}_j \iff g(x^{(a)}_j) \le g(x^{(b)}_j) &amp;&amp; \text{$g$ strictly increasing preserves order}\\
-&amp;\{i\in S_t:\ x^{(i)}_j \le s\} = \{i\in S_t:\ g(x^{(i)}_j) \le s'\} &amp;&amp; \text{for $s$ between two consecutive sorted values and $s'$ between their images}\\
-&amp;\text{the candidate partitions of every node are the same sets} &amp;&amp; \text{the thresholds are the gaps between consecutive values, in the same order}\\
-&amp;\Delta I \text{ of each candidate partition is the same} &amp;&amp; \text{$\Delta I$ depends only on which labels go left and right}\\
-&amp;\text{the best split at the root, then (by induction on depth) at every node, is the same} &amp;&amp; \text{same data reach each child} \qquad\blacksquare
+&amp;x^{(a)}_j \le x^{(b)}_j \iff g(x^{(a)}_j) \le g(x^{(b)}_j) \\
+&amp;\quad\small \text{$g$ strictly increasing preserves order}\\
+&amp;\{i\in S_t:\ x^{(i)}_j \le s\} = \{i\in S_t:\ g(x^{(i)}_j) \le s'\} \\
+&amp;\quad\small \text{for $s$ between two consecutive sorted values and $s'$ between their images}\\
+&amp;\text{the candidate partitions of every node are the same sets} \\
+&amp;\quad\small \text{the thresholds are the gaps between consecutive values, in the same order}\\
+&amp;\Delta I \text{ of each candidate partition is the same} \\
+&amp;\quad\small \text{$\Delta I$ depends only on which labels go left and right}\\
+&amp;\text{the best split at the root, then (by induction on depth) at every node, is the same} \\
+&amp;\quad\small \text{same data reach each child} \qquad\blacksquare
 \end{aligned}
 \]</span></p>
 <p>(with ties broken in the same order). What does change is the stored threshold: scikit-learn stores the midpoint <span class="math inline">\(\frac12(x_{(a)}+x_{(b)})\)</span> of the two neighbouring training values, and in the transformed feature it stores <span class="math inline">\(\frac12\big(g(x_{(a)})+g(x_{(b)})\big)\)</span>, which is in general not <span class="math inline">\(g\)</span> of the old midpoint. So a <strong>new</strong> point that falls strictly between two neighbouring training values may go to different sides in the two trees. Everything else, including every prediction on the training data, is identical. A strictly <em>decreasing</em> <span class="math inline">\(g\)</span> reverses the order, which only swaps left and right.</p>
-<div id="b14b3cf0" class="cell" data-execution_count="18">
+<div id="36bd28d2" class="cell" data-execution_count="18">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>rm <span class="op">=</span> np.random.default_rng(<span class="dv">0</span>)</span>
 <span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>Xm <span class="op">=</span> rm.uniform(<span class="fl">0.5</span>, <span class="dv">5</span>, (<span class="dv">300</span>, <span class="dv">2</span>))<span class="op">;</span> ym <span class="op">=</span> ((Xm[:, <span class="dv">0</span>] <span class="op">*</span> Xm[:, <span class="dv">1</span>] <span class="op">&gt;</span> <span class="dv">6</span>) <span class="op">^</span> (rm.uniform(size<span class="op">=</span><span class="dv">300</span>) <span class="op">&lt;</span> <span class="fl">0.1</span>)).astype(<span class="bu">int</span>)</span>
 <span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>Xm_new <span class="op">=</span> rm.uniform(<span class="fl">0.5</span>, <span class="dv">5</span>, (<span class="dv">5000</span>, <span class="dv">2</span>))</span>
@@ -1029,7 +1063,7 @@ new points predicted differently: 0.02%</code></pre>
 <p><strong>What it says.</strong> The regression function (or the class boundary) can be approximated by a moderate number of boxes with sides parallel to the axes, i.e.&nbsp;the important structure is aligned with the features as given.</p>
 <p><strong>Why it matters.</strong> A boundary like <span class="math inline">\(x_2 = x_1\)</span> (a claim is suspicious when the repair estimate exceeds the car’s value) is one line for a linear model but a staircase for a tree. Every step costs leaves, every leaf costs data, so the tree needs many more examples to reach the same accuracy, and its extra leaves add variance. It is a <strong>prediction</strong> problem (worse accuracy for a given <span class="math inline">\(m\)</span>), and an interpretation one (the rules describe the staircase, not the simple truth).</p>
 <p><strong>How to check.</strong> Compare the tree with a linear model (logistic or linear regression, <a href="02_logistic_regression.html">notes 01–02</a>) on the same CV folds; plot accuracy against the number of leaves; try the tree on combinations of features suggested by the domain (differences, ratios) or on principal-component rotations, and see whether a much smaller tree does as well. Holds vs violated, side by side: a boundary along an axis (<span class="math inline">\(x_2 &gt; 0.5\)</span>) versus the diagonal (<span class="math inline">\(x_2 &gt; x_1\)</span>), with 400 training points.</p>
-<div id="8e359ef7" class="cell" data-execution_count="19">
+<div id="c8c3e1b0" class="cell" data-execution_count="19">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>rd <span class="op">=</span> np.random.default_rng(<span class="dv">1</span>)</span>
 <span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>Xd, Xd_te <span class="op">=</span> rd.uniform(<span class="dv">0</span>, <span class="dv">1</span>, (<span class="dv">400</span>, <span class="dv">2</span>)), rd.uniform(<span class="dv">0</span>, <span class="dv">1</span>, (<span class="dv">5000</span>, <span class="dv">2</span>))</span>
 <span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>rotate <span class="op">=</span> <span class="kw">lambda</span> X: np.c_[X[:, <span class="dv">1</span>] <span class="op">-</span> X[:, <span class="dv">0</span>], X[:, <span class="dv">0</span>] <span class="op">+</span> X[:, <span class="dv">1</span>]]          <span class="co"># new features: x2 - x1 and x1 + x2</span></span>
@@ -1065,7 +1099,7 @@ diagonal truth, rotated features  :  2 leaves, test accuracy 0.998</code></pre>
 <p><strong>What it says.</strong> New inputs fall in the region covered by the training data. A tree’s prediction is the constant of a leaf, and the leaves at the edges extend to infinity, so outside the training range the prediction is the constant of the last leaf.</p>
 <p><strong>Why it matters.</strong> Trees <strong>cannot extrapolate</strong> a trend. With inflation, a claim cost that grows with time, or a premium that grows with the insured value, a tree trained on past values predicts the level of the most recent leaf forever (<a href="00_supervised_learning.html">note 00</a>, section 14.3, showed the resulting flat forecast). Inside the range the tree is fine; the damage is to predictions for new regions.</p>
 <p><strong>How to check.</strong> For each feature, the fraction of new inputs below the training minimum or above the maximum; more generally, adversarial validation of training vs new inputs (note 00, section 13.2). Holds vs violated: a linear trend <span class="math inline">\(y = 2x + \varepsilon\)</span> learned on <span class="math inline">\(x\in[0,5]\)</span>, evaluated inside the range and on <span class="math inline">\(x \in [5, 10]\)</span>.</p>
-<div id="294b5276" class="cell" data-execution_count="20">
+<div id="188ad9dc" class="cell" data-execution_count="20">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>re_ <span class="op">=</span> np.random.default_rng(<span class="dv">2</span>)</span>
 <span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>x_in <span class="op">=</span> re_.uniform(<span class="dv">0</span>, <span class="dv">5</span>, <span class="dv">200</span>)<span class="op">;</span> y_in <span class="op">=</span> <span class="dv">2</span> <span class="op">*</span> x_in <span class="op">+</span> re_.normal(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">200</span>)</span>
 <span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>x_out <span class="op">=</span> re_.uniform(<span class="dv">5</span>, <span class="dv">10</span>, <span class="dv">200</span>)<span class="op">;</span> y_out <span class="op">=</span> <span class="dv">2</span> <span class="op">*</span> x_out <span class="op">+</span> re_.normal(<span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">200</span>)</span>
@@ -1106,7 +1140,7 @@ linear + tree on residuals  MSE inside the range   0.79   beyond it    1.10</cod
 <p><strong>What it says.</strong> Greedy search picks the split with the best <em>immediate</em> gain. It finds a good tree when every useful interaction also has some marginal signal, i.e.&nbsp;at least one of the features involved separates the classes a little on its own.</p>
 <p><strong>Why it matters.</strong> In a pure interaction no single feature has any marginal effect. The classic case is XOR: <span class="math inline">\(y = 1\)</span> when exactly one of <span class="math inline">\(x_1 &gt; 0\)</span>, <span class="math inline">\(x_2 &gt; 0\)</span> holds (in insurance: a risk that is high for young drivers of powerful cars and for old drivers of old cars, but average on each feature separately). Every first split has a gain of about zero, so the root threshold lands wherever noise puts it; a depth-limited tree, or a tree stopped by <code>min_impurity_decrease</code>, finds nothing.</p>
 <p><strong>How to check.</strong> A shallow or early-stopped tree does far worse than a deep tree or an ensemble; the root split’s gain is tiny although the model eventually predicts well; domain knowledge suggests interactions. Holds vs violated, and the remedies:</p>
-<div id="002452f6" class="cell" data-execution_count="21">
+<div id="3ffa2425" class="cell" data-execution_count="21">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>rx <span class="op">=</span> np.random.default_rng(<span class="dv">3</span>)</span>
 <span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>Xx, Xx_te <span class="op">=</span> rx.uniform(<span class="op">-</span><span class="dv">1</span>, <span class="dv">1</span>, (<span class="dv">400</span>, <span class="dv">2</span>)), rx.uniform(<span class="op">-</span><span class="dv">1</span>, <span class="dv">1</span>, (<span class="dv">5000</span>, <span class="dv">2</span>))</span>
 <span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>xor <span class="op">=</span> <span class="kw">lambda</span> X: ((X[:, <span class="dv">0</span>] <span class="op">&gt;</span> <span class="dv">0</span>) <span class="op">^</span> (X[:, <span class="dv">1</span>] <span class="op">&gt;</span> <span class="dv">0</span>)).astype(<span class="bu">int</span>)</span>
@@ -1160,7 +1194,7 @@ with the feature x1*x2, depth 1  :   2 leaves, test acc 0.996</code></pre>
 \]</span></p>
 <p>so, keeping the two means <span class="math inline">\(a, b\)</span> fixed, each category is best placed on the side whose mean is <strong>closer to <span class="math inline">\(\bar y_c\)</span></strong>, i.e.&nbsp;left if <span class="math inline">\(\bar y_c \le (a+b)/2\)</span>. Reassigning every category that way cannot increase the cost; recomputing the two side means afterwards cannot increase it either (the mean minimises the squared error, section 3). The result is at least as good as <span class="math inline">\((L^*, R^*)\)</span>, so it is optimal too, and it is a threshold on <span class="math inline">\(\bar y_c\)</span>: a prefix of the sorted order. <span class="math inline">\(\blacksquare\)</span></p>
 <p>For binary classification with Gini, note that the squared error of 0/1 labels around their mean <span class="math inline">\(p\)</span> is <span class="math inline">\(N_1(1-p)^2 + N_0p^2 = Np(1-p)\)</span>, half of <span class="math inline">\(N\cdot\text{Gini}\)</span>: minimising Gini is minimising the squared error of the 0/1 labels, and the same argument applies with <span class="math inline">\(\bar y_c\)</span> = the fraction of class 1. (For more than two classes the trick is not exact; heuristics are used.) The code checks it against brute force over the 31 partitions of 6 categories:</p>
-<div id="ba2c5878" class="cell" data-execution_count="22">
+<div id="14fbe96d" class="cell" data-execution_count="22">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> itertools</span>
 <span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> sse_(v): <span class="cf">return</span> np.<span class="bu">sum</span>((v <span class="op">-</span> v.mean()) <span class="op">**</span> <span class="dv">2</span>) <span class="cf">if</span> <span class="bu">len</span>(v) <span class="cf">else</span> <span class="fl">0.0</span></span>
 <span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>rcat <span class="op">=</span> np.random.default_rng(<span class="dv">2</span>)<span class="op">;</span> k_cat <span class="op">=</span> <span class="dv">6</span></span>
@@ -1187,7 +1221,7 @@ error removed by the one-hot split = 46% of what the best partition removes</cod
 </div>
 <p><strong>One-hot vs native categorical splits.</strong> On one-hot columns a single split can only isolate <em>one</em> category from the rest; grouping several categories takes several splits, each on a smaller subset of the data, so the tree gets deeper and noisier (the last two lines: the best partition groups three categories against three, and one-hot’s best single split removes less than half as much error). <strong>Native</strong> categorical splits use the ordering trick at every node: the original CART, LightGBM, XGBoost’s categorical mode and scikit-learn’s <code>HistGradientBoostingClassifier/Regressor(categorical_features=...)</code> support them. scikit-learn’s <code>DecisionTreeClassifier</code> (version 1.8) does not: it needs numbers. A practical substitute is to encode each category by its mean target (<strong>target encoding</strong>) and let the tree split that number, which is the ordering trick done once at the root; but the encoding uses <span class="math inline">\(y\)</span>, so it must be computed inside each CV training fold (or cross-fitted), or it leaks (<a href="00_supervised_learning.html">note 00</a>, section 14.1). With few categories, one-hot is fine.</p>
 <p><strong>High-cardinality features overfit.</strong> With many categories and few examples per category, the ordering trick sorts categories by <em>noisy</em> means, and the best prefix separates noise very well on the training data. A made-up example: 1,000 claims, a real binary feature (“third party involved”: fraud rate 0.35 vs 0.20) and a repair-shop ID with 200 levels and <strong>no</strong> effect. Training on 700 claims, testing the chosen split on 300:</p>
-<div id="8fe23887" class="cell" data-execution_count="23">
+<div id="217e5ce0" class="cell" data-execution_count="23">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb41"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> gini01(v): <span class="cf">return</span> <span class="dv">2</span> <span class="op">*</span> v.mean() <span class="op">*</span> (<span class="dv">1</span> <span class="op">-</span> v.mean()) <span class="cf">if</span> <span class="bu">len</span>(v) <span class="cf">else</span> <span class="fl">0.0</span></span>
 <span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> split_gain(side, v): <span class="cf">return</span> gini01(v) <span class="op">-</span> (side.mean() <span class="op">*</span> gini01(v[side]) <span class="op">+</span> (<span class="dv">1</span> <span class="op">-</span> side.mean()) <span class="op">*</span> gini01(v[<span class="op">~</span>side]))</span>
 <span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>rh <span class="op">=</span> np.random.default_rng(<span class="dv">0</span>)<span class="op">;</span> m_h <span class="op">=</span> <span class="dv">1000</span></span>
@@ -1219,7 +1253,7 @@ test gain    : shop ID 0.0010   third party 0.0289</code></pre>
 <li>If a feature had <strong>no</strong> NaN in the training rows reaching a node, a NaN at prediction time goes to the child with <strong>more training samples</strong>.</li>
 </ol>
 <p>The tiny examples below check each rule, then a made-up fraud example where fraudulent claims lack the report much more often (60 % vs 15 %) compares native handling with mean imputation and with mean imputation plus a missing-indicator column.</p>
-<div id="1aa6872d" class="cell" data-execution_count="24">
+<div id="396e2c1b" class="cell" data-execution_count="24">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb43"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>X8 <span class="op">=</span> np.array([[<span class="fl">1.</span>], [<span class="fl">2.</span>], [<span class="fl">3.</span>], [np.nan], [np.nan], [<span class="fl">6.</span>], [<span class="fl">7.</span>], [<span class="fl">8.</span>]])</span>
 <span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> labels <span class="kw">in</span> ([<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>], [<span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">1</span>]):</span>
 <span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>    t <span class="op">=</span> DecisionTreeClassifier(max_depth<span class="op">=</span><span class="dv">1</span>).fit(X8, labels)</span>
@@ -1268,7 +1302,7 @@ p_k^{w} = \frac{w_k N_{t,k}}{\sum_{k'} w_{k'} N_{t,k'}},
 \end{aligned}
 \]</span></p>
 <p>A balanced tree flags a leaf as soon as its fraud-to-non-fraud ratio exceeds the overall one, i.e.&nbsp;as soon as the leaf has a higher fraud rate than the portfolio. It is equivalent (for the leaf decisions) to thresholding the unweighted leaf probability at the prevalence instead of at 0.5, plus a change of the splits.</p>
-<div id="80fd3aa2" class="cell" data-execution_count="25">
+<div id="37c343c9" class="cell" data-execution_count="25">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb45"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.datasets <span class="im">import</span> make_classification</span>
 <span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>Xi, yi <span class="op">=</span> make_classification(n_samples<span class="op">=</span><span class="dv">6000</span>, n_features<span class="op">=</span><span class="dv">6</span>, n_informative<span class="op">=</span><span class="dv">3</span>, weights<span class="op">=</span>[<span class="fl">0.97</span>], flip_y<span class="op">=</span><span class="fl">0.01</span>,</span>
 <span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>                             class_sep<span class="op">=</span><span class="fl">0.8</span>, random_state<span class="op">=</span><span class="dv">2</span>)</span>
@@ -1299,7 +1333,7 @@ class_weight=balanced: recall 0.562, precision 0.226, claims flagged 8.7%</code>
 \]</span></p>
 <p>A feature the model does not really use, or uses only to fit noise, gets <span class="math inline">\(\mathrm{PI}\approx 0\)</span> (or slightly negative).</p>
 <p><strong>Demo.</strong> A made-up fraud model with a continuous feature <span class="math inline">\(x_1\)</span> (strong effect), a binary feature <span class="math inline">\(x_2\)</span> (real effect) and a random “claim ID” uniform in <span class="math inline">\([0,1]\)</span> (no effect).</p>
-<div id="067de8d4" class="cell" data-execution_count="26">
+<div id="f546c3fb" class="cell" data-execution_count="26">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb47"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.inspection <span class="im">import</span> permutation_importance</span>
 <span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>rp <span class="op">=</span> np.random.default_rng(<span class="dv">0</span>)<span class="op">;</span> m_p <span class="op">=</span> <span class="dv">1000</span></span>
 <span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>x1p, x2p, idp <span class="op">=</span> rp.normal(size<span class="op">=</span>m_p), rp.integers(<span class="dv">0</span>, <span class="dv">2</span>, m_p), rp.uniform(size<span class="op">=</span>m_p)</span>
@@ -1327,7 +1361,7 @@ train accuracy 0.856, test accuracy 0.690</code></pre>
 </div>
 <p>MDI gives the pure-noise ID a large share of the importance, more than the real binary feature, because the ID offers hundreds of thresholds that the tree uses to fit noise; permutation importance on test data puts it at about zero (negative: shuffling it even helps a little) and ranks the binary feature correctly.</p>
 <p><strong>Correlated features split importance.</strong> Add a near copy of <span class="math inline">\(x_1\)</span> (<span class="math inline">\(x_1\)</span> plus a little noise). The tree uses one or the other at each node, depending on tiny differences, so the importance is shared between them, and neither looks as important as <span class="math inline">\(x_1\)</span> did alone. Permutation importance has a related problem: shuffling one of two copies breaks little, because the model can use the other.</p>
-<div id="ee80df21" class="cell" data-execution_count="27">
+<div id="d7437b5e" class="cell" data-execution_count="27">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb49"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>x1c <span class="op">=</span> x1p <span class="op">+</span> rp.normal(<span class="dv">0</span>, <span class="fl">0.1</span>, m_p)</span>
 <span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>Xq <span class="op">=</span> np.c_[x1p, x1c, x2p]</span>
 <span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>Xq_tr, Xq_te, yq_tr, yq_te <span class="op">=</span> train_test_split(Xq, yp, test_size<span class="op">=</span><span class="fl">0.3</span>, random_state<span class="op">=</span><span class="dv">0</span>)</span>
@@ -1345,7 +1379,7 @@ with the copy   : MDI x1 0.641, copy 0.192, x2 0.167</code></pre>
 <section id="you-need-to-explain-the-model" class="level3">
 <h3 class="anchored" data-anchor-id="you-need-to-explain-the-model">16.5 …you need to explain the model</h3>
 <p><strong>Reading rules from a tree.</strong> Every leaf is a rule: the conjunction of the questions on its path, with the leaf’s prediction and support (number of training examples). A depth-<span class="math inline">\(d\)</span> tree gives at most <span class="math inline">\(2^d\)</span> rules of at most <span class="math inline">\(d\)</span> conditions each. The function below extracts them from the from-scratch tree of section 10; scikit-learn has <code>export_text</code> and <code>plot_tree</code> for its trees.</p>
-<div id="4c3bf34a" class="cell" data-execution_count="28">
+<div id="568bbf9e" class="cell" data-execution_count="28">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb51"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.tree <span class="im">import</span> export_text</span>
 <span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> rules(node, names, path<span class="op">=</span>()):</span>
 <span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> node.is_leaf():</span>
@@ -1382,7 +1416,7 @@ IF x2 &gt; -2.45 AND x2 &gt; 2.30 THEN class 1   (n = 77)
 <li><strong>Association, not causation</strong>: a rule says what the model does, not what would happen if you changed the feature (a rule on “number of previous claims” does not mean that preventing claims changes the risk of that customer).</li>
 <li><strong>Proxies</strong>: a feature can stand in for a sensitive attribute (postcode for income or origin); readable rules make this visible, which is an advantage, but only if someone looks.</li>
 </ul>
-<div id="17fe38a0" class="cell" data-execution_count="29">
+<div id="4dee6c1c" class="cell" data-execution_count="29">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb53"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>rs_ <span class="op">=</span> np.random.default_rng(<span class="dv">0</span>)</span>
 <span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>root_feats <span class="op">=</span> [fn[DecisionTreeClassifier(max_depth<span class="op">=</span><span class="dv">2</span>, random_state<span class="op">=</span><span class="dv">0</span>).fit(Xtr[i], ytr[i]).tree_.feature[<span class="dv">0</span>]]</span>
 <span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>              <span class="cf">for</span> i <span class="kw">in</span> (rs_.integers(<span class="dv">0</span>, <span class="bu">len</span>(ytr), <span class="bu">len</span>(ytr)) <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">30</span>))]</span>

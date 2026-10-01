@@ -541,10 +541,14 @@ One memory cell with old value $c_{t-1} = 0.8$. The gates (computed from $\mathb
 
 $$
 \begin{aligned}
-c_t &= f\,c_{t-1} + i\,\tilde c && \text{memory update}\\
-&= 0.9\cdot0.8 + 0.3\cdot(-0.5) && \text{substitute}\\
-&= 0.72 - 0.15 = 0.57, && \text{keep 90 \% of the old, write 30 \% of the candidate}\\
-h_t &= o\tanh(c_t) = 0.7\cdot\tanh(0.57) = 0.7\cdot0.515 = 0.36. && \text{show 70 \% of the squashed memory}
+c_t &= f\,c_{t-1} + i\,\tilde c \\
+&\quad\small \text{memory update}\\
+&= 0.9\cdot0.8 + 0.3\cdot(-0.5) \\
+&\quad\small \text{substitute}\\
+&= 0.72 - 0.15 = 0.57, \\
+&\quad\small \text{keep 90 \% of the old, write 30 \% of the candidate}\\
+h_t &= o\tanh(c_t) = 0.7\cdot\tanh(0.57) = 0.7\cdot0.515 = 0.36. \\
+&\quad\small \text{show 70 \% of the squashed memory}
 \end{aligned}
 $$
 
@@ -615,7 +619,13 @@ $$\frac{\partial\mathbf{c}_t}{\partial\mathbf{c}_{t-1}} = \mathrm{diag}(\mathbf{
 Collecting the terms:
 
 $$
-\boxed{\frac{\partial\mathbf{c}_t}{\partial\mathbf{c}_{t-1}} = \underbrace{\mathrm{diag}(\mathbf{f}_t)}_{\text{direct path}} + \underbrace{\Big[\mathrm{diag}\big(\mathbf{c}_{t-1}\odot\mathbf{f}_t\odot(1-\mathbf{f}_t)\big)\mathbf{W}_{fh}^\top + \mathrm{diag}\big(\tilde{\mathbf{c}}_t\odot\mathbf{i}_t\odot(1-\mathbf{i}_t)\big)\mathbf{W}_{ih}^\top + \mathrm{diag}\big(\mathbf{i}_t\odot(1-\tilde{\mathbf{c}}_t^2)\big)\mathbf{W}_{ch}^\top\Big]\mathrm{diag}\big(\mathbf{o}_{t-1}\odot(1-\tanh^2\mathbf{c}_{t-1})\big)}_{\text{indirect paths through the gates, via }\mathbf{h}_{t-1}}}
+\boxed{\begin{aligned}
+\frac{\partial\mathbf{c}_t}{\partial\mathbf{c}_{t-1}} &= \underbrace{\mathrm{diag}(\mathbf{f}_t)}_{\text{direct path}} \\
+&\quad + \Big[\mathrm{diag}\big(\mathbf{c}_{t-1}\odot\mathbf{f}_t\odot(1-\mathbf{f}_t)\big)\mathbf{W}_{fh}^\top \\
+&\qquad\ + \mathrm{diag}\big(\tilde{\mathbf{c}}_t\odot\mathbf{i}_t\odot(1-\mathbf{i}_t)\big)\mathbf{W}_{ih}^\top \\
+&\qquad\ + \mathrm{diag}\big(\mathbf{i}_t\odot(1-\tilde{\mathbf{c}}_t^2)\big)\mathbf{W}_{ch}^\top\Big]\mathrm{diag}\big(\mathbf{o}_{t-1}\odot(1-\tanh^2\mathbf{c}_{t-1})\big) \\
+&\qquad \text{(the bracket: indirect paths through the gates, via }\mathbf{h}_{t-1}\text{)}
+\end{aligned}}
 $$
 
 **Why the direct path dominates when $\mathbf{f}\approx\mathbf{1}$.**

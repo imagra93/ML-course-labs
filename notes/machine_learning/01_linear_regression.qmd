@@ -85,10 +85,11 @@ Now $\theta$ is a **single number**, so the loss is an ordinary function of one 
 **The loss is a parabola.** Expand the square $(\theta x^{(i)} - y^{(i)})^2 = \theta^2 (x^{(i)})^2 - 2\theta\,x^{(i)}y^{(i)} + (y^{(i)})^2$ and sum:
 
 $$
-J(\theta) = \frac{1}{2m}\sum_{i=1}^m \big(\theta x^{(i)} - y^{(i)}\big)^2
-= \frac{1}{2m}\Big( S_{xx}\,\theta^2 \;-\; 2\,S_{xy}\,\theta \;+\; S_{yy} \Big),
-\qquad
-S_{xx} = \sum_i \big(x^{(i)}\big)^2,\;\; S_{xy} = \sum_i x^{(i)} y^{(i)},\;\; S_{yy} = \sum_i \big(y^{(i)}\big)^2 .
+\begin{aligned}
+J(\theta) &= \frac{1}{2m}\sum_{i=1}^m \big(\theta x^{(i)} - y^{(i)}\big)^2
+= \frac{1}{2m}\Big( S_{xx}\,\theta^2 \;-\; 2\,S_{xy}\,\theta \;+\; S_{yy} \Big), \\
+&\text{with}\quad S_{xx} = \sum_i \big(x^{(i)}\big)^2,\;\; S_{xy} = \sum_i x^{(i)} y^{(i)},\;\; S_{yy} = \sum_i \big(y^{(i)}\big)^2 .
+\end{aligned}
 $$
 
 $S_{xx}, S_{xy}, S_{yy}$ are just numbers computed from the data. So $J(\theta) = A\theta^2 + B\theta + C$ with $A = S_{xx}/(2m) > 0$ (as long as not every $x^{(i)}$ is 0): a parabola that **opens upward**.
@@ -110,9 +111,12 @@ The captions check out by hand: $J(0.5) = \frac16(3.5 - 28 + 59) = 5.75$ and $J(
 
 $$
 \begin{aligned}
-J'(\theta) &= \frac{1}{2m}\sum_{i=1}^m 2\big(\theta x^{(i)} - y^{(i)}\big)\,x^{(i)} && \text{chain rule: } \tfrac{d}{d\theta}(\theta x - y)^2 = 2(\theta x - y)\cdot x\\
-&= \frac{1}{m}\sum_{i=1}^m \big(\theta x^{(i)} - y^{(i)}\big)\,x^{(i)} && \text{the 2 cancels the } \tfrac12\\
-&= \frac{1}{m}\Big(\theta\sum_{i=1}^m \big(x^{(i)}\big)^2 - \sum_{i=1}^m x^{(i)}y^{(i)}\Big) = \frac{1}{m}\big(S_{xx}\,\theta - S_{xy}\big) && \text{split the sum; } \theta \text{ is the same in every term}
+J'(\theta) &= \frac{1}{2m}\sum_{i=1}^m 2\big(\theta x^{(i)} - y^{(i)}\big)\,x^{(i)} \\
+&\quad\small \text{chain rule: } \tfrac{d}{d\theta}(\theta x - y)^2 = 2(\theta x - y)\cdot x\\
+&= \frac{1}{m}\sum_{i=1}^m \big(\theta x^{(i)} - y^{(i)}\big)\,x^{(i)} \\
+&\quad\small \text{the 2 cancels the } \tfrac12\\
+&= \frac{1}{m}\Big(\theta\sum_{i=1}^m \big(x^{(i)}\big)^2 - \sum_{i=1}^m x^{(i)}y^{(i)}\Big) = \frac{1}{m}\big(S_{xx}\,\theta - S_{xy}\big) \\
+&\quad\small \text{split the sum; } \theta \text{ is the same in every term}
 \end{aligned}
 $$
 
@@ -288,9 +292,10 @@ print("numerical:", num)
 The gradient points in the direction of steepest **increase** of $J$. So take small steps in the opposite direction:
 
 $$
-\boldsymbol{\theta} \leftarrow \boldsymbol{\theta} - \alpha\,\nabla_{\boldsymbol{\theta}} J(\boldsymbol{\theta}) = \boldsymbol{\theta} - \frac{\alpha}{m}\mathbf{X}^\top(\mathbf{X}\boldsymbol{\theta} - \mathbf{y}),
-\qquad\text{i.e.}\qquad
-\theta_j \leftarrow \theta_j - \alpha\,\frac{1}{m}\sum_{i=1}^{m}\big(h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)})-y^{(i)}\big)\,x_j^{(i)}\quad (j = 0,\dots,n).
+\begin{gathered}
+\boldsymbol{\theta} \leftarrow \boldsymbol{\theta} - \alpha\,\nabla_{\boldsymbol{\theta}} J(\boldsymbol{\theta}) = \boldsymbol{\theta} - \frac{\alpha}{m}\mathbf{X}^\top(\mathbf{X}\boldsymbol{\theta} - \mathbf{y}), \\
+\text{i.e.}\quad \theta_j \leftarrow \theta_j - \alpha\,\frac{1}{m}\sum_{i=1}^{m}\big(h_{\boldsymbol{\theta}}(\mathbf{x}^{(i)})-y^{(i)}\big)\,x_j^{(i)}\quad (j = 0,\dots,n).
+\end{gathered}
 $$
 
 *Why does a small step decrease $J$?* First-order Taylor expansion: $J(\boldsymbol{\theta} - \alpha\mathbf{g}) \approx J(\boldsymbol{\theta}) - \alpha\,\mathbf{g}^\top\mathbf{g} = J(\boldsymbol{\theta}) - \alpha\lVert\mathbf{g}\rVert^2 < J(\boldsymbol{\theta})$ whenever $\mathbf{g}\neq 0$ and $\alpha$ is small.
@@ -428,10 +433,14 @@ Then $\hat{\mathbf{y}} = \mathbf{X}\boldsymbol{\theta}$ (row $i$ is $(\mathbf{x}
 
 $$
 \begin{aligned}
-\tilde J(\boldsymbol{\theta}) &= (\mathbf{y}-\mathbf{X}\boldsymbol{\theta})^\top(\mathbf{y}-\mathbf{X}\boldsymbol{\theta}) && \text{sum of squared errors}\\
-&= \mathbf{y}^\top\mathbf{y}-\mathbf{y}^\top\mathbf{X}\boldsymbol{\theta}-\boldsymbol{\theta}^\top\mathbf{X}^\top\mathbf{y}+\boldsymbol{\theta}^\top\mathbf{X}^\top\mathbf{X}\boldsymbol{\theta} && \text{multiply out, using } (\mathbf{X}\boldsymbol{\theta})^\top = \boldsymbol{\theta}^\top\mathbf{X}^\top\\
-\nabla_{\boldsymbol{\theta}}\tilde J &= \mathbf{0}-\mathbf{X}^\top\mathbf{y}-\mathbf{X}^\top\mathbf{y}+2\mathbf{X}^\top\mathbf{X}\boldsymbol{\theta} && \mathbf{y}^\top\mathbf{X}\boldsymbol{\theta} = (\mathbf{X}^\top\mathbf{y})^\top\boldsymbol{\theta} = \boldsymbol{\theta}^\top\mathbf{X}^\top\mathbf{y}\text{: Fact 1; last term: Fact 2}\\
-&= -2\mathbf{X}^\top\mathbf{y}+2\mathbf{X}^\top\mathbf{X}\boldsymbol{\theta}, && \text{which is } 2m \text{ times the gradient of section 4.}
+\tilde J(\boldsymbol{\theta}) &= (\mathbf{y}-\mathbf{X}\boldsymbol{\theta})^\top(\mathbf{y}-\mathbf{X}\boldsymbol{\theta}) \\
+&\quad\small \text{sum of squared errors}\\
+&= \mathbf{y}^\top\mathbf{y}-\mathbf{y}^\top\mathbf{X}\boldsymbol{\theta}-\boldsymbol{\theta}^\top\mathbf{X}^\top\mathbf{y}+\boldsymbol{\theta}^\top\mathbf{X}^\top\mathbf{X}\boldsymbol{\theta} \\
+&\quad\small \text{multiply out, using } (\mathbf{X}\boldsymbol{\theta})^\top = \boldsymbol{\theta}^\top\mathbf{X}^\top\\
+\nabla_{\boldsymbol{\theta}}\tilde J &= \mathbf{0}-\mathbf{X}^\top\mathbf{y}-\mathbf{X}^\top\mathbf{y}+2\mathbf{X}^\top\mathbf{X}\boldsymbol{\theta} \\
+&\quad\small \mathbf{y}^\top\mathbf{X}\boldsymbol{\theta} = (\mathbf{X}^\top\mathbf{y})^\top\boldsymbol{\theta} = \boldsymbol{\theta}^\top\mathbf{X}^\top\mathbf{y}\text{: Fact 1; last term: Fact 2}\\
+&= -2\mathbf{X}^\top\mathbf{y}+2\mathbf{X}^\top\mathbf{X}\boldsymbol{\theta}, \\
+&\quad\small \text{which is } 2m \text{ times the gradient of section 4.}
 \end{aligned}
 $$
 
@@ -457,9 +466,12 @@ $$
 $$
 \begin{aligned}
 \mathbf{X}^\top\mathbf{X} &= \begin{pmatrix} m & \sum x\\ \sum x & \sum x^2\end{pmatrix} = \begin{pmatrix} 3 & 6\\ 6 & 14\end{pmatrix},
-\qquad \mathbf{X}^\top\mathbf{y} = \begin{pmatrix}\sum y\\ \sum xy\end{pmatrix} = \begin{pmatrix} 11\\ 28\end{pmatrix} && \text{column of ones and column of } x\\
-(\mathbf{X}^\top\mathbf{X})^{-1} &= \frac{1}{3\cdot14 - 6\cdot6}\begin{pmatrix} 14 & -6\\ -6 & 3\end{pmatrix} = \frac16\begin{pmatrix} 14 & -6\\ -6 & 3\end{pmatrix} && 2\times2 \text{ inverse: swap the diagonal, negate the rest, divide by the determinant}\\
-\boldsymbol{\theta}^* &= \frac16\begin{pmatrix} 14\cdot11 - 6\cdot28\\ -6\cdot11 + 3\cdot28\end{pmatrix} = \frac16\begin{pmatrix} -14\\ 18\end{pmatrix} = \begin{pmatrix} -7/3\\ 3\end{pmatrix}. && \text{multiply}
+\qquad \mathbf{X}^\top\mathbf{y} = \begin{pmatrix}\sum y\\ \sum xy\end{pmatrix} = \begin{pmatrix} 11\\ 28\end{pmatrix} \\
+&\quad\small \text{column of ones and column of } x\\
+(\mathbf{X}^\top\mathbf{X})^{-1} &= \frac{1}{3\cdot14 - 6\cdot6}\begin{pmatrix} 14 & -6\\ -6 & 3\end{pmatrix} = \frac16\begin{pmatrix} 14 & -6\\ -6 & 3\end{pmatrix} \\
+&\quad\small 2\times2 \text{ inverse: swap the diagonal, negate the rest, divide by the determinant}\\
+\boldsymbol{\theta}^* &= \frac16\begin{pmatrix} 14\cdot11 - 6\cdot28\\ -6\cdot11 + 3\cdot28\end{pmatrix} = \frac16\begin{pmatrix} -14\\ 18\end{pmatrix} = \begin{pmatrix} -7/3\\ 3\end{pmatrix}. \\
+&\quad\small \text{multiply}
 \end{aligned}
 $$
 
@@ -552,9 +564,12 @@ In one dimension this is $\theta_{\text{new}} = \theta_{\text{old}} - J'(\theta_
 
 $$
 \begin{aligned}
-\boldsymbol{\theta}_{\text{new}} &= \boldsymbol{\theta}_{\text{old}} - \Big(\tfrac1m\mathbf{X}^\top\mathbf{X}\Big)^{-1}\tfrac1m\big(\mathbf{X}^\top\mathbf{X}\boldsymbol{\theta}_{\text{old}} - \mathbf{X}^\top\mathbf{y}\big) && \nabla J \text{ and } \nabla^2 J\text{; the Hessian does not depend on } \boldsymbol{\theta}\\
-&= \boldsymbol{\theta}_{\text{old}} - \underbrace{(\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{X}}_{=\,\mathbf{I}}\,\boldsymbol{\theta}_{\text{old}} + (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{y} && \text{the } \tfrac1m \text{ cancel; distribute}\\
-&= (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{y}. && \text{the } \boldsymbol{\theta}_{\text{old}} \text{ terms cancel}
+\boldsymbol{\theta}_{\text{new}} &= \boldsymbol{\theta}_{\text{old}} - \Big(\tfrac1m\mathbf{X}^\top\mathbf{X}\Big)^{-1}\tfrac1m\big(\mathbf{X}^\top\mathbf{X}\boldsymbol{\theta}_{\text{old}} - \mathbf{X}^\top\mathbf{y}\big) \\
+&\quad\small \nabla J \text{ and } \nabla^2 J\text{; the Hessian does not depend on } \boldsymbol{\theta}\\
+&= \boldsymbol{\theta}_{\text{old}} - \underbrace{(\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{X}}_{=\,\mathbf{I}}\,\boldsymbol{\theta}_{\text{old}} + (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{y} \\
+&\quad\small \text{the } \tfrac1m \text{ cancel; distribute}\\
+&= (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{y}. \\
+&\quad\small \text{the } \boldsymbol{\theta}_{\text{old}} \text{ terms cancel}
 \end{aligned}
 $$
 
@@ -713,9 +728,10 @@ Metrics measure the performance of a model on validation and test data. Unlike l
 $$
 \begin{aligned}
 \text{MAE} &= \tfrac{10+10+20+10+10}{5} = 12, \qquad
-\text{MSE} = \tfrac{100+100+400+100+100}{5} = 160, \qquad \text{RMSE} = \sqrt{160} = 12.6,\\
-\bar y &= 200,\qquad \textstyle\sum(y-\bar y)^2 = 0 + 2\,500 + 10\,000 + 2\,500 + 10\,000 = 25\,000,\qquad
-R^2 = 1 - \tfrac{800}{25\,000} = 0.968,\\
+\text{MSE} = \tfrac{100+100+400+100+100}{5} = 160, \\
+&\text{RMSE} = \sqrt{160} = 12.6, \\
+\bar y &= 200,\qquad \textstyle\sum(y-\bar y)^2 = 0 + 2\,500 + 10\,000 + 2\,500 + 10\,000 = 25\,000, \\
+&R^2 = 1 - \tfrac{800}{25\,000} = 0.968, \\
 \text{MAPE} &= \tfrac{100}{5}\Big(\tfrac{10}{200}+\tfrac{10}{150}+\tfrac{20}{300}+\tfrac{10}{250}+\tfrac{10}{100}\Big) = 6.5\,\%.
 \end{aligned}
 $$
@@ -746,10 +762,14 @@ On the *training* data of a least-squares fit with an intercept, the total varia
 
 $$
 \begin{aligned}
-y^{(i)} - \bar y &= (\hat y^{(i)} - \bar y) + e^{(i)}, \qquad e^{(i)} = y^{(i)} - \hat y^{(i)} && \text{add and subtract } \hat y^{(i)}\\
-\sum_i (y^{(i)} - \bar y)^2 &= \sum_i (\hat y^{(i)} - \bar y)^2 + \sum_i (e^{(i)})^2 + 2\sum_i(\hat y^{(i)} - \bar y)\,e^{(i)} && \text{square and sum}\\
-\sum_i \hat y^{(i)} e^{(i)} &= \boldsymbol{\theta}^{*\top}\mathbf{X}^\top\mathbf{e} = 0,\qquad \bar y\sum_i e^{(i)} = 0 && \text{normal equations (section 7): } \mathbf{X}^\top\mathbf{e} = \mathbf{0}\text{, first column of ones}\\
-\underbrace{\textstyle\sum_i (y^{(i)} - \bar y)^2}_{\text{TSS (total)}} &= \underbrace{\textstyle\sum_i (\hat y^{(i)} - \bar y)^2}_{\text{ESS (explained)}} + \underbrace{\textstyle\sum_i (e^{(i)})^2}_{\text{SSE (unexplained)}} . && \text{the cross term vanishes}
+y^{(i)} - \bar y &= (\hat y^{(i)} - \bar y) + e^{(i)}, \qquad e^{(i)} = y^{(i)} - \hat y^{(i)} \\
+&\quad\small \text{add and subtract } \hat y^{(i)}\\
+\sum_i (y^{(i)} - \bar y)^2 &= \sum_i (\hat y^{(i)} - \bar y)^2 + \sum_i (e^{(i)})^2 + 2\sum_i(\hat y^{(i)} - \bar y)\,e^{(i)} \\
+&\quad\small \text{square and sum}\\
+\sum_i \hat y^{(i)} e^{(i)} &= \boldsymbol{\theta}^{*\top}\mathbf{X}^\top\mathbf{e} = 0,\qquad \bar y\sum_i e^{(i)} = 0 \\
+&\quad\small \text{normal equations (section 7): } \mathbf{X}^\top\mathbf{e} = \mathbf{0}\text{, first column of ones}\\
+\underbrace{\textstyle\sum_i (y^{(i)} - \bar y)^2}_{\text{TSS (total)}} &= \underbrace{\textstyle\sum_i (\hat y^{(i)} - \bar y)^2}_{\text{ESS (explained)}} + \underbrace{\textstyle\sum_i (e^{(i)})^2}_{\text{SSE (unexplained)}} . \\
+&\quad\small \text{the cross term vanishes}
 \end{aligned}
 $$
 
@@ -824,8 +844,10 @@ For a random vector $\mathbf{z}$, $\mathrm{Cov}(\mathbf{z}) = \mathbb{E}\big[(\m
 
 $$
 \begin{aligned}
-\mathbb{E}[\mathbf{A}\mathbf{z} + \mathbf{b}] &= \mathbf{A}\,\mathbb{E}[\mathbf{z}] + \mathbf{b} && \text{linearity of expectation}\\
-\mathrm{Cov}(\mathbf{A}\mathbf{z} + \mathbf{b}) &= \mathbb{E}\big[\mathbf{A}(\mathbf{z} - \mathbb{E}\mathbf{z})(\mathbf{z} - \mathbb{E}\mathbf{z})^\top\mathbf{A}^\top\big] = \mathbf{A}\,\mathrm{Cov}(\mathbf{z})\,\mathbf{A}^\top && \mathbf{A}\mathbf{z} + \mathbf{b} - \mathbb{E}[\cdot] = \mathbf{A}(\mathbf{z} - \mathbb{E}\mathbf{z})\text{; constants leave the expectation}
+\mathbb{E}[\mathbf{A}\mathbf{z} + \mathbf{b}] &= \mathbf{A}\,\mathbb{E}[\mathbf{z}] + \mathbf{b} \\
+&\quad\small \text{linearity of expectation}\\
+\mathrm{Cov}(\mathbf{A}\mathbf{z} + \mathbf{b}) &= \mathbb{E}\big[\mathbf{A}(\mathbf{z} - \mathbb{E}\mathbf{z})(\mathbf{z} - \mathbb{E}\mathbf{z})^\top\mathbf{A}^\top\big] = \mathbf{A}\,\mathrm{Cov}(\mathbf{z})\,\mathbf{A}^\top \\
+&\quad\small \mathbf{A}\mathbf{z} + \mathbf{b} - \mathbb{E}[\cdot] = \mathbf{A}(\mathbf{z} - \mathbb{E}\mathbf{z})\text{; constants leave the expectation}
 \end{aligned}
 $$
 
@@ -868,9 +890,10 @@ $$
 **One feature with intercept.** $\mathbf{X}^\top\mathbf{X} = \begin{pmatrix} m & \sum x\\ \sum x & \sum x^2\end{pmatrix}$, and the slope entry of its inverse is
 
 $$
-\big[(\mathbf{X}^\top\mathbf{X})^{-1}\big]_{11} = \frac{m}{m\sum_i x_i^2 - (\sum_i x_i)^2} = \frac{1}{\sum_i x_i^2 - m\bar x^2} = \frac{1}{\sum_i (x_i - \bar x)^2}
-\quad\Longrightarrow\quad
-\mathrm{Var}(\hat\theta_1) = \frac{\sigma^2}{\sum_i (x_i - \bar x)^2},
+\begin{gathered}
+\big[(\mathbf{X}^\top\mathbf{X})^{-1}\big]_{11} = \frac{m}{m\sum_i x_i^2 - (\sum_i x_i)^2} = \frac{1}{\sum_i x_i^2 - m\bar x^2} = \frac{1}{\sum_i (x_i - \bar x)^2} \\
+\Longrightarrow\quad \mathrm{Var}(\hat\theta_1) = \frac{\sigma^2}{\sum_i (x_i - \bar x)^2},
+\end{gathered}
 $$
 
 (divide numerator and denominator by $m$ and use $\sum_i x_i = m\bar x$, then $\sum_i(x_i - \bar x)^2 = \sum_i x_i^2 - m\bar x^2$). The slope is precise when the noise is small, when there are many points and when the $x$'s are spread out. For the three points $\sum_i (x_i - \bar x)^2 = 1 + 0 + 1 = 2$, so $\mathrm{Var}(\hat\theta_1) = \sigma^2/2$, the $\frac36$ entry of $(\mathbf{X}^\top\mathbf{X})^{-1}$ in section 7.
@@ -898,10 +921,14 @@ The residuals are the part of the noise the model could not absorb. They are **n
 
 $$
 \begin{aligned}
-\text{SSE} = \mathbf{e}^\top\mathbf{e} &= \boldsymbol{\varepsilon}^\top(\mathbf{I}-\mathbf{H})^\top(\mathbf{I}-\mathbf{H})\boldsymbol{\varepsilon} = \boldsymbol{\varepsilon}^\top(\mathbf{I}-\mathbf{H})\boldsymbol{\varepsilon} && \text{symmetric and idempotent}\\
-&= \mathrm{tr}\big(\boldsymbol{\varepsilon}^\top(\mathbf{I}-\mathbf{H})\boldsymbol{\varepsilon}\big) = \mathrm{tr}\big((\mathbf{I}-\mathbf{H})\boldsymbol{\varepsilon}\boldsymbol{\varepsilon}^\top\big) && \text{a number is its own trace; cyclic property}\\
-\mathbb{E}[\text{SSE}] &= \mathrm{tr}\big((\mathbf{I}-\mathbf{H})\,\mathbb{E}[\boldsymbol{\varepsilon}\boldsymbol{\varepsilon}^\top]\big) && \text{trace and expectation are both linear}\\
-&= \mathrm{tr}\big((\mathbf{I}-\mathbf{H})\,\sigma^2\mathbf{I}\big) = \sigma^2\,\mathrm{tr}(\mathbf{I}-\mathbf{H}) = \sigma^2(m - n - 1) . && \mathbb{E}[\boldsymbol{\varepsilon}\boldsymbol{\varepsilon}^\top] = \mathrm{Cov}(\boldsymbol{\varepsilon}) = \sigma^2\mathbf{I}\text{ by (i), (ii)}
+\text{SSE} = \mathbf{e}^\top\mathbf{e} &= \boldsymbol{\varepsilon}^\top(\mathbf{I}-\mathbf{H})^\top(\mathbf{I}-\mathbf{H})\boldsymbol{\varepsilon} = \boldsymbol{\varepsilon}^\top(\mathbf{I}-\mathbf{H})\boldsymbol{\varepsilon} \\
+&\quad\small \text{symmetric and idempotent}\\
+&= \mathrm{tr}\big(\boldsymbol{\varepsilon}^\top(\mathbf{I}-\mathbf{H})\boldsymbol{\varepsilon}\big) = \mathrm{tr}\big((\mathbf{I}-\mathbf{H})\boldsymbol{\varepsilon}\boldsymbol{\varepsilon}^\top\big) \\
+&\quad\small \text{a number is its own trace; cyclic property}\\
+\mathbb{E}[\text{SSE}] &= \mathrm{tr}\big((\mathbf{I}-\mathbf{H})\,\mathbb{E}[\boldsymbol{\varepsilon}\boldsymbol{\varepsilon}^\top]\big) \\
+&\quad\small \text{trace and expectation are both linear}\\
+&= \mathrm{tr}\big((\mathbf{I}-\mathbf{H})\,\sigma^2\mathbf{I}\big) = \sigma^2\,\mathrm{tr}(\mathbf{I}-\mathbf{H}) = \sigma^2(m - n - 1) . \\
+&\quad\small \mathbb{E}[\boldsymbol{\varepsilon}\boldsymbol{\varepsilon}^\top] = \mathrm{Cov}(\boldsymbol{\varepsilon}) = \sigma^2\mathbf{I}\text{ by (i), (ii)}
 \end{aligned}
 $$
 
@@ -1049,12 +1076,18 @@ plt.tight_layout(); plt.show()
 
 $$
 \begin{aligned}
-\mathbb{E}[\tilde{\boldsymbol{\theta}}] &= \mathbf{C}\mathbf{X}\boldsymbol{\theta} = \boldsymbol{\theta} + \mathbf{D}\mathbf{X}\boldsymbol{\theta} && \mathbb{E}[\mathbf{y}] = \mathbf{X}\boldsymbol{\theta}\text{ by (i)}\\
-\text{unbiased for every } \boldsymbol{\theta} \;&\Longleftrightarrow\; \mathbf{D}\mathbf{X} = \mathbf{0} && \text{the extra term must vanish for all } \boldsymbol{\theta}\\
-\mathrm{Cov}(\tilde{\boldsymbol{\theta}}) &= \sigma^2\mathbf{C}\mathbf{C}^\top && \text{rule of 14.1 and (ii)}\\
-&= \sigma^2\big[(\mathbf{X}^\top\mathbf{X})^{-1} + (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{D}^\top + \mathbf{D}\mathbf{X}(\mathbf{X}^\top\mathbf{X})^{-1} + \mathbf{D}\mathbf{D}^\top\big] && \text{multiply out } \mathbf{C}\mathbf{C}^\top\\
-&= \sigma^2(\mathbf{X}^\top\mathbf{X})^{-1} + \sigma^2\mathbf{D}\mathbf{D}^\top && \mathbf{D}\mathbf{X} = \mathbf{0}\text{ and } \mathbf{X}^\top\mathbf{D}^\top = (\mathbf{D}\mathbf{X})^\top = \mathbf{0}\\
-&= \mathrm{Cov}(\hat{\boldsymbol{\theta}}) + \sigma^2\mathbf{D}\mathbf{D}^\top . && \text{section 14.3}
+\mathbb{E}[\tilde{\boldsymbol{\theta}}] &= \mathbf{C}\mathbf{X}\boldsymbol{\theta} = \boldsymbol{\theta} + \mathbf{D}\mathbf{X}\boldsymbol{\theta} \\
+&\quad\small \mathbb{E}[\mathbf{y}] = \mathbf{X}\boldsymbol{\theta}\text{ by (i)}\\
+\text{unbiased for every } \boldsymbol{\theta} \;&\Longleftrightarrow\; \mathbf{D}\mathbf{X} = \mathbf{0} \\
+&\quad\small \text{the extra term must vanish for all } \boldsymbol{\theta}\\
+\mathrm{Cov}(\tilde{\boldsymbol{\theta}}) &= \sigma^2\mathbf{C}\mathbf{C}^\top \\
+&\quad\small \text{rule of 14.1 and (ii)}\\
+&= \sigma^2\big[(\mathbf{X}^\top\mathbf{X})^{-1} + (\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{D}^\top + \mathbf{D}\mathbf{X}(\mathbf{X}^\top\mathbf{X})^{-1} + \mathbf{D}\mathbf{D}^\top\big] \\
+&\quad\small \text{multiply out } \mathbf{C}\mathbf{C}^\top\\
+&= \sigma^2(\mathbf{X}^\top\mathbf{X})^{-1} + \sigma^2\mathbf{D}\mathbf{D}^\top \\
+&\quad\small \mathbf{D}\mathbf{X} = \mathbf{0}\text{ and } \mathbf{X}^\top\mathbf{D}^\top = (\mathbf{D}\mathbf{X})^\top = \mathbf{0}\\
+&= \mathrm{Cov}(\hat{\boldsymbol{\theta}}) + \sigma^2\mathbf{D}\mathbf{D}^\top . \\
+&\quad\small \text{section 14.3}
 \end{aligned}
 $$
 
@@ -1189,9 +1222,12 @@ With positively correlated errors and a feature that itself changes slowly (a tr
 
 $$
 \begin{aligned}
-\text{DW} &= \frac{\sum_{t=2}^m (e_t - e_{t-1})^2}{\sum_{t=1}^m e_t^2} && \text{definition}\\
-&= \frac{\sum_{t=2}^m e_t^2 + \sum_{t=2}^m e_{t-1}^2 - 2\sum_{t=2}^m e_te_{t-1}}{\sum_{t=1}^m e_t^2} && \text{expand the square}\\
-&\approx \frac{2\sum_{t} e_t^2 - 2\sum_{t=2}^m e_te_{t-1}}{\sum_{t} e_t^2} = 2(1 - r_1) . && \text{each of the first two sums misses only one end term}
+\text{DW} &= \frac{\sum_{t=2}^m (e_t - e_{t-1})^2}{\sum_{t=1}^m e_t^2} \\
+&\quad\small \text{definition}\\
+&= \frac{\sum_{t=2}^m e_t^2 + \sum_{t=2}^m e_{t-1}^2 - 2\sum_{t=2}^m e_te_{t-1}}{\sum_{t=1}^m e_t^2} \\
+&\quad\small \text{expand the square}\\
+&\approx \frac{2\sum_{t} e_t^2 - 2\sum_{t=2}^m e_te_{t-1}}{\sum_{t} e_t^2} = 2(1 - r_1) . \\
+&\quad\small \text{each of the first two sums misses only one end term}
 \end{aligned}
 $$
 
@@ -1327,9 +1363,12 @@ where $\text{SSE}_\lambda$ is the residual sum of squares of the regression of $
 2. **Weighted least squares** when the variance can be modelled, $\mathrm{Var}(\varepsilon_i) = \sigma^2/w_i$ with known weights $w_i$ (for example, $y_i$ is the average of $n_i$ claims, so $w_i = n_i$). Minimise $J_w(\boldsymbol{\theta}) = \sum_i w_i(y_i - \boldsymbol{\theta}^\top\mathbf{x}^{(i)})^2 = (\mathbf{y}-\mathbf{X}\boldsymbol{\theta})^\top\mathbf{W}(\mathbf{y}-\mathbf{X}\boldsymbol{\theta})$ with $\mathbf{W} = \mathrm{diag}(w_i)$:
 $$
 \begin{aligned}
-J_w(\boldsymbol{\theta}) &= \mathbf{y}^\top\mathbf{W}\mathbf{y} - 2(\mathbf{X}^\top\mathbf{W}\mathbf{y})^\top\boldsymbol{\theta} + \boldsymbol{\theta}^\top\mathbf{X}^\top\mathbf{W}\mathbf{X}\boldsymbol{\theta} && \text{multiply out; } \mathbf{W} \text{ symmetric, a number equals its transpose}\\
-\nabla J_w &= -2\mathbf{X}^\top\mathbf{W}\mathbf{y} + 2\mathbf{X}^\top\mathbf{W}\mathbf{X}\boldsymbol{\theta} = \mathbf{0} && \text{Facts 1 and 2}\\
-\boldsymbol{\theta}_{\text{WLS}} &= (\mathbf{X}^\top\mathbf{W}\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{W}\mathbf{y} . && \text{solve}
+J_w(\boldsymbol{\theta}) &= \mathbf{y}^\top\mathbf{W}\mathbf{y} - 2(\mathbf{X}^\top\mathbf{W}\mathbf{y})^\top\boldsymbol{\theta} + \boldsymbol{\theta}^\top\mathbf{X}^\top\mathbf{W}\mathbf{X}\boldsymbol{\theta} \\
+&\quad\small \text{multiply out; } \mathbf{W} \text{ symmetric, a number equals its transpose}\\
+\nabla J_w &= -2\mathbf{X}^\top\mathbf{W}\mathbf{y} + 2\mathbf{X}^\top\mathbf{W}\mathbf{X}\boldsymbol{\theta} = \mathbf{0} \\
+&\quad\small \text{Facts 1 and 2}\\
+\boldsymbol{\theta}_{\text{WLS}} &= (\mathbf{X}^\top\mathbf{W}\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{W}\mathbf{y} . \\
+&\quad\small \text{solve}
 \end{aligned}
 $$
 *Why it is the right thing:* with $\tilde{\mathbf{y}} = \mathbf{W}^{1/2}\mathbf{y}$ and $\tilde{\mathbf{X}} = \mathbf{W}^{1/2}\mathbf{X}$ (each row multiplied by $\sqrt{w_i}$), $\tilde{\mathbf{y}} = \tilde{\mathbf{X}}\boldsymbol{\theta} + \mathbf{W}^{1/2}\boldsymbol{\varepsilon}$ and $\mathrm{Cov}(\mathbf{W}^{1/2}\boldsymbol{\varepsilon}) = \mathbf{W}^{1/2}(\sigma^2\mathbf{W}^{-1})\mathbf{W}^{1/2} = \sigma^2\mathbf{I}$: the transformed problem is homoscedastic, so OLS on it is BLUE (Gauss–Markov), and it is exactly WLS because $\tilde{\mathbf{X}}^\top\tilde{\mathbf{X}} = \mathbf{X}^\top\mathbf{W}\mathbf{X}$ and $\tilde{\mathbf{X}}^\top\tilde{\mathbf{y}} = \mathbf{X}^\top\mathbf{W}\mathbf{y}$. By 14.3 on the transformed problem, $\mathrm{Cov}(\boldsymbol{\theta}_{\text{WLS}}) = \sigma^2(\mathbf{X}^\top\mathbf{W}\mathbf{X})^{-1}$. When the weights are unknown, **feasible WLS** estimates the variance function from the OLS residuals first. A convenient model is a power law, $\sigma(x) \propto x^{\gamma}$: regress $\log e_i^2$ on $\log x_i$, and use $w_i = 1/\hat\sigma_i^2$ with $\log\hat\sigma_i^2$ the fitted values (the weights only need to be proportional to $1/\sigma_i^2$, so the constant offset between $\mathbb{E}[\log\varepsilon^2]$ and $\log\sigma^2$ does not matter). scikit-learn: `LinearRegression().fit(X, y, sample_weight=w)`.
@@ -1458,9 +1497,12 @@ Even with 8 points and skewed noise, the coefficient intervals keep their 95 % c
 
 $$
 \begin{aligned}
-(\mathbf{X}^\top\mathbf{X})^{-1} &= \mathbf{V}\boldsymbol{\Lambda}^{-1}\mathbf{V}^\top = \sum_k \frac{\mathbf{v}_k\mathbf{v}_k^\top}{\lambda_k} && \text{check: } \mathbf{V}\boldsymbol{\Lambda}\mathbf{V}^\top\mathbf{V}\boldsymbol{\Lambda}^{-1}\mathbf{V}^\top = \mathbf{I}\\
-\mathrm{Var}(\hat\theta_j) &= \sigma^2\big[(\mathbf{X}^\top\mathbf{X})^{-1}\big]_{jj} = \sigma^2\sum_k\frac{v_{jk}^2}{\lambda_k} && \text{section 14.3}\\
-\mathrm{Var}(\mathbf{v}_k^\top\hat{\boldsymbol{\theta}}) &= \sigma^2\,\mathbf{v}_k^\top(\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{v}_k = \frac{\sigma^2}{\lambda_k}, \qquad \lambda_k = \mathbf{v}_k^\top\mathbf{X}^\top\mathbf{X}\mathbf{v}_k = \lVert\mathbf{X}\mathbf{v}_k\rVert^2 . && \text{orthonormality}
+(\mathbf{X}^\top\mathbf{X})^{-1} &= \mathbf{V}\boldsymbol{\Lambda}^{-1}\mathbf{V}^\top = \sum_k \frac{\mathbf{v}_k\mathbf{v}_k^\top}{\lambda_k} \\
+&\quad\small \text{check: } \mathbf{V}\boldsymbol{\Lambda}\mathbf{V}^\top\mathbf{V}\boldsymbol{\Lambda}^{-1}\mathbf{V}^\top = \mathbf{I}\\
+\mathrm{Var}(\hat\theta_j) &= \sigma^2\big[(\mathbf{X}^\top\mathbf{X})^{-1}\big]_{jj} = \sigma^2\sum_k\frac{v_{jk}^2}{\lambda_k} \\
+&\quad\small \text{section 14.3}\\
+\mathrm{Var}(\mathbf{v}_k^\top\hat{\boldsymbol{\theta}}) &= \sigma^2\,\mathbf{v}_k^\top(\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{v}_k = \frac{\sigma^2}{\lambda_k}, \qquad \lambda_k = \mathbf{v}_k^\top\mathbf{X}^\top\mathbf{X}\mathbf{v}_k = \lVert\mathbf{X}\mathbf{v}_k\rVert^2 . \\
+&\quad\small \text{orthonormality}
 \end{aligned}
 $$
 
@@ -1476,9 +1518,12 @@ Apply it with $a = \mathbf{x}_j^\top\mathbf{x}_j$, $\mathbf{b} = \mathbf{X}_{-j}
 
 $$
 \begin{aligned}
-\big[(\mathbf{X}_c^\top\mathbf{X}_c)^{-1}\big]_{jj} &= \frac{1}{\mathbf{x}_j^\top\mathbf{x}_j - \mathbf{x}_j^\top\mathbf{X}_{-j}(\mathbf{X}_{-j}^\top\mathbf{X}_{-j})^{-1}\mathbf{X}_{-j}^\top\mathbf{x}_j} && \text{lemma}\\
-&= \frac{1}{\mathbf{x}_j^\top(\mathbf{I}-\mathbf{H}_{-j})\mathbf{x}_j} = \frac{1}{\lVert(\mathbf{I}-\mathbf{H}_{-j})\mathbf{x}_j\rVert^2} = \frac{1}{\text{RSS}_j} && \mathbf{I}-\mathbf{H}_{-j}\text{ symmetric and idempotent}\\
-&= \frac{1}{\text{TSS}_j\,(1 - R_j^2)} . && \text{definition of } R^2
+\big[(\mathbf{X}_c^\top\mathbf{X}_c)^{-1}\big]_{jj} &= \frac{1}{\mathbf{x}_j^\top\mathbf{x}_j - \mathbf{x}_j^\top\mathbf{X}_{-j}(\mathbf{X}_{-j}^\top\mathbf{X}_{-j})^{-1}\mathbf{X}_{-j}^\top\mathbf{x}_j} \\
+&\quad\small \text{lemma}\\
+&= \frac{1}{\mathbf{x}_j^\top(\mathbf{I}-\mathbf{H}_{-j})\mathbf{x}_j} = \frac{1}{\lVert(\mathbf{I}-\mathbf{H}_{-j})\mathbf{x}_j\rVert^2} = \frac{1}{\text{RSS}_j} \\
+&\quad\small \mathbf{I}-\mathbf{H}_{-j}\text{ symmetric and idempotent}\\
+&= \frac{1}{\text{TSS}_j\,(1 - R_j^2)} . \\
+&\quad\small \text{definition of } R^2
 \end{aligned}
 $$
 
@@ -1656,9 +1701,12 @@ $$
 
 $$
 \begin{aligned}
-\hat{\boldsymbol{\theta}}_{(i)} &= \Big(\mathbf{M}^{-1} + \frac{\mathbf{c}\mathbf{c}^\top}{1-h}\Big)(\mathbf{X}^\top\mathbf{y} - \mathbf{x}_iy_i) && \text{normal equation without row } i\\
-&= \hat{\boldsymbol{\theta}} - \mathbf{c}\,y_i + \frac{\mathbf{c}\,\hat y_i}{1-h} - \frac{\mathbf{c}\,h\,y_i}{1-h} && \mathbf{M}^{-1}\mathbf{X}^\top\mathbf{y} = \hat{\boldsymbol{\theta}},\ \mathbf{c}^\top\mathbf{X}^\top\mathbf{y} = \mathbf{x}_i^\top\hat{\boldsymbol{\theta}} = \hat y_i,\ \mathbf{c}^\top\mathbf{x}_i = h\\
-&= \hat{\boldsymbol{\theta}} + \mathbf{c}\,\frac{-y_i(1-h) + \hat y_i - h\,y_i}{1-h} = \hat{\boldsymbol{\theta}} - \frac{(\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{x}_i\,e_i}{1 - h_{ii}} . && \text{common denominator; } e_i = y_i - \hat y_i
+\hat{\boldsymbol{\theta}}_{(i)} &= \Big(\mathbf{M}^{-1} + \frac{\mathbf{c}\mathbf{c}^\top}{1-h}\Big)(\mathbf{X}^\top\mathbf{y} - \mathbf{x}_iy_i) \\
+&\quad\small \text{normal equation without row } i\\
+&= \hat{\boldsymbol{\theta}} - \mathbf{c}\,y_i + \frac{\mathbf{c}\,\hat y_i}{1-h} - \frac{\mathbf{c}\,h\,y_i}{1-h} \\
+&\quad\small \mathbf{M}^{-1}\mathbf{X}^\top\mathbf{y} = \hat{\boldsymbol{\theta}},\ \mathbf{c}^\top\mathbf{X}^\top\mathbf{y} = \mathbf{x}_i^\top\hat{\boldsymbol{\theta}} = \hat y_i,\ \mathbf{c}^\top\mathbf{x}_i = h\\
+&= \hat{\boldsymbol{\theta}} + \mathbf{c}\,\frac{-y_i(1-h) + \hat y_i - h\,y_i}{1-h} = \hat{\boldsymbol{\theta}} - \frac{(\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{x}_i\,e_i}{1 - h_{ii}} . \\
+&\quad\small \text{common denominator; } e_i = y_i - \hat y_i
 \end{aligned}
 $$
 
@@ -1666,9 +1714,12 @@ Two consequences. The leave-one-out residual is $y_i - \mathbf{x}_i^\top\hat{\bo
 
 $$
 \begin{aligned}
-D_i &= \frac{\lVert\mathbf{X}\hat{\boldsymbol{\theta}} - \mathbf{X}\hat{\boldsymbol{\theta}}_{(i)}\rVert^2}{p\,\hat\sigma^2} = \frac{(\hat{\boldsymbol{\theta}} - \hat{\boldsymbol{\theta}}_{(i)})^\top\mathbf{X}^\top\mathbf{X}(\hat{\boldsymbol{\theta}} - \hat{\boldsymbol{\theta}}_{(i)})}{p\,\hat\sigma^2} && \text{definition}\\
-&= \frac{e_i^2}{(1-h_{ii})^2}\,\frac{\mathbf{x}_i^\top(\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{X}(\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{x}_i}{p\,\hat\sigma^2} = \frac{e_i^2\,h_{ii}}{p\,\hat\sigma^2(1-h_{ii})^2} && \text{substitute the difference just derived}\\
-&= \frac{r_i^2}{p}\cdot\frac{h_{ii}}{1 - h_{ii}} . && r_i^2 = e_i^2/(\hat\sigma^2(1-h_{ii}))
+D_i &= \frac{\lVert\mathbf{X}\hat{\boldsymbol{\theta}} - \mathbf{X}\hat{\boldsymbol{\theta}}_{(i)}\rVert^2}{p\,\hat\sigma^2} = \frac{(\hat{\boldsymbol{\theta}} - \hat{\boldsymbol{\theta}}_{(i)})^\top\mathbf{X}^\top\mathbf{X}(\hat{\boldsymbol{\theta}} - \hat{\boldsymbol{\theta}}_{(i)})}{p\,\hat\sigma^2} \\
+&\quad\small \text{definition}\\
+&= \frac{e_i^2}{(1-h_{ii})^2}\,\frac{\mathbf{x}_i^\top(\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{X}^\top\mathbf{X}(\mathbf{X}^\top\mathbf{X})^{-1}\mathbf{x}_i}{p\,\hat\sigma^2} = \frac{e_i^2\,h_{ii}}{p\,\hat\sigma^2(1-h_{ii})^2} \\
+&\quad\small \text{substitute the difference just derived}\\
+&= \frac{r_i^2}{p}\cdot\frac{h_{ii}}{1 - h_{ii}} . \\
+&\quad\small r_i^2 = e_i^2/(\hat\sigma^2(1-h_{ii}))
 \end{aligned}
 $$
 
@@ -1803,9 +1854,12 @@ The straight line fitted on $[0, 4]$ predicts $14.32 \pm 1.15$ at $x_0 = 12$ whi
 
 $$
 \begin{aligned}
-\mathbb{E}[y\mid\mathbf{x}] &= e^{\boldsymbol{\theta}^\top\mathbf{x}}\;\mathbb{E}[e^{\varepsilon}] && e^{a + \varepsilon} = e^a e^{\varepsilon}\\
-\mathbb{E}[e^{\varepsilon}] &= \int e^{t}\,\tfrac{1}{\sqrt{2\pi}\sigma}e^{-t^2/(2\sigma^2)}\,dt = e^{\sigma^2/2}\int \tfrac{1}{\sqrt{2\pi}\sigma}e^{-(t - \sigma^2)^2/(2\sigma^2)}\,dt = e^{\sigma^2/2} && \text{complete the square: } t - \tfrac{t^2}{2\sigma^2} = \tfrac{\sigma^2}{2} - \tfrac{(t-\sigma^2)^2}{2\sigma^2}\\
-\text{while}\quad P\big(y \le e^{\boldsymbol{\theta}^\top\mathbf{x}}\big) &= P(\varepsilon \le 0) = \tfrac12 . && e^{\boldsymbol{\theta}^\top\mathbf{x}} \text{ is the median}
+\mathbb{E}[y\mid\mathbf{x}] &= e^{\boldsymbol{\theta}^\top\mathbf{x}}\;\mathbb{E}[e^{\varepsilon}] \\
+&\quad\small e^{a + \varepsilon} = e^a e^{\varepsilon}\\
+\mathbb{E}[e^{\varepsilon}] &= \int e^{t}\,\tfrac{1}{\sqrt{2\pi}\sigma}e^{-t^2/(2\sigma^2)}\,dt = e^{\sigma^2/2}\int \tfrac{1}{\sqrt{2\pi}\sigma}e^{-(t - \sigma^2)^2/(2\sigma^2)}\,dt = e^{\sigma^2/2} \\
+&\quad\small \text{complete the square: } t - \tfrac{t^2}{2\sigma^2} = \tfrac{\sigma^2}{2} - \tfrac{(t-\sigma^2)^2}{2\sigma^2}\\
+\text{while}\quad P\big(y \le e^{\boldsymbol{\theta}^\top\mathbf{x}}\big) &= P(\varepsilon \le 0) = \tfrac12 . \\
+&\quad\small e^{\boldsymbol{\theta}^\top\mathbf{x}} \text{ is the median}
 \end{aligned}
 $$
 

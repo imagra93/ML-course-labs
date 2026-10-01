@@ -1,46 +1,83 @@
 # ML Course Labs
 
-Material for a master's-level machine learning course: hands-on lab notebooks, theory
-notes and class slides. The labs go from implementing algorithms by hand in NumPy up to
-multi-task deep learning and transformer text generation, and each one is self-contained:
-theory, code, and exercises in the same notebook.
+Material for a master's-level machine learning course: theory notes, class slides and
+hands-on lab notebooks. The labs go from implementing algorithms by hand in NumPy up to
+multi-task deep learning and transformer text generation.
 
-Every notebook can be opened directly in Google Colab — click a badge below, no
-local install required.
+# Theory notes
 
-## Repository layout
+Web pages with every derivation, the assumptions of each method, and code that reproduces
+every plot: **<https://imagra93.github.io/ML-course-labs/notes/>**
 
-Everything is split the same way: a **machine learning** part (classical ML) and a
-**neural networks** part (deep learning).
+## Machine learning
 
-```
-notebooks/
-  lab 0 - Python for Machine Learning.ipynb     Part 0: Python prerequisites
-  machine_learning/         Labs 1–6 and 16 (scikit-learn / NumPy)
-  neural_networks/          Labs 7–15 (PyTorch)
-notes/
-  index.qmd                 Landing page of the notes
-  assets/                   Scripts and styles of the notes pages (navigation, slide figures)
-  machine_learning/         Notes 00–07: .qmd source + rendered .html, class notes PDF
-  neural_networks/          Notes 00–06: .qmd source + rendered .html, class notes PDF
-slides/
-  index.html                Landing page for both slide sets
-  assets/                   Shared slide engine (styles, navigation, figures, MathJax)
-  machine_learning/         Decks 01–08
-  neural_networks/          Decks 01–06
-```
-
-| | Machine learning | Neural networks |
+| # | Note | Contents |
 |---|---|---|
-| **Labs** (notebooks) | [notebooks/machine_learning](notebooks/machine_learning) | [notebooks/neural_networks](notebooks/neural_networks) |
-| **Notes** (theory) | [notes/machine_learning](notes/machine_learning) | [notes/neural_networks](notes/neural_networks) |
-| **Slides** (HTML) | [slides/machine_learning](slides/machine_learning) | [slides/neural_networks](slides/neural_networks) |
+| 00 | [Supervised learning, splits and CV](https://imagra93.github.io/ML-course-labs/notes/machine_learning/00_supervised_learning.html) | bias–variance, train/val/test, K-fold and nested CV, metric precision; assumptions: i.i.d., shift, groups, time, leakage |
+| 01 | [Linear regression](https://imagra93.github.io/ML-course-labs/notes/machine_learning/01_linear_regression.html) | gradient descent, normal equation, convexity, MLE, OLS statistics; assumptions and diagnostics, collinearity and VIF, influence |
+| 02 | [Logistic regression](https://imagra93.github.io/ML-course-labs/notes/machine_learning/02_logistic_regression.html) | cross-entropy = MLE, Newton/IRLS, separation, odds ratios, metrics, ROC/AUC, calibration; assumptions, class imbalance |
+| 02b | [Generalised linear models](https://imagra93.github.io/ML-course-labs/notes/machine_learning/02b_generalized_linear_models.html) | the GLM recipe, IRLS, deviance, Poisson claim counts, overdispersion, offsets, Gamma, Tweedie |
+| 03 | [Regularisation, inputs, assumptions](https://imagra93.github.io/ML-course-labs/notes/machine_learning/03_regularization_inputs_assumptions.html) | Ridge, Lasso, Elastic Net, MAP, choosing λ; scaling, encodings, missing values, pipelines and leakage |
+| 04 | [Softmax regression](https://imagra93.github.io/ML-course-labs/notes/machine_learning/04_softmax_regression.html) | softmax, log-sum-exp, gradient, convexity, multiclass metrics; IIA, imbalance, temperature scaling |
+| 05 | [Support vector classifier](https://imagra93.github.io/ML-course-labs/notes/machine_learning/05_support_vector_classifier.html) | margin, duality and KKT, kernels and Mercer, hinge loss; scaling, C and γ, Platt probabilities |
+| 06 | [Decision trees and CART](https://imagra93.github.io/ML-course-labs/notes/machine_learning/06_decision_trees_cart.html) | entropy, Gini, CART from scratch, pruning; what trees assume, categorical and missing values |
+| 07 | [Bagging, random forests and boosting](https://imagra93.github.io/ML-course-labs/notes/machine_learning/07_bagging_random_forest_boosting.html) | bootstrap and OOB, random forests, AdaBoost, gradient boosting, XGBoost derivation, boosting in practice |
+
+Original class notes (PDF): [ML_classNotes.pptx.pdf](ML_classNotes.pptx.pdf)
+
+## Neural networks
+
+| # | Note | Contents |
+|---|---|---|
+| 00 | [Neural networks and the MLP](https://imagra93.github.io/ML-course-labs/notes/neural_networks/00_neural_networks_mlp.html) | neuron, XOR, forward pass, activations, losses as MLE, universal approximation; practical checks |
+| 01 | [Backpropagation](https://imagra93.github.io/ML-course-labs/notes/neural_networks/01_backpropagation.html) | chain rule on graphs, backprop derivation, gradient checking, autograd, initialisation, vanishing gradients |
+| 02 | [Training: optimisation and regularisation](https://imagra93.github.io/ML-course-labs/notes/neural_networks/02_training_optimization_regularization.html) | SGD, momentum, Adam, schedules, weight decay, dropout, BatchNorm; debugging guide |
+| 03 | [CNNs, transfer and multi-task learning](https://imagra93.github.io/ML-course-labs/notes/neural_networks/03_cnn_transfer_multitask.html) | convolution and its backward pass, ResNet, transfer and multi-task learning, segmentation, detection |
+| 04 | [Embeddings, RNNs and LSTMs](https://imagra93.github.io/ML-course-labs/notes/neural_networks/04_rnn_lstm.html) | embeddings, RNN, BPTT, clipping, LSTM/GRU, masking; sequence-model assumptions |
+| 05 | [Attention and transformers](https://imagra93.github.io/ML-course-labs/notes/neural_networks/05_attention_transformers.html) | attention, multi-head, positions, causal mask, KV cache, a tiny GPT, decoding, perplexity |
+| 06 | [Embeddings, retrieval and RAG](https://imagra93.github.io/ML-course-labs/notes/neural_networks/06_embeddings_rag.html) | TF-IDF, BM25, LSA, neural embeddings, retrieval metrics, hybrid search, chunking, RAG |
+
+Original class notes (PDF): [ML_notes_NN.pptx.pdf](ML_notes_NN.pptx.pdf)
+
+---
+
+# Class slides
+
+Interactive HTML decks, one per topic: **<https://imagra93.github.io/ML-course-labs/slides/>**
+→ / Space advances, ← goes back, F is full screen, N / P jump between topics.
+
+## Machine learning
+
+| # | Deck |
+|---|---|
+| 01 | [Supervised learning · train, validation, test](https://imagra93.github.io/ML-course-labs/slides/machine_learning/01_supervised_learning.html) |
+| 02 | [Linear regression](https://imagra93.github.io/ML-course-labs/slides/machine_learning/02_linear_regression.html) |
+| 03 | [Logistic regression and classification metrics](https://imagra93.github.io/ML-course-labs/slides/machine_learning/03_logistic_regression.html) |
+| 04 | [Softmax regression](https://imagra93.github.io/ML-course-labs/slides/machine_learning/04_softmax_regression.html) |
+| 05 | [Regularization, inputs, assumptions](https://imagra93.github.io/ML-course-labs/slides/machine_learning/05_regularization.html) |
+| 06 | [Decision trees and CART](https://imagra93.github.io/ML-course-labs/slides/machine_learning/06_decision_trees.html) |
+| 07 | [Bagging, random forest, boosting, XGBoost](https://imagra93.github.io/ML-course-labs/slides/machine_learning/07_ensembles.html) |
+| 08 | [Support vector machines](https://imagra93.github.io/ML-course-labs/slides/machine_learning/08_svm.html) |
+
+## Neural networks
+
+| # | Deck |
+|---|---|
+| 01 | [From logistic regression to neural networks](https://imagra93.github.io/ML-course-labs/slides/neural_networks/01_neural_networks.html) |
+| 02 | [Forward and backward propagation](https://imagra93.github.io/ML-course-labs/slides/neural_networks/02_backpropagation.html) |
+| 03 | [Training: optimizers, regularization, layers](https://imagra93.github.io/ML-course-labs/slides/neural_networks/03_training.html) |
+| 04 | [CNNs, transfer learning, segmentation, detection](https://imagra93.github.io/ML-course-labs/slides/neural_networks/04_cnn.html) |
+| 05 | [RNNs and LSTMs](https://imagra93.github.io/ML-course-labs/slides/neural_networks/05_rnn_lstm.html) |
+| 06 | [Attention and transformers](https://imagra93.github.io/ML-course-labs/slides/neural_networks/06_transformers.html) |
 
 ---
 
 # Lab notebooks
 
-## Part 0 — Prerequisites ([notebooks](notebooks))
+Every notebook opens in Google Colab from its badge. The last neural-network labs are much
+faster on a GPU (**Runtime → Change runtime type → T4 GPU**).
+
+## Part 0 — Prerequisites
 
 Work through this **before the first session**. It covers the subset of Python, NumPy
 and pandas the labs assume, and ends with a miniature end-to-end ML workflow.
@@ -49,7 +86,7 @@ and pandas the labs assume, and ends with a miniature end-to-end ML workflow.
 |---|-----|--------|-------|
 | 0 | [Python for Machine Learning](notebooks/lab 0 - Python for Machine Learning.ipynb) | Python essentials, OOP (`fit`/`predict`), NumPy, pandas, Matplotlib | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/lab 0 - Python for Machine Learning.ipynb) |
 
-## Part 1 — Classical Machine Learning ([notebooks/machine_learning](notebooks/machine_learning))
+## Part 1 — Classical Machine Learning
 
 Scikit-learn / NumPy. Small datasets, runs comfortably on a laptop CPU.
 
@@ -63,7 +100,7 @@ Scikit-learn / NumPy. Small datasets, runs comfortably on a laptop CPU.
 | 5 | [Support Vector Machines](notebooks/machine_learning/lab%205%20-%20Support%20Vector%20Machines.ipynb) | Maximum margin, soft margin, the kernel trick, hyperparameter search | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%205%20-%20Support%20Vector%20Machines.ipynb) |
 | 6 | [XGBoost and Gradient Boosting](notebooks/machine_learning/lab%206%20-%20XGBoost%20and%20Gradient%20Boosting.ipynb) | Boosting theory, regularised objective, early stopping, tuning | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%206%20-%20XGBoost%20and%20Gradient%20Boosting.ipynb) |
 
-## Part 2 — Neural Networks ([notebooks/neural_networks](notebooks/neural_networks))
+## Part 2 — Neural Networks
 
 PyTorch. The last few labs are much faster on a GPU —
 in Colab, use **Runtime → Change runtime type → T4 GPU**.
@@ -81,7 +118,7 @@ in Colab, use **Runtime → Change runtime type → T4 GPU**.
 | 14 | [Text generation with Transformers](notebooks/neural_networks/lab 14 - Text generation with Transformers.ipynb) | BPE from scratch, GPT-2 parameter count, perplexity and surprisal, causal attention, greedy/temperature/top-k/top-p from scratch, KV cache, beam search, few-shot prompting | opt. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 14 - Text generation with Transformers.ipynb) |
 | 15 | [RAG: embeddings and similarity search](notebooks/neural_networks/lab 15 - RAG embeddings and similarity search.ipynb) | Full RAG pipeline: TF-IDF, character n-grams, LSA and a neural encoder compared with hit rate@k and MRR, approximate search (IVF), chunking, grounded answers with a small LLM, hallucination and prompt injection | opt. | [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 15 - RAG embeddings and similarity search.ipynb) |
 
-## Part 3 — Time Series ([notebooks/machine_learning](notebooks/machine_learning))
+## Part 3 — Time Series
 
 The methodology lab. Linear regression again, but with data where the i.i.d. assumption
 fails — and where the usual validation habits silently produce worthless models.
@@ -92,151 +129,3 @@ fails — and where the usual validation habits silently produce worthless model
 
 Best placed at the end of the course: it assumes Labs 1 and 2, and it re-examines the
 train/validation discipline students have been applying since Lab 1.
-
----
-
-# Theory notes
-
-Self-contained theory notes, published as web pages: **<https://imagra93.github.io/ML-course-labs/notes/>**. Each note has the theory with every derivation, the
-assumptions of the method with how to check them and what to do when they fail, and code that reproduces every plot
-and number, with the slides' interactive figures inside the text. Each note is a [Quarto](https://quarto.org) file
-(`.qmd`: Markdown with Python cells) rendered to the `.html` page next to it; to edit one, see the folder READMEs.
-
-## Machine learning — [notes/machine_learning](notes/machine_learning)
-
-| # | Note | Contents | Source |
-|---|---|---|---|
-| 00 | [Supervised learning, splits and CV](https://imagra93.github.io/ML-course-labs/notes/machine_learning/00_supervised_learning.html) | bias–variance, train/val/test, K-fold and nested CV, metric precision; assumptions: i.i.d., shift, groups, time, leakage | [.qmd](notes/machine_learning/00_supervised_learning.qmd) |
-| 01 | [Linear regression](https://imagra93.github.io/ML-course-labs/notes/machine_learning/01_linear_regression.html) | gradient descent, normal equation, convexity, MLE, OLS statistics; assumptions and diagnostics, collinearity and VIF, influence | [.qmd](notes/machine_learning/01_linear_regression.qmd) |
-| 02 | [Logistic regression](https://imagra93.github.io/ML-course-labs/notes/machine_learning/02_logistic_regression.html) | cross-entropy = MLE, Newton/IRLS, separation, odds ratios, metrics, ROC/AUC, calibration; assumptions, class imbalance | [.qmd](notes/machine_learning/02_logistic_regression.qmd) |
-| 02b | [Generalised linear models](https://imagra93.github.io/ML-course-labs/notes/machine_learning/02b_generalized_linear_models.html) | the GLM recipe, IRLS, deviance, Poisson claim counts, overdispersion, offsets, Gamma, Tweedie | [.qmd](notes/machine_learning/02b_generalized_linear_models.qmd) |
-| 03 | [Regularisation, inputs, assumptions](https://imagra93.github.io/ML-course-labs/notes/machine_learning/03_regularization_inputs_assumptions.html) | Ridge, Lasso, Elastic Net, MAP, choosing λ; scaling, encodings, missing values, pipelines and leakage | [.qmd](notes/machine_learning/03_regularization_inputs_assumptions.qmd) |
-| 04 | [Softmax regression](https://imagra93.github.io/ML-course-labs/notes/machine_learning/04_softmax_regression.html) | softmax, log-sum-exp, gradient, convexity, multiclass metrics; IIA, imbalance, temperature scaling | [.qmd](notes/machine_learning/04_softmax_regression.qmd) |
-| 05 | [Support vector classifier](https://imagra93.github.io/ML-course-labs/notes/machine_learning/05_support_vector_classifier.html) | margin, duality and KKT, kernels and Mercer, hinge loss; scaling, C and γ, Platt probabilities | [.qmd](notes/machine_learning/05_support_vector_classifier.qmd) |
-| 06 | [Decision trees and CART](https://imagra93.github.io/ML-course-labs/notes/machine_learning/06_decision_trees_cart.html) | entropy, Gini, CART from scratch, pruning; what trees assume, categorical and missing values | [.qmd](notes/machine_learning/06_decision_trees_cart.qmd) |
-| 07 | [Bagging, random forests and boosting](https://imagra93.github.io/ML-course-labs/notes/machine_learning/07_bagging_random_forest_boosting.html) | bootstrap and OOB, random forests, AdaBoost, gradient boosting, XGBoost derivation, boosting in practice | [.qmd](notes/machine_learning/07_bagging_random_forest_boosting.qmd) |
-
-Original class notes (PDF): [ML_classNotes.pptx.pdf](notes/machine_learning/ML_classNotes.pptx.pdf)
-
-## Neural networks — [notes/neural_networks](notes/neural_networks)
-
-| # | Note | Contents | Source |
-|---|---|---|---|
-| 00 | [Neural networks and the MLP](https://imagra93.github.io/ML-course-labs/notes/neural_networks/00_neural_networks_mlp.html) | neuron, XOR, forward pass, activations, losses as MLE, universal approximation; practical checks | [.qmd](notes/neural_networks/00_neural_networks_mlp.qmd) |
-| 01 | [Backpropagation](https://imagra93.github.io/ML-course-labs/notes/neural_networks/01_backpropagation.html) | chain rule on graphs, backprop derivation, gradient checking, autograd, initialisation, vanishing gradients | [.qmd](notes/neural_networks/01_backpropagation.qmd) |
-| 02 | [Training: optimisation and regularisation](https://imagra93.github.io/ML-course-labs/notes/neural_networks/02_training_optimization_regularization.html) | SGD, momentum, Adam, schedules, weight decay, dropout, BatchNorm; debugging guide | [.qmd](notes/neural_networks/02_training_optimization_regularization.qmd) |
-| 03 | [CNNs, transfer and multi-task learning](https://imagra93.github.io/ML-course-labs/notes/neural_networks/03_cnn_transfer_multitask.html) | convolution and its backward pass, ResNet, transfer and multi-task learning, segmentation, detection | [.qmd](notes/neural_networks/03_cnn_transfer_multitask.qmd) |
-| 04 | [Embeddings, RNNs and LSTMs](https://imagra93.github.io/ML-course-labs/notes/neural_networks/04_rnn_lstm.html) | embeddings, RNN, BPTT, clipping, LSTM/GRU, masking; sequence-model assumptions | [.qmd](notes/neural_networks/04_rnn_lstm.qmd) |
-| 05 | [Attention and transformers](https://imagra93.github.io/ML-course-labs/notes/neural_networks/05_attention_transformers.html) | attention, multi-head, positions, causal mask, KV cache, a tiny GPT, decoding, perplexity | [.qmd](notes/neural_networks/05_attention_transformers.qmd) |
-| 06 | [Embeddings, retrieval and RAG](https://imagra93.github.io/ML-course-labs/notes/neural_networks/06_embeddings_rag.html) | TF-IDF, BM25, LSA, neural embeddings, retrieval metrics, hybrid search, chunking, RAG | [.qmd](notes/neural_networks/06_embeddings_rag.qmd) |
-
-Original class notes (PDF): [ML_notes_NN.pptx.pdf](notes/neural_networks/ML_notes_NN.pptx.pdf)
-
----
-
-# Class slides
-
-Interactive HTML decks (one per topic) built on a shared engine in
-[slides/assets](slides/assets). Open [slides/index.html](slides/index.html) in a browser,
-or a set's own `index.html`. → / Space advances (and drives the interactive demos), ← goes
-back, F is full screen, N / P jump between topics. Equations need internet (MathJax from a CDN).
-Editing instructions are in [slides/machine_learning/README.md](slides/machine_learning/README.md)
-and [slides/neural_networks/README.md](slides/neural_networks/README.md).
-In the neural-network decks every lab has its own slide with an **Open in Colab** button, placed right
-after the theory it needs; [slides/neural_networks/index.html](slides/neural_networks/index.html) also lists
-the labs in that order.
-
-## Machine learning — [slides/machine_learning](slides/machine_learning/index.html)
-
-| # | Deck |
-|---|---|
-| 01 | [Supervised learning · train, validation, test](slides/machine_learning/01_supervised_learning.html) |
-| 02 | [Linear regression](slides/machine_learning/02_linear_regression.html) |
-| 03 | [Logistic regression and classification metrics](slides/machine_learning/03_logistic_regression.html) |
-| 04 | [Softmax regression](slides/machine_learning/04_softmax_regression.html) |
-| 05 | [Regularization, inputs, assumptions](slides/machine_learning/05_regularization.html) |
-| 06 | [Decision trees and CART](slides/machine_learning/06_decision_trees.html) |
-| 07 | [Bagging, random forest, boosting, XGBoost](slides/machine_learning/07_ensembles.html) |
-| 08 | [Support vector machines](slides/machine_learning/08_svm.html) |
-
-## Neural networks — [slides/neural_networks](slides/neural_networks/index.html)
-
-| # | Deck |
-|---|---|
-| 01 | [From logistic regression to neural networks](slides/neural_networks/01_neural_networks.html) |
-| 02 | [Forward and backward propagation](slides/neural_networks/02_backpropagation.html) |
-| 03 | [Training: optimizers, regularization, layers](slides/neural_networks/03_training.html) |
-| 04 | [CNNs, transfer learning, segmentation, detection](slides/neural_networks/04_cnn.html) |
-| 05 | [RNNs and LSTMs](slides/neural_networks/05_rnn_lstm.html) |
-| 06 | [Attention and transformers](slides/neural_networks/06_transformers.html) |
-
----
-
-## Running in Google Colab (recommended)
-
-Click any **Open in Colab** badge above. Colab reads the notebook straight from
-GitHub — nothing to install, and a free GPU is one menu click away.
-
-The general URL pattern is:
-
-```
-https://colab.research.google.com/github/<user>/<repo>/blob/<branch>/<path-to-notebook>
-```
-
-Two things to keep in mind:
-
-- **The repository must be public** (or you must authorise Colab's GitHub access
-  via *File → Open notebook → GitHub*), and the notebooks must be **pushed** to
-  `main` — Colab reads GitHub, not your local disk.
-- Changes made in Colab are **not** saved back here. Use *File → Save a copy in
-  Drive* to keep your work.
-
-Most notebooks already contain their own `!pip install` cells for anything Colab
-does not ship by default, so they run top-to-bottom as-is.
-
-## Running locally
-
-```bash
-git clone https://github.com/imagra93/ML-course-labs.git
-cd ML-course-labs
-
-python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-
-# Part 1 (classical ML) only:
-pip install -r requirements.txt
-
-# Part 2 (neural networks) as well:
-pip install -r requirements.txt -r requirements-dl.txt
-
-jupyter lab
-```
-
-`requirements-dl.txt` installs CPU PyTorch wheels. For an NVIDIA GPU, install
-Torch from the official index instead:
-
-```bash
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
-```
-
-## Data
-
-Nothing needs to be downloaded by hand:
-
-- Lab 0, labs 1–6, labs 7, 8, 15 and lab 16 use synthetic data or the small datasets bundled with
-  scikit-learn (Iris, Wine, Breast Cancer, Diabetes).
-- Labs 9–10 download **Fashion-MNIST** through `torchvision.datasets` on first run.
-- Lab 11 downloads the **IMDB** review dataset (the Keras version, about 19 MB) directly with `urllib`; no TensorFlow needed.
-- Lab 10b downloads the **African Wildlife** detection dataset (≈100 MB) and YOLO11n weights (≈5 MB) through Ultralytics.
-- Labs 12–13 download the face dataset from Google Drive with `gdown` and unzip
-  it into `data/`.
-- Lab 14 downloads pretrained **GPT-2** weights (≈500 MB) from the Hugging Face Hub.
-- Lab 15 downloads a multilingual sentence encoder (≈470 MB) and Qwen2.5-1.5B-Instruct plus Qwen2.5-0.5B-Instruct (≈4 GB) from the Hugging Face Hub.
-
-Downloaded data is git-ignored.
-
-## Known caveats
-
-- **Lab 6 (XGBoost)** needs the Graphviz *system* binaries for the tree plots
-  (`sudo apt install graphviz` / `brew install graphviz`), not just the Python
-  package.

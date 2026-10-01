@@ -220,7 +220,10 @@ Raw $\mathrm{tf}\times\mathrm{idf}$ scores the long document ten times higher th
 
 **Latent semantic analysis** factorises the document–term matrix $\mathbf{X}\in\mathbb{R}^{N\times|V|}$ with a truncated SVD:
 $$
-\mathbf{X}\approx\mathbf{U}_k\boldsymbol{\Sigma}_k\mathbf{V}_k^\top, \qquad \text{document embeddings} = \mathbf{U}_k\boldsymbol{\Sigma}_k\in\mathbb{R}^{N\times k},\quad \text{term embeddings} = \mathbf{V}_k\boldsymbol{\Sigma}_k\in\mathbb{R}^{|V|\times k}.
+\begin{gathered}
+\mathbf{X}\approx\mathbf{U}_k\boldsymbol{\Sigma}_k\mathbf{V}_k^\top, \\
+\text{document embeddings} = \mathbf{U}_k\boldsymbol{\Sigma}_k\in\mathbb{R}^{N\times k},\quad \text{term embeddings} = \mathbf{V}_k\boldsymbol{\Sigma}_k\in\mathbb{R}^{|V|\times k}.
+\end{gathered}
 $$
 
 - **Eckart–Young theorem**: keeping the top $k$ singular values gives the best rank-$k$ approximation of $\mathbf{X}$ in squared (Frobenius) error. LSA is "PCA without centring" for text.
@@ -380,8 +383,10 @@ where $\mathrm{IDCG}$ is the DCG of the ideal ordering (the relevance grades sor
 
 $$
 \begin{aligned}
-\mathrm{DCG@5} &= \frac{3}{\log_2 2} + \frac{0}{\log_2 3} + \frac{2}{\log_2 4} + \frac{1}{\log_2 5} + \frac{0}{\log_2 6} = 3 + 0 + 1 + 0.431 + 0 = 4.431 && \text{discount }1/\log_2(i+1)\\
-\mathrm{IDCG@5} &= \frac{3}{1} + \frac{2}{1.585} + \frac{1}{2} + 0 + 0 = 3 + 1.262 + 0.5 = 4.762 && \text{ideal order }(3,2,1,0,0)\\
+\mathrm{DCG@5} &= \frac{3}{\log_2 2} + \frac{0}{\log_2 3} + \frac{2}{\log_2 4} + \frac{1}{\log_2 5} + \frac{0}{\log_2 6} = 3 + 0 + 1 + 0.431 + 0 = 4.431 \\
+&\quad\small \text{discount }1/\log_2(i+1)\\
+\mathrm{IDCG@5} &= \frac{3}{1} + \frac{2}{1.585} + \frac{1}{2} + 0 + 0 = 3 + 1.262 + 0.5 = 4.762 \\
+&\quad\small \text{ideal order }(3,2,1,0,0)\\
 \mathrm{nDCG@5} &= 4.431/4.762 = 0.930 .
 \end{aligned}
 $$

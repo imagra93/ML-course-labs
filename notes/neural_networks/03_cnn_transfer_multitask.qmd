@@ -332,8 +332,10 @@ This is the **full convolution** of $\boldsymbol{\delta}$ with $\mathbf{k}$ (tru
 
 **2-D.** The same two steps with double sums give
 $$
-\frac{\partial L}{\partial K_{uv}}=\sum_{i,j}\delta_{ij}\,X_{i+u,\,j+v}\ \ (\text{valid cross-correlation of } \mathbf{X} \text{ with } \boldsymbol{\delta}),\qquad
+\begin{gathered}
+\frac{\partial L}{\partial K_{uv}}=\sum_{i,j}\delta_{ij}\,X_{i+u,\,j+v}\ \ (\text{valid cross-correlation of } \mathbf{X} \text{ with } \boldsymbol{\delta}), \\
 \frac{\partial L}{\partial X_{pq}}=\sum_{u,v}\delta_{p-u,\,q-v}\,K_{uv}\ \ (\text{full convolution of } \boldsymbol{\delta} \text{ with } \mathbf{K}),
+\end{gathered}
 $$
 and $\partial L/\partial b=\sum_{i,j}\delta_{ij}$. With channels, $\partial L/\partial\mathbf{K}_{c,c'}=\mathbf{X}_{c'}\star\boldsymbol{\delta}_c$ and $\partial L/\partial\mathbf{X}_{c'}=\sum_c\boldsymbol{\delta}_c*\mathbf{K}_{c,c'}$ (sum over the output channels that used input channel $c'$).
 
@@ -1204,7 +1206,10 @@ Modern YOLOs (v8, 11) use 3 grids of different sizes (for small, medium and larg
 
 **Training a detector: the loss.** A detector is a **multi-task** network (section 14): a box regression and a classification at every cell. For YOLO11 (the lab):
 $$
-J=\lambda_{\text{box}}\big(1-\mathrm{CIoU}\big)+\lambda_{\text{cls}}\,\mathrm{BCE}+\lambda_{\text{dfl}}\,\mathrm{DFL},\qquad\lambda_{\text{box}}=7.5,\ \lambda_{\text{cls}}=0.5,\ \lambda_{\text{dfl}}=1.5\ \text{(Ultralytics defaults)}.
+\begin{gathered}
+J=\lambda_{\text{box}}\big(1-\mathrm{CIoU}\big)+\lambda_{\text{cls}}\,\mathrm{BCE}+\lambda_{\text{dfl}}\,\mathrm{DFL}, \\
+\lambda_{\text{box}}=7.5,\ \lambda_{\text{cls}}=0.5,\ \lambda_{\text{dfl}}=1.5\ \text{(Ultralytics defaults)}.
+\end{gathered}
 $$
 
 - **Box**: $1-\mathrm{IoU}$ (section 16.4); CIoU adds penalties for the distance between the centres and for the aspect ratio. Unlike an L1 loss on pixel coordinates, it does not depend on the object's size.
