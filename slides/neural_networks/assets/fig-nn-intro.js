@@ -31,15 +31,17 @@ FIG['bio-neuron']=root=>{const svg=initSvg(svgOf(root),620,300);T(svg,150,20,'a 
   arrowPx(svg,494,130,512,130,'ln thin sk','fk');E('rect',{x:514,y:110,width:40,height:40,rx:6,fill:'#4472c4'},svg);T(svg,534,136,'g','lab').style.fill='#fff';arrowPx(svg,554,130,576,130,'ln thin sk','fk');T(svg,592,136,'ŷ','lab big');
   [[372,'inputs','× weights',372,196],[470,'sum','+ bias',470,154],[545,'activation','(non-linear)',534,150]].forEach(([x,t1,t2,px,py])=>{T(svg,x,238,t1,'lab','middle');T(svg,x,256,t2,'','middle');lead(x,224,px,py+6)});
   TT(svg,470,290,'ŷ = g(w_1x_1 + w_2x_2 + w_3x_3 + b)','lab','middle')};
-/* a layer of K neurons + softmax = softmax regression */
-FIG['softmax-layer']=root=>{const svg=initSvg(svgOf(root),600,300);
+/* a layer of K neurons + softmax = softmax regression.
+   data-later: only the layer and its K scores at first; the softmax block, the probabilities and the caption are one .step */
+FIG['softmax-layer']=root=>{const later=root.hasAttribute('data-later');const svg=initSvg(svgOf(root),600,300);
   const pos=drawNet(svg,[3,3],{x0:60,y0:40,w:200,h:220,r:18,label:(l,i)=>l===0?'x'+['₁','₂','₃'][i]:'z'+['₁','₂','₃'][i],fill:l=>l===0?'#70ad47':'#4472c4'});
-  T(svg,60,28,'inputs','lab');T(svg,260,28,'K = 3 neurons','lab');
-  E('rect',{x:320,y:40,width:56,height:220,rx:8,fill:'#fff2cc',stroke:'#bf9000'},svg);const st=T(svg,348,155,'softmax','lab');st.setAttribute('transform','rotate(-90 348 150)');
+  T(svg,60,28,'inputs','lab');T(svg,260,28,later?'K = 3 neurons: 3 scores':'K = 3 neurons','lab');
+  const G=later?E('g',{class:'step'},svg):svg;
+  E('rect',{x:320,y:40,width:56,height:220,rx:8,fill:'#fff2cc',stroke:'#bf9000'},G);const st=T(G,348,155,'softmax','lab');st.setAttribute('transform','rotate(-90 348 150)');
   const pr=[0.70,0.20,0.10],nm=['cat','dog','car'];
-  pos[1].forEach((p,k)=>{arrowPx(svg,p[0]+19,p[1],318,p[1],'ln thin sk','fk');arrowPx(svg,378,p[1],402,p[1],'ln thin sk','fk');E('rect',{x:406,y:p[1]-12,width:110*pr[k],height:24,fill:'#ed7d31'},svg);
-    T(svg,406+110*pr[k]+6,p[1]+5,'P('+nm[k]+') = '+pr[k].toFixed(2),'','start')});
-  T(svg,300,292,'each neuron scores one class; softmax turns the K scores into probabilities that sum to 1','','middle')};
+  pos[1].forEach((p,k)=>{arrowPx(G,p[0]+19,p[1],318,p[1],'ln thin sk','fk');arrowPx(G,378,p[1],402,p[1],'ln thin sk','fk');E('rect',{x:406,y:p[1]-12,width:110*pr[k],height:24,fill:'#ed7d31'},G);
+    T(G,406+110*pr[k]+6,p[1]+5,'P('+nm[k]+') = '+pr[k].toFixed(2),'','start')});
+  T(G,300,292,'each neuron scores one class; softmax turns the K scores into probabilities that sum to 1','','middle')};
 /* hand-made features: the circle becomes a line in (x1², x2²) */
 FIG['feat-map']=root=>{const svg=initSvg(svgOf(root),640,300);const r=rng(21);const pts=[];for(let i=0;i<150;i++){const a=2*r()-1,b=2*r()-1;pts.push([a,b,a*a+b*b<0.42?1:0])}
   const A=Plot(svg,{at:[0,0],w:280,h:290,x:[-1.05,1.05],y:[-1.05,1.05],m:{l:34,r:8,t:30,b:34}});A.axes({xt:[-1,0,1],yt:[-1,0,1],grid:false,xl:'x₁',yl:'x₂'});T(A.root,157,18,'original features: no line works','lab');
@@ -167,6 +169,16 @@ FIG['nn-zoo']=root=>{const svg=initSvg(svgOf(root),960,290);const W=226;
   const xs=[0,1,2,3,4].map(i=>x0+30+i*41);xs.forEach((x,i)=>{for(let j=i+1;j<5;j++){const x2=xs[j];const hi=i===0&&j===4;E('path',{d:'M'+x+',150 Q'+((x+x2)/2)+','+(150-(x2-x)*0.62)+' '+x2+',150',fill:'none',stroke:hi?'#c00000':'#9dafd6','stroke-width':hi?2.2:1},svg)}});
   xs.forEach(x=>E('circle',{cx:x,cy:160,r:12,fill:'#bdd7ee',stroke:'#404040'},svg));
 };
+/* one activation and its derivative (blue = g, red dashed = g′), with two marked values of z. data-act = sigmoid | tanh | relu | leaky | gelu */
+const ACT1={sigmoid:{x:[-6,6],y:[-0.15,1.2],yt:[0,0.5,1],marks:[0,5]},tanh:{x:[-6,6],y:[-1.3,1.3],yt:[-1,0,1],marks:[0,3]},
+  relu:{x:[-4,4],y:[-0.5,4.3],yt:[0,1,2,3,4],marks:[-2,2],step:0},leaky:{x:[-4,4],y:[-1,4.3],yt:[-1,0,1,2,3,4],marks:[-2,2],step:0.2},gelu:{x:[-4,4],y:[-0.5,4.3],yt:[0,1,2,3,4],marks:[-1,1]}};
+FIG['act-one']=root=>{const k=root.getAttribute('data-act')||'sigmoid';const c=ACT1[k];const a=ACTS[k];const P=Plot(svgOf(root),{w:540,h:340,x:c.x,y:c.y,m:{l:40,r:14,t:14,b:36}});
+  P.axes({xt:c.x[1]>5?[-6,-3,0,3,6]:[-4,-2,0,2,4],yt:c.yt,xl:'z'});P.line(c.x[0],0,c.x[1],0,'ax',P.bg);P.line(0,c.y[0],0,c.y[1],'ax',P.bg);
+  P.fn(a[0],'ln sb',c.x[0],c.x[1],400);
+  if(c.step!==undefined){const s0=c.step;P.line(c.x[0],s0,0,s0,'ln sr dash');P.line(0,1,c.x[1],1,'ln sr dash');P.dot(0,s0,4.5,'fr pt');P.dot(0,1,4.5,'fw pt').setAttribute('style','stroke:#c00000;stroke-width:1.6')}
+  else P.fn(a[1],'ln sr dash',c.x[0],c.x[1],400);
+  c.marks.forEach(z=>{P.line(z,c.y[0],z,c.y[1],'ln thin sm dot2');P.dot(z,a[0](z),5,'fb pt');P.dot(z,c.step!==undefined?(z>0?1:c.step):a[1](z),5,'fr pt');P.text(z,c.y[1],'z = '+z,'', 'middle',0,14).setAttribute('style','paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round')});
+  P.text(c.x[0]+(c.x[1]-c.x[0])*0.03,c.y[1]-(c.y[1]-c.y[0])*0.05,'g(z)','lab','start').style.fill='#4472c4';P.text(c.x[0]+(c.x[1]-c.x[0])*0.03,c.y[1]-(c.y[1]-c.y[0])*0.14,'g′(z)  (dashed)','lab','start').style.fill='#c00000'};
 /* activation functions and their derivatives, side by side */
 FIG['act-deriv']=root=>{const svg=initSvg(svgOf(root),960,230);
   [['sigmoid  σ(z)',z=>1/(1+Math.exp(-z)),z=>{const s=1/(1+Math.exp(-z));return s*(1-s)},[-0.15,1.1],[0,0.5,1],'σ′(0) = 0.25 is its maximum'],
