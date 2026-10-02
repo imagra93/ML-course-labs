@@ -14,7 +14,7 @@ checkpoints/
 *.pth
 *.zip
 
-# YOLO weights, exports and training runs (lab 10b, Object detection with YOLO)
+# YOLO weights, exports and training runs (lab 13, Object detection with YOLO)
 *.pt
 *.onnx
 runs/
@@ -34,3 +34,4 @@ notebooks/neural_networks/logs_lightning/
 /.quarto/
 /_freeze/
 **/*.quarto_ipynb
+exam*

@@ -611,7 +611,7 @@ Gradient descent ($\alpha=0.075$: factors $0.925$ along $w_1$ and $1-25\cdot0.07
 | one-cycle | up from $\alpha_0/25$ to $\alpha_0$ in the first 30 % of steps, then cosine down to $\alpha_0/(25\cdot10^4)$ | `OneCycleLR(opt, max_lr=α₀, total_steps=T)` |
 | reduce on plateau | $\alpha\leftarrow\gamma\,\alpha$ after `patience` epochs without improvement of the validation loss | `ReduceLROnPlateau(opt, factor=γ, patience=p)` |
 
-**Warm-up**, in more detail. Adam's first step moves every parameter by the full $\alpha$ (section 4.4), whatever the quality of that first gradient, and $\hat{\mathbf{s}}_t$ is an average of only $t$ squared gradients, so early steps are large and poorly informed. Large-batch SGD has the same problem (section 2.5). A warm-up of a few hundred to a few thousand steps (or ~5 % of training) is standard for transformers. **One-cycle** (Smith & Topin, 2019) combines a long warm-up, a high peak, and a very low final rate (PyTorch's `OneCycleLR` also cycles the momentum the opposite way, from 0.95 down to 0.85 and back). **Reduce on plateau** needs no planning: it divides $\alpha$ when the validation loss stalls (used in the face labs).
+**Warm-up**, in more detail. Adam's first step moves every parameter by the full $\alpha$ (section 4.4), whatever the quality of that first gradient, and $\hat{\mathbf{s}}_t$ is an average of only $t$ squared gradients, so early steps are large and poorly informed. Large-batch SGD has the same problem (section 2.5). A warm-up of a few hundred to a few thousand steps (or ~5 % of training) is standard for transformers. **One-cycle** (Smith & Topin, 2019) combines a long warm-up, a high peak, and a very low final rate (PyTorch's `OneCycleLR` also cycles the momentum the opposite way, from 0.95 down to 0.85 and back). **Reduce on plateau** needs no planning: it divides $\alpha$ when the validation loss stalls (used in the face demos).
 
 We implement the formulas and check them against PyTorch's schedulers, stepping each one 100 times:
 
@@ -752,7 +752,7 @@ for epoch in range(epochs):
         val_loss = evaluate(model, val_loader)
 ```
 
-Frameworks like **PyTorch Lightning** ([NN note 03](03_cnn_transfer_multitask.html), face lab) write this loop, the device handling, checkpointing and early stopping for you, but it is the same loop.
+Frameworks like **PyTorch Lightning** ([NN note 03](03_cnn_transfer_multitask.html), face demo) write this loop, the device handling, checkpointing and early stopping for you, but it is the same loop.
 
 **Averaging metrics over an epoch.** Weight each batch by its size (the last batch is usually smaller). For non-linear metrics, don't average per-batch values: with $N$ batches of equal size, $\frac1N\sum_b\sqrt{\mathrm{MSE}_b}\le\sqrt{\frac1N\sum_b\mathrm{MSE}_b}$ by Jensen's inequality ($\sqrt{\cdot}$ is concave), so the average of per-batch RMSEs underestimates the true RMSE. Accumulate sums and take the root at the end.
 

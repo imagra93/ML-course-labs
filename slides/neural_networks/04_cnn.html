@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
 <link rel="stylesheet" href="../assets/deck.css?v=20260930">
-<link rel="stylesheet" href="assets/nn.css?v=20260930">
+<link rel="stylesheet" href="assets/nn.css?v=20261005">
 <script src="../assets/mathjax-config.js?v=20260930"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
 </head>
@@ -24,8 +24,8 @@
   <h2>Where we are</h2>
   <div class="cards c3">
     <div class="card"><h3>Part A · Convolutions</h3><ul><li>images are grids of numbers</li><li>from a dense layer to a convolution</li><li>filters, channels, output size</li><li>pooling, receptive field</li></ul></div>
-    <div class="card o"><h3>Part B · Architectures</h3><ul><li>a basic CNN, layer by layer · <b>Lab 10</b></li><li>AlexNet, VGG, ResNet, 1×1 convs</li><li>transfer learning · <b>Lab 12</b></li><li>multi-task learning · <b>Lab 13</b></li></ul></div>
-    <div class="card g"><h3>Part C · Beyond classification</h3><ul><li>semantic / instance segmentation</li><li>U-Net, IoU and Dice</li><li>object detection, YOLO</li><li>NMS and mAP · <b>Lab 10b</b></li></ul></div>
+    <div class="card o"><h3>Part B · Architectures</h3><ul><li>a basic CNN, layer by layer · <b>Lab 10</b></li><li>AlexNet, VGG, ResNet, 1×1 convs</li><li>transfer learning · <b>Lab 12</b></li><li>multi-task learning · <b>demo</b></li></ul></div>
+    <div class="card g"><h3>Part C · Beyond classification</h3><ul><li>semantic / instance segmentation</li><li>U-Net, IoU and Dice</li><li>object detection, YOLO</li><li>NMS and mAP · <b>Lab 13</b></li></ul></div>
   </div>
   <svg class="fig" data-fig="tasks" style="max-height:300px" aria-label="The same street scene as classification, detection, semantic and instance segmentation"></svg>
 </section>
@@ -171,7 +171,7 @@
   </div>
 </section>
 
-<section class="slide divider"><div class="card coral"><h1><b>Part B</b><br>Architectures and transfer learning</h1><ul class="small" style="color:#fff"><li>a basic CNN, layer by layer · Lab 10</li><li>AlexNet, VGG, ResNet</li><li>transfer learning · Lab 12</li><li>multi-task learning · Lab 13</li></ul></div></section>
+<section class="slide divider"><div class="card coral"><h1><b>Part B</b><br>Architectures and transfer learning</h1><ul class="small" style="color:#fff"><li>a basic CNN, layer by layer · Lab 10</li><li>AlexNet, VGG, ResNet</li><li>transfer learning · Lab 12</li><li>multi-task learning · demo</li></ul></div></section>
 
 <section class="slide">
   <h2>Basic CNN architecture:</h2>
@@ -296,25 +296,27 @@ m.fc = nn.Linear(m.fc.in_features, n_classes)</pre>
 
 <section class="slide lab">
   <div class="labtag">LAB 12</div>
-  <h2>Transfer learning: eye positions with a ResNet-50</h2>
+  <h2>Fine-tuning a ResNet: pre-trained or from scratch?</h2>
   <div class="cols c64">
     <div class="stack" style="gap:10px">
-      <p>A regression problem on real photos: predict the positions of both eyes, $(x_l,y_l,x_r,y_r)$, from a face image, starting from a network pre-trained on ImageNet. Plain PyTorch, every step written by hand.</p>
+      <p>The same ResNet-18 on 27,000 satellite images (EuroSAT, 10 land-use classes), started from random weights and from ImageNet weights. ImageNet has never seen a forest from above: does the knowledge transfer?</p>
       <ol class="todo">
-        <li>Look at the data; normalize the coordinates to $[0,1]$ (independent of the image size).</li>
-        <li>A <code>Dataset</code> with the transforms: ImageNet normalization, light augmentation.</li>
-        <li>Replace ResNet-50's classifier (<code>fc</code>) by a small regression head with 4 outputs; MSE loss, RMSE metric.</li>
-        <li>A training loop with gradient clipping and checkpointing of the best model; learning curves.</li>
-        <li>Draw the predicted eyes on test faces.</li>
+        <li>What an ImageNet network says about satellite images; its first-layer filters next to random ones.</li>
+        <li><b>Zero training</b>: ImageNet features + logistic regression.</li>
+        <li>With 500 labelled images: <b>from scratch</b>, <b>frozen backbone + new head</b>, <b>fine-tuning</b> (last block, then everything, with discriminative learning rates).</li>
+        <li>Look inside: which weights moved, t-SNE of the features, confusion matrices.</li>
+        <li><b>How many labels do you need?</b> Accuracy against training-set size.</li>
+        <li>Three ways to break a fine-tune: a learning rate too large, no ImageNet normalization, BatchNorm drifting.</li>
       </ol>
     </div>
     <div class="labcard">
-      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 12 - Multitask face analysis plain PyTorch.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 12 - Fine-tuning ResNet pretrained vs scratch.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
       <dl class="gloss">
-        <dt>notebook</dt><dd><code>lab 12 - Multitask face analysis plain PyTorch.ipynb</code></dd>
-        <dt>you need</dt><dd>transfer learning and ResNet (this part), regression losses (ch. 1), the training loop (ch. 3)</dd>
-        <dt>runs on</dt><dd><b>GPU</b> (Runtime → Change runtime type → T4 GPU)</dd>
-        <dt>data</dt><dd>downloaded by the notebook with <code>gdown</code></dd>
+        <dt>notebook</dt><dd><code>lab 12 - Fine-tuning ResNet pretrained vs scratch.ipynb</code></dd>
+        <dt>you need</dt><dd>transfer learning and ResNet (this part), the training loop, schedules and BatchNorm (ch. 3)</dd>
+        <dt>result</dt><dd>500 labelled images: from scratch ≈ 81 %, fine-tuned ≈ 93 %</dd>
+        <dt>runs on</dt><dd><b>GPU</b> (T4 in Colab), 10 to 15 minutes</dd>
+        <dt>data</dt><dd>EuroSAT, ≈ 90 MB, downloaded by torchvision</dd>
       </dl>
     </div>
   </div>
@@ -372,24 +374,22 @@ trainer.fit(model, datamodule=dm)</pre>
   </div>
 </section>
 
-<section class="slide lab">
-  <div class="labtag">LAB 13</div>
-  <h2>Multi-task face analysis with Lightning</h2>
+<section class="slide lab demo">
+  <div class="labtag">DEMO</div>
+  <h2>Multi-task face analysis</h2>
   <div class="cols c64">
     <div class="stack" style="gap:10px">
-      <p>The same faces and backbone as Lab 12, now with <b>three tasks</b> at once: eye positions (regression), gender (binary classification) and age (regression).</p>
+      <p>A worked solution to the multi-task problem on real faces: <b>one ResNet-50 backbone, several heads</b>. A demo, not a lab: there are no exercises, just two versions of the solution to read and run.</p>
       <ol class="todo">
-        <li>A trivial baseline for every task first: the numbers to beat.</li>
-        <li>A <code>LightningDataModule</code> that computes the target statistics on the training split only.</li>
-        <li>A <code>LightningModule</code>: shared trunk, three heads, standardized targets, weighted loss, TorchMetrics.</li>
-        <li><code>Trainer</code> with early stopping, checkpointing and a CSV logger.</li>
-        <li>Test evaluation against the baseline, learning curves, predictions on new faces.</li>
+        <li><b>Plain PyTorch</b>: transfer learning with a ResNet-50, eye positions as a regression problem, a hand-written training loop with gradient clipping and checkpointing, the predicted eyes drawn on test faces.</li>
+        <li><b>Lightning</b>: the same faces with <b>three tasks</b> at once, eye positions (regression), gender (classification) and age (regression): a baseline first, standardized targets, a weighted loss, a <code>Trainer</code> with early stopping.</li>
       </ol>
     </div>
     <div class="labcard">
-      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 13 - Multitask face analysis Lightning.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <a class="colab" style="font-size:19px" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/demo - multitask face analysis plain PyTorch.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Demo: plain PyTorch</a>
+      <a class="colab" style="font-size:19px" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/demo - multitask face analysis Lightning.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Demo: Lightning</a>
       <dl class="gloss">
-        <dt>notebook</dt><dd><code>lab 13 - Multitask face analysis Lightning.ipynb</code></dd>
+        <dt>notebooks</dt><dd><code>demo - multitask face analysis plain PyTorch.ipynb</code>, <code>demo - multitask face analysis Lightning.ipynb</code></dd>
         <dt>you need</dt><dd>Lab 12, multi-task learning and Lightning (the two previous slides)</dd>
         <dt>runs on</dt><dd><b>GPU</b> (T4 in Colab)</dd>
       </dl>
@@ -397,7 +397,7 @@ trainer.fit(model, datamodule=dm)</pre>
   </div>
 </section>
 
-<section class="slide divider"><div class="card green"><h1><b>Part C</b><br>Segmentation and object detection</h1><ul class="small"><li>classify every pixel: U-Net</li><li>IoU and Dice</li><li>boxes: YOLO</li><li>NMS and mAP · Lab 10b</li></ul></div></section>
+<section class="slide divider"><div class="card green"><h1><b>Part C</b><br>Segmentation and object detection</h1><ul class="small"><li>classify every pixel: U-Net</li><li>IoU and Dice</li><li>boxes: YOLO</li><li>NMS and mAP · Lab 13</li></ul></div></section>
 
 <section class="slide">
   <h2>Segmentation: three flavours</h2>
@@ -534,7 +534,7 @@ trainer.fit(model, datamodule=dm)</pre>
     </div>
     <div class="stack" style="gap:10px">
       <div class="note"><p class="small"><b>Assignment</b> decides which predictions are responsible for which true object (the "positives"): the cell containing the centre (YOLOv1), the anchor boxes with the best IoU (YOLOv3–5), or a learned score mixing IoU and class confidence (YOLOv8–11, the <b>task-aligned assigner</b>). The box and DFL terms only use the positives.</p></div>
-      <p class="small">It is the same recipe as the multi-task face lab: one backbone, several heads, a weighted sum of losses.</p>
+      <p class="small">It is the same recipe as the multi-task face demo: one backbone, several heads, a weighted sum of losses.</p>
       <p class="small why">Class imbalance is huge (thousands of background cells for a few objects): focal loss and careful weighting exist for that.</p>
     </div>
   </div>
@@ -595,7 +595,7 @@ trainer.fit(model, datamodule=dm)</pre>
 </section>
 
 <section class="slide lab">
-  <div class="labtag">LAB 10b</div>
+  <div class="labtag">LAB 13</div>
   <h2>Object detection with YOLO</h2>
   <div class="cols c64">
     <div class="stack" style="gap:10px">
@@ -609,10 +609,10 @@ trainer.fit(model, datamodule=dm)</pre>
       </ol>
     </div>
     <div class="labcard">
-      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 10b - Object detection with YOLO.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 13 - Object detection with YOLO.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
       <dl class="gloss">
-        <dt>notebook</dt><dd><code>lab 10b - Object detection with YOLO.ipynb</code></dd>
-        <dt>you need</dt><dd>transfer learning (Part B), and detection, IoU, NMS, mAP (this part)</dd>
+        <dt>notebook</dt><dd><code>lab 13 - Object detection with YOLO.ipynb</code></dd>
+        <dt>you need</dt><dd>transfer learning (Part B, Lab 12), and detection, IoU, NMS, mAP (this part)</dd>
         <dt>runs on</dt><dd>a GPU is strongly recommended (T4 in Colab)</dd>
         <dt>data</dt><dd>≈100 MB of images and YOLO11n weights, downloaded by Ultralytics</dd>
       </dl>

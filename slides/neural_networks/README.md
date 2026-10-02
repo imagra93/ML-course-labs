@@ -7,7 +7,7 @@ One HTML file per topic, built on the same engine as [`../machine_learning`](../
 | `01_neural_networks.html` | From one neuron to deep networks: linear and logistic regression as neurons, a layer of neurons, XOR, hand-made vs learned features, MLP, depth, the network family of the course, forward pass with numbers, activations and their derivatives (one slide each), losses, sigmoid + cross-entropy, multiclass and one-hot, softmax (with numbers and an interactive demo), where the losses come from, losses in PyTorch | – | slides 2–27, 44–48 + notes 00 |
 | `02_backpropagation.html` | Derivatives refresher, chain rule on graphs, backprop with real numbers, the derivation and the algorithm, the algorithm in NumPy, gradient checking, initialization, vanishing gradients | 7 | slides 28–43, 53 + notes 01 |
 | `03_training.html` | Mini-batches, learning rate, moving averages, momentum, RMSProp, Adam, schedules, over/underfitting, weight decay (derivation and demo), augmentation, early stopping, dropout, BatchNorm, other layers, debugging | 8, 9 | slides 41–42, 49–59 + notes 02 |
-| `04_cnn.html` | Dense layer vs convolution, convolutions, pooling, receptive field, architectures, transfer learning, multi-task learning, PyTorch Lightning, segmentation, detection (YOLO11 loss), NMS, mAP | 10, 12, 13, 10b | slides 60–81 + notes 03 |
+| `04_cnn.html` | Dense layer vs convolution, convolutions, pooling, receptive field, architectures, transfer learning, multi-task learning, PyTorch Lightning, segmentation, detection (YOLO11 loss), NMS, mAP | 10, 12, 13 (+ a multi-task demo) | slides 60–81 + notes 03 |
 | `05_rnn_lstm.html` | Tokens and embedding lookup, RNNs, BPTT, vanishing gradients (derivation), gates, the LSTM gate by gate, GRU, packing | 11 | slides 83–93 + notes 04 |
 | `06_transformers.html` | Attention, Q/K/V, √d_k, multi-head, positions, masks, self-attention in code, transformers, GPT, decoding, perplexity, RAG, retrieval metrics | 14, 15 | slides 94–109 + notes 05, 06 |
 
@@ -17,7 +17,7 @@ Every deck is self-contained: a "where we are" slide, worked examples with real 
 
 ## Lab slides
 
-Each notebook of `notebooks/neural_networks` has one green lab slide, placed right after the theory it needs (Lab 7 → 8 → 9 → 10 → 12 → 13 → 10b → 11 → 14 → 15). `index.html` lists them in that order with direct links. To add one:
+Each lab notebook of `notebooks/neural_networks` has one green lab slide, placed right after the theory it needs (Lab 7 → 8 → 9 → 10 → 12 → [demo] → 13 → 11 → 14 → 15; the lab numbers are not in course order). The two `demo - multitask …` notebooks share one orange slide (`<section class="slide lab demo">`, tag `DEMO`, two Colab buttons). `index.html` lists them all in order with direct links. To add a lab:
 
 ```html
 <section class="slide lab">
