@@ -8,9 +8,9 @@ format:
           <script src="../../slides/neural_networks/assets/fig-nn-backprop.js"></script>
 ---
 
-To train a network with gradient descent we need $\nabla_{\boldsymbol{\theta}}J$ for **every** weight and bias. Backpropagation computes all of them in one backward sweep, at roughly the cost of a forward pass. It is nothing more than the chain rule, organised so that no computation is repeated. This note builds it from a single derivative up to the general algorithm, with the numbers of the slides at every step, then covers what you need to use it safely: gradient checking, automatic differentiation in PyTorch (and its pitfalls), numerically stable losses, initialisation, vanishing and exploding gradients, and the assumptions behind a training run.
+To train a network with gradient descent we need $\nabla_{\mathbf{w}}J$ for **every** weight and bias. Backpropagation computes all of them in one backward sweep, at roughly the cost of a forward pass. It is nothing more than the chain rule, organised so that no computation is repeated. This note builds it from a single derivative up to the general algorithm, with the numbers of the slides at every step, then covers what you need to use it safely: gradient checking, automatic differentiation in PyTorch (and its pitfalls), numerically stable losses, initialisation, vanishing and exploding gradients, and the assumptions behind a training run.
 
-**What you need.** From [NN note 00](00_neural_networks_mlp.html): the forward pass $\mathbf{Z}^{[l]} = \mathbf{A}^{[l-1]}\mathbf{W}^{[l]} + \mathbf{b}^{[l]}$, $\mathbf{A}^{[l]} = g^{[l]}(\mathbf{Z}^{[l]})$ (examples are the rows of $\mathbf{A}^{[l]}$, $\mathbf{A}^{[0]} = \mathbf{X}$), the activations' derivatives ($\sigma' = \sigma(1-\sigma)$, $\tanh' = 1-\tanh^2$, $\mathrm{ReLU}' = \mathbb{1}[z>0]$), and the fact that for the matching output + loss pairs the gradient at the logits is "prediction − target". From calculus: derivatives and the chain rule. Gradient descent is [ML note 01](../machine_learning/01_linear_regression.html): $\boldsymbol{\theta}\leftarrow\boldsymbol{\theta} - \alpha\nabla_{\boldsymbol{\theta}}J$.
+**What you need.** From [NN note 00](00_neural_networks_mlp.html): the forward pass $\mathbf{Z}^{[l]} = \mathbf{A}^{[l-1]}\mathbf{W}^{[l]} + \mathbf{b}^{[l]}$, $\mathbf{A}^{[l]} = g^{[l]}(\mathbf{Z}^{[l]})$ (examples are the rows of $\mathbf{A}^{[l]}$, $\mathbf{A}^{[0]} = \mathbf{X}$), the activations' derivatives ($\sigma' = \sigma(1-\sigma)$, $\tanh' = 1-\tanh^2$, $\mathrm{ReLU}' = \mathbb{1}[z>0]$), and the fact that for the matching output + loss pairs the gradient at the logits is "prediction − target". From calculus: derivatives and the chain rule. Gradient descent is [ML note 01](../machine_learning/01_linear_regression.html): $\mathbf{w}\leftarrow\mathbf{w} - \alpha\nabla_{\mathbf{w}}J$.
 
 **After this note you can**
 
@@ -35,7 +35,7 @@ Training a network is a loop of five steps:
 $$
 \begin{gathered}
 \text{data } (\mathbf{x}, y)\ \longrightarrow\ \textbf{forward: } \hat y = h(\mathbf{x})\ \longrightarrow\ \textbf{loss } L(\hat y, y)\ \longrightarrow \\
-\textbf{backward: } \frac{\partial L}{\partial\theta} \text{ for every } \theta\ \longrightarrow\ \textbf{update: } \theta\leftarrow\theta - \alpha\frac{\partial L}{\partial\theta} .
+\textbf{backward: } \frac{\partial L}{\partialw} \text{ for every } w\ \longrightarrow\ \textbf{update: } w\leftarroww - \alpha\frac{\partial L}{\partialw} .
 \end{gathered}
 $$
 
@@ -49,7 +49,7 @@ $$
 \frac{dy}{dx} = \frac{dy}{du}\cdot\frac{du}{dx} .
 $$
 
-A **partial derivative** $\frac{\partial L}{\partial w}$ is the same thing for one input while all the others are held fixed, and the **gradient** $\nabla_{\boldsymbol{\theta}}L$ is the vector of all of them. A neural network is a long chain of simple functions, and backpropagation is the chain rule applied along the chain, from the loss back to each weight.
+A **partial derivative** $\frac{\partial L}{\partial w}$ is the same thing for one input while all the others are held fixed, and the **gradient** $\nabla_{\mathbf{w}}L$ is the vector of all of them. A neural network is a long chain of simple functions, and backpropagation is the chain rule applied along the chain, from the loss back to each weight.
 
 **Worked example.** $u = 3x + 1$, $y = u^2$, at $x = 1$:
 
@@ -85,29 +85,29 @@ print(f"x = 1.01: y = {y_f(1.01):.4f}, change {y_f(1.01) - y_f(1.0):.4f}  (deriv
 
 ## 3. Gradient calculation: several paths
 
-We could write the whole network as one very complex formula and differentiate it by hand, but that is complex and inefficient. Backpropagation instead works on the **computational graph** of the computation, the structure that TensorFlow and PyTorch build automatically. The one new ingredient is what happens when a parameter reaches the loss through **several paths**: the chain rule adds one term per path. If $g_j = g_j(\theta_1,\dots,\theta_p)$ for $j = 1,\dots,k$ and $J = J(g_1,\dots,g_k)$,
+We could write the whole network as one very complex formula and differentiate it by hand, but that is complex and inefficient. Backpropagation instead works on the **computational graph** of the computation, the structure that TensorFlow and PyTorch build automatically. The one new ingredient is what happens when a parameter reaches the loss through **several paths**: the chain rule adds one term per path. If $g_j = g_j(w_1,\dots,w_p)$ for $j = 1,\dots,k$ and $J = J(g_1,\dots,g_k)$,
 
 $$
-\frac{\partial J}{\partial\theta_i} = \sum_{j=1}^k\frac{\partial J}{\partial g_j}\,\frac{\partial g_j}{\partial\theta_i} .
+\frac{\partial J}{\partialw_i} = \sum_{j=1}^k\frac{\partial J}{\partial g_j}\,\frac{\partial g_j}{\partialw_i} .
 $$
 
-**Why.** Nudge $\theta_i$ by $\Delta\theta_i$. To first order each $g_j$ moves by $\Delta g_j\approx\frac{\partial g_j}{\partial\theta_i}\Delta\theta_i$, and $J$ responds to all those moves at once, $\Delta J\approx\sum_j\frac{\partial J}{\partial g_j}\Delta g_j$ (first-order Taylor expansion of $J$ in the $g_j$). Substituting and dividing by $\Delta\theta_i$ gives the formula. The single-path rule is the case $k = 1$: $\frac{d f(g(x))}{dx} = \frac{df}{dg}\big|_{g(x)}\cdot\frac{dg}{dx}$, the outer derivative evaluated at the inner function times the inner derivative.
+**Why.** Nudge $w_i$ by $\Deltaw_i$. To first order each $g_j$ moves by $\Delta g_j\approx\frac{\partial g_j}{\partialw_i}\Deltaw_i$, and $J$ responds to all those moves at once, $\Delta J\approx\sum_j\frac{\partial J}{\partial g_j}\Delta g_j$ (first-order Taylor expansion of $J$ in the $g_j$). Substituting and dividing by $\Deltaw_i$ gives the formula. The single-path rule is the case $k = 1$: $\frac{d f(g(x))}{dx} = \frac{df}{dg}\big|_{g(x)}\cdot\frac{dg}{dx}$, the outer derivative evaluated at the inner function times the inner derivative.
 
-**Worked example.** $J = g_1g_2$ with $g_1 = \theta^2$ and $g_2 = 3\theta$, at $\theta = 2$ (so $g_1 = 4$, $g_2 = 6$):
+**Worked example.** $J = g_1g_2$ with $g_1 = w^2$ and $g_2 = 3w$, at $w = 2$ (so $g_1 = 4$, $g_2 = 6$):
 
 $$
 \begin{aligned}
-\frac{dJ}{d\theta} &= \frac{\partial J}{\partial g_1}\frac{dg_1}{d\theta} + \frac{\partial J}{\partial g_2}\frac{dg_2}{d\theta} \\
+\frac{dJ}{dw} &= \frac{\partial J}{\partial g_1}\frac{dg_1}{dw} + \frac{\partial J}{\partial g_2}\frac{dg_2}{dw} \\
 &\quad\small \text{two paths}\\
-&= g_2\cdot2\theta + g_1\cdot3 = 6\cdot4 + 4\cdot3 = 24 + 12 = 36 . \\
-&\quad\small \text{local derivatives at } \theta = 2
+&= g_2\cdot2w + g_1\cdot3 = 6\cdot4 + 4\cdot3 = 24 + 12 = 36 . \\
+&\quad\small \text{local derivatives at } w = 2
 \end{aligned}
 $$
 
-Directly, $J = 3\theta^3$ and $dJ/d\theta = 9\theta^2 = 36$. ✓
+Directly, $J = 3w^3$ and $dJ/dw = 9w^2 = 36$. ✓
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="graph-chain" aria-label="A computational graph from parameters through intermediate functions to the loss"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/02_backpropagation.html#4">slide 4</a> of the Backpropagation deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="graph-chain" data-w aria-label="A computational graph from parameters through intermediate functions to the loss"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/02_backpropagation.html#4">slide 4</a> of the Backpropagation deck.</p></div>
 ```
 
 ## 4. A computation is a graph: $f = (a+b)\cdot c$
@@ -164,7 +164,7 @@ Every layer in this course is built from three kinds of node plus element-wise f
 | **multiply** $uv$ (weight × input) | $3\cdot5 = 15$ | $v, u$ | $2\cdot5 = 10$ and $2\cdot3 = 6$ | **swapper**: each input gets upstream × the **other** input |
 | **max** $\max(u, v)$ (ReLU, max-pooling) | $\max(3,5) = 5$ | $\mathbb{1}[u>v], \mathbb{1}[v>u]$ | $0$ and $2$ | **router**: only the winner receives the gradient |
 
-The multiply rule is why a weight's gradient is proportional to the activation feeding it: for $z = wa$, $\partial L/\partial w = \delta\cdot a$ with $\delta = \partial L/\partial z$. The dual of the add gate is the **copy** (a value used in several places, like $\theta$ in section 3): on the way back the gradients arriving from its uses **add up**. Element-wise functions multiply by their derivative, written with the stored output: sigmoid $a(1-a)$, tanh $1-a^2$ ([NN note 00](00_neural_networks_mlp.html), section 14).
+The multiply rule is why a weight's gradient is proportional to the activation feeding it: for $z = wa$, $\partial L/\partial w = \delta\cdot a$ with $\delta = \partial L/\partial z$. The dual of the add gate is the **copy** (a value used in several places, like $w$ in section 3): on the way back the gradients arriving from its uses **add up**. Element-wise functions multiply by their derivative, written with the stored output: sigmoid $a(1-a)$, tanh $1-a^2$ ([NN note 00](00_neural_networks_mlp.html), section 14).
 
 ```{=html}
 <div class="widget"><svg class="fig" data-fig="gates" style="max-height:260px" aria-label="Add, multiply and max gates with their forward values and how they route the upstream gradient"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/02_backpropagation.html#6">slide 6</a> of the Backpropagation deck.</p></div>
@@ -229,7 +229,7 @@ print(f"after one step (alpha = 0.5): w={w_new:.3f}  b={b_new:.3f}  z={z_new:.3f
 **The naive way** nudges each of the $P$ parameters and re-runs the network. The centred finite difference
 
 $$
-\frac{\partial J}{\partial\theta_k}\approx\frac{J(\boldsymbol{\theta}+\varepsilon\mathbf{e}_k) - J(\boldsymbol{\theta}-\varepsilon\mathbf{e}_k)}{2\varepsilon}
+\frac{\partial J}{\partialw_k}\approx\frac{J(\mathbf{w}+\varepsilon\mathbf{e}_k) - J(\mathbf{w}-\varepsilon\mathbf{e}_k)}{2\varepsilon}
 $$
 
 ($\mathbf{e}_k$ = the $k$-th unit vector) needs **two forward passes per parameter**, $2P$ in total. A small network has $10^5$ parameters; GPT-2 has $1.2\times10^8$.
@@ -333,7 +333,7 @@ Reading the numbers: $\delta^{[2]} < 0$ says the output should go **up**. The hi
 **Try it.** Step through the backward pass on the network drawing: the output error $-0.367$, the gradients of layer 2, the error sent back through $\mathbf{W}^{[2]}$, the damping by the tanh, the gradients of layer 1, the update, and the new loss (read-out: 0.277, down from 0.458).
 
 ```{=html}
-<div class="widget" data-fig="net-num" data-auto="s=1 :: output error: δ⁽²⁾ = ŷ − y = 0.633 − 1 = −0.367 (sigmoid + cross-entropy) | s=2 :: gradients of layer 2: ∂W⁽²⁾ = a⁽¹⁾ᵀ δ⁽²⁾, ∂b⁽²⁾ = δ⁽²⁾ (multiply gate: the other input) | s=3 :: send δ⁽²⁾ back through W⁽²⁾: ∂a⁽¹⁾ = δ⁽²⁾ · W⁽²⁾ᵀ = (−0.367·0.7, −0.367·(−0.5)) | s=4 :: through the tanh: δ⁽¹⁾ = ∂a⁽¹⁾ ⊙ (1 − a²) = (−0.257·0.420, 0.184·0.856) | s=5 :: gradients of layer 1: ∂W⁽¹⁾ = xᵀ δ⁽¹⁾ (x = (1, 2)), ∂b⁽¹⁾ = δ⁽¹⁾ | s=6 :: update every parameter: θ ← θ − 0.5 · ∂θ | s=7 :: forward again with the new weights">
+<div class="widget" data-fig="net-num" data-auto="s=1 :: output error: δ⁽²⁾ = ŷ − y = 0.633 − 1 = −0.367 (sigmoid + cross-entropy) | s=2 :: gradients of layer 2: ∂W⁽²⁾ = a⁽¹⁾ᵀ δ⁽²⁾, ∂b⁽²⁾ = δ⁽²⁾ (multiply gate: the other input) | s=3 :: send δ⁽²⁾ back through W⁽²⁾: ∂a⁽¹⁾ = δ⁽²⁾ · W⁽²⁾ᵀ = (−0.367·0.7, −0.367·(−0.5)) | s=4 :: through the tanh: δ⁽¹⁾ = ∂a⁽¹⁾ ⊙ (1 − a²) = (−0.257·0.420, 0.184·0.856) | s=5 :: gradients of layer 1: ∂W⁽¹⁾ = xᵀ δ⁽¹⁾ (x = (1, 2)), ∂b⁽¹⁾ = δ⁽¹⁾ | s=6 :: update every parameter: w ← w − 0.5 · ∂w | s=7 :: forward again with the new weights">
       <svg class="fig" aria-label="The 2-2-1 network with forward values and every gradient written next to the nodes"></svg>
       <div class="ctl"><label for="nn2-s">step</label><input type="range" id="nn2-s" data-k="s" min="0" max="7" step="1" value="0"><span class="v" data-v="s"></span></div>
       <div class="panels">
@@ -569,17 +569,17 @@ A backpropagation implementation can be subtly wrong and still "train". Check it
 
 ### 12.1 Centred differences and the choice of ε
 
-Taylor-expand $J$ around $\theta$ in one coordinate (writing $J', J'', J'''$ for its derivatives there):
+Taylor-expand $J$ around $w$ in one coordinate (writing $J', J'', J'''$ for its derivatives there):
 
 $$
 \begin{aligned}
-J(\theta+\varepsilon) &= J + \varepsilon J' + \tfrac{\varepsilon^2}{2}J'' + \tfrac{\varepsilon^3}{6}J''' + O(\varepsilon^4) \\
+J(w+\varepsilon) &= J + \varepsilon J' + \tfrac{\varepsilon^2}{2}J'' + \tfrac{\varepsilon^3}{6}J''' + O(\varepsilon^4) \\
 &\quad\small \text{Taylor}\\
-J(\theta-\varepsilon) &= J - \varepsilon J' + \tfrac{\varepsilon^2}{2}J'' - \tfrac{\varepsilon^3}{6}J''' + O(\varepsilon^4) \\
+J(w-\varepsilon) &= J - \varepsilon J' + \tfrac{\varepsilon^2}{2}J'' - \tfrac{\varepsilon^3}{6}J''' + O(\varepsilon^4) \\
 &\quad\small \text{Taylor, } \varepsilon\to-\varepsilon\\
-\frac{J(\theta+\varepsilon) - J(\theta-\varepsilon)}{2\varepsilon} &= J' + \tfrac{\varepsilon^2}{6}J''' + O(\varepsilon^4) \\
+\frac{J(w+\varepsilon) - J(w-\varepsilon)}{2\varepsilon} &= J' + \tfrac{\varepsilon^2}{6}J''' + O(\varepsilon^4) \\
 &\quad\small \text{subtract: the even terms cancel; divide by } 2\varepsilon\\
-\frac{J(\theta+\varepsilon) - J(\theta)}{\varepsilon} &= J' + \tfrac{\varepsilon}{2}J'' + O(\varepsilon^2) \\
+\frac{J(w+\varepsilon) - J(w)}{\varepsilon} &= J' + \tfrac{\varepsilon}{2}J'' + O(\varepsilon^2) \\
 &\quad\small \text{one-sided, from the first line}
 \end{aligned}
 $$
@@ -644,9 +644,9 @@ which is scale-free (a gradient of size $10^{-6}$ and one of size $10$ are judge
 
 **Pitfalls**, each with its fix:
 
-- **Kinks.** ReLU and max are not differentiable at 0. If a pre-activation lies within ε of 0, the two evaluations $J(\theta\pm\varepsilon)$ fall on different linear pieces and the numerical derivative is wrong, not the backprop one. Fix: re-check the flagged entries with a smaller ε, or skip entries whose perturbation crosses a kink. Demonstrated below.
+- **Kinks.** ReLU and max are not differentiable at 0. If a pre-activation lies within ε of 0, the two evaluations $J(w\pm\varepsilon)$ fall on different linear pieces and the numerical derivative is wrong, not the backprop one. Fix: re-check the flagged entries with a smaller ε, or skip entries whose perturbation crosses a kink. Demonstrated below.
 - **float32.** Rounding error dominates (section 12.1). Fix: run the check in float64.
-- **Randomness.** Dropout masks or data augmentation that change between the two evaluations make $J(\theta+\varepsilon)$ and $J(\theta-\varepsilon)$ differ for reasons unrelated to θ. Fix: switch them off or fix the random mask during the check (section 16.5).
+- **Randomness.** Dropout masks or data augmentation that change between the two evaluations make $J(w+\varepsilon)$ and $J(w-\varepsilon)$ differ for reasons unrelated to the parameters. Fix: switch them off or fix the random mask during the check (section 16.5).
 - **Regularisation.** A penalty term in the loss must be included in both the numerical and the analytical gradient.
 - **Cost.** A full check needs $2P$ forward passes. Fix: a small network, a few examples, and a **random subset** of entries **per tensor** (so that a bug in any one tensor is caught and located).
 
@@ -746,7 +746,7 @@ for e in [1e-5, 1e-6, 1e-7]:
     print(f"eps = {e:.0e}: numerical {num_k:.6f}   backprop {db_big[1][0, j_k]:.6f}   relative error {rel(np.array([num_k]), db_big[1][:, j_k]):.0e}")
 ```
 
-With $\varepsilon = 10^{-5}$ the perturbation $-\varepsilon$ pushes that example across the kink, so $J(\theta-\varepsilon)$ is computed with the unit switched off and the numerical derivative is wrong; the backprop value is the correct one. Once ε is smaller than the distance to the kink the two agree again. The practical rule: when a ReLU network shows relative errors between $10^{-7}$ and $10^{-4}$ in a few entries, re-check those entries with a smaller ε before hunting for a bug.
+With $\varepsilon = 10^{-5}$ the perturbation $-\varepsilon$ pushes that example across the kink, so $J(w-\varepsilon)$ is computed with the unit switched off and the numerical derivative is wrong; the backprop value is the correct one. Once ε is smaller than the distance to the kink the two agree again. The practical rule: when a ReLU network shows relative errors between $10^{-7}$ and $10^{-4}$ in a few entries, re-check those entries with a smaller ε before hunting for a bug.
 
 **Check the tiny network of section 9 the same way** (the slides' exercise): perturbing $W^{[2]}_1$ by $\pm\varepsilon$ gives $-0.280$, the number of section 9 (printed at the end of that section's cell).
 
@@ -766,7 +766,7 @@ for epoch in range(3000):                           # full-batch gradient descen
 g1, g2 = np.meshgrid(np.linspace(-1.8, 2.8, 300), np.linspace(-1.3, 1.8, 300))
 P = net.forward(np.c_[g1.ravel(), g2.ravel()]).reshape(g1.shape)
 fig, axes = plt.subplots(1, 2, figsize=(11, 3.8))
-axes[0].plot(costs); axes[0].set_yscale("log"); axes[0].set_xlabel("iteration"); axes[0].set_title(r"$J(\theta)$, NumPy backprop + batch GD")
+axes[0].plot(costs); axes[0].set_yscale("log"); axes[0].set_xlabel("iteration"); axes[0].set_title(r"$J(w)$, NumPy backprop + batch GD")
 axes[1].contourf(g1, g2, P, levels=20, cmap="coolwarm", alpha=0.6); axes[1].contour(g1, g2, P, levels=[0.5], colors="k")
 axes[1].scatter(Xm[:, 0], Xm[:, 1], c=ym, cmap="coolwarm", s=8, edgecolor="k", lw=0.3)
 axes[1].set_title(f"2-32-32-1 ReLU net, train acc {np.mean((net.forward(Xm) > 0.5) == Ym):.3f}"); axes[1].set_xlabel("$x_1$")
@@ -826,7 +826,7 @@ x_, w_, bias_ = Value(2.0), Value(-0.5), Value(0.3)
 J_ = -((w_ * x_ + bias_).sigmoid().log()); J_.backward()
 print(f"neuron: J = {J_.data:.3f}, dJ/dw = {w_.grad:.3f}, dJ/db = {bias_.grad:.3f}")
 th = Value(2.0); J2 = (th * th) * (th * 3.0); J2.backward()
-print(f"two paths: J = {J2.data}, dJ/dtheta = {th.grad}")
+print(f"two paths: J = {J2.data}, dJ/dw = {th.grad}")
 ```
 
 PyTorch does exactly this, with tensors instead of scalars and a hand-written backward formula (like section 10's) for every operation.
@@ -1306,7 +1306,7 @@ The gradient norm grows faster and faster, from $8\times10^{2}$ to $2\times10^{1
 
 **What it says.** The function evaluated in the forward pass is the one being differentiated: no randomness changes between the evaluations you compare, and no tensor saved for the backward pass is modified in between.
 
-**Why it matters.** Backpropagation differentiates the recorded computation, including the particular dropout mask used ([NN note 02](02_training_optimization_regularization.html)). That is correct for training, but a finite-difference check that draws a new mask for $J(\theta+\varepsilon)$ and $J(\theta-\varepsilon)$ compares two different functions and reports nonsense. And an in-place edit of a saved tensor (section 13.3) would make autograd use a value that was never part of the forward computation; PyTorch refuses rather than return a wrong gradient.
+**Why it matters.** Backpropagation differentiates the recorded computation, including the particular dropout mask used ([NN note 02](02_training_optimization_regularization.html)). That is correct for training, but a finite-difference check that draws a new mask for $J(w+\varepsilon)$ and $J(w-\varepsilon)$ compares two different functions and reports nonsense. And an in-place edit of a saved tensor (section 13.3) would make autograd use a value that was never part of the forward computation; PyTorch refuses rather than return a wrong gradient.
 
 **How to check.** Run gradient checks with dropout off or with a fixed mask; heed PyTorch's in-place error instead of working around it with `.clone()` in the wrong place.
 

@@ -806,9 +806,9 @@ So: measure the shift, try the free fix (AdaBN) first, and prefer fine-tuning ov
 
 ## 14. Multi-task learning
 
-**Multi-task learning (MTL)**: one network for several related tasks, a shared backbone (trunk) $\mathbf{h}=f_{\boldsymbol{\theta}}(\mathbf{x})$ and one small head per task, $\hat y_k=g_{\boldsymbol{\phi}_k}(\mathbf{h})$. In the face lab: eye coordinates (regression), gender (binary classification) and age (regression) from one ResNet-50. The loss is a weighted sum, so the trunk receives gradient from every task:
+**Multi-task learning (MTL)**: one network for several related tasks, a shared backbone (trunk) $\mathbf{h}=f_{\mathbf{w}}(\mathbf{x})$ and one small head per task, $\hat y_k=g_{\boldsymbol{\phi}_k}(\mathbf{h})$. In the face lab: eye coordinates (regression), gender (binary classification) and age (regression) from one ResNet-50. The loss is a weighted sum, so the trunk receives gradient from every task:
 $$
-J=\sum_k\lambda_kJ_k\qquad\Rightarrow\qquad\nabla_{\boldsymbol{\theta}}J=\sum_k\lambda_k\nabla_{\boldsymbol{\theta}}J_k,\qquad\nabla_{\boldsymbol{\phi}_k}J=\lambda_k\nabla_{\boldsymbol{\phi}_k}J_k .
+J=\sum_k\lambda_kJ_k\qquad\Rightarrow\qquad\nabla_{\mathbf{w}}J=\sum_k\lambda_k\nabla_{\mathbf{w}}J_k,\qquad\nabla_{\boldsymbol{\phi}_k}J=\lambda_k\nabla_{\boldsymbol{\phi}_k}J_k .
 $$
 
 ```{=html}
@@ -839,7 +839,7 @@ $$
 $$
 and averaging over the data and summing over independent tasks (the joint likelihood is a product),
 $$
-J(\boldsymbol{\theta},\sigma_1,\dots,\sigma_K)=\sum_k\Big(\frac{1}{2\sigma_k^2}J_k(\boldsymbol{\theta})+\log\sigma_k\Big)+\text{const},\qquad J_k=\text{the MSE of task } k .
+J(\mathbf{w},\sigma_1,\dots,\sigma_K)=\sum_k\Big(\frac{1}{2\sigma_k^2}J_k(\mathbf{w})+\log\sigma_k\Big)+\text{const},\qquad J_k=\text{the MSE of task } k .
 $$
 Each task gets the weight $\lambda_k=1/(2\sigma_k^2)$, learned jointly with the network: a noisy or large-scale task gets a large $\sigma_k$ and hence a small weight, and the $\log\sigma_k$ term stops $\sigma_k\to\infty$ (which would switch the task off). For fixed network parameters, minimise over $\sigma_k$:
 $$
@@ -851,9 +851,9 @@ $$
 
 ### 14.2 Detecting negative transfer: the cosine of task gradients
 
-Let $\mathbf{g}_1=\nabla_{\boldsymbol{\theta}}J_1$ and $\mathbf{g}_2=\nabla_{\boldsymbol{\theta}}J_2$ be the gradients of two tasks with respect to the **shared** parameters. A small step that decreases task 2, $\boldsymbol{\theta}\leftarrow\boldsymbol{\theta}-\eta\,\mathbf{g}_2$, changes task 1's loss by
+Let $\mathbf{g}_1=\nabla_{\mathbf{w}}J_1$ and $\mathbf{g}_2=\nabla_{\mathbf{w}}J_2$ be the gradients of two tasks with respect to the **shared** parameters. A small step that decreases task 2, $\mathbf{w}\leftarrow\mathbf{w}-\eta\,\mathbf{g}_2$, changes task 1's loss by
 $$
-J_1(\boldsymbol{\theta}-\eta\mathbf{g}_2)-J_1(\boldsymbol{\theta})\approx-\eta\,\mathbf{g}_1^\top\mathbf{g}_2=-\eta\,\lVert\mathbf{g}_1\rVert\lVert\mathbf{g}_2\rVert\cos(\mathbf{g}_1,\mathbf{g}_2)
+J_1(\mathbf{w}-\eta\mathbf{g}_2)-J_1(\mathbf{w})\approx-\eta\,\mathbf{g}_1^\top\mathbf{g}_2=-\eta\,\lVert\mathbf{g}_1\rVert\lVert\mathbf{g}_2\rVert\cos(\mathbf{g}_1,\mathbf{g}_2)
 $$
 (first-order Taylor expansion of $J_1$). A **positive cosine** means that learning task 2 also helps task 1 at this point; a **negative cosine** means it hurts (a conflict). Monitoring $\cos(\mathbf{g}_1,\mathbf{g}_2)$ on mini-batches during training is a cheap detector of negative transfer. Two cautions: (1) average it over many mini-batches, since single-batch values are noisy; (2) near a minimum of the *sum* $J_1+J_2$, the shared gradients cancel, $\mathbf{g}_1\approx-\mathbf{g}_2$, and the cosine tends to $-1$ for any pair of tasks, so read it during training, not at convergence of a full-batch run.
 
