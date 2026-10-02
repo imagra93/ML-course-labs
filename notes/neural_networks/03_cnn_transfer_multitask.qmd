@@ -802,11 +802,11 @@ for name, r in results.items(): print(f"{name:46s} {np.mean(r[2]):15.3f} {np.mea
 
 So: measure the shift, try the free fix (AdaBN) first, and prefer fine-tuning over a frozen backbone when the low-level statistics changed.
 
-**Lab 12 · Transfer learning: eye positions with a ResNet-50** ([open in Colab](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 12 - Multitask face analysis plain PyTorch.ipynb)). A regression problem on real photos: predict the positions of both eyes $(x_l,y_l,x_r,y_r)$ from a face image, starting from a network pre-trained on ImageNet, in plain PyTorch: normalise the coordinates to $[0,1]$; a `Dataset` with ImageNet normalisation and light augmentation; ResNet-50's classifier `fc` replaced by a small regression head with 4 outputs, MSE loss and RMSE metric; a training loop with gradient clipping and checkpointing of the best model; the predicted eyes drawn on test faces. Needs a GPU (Colab T4); the data are downloaded by the notebook.
+**Lab 12 · Fine-tuning a ResNet: pre-trained or from scratch?** ([open in Colab](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 12 - Fine-tuning ResNet pretrained vs scratch.ipynb)). The same ResNet-18 on 27,000 satellite images (EuroSAT, 10 land-use classes), started from random weights and from ImageNet weights: what an ImageNet network says about satellite images; the first-layer filters, random against pre-trained; **zero training** (ImageNet features and a logistic regression); with 500 labelled images, training from scratch, a frozen backbone with a new head, and fine-tuning (the last block, then everything, with discriminative learning rates); which weights moved and a t-SNE of the features; confusion matrices; accuracy against the number of labelled images (5 to 600 per class); and three ways to break a fine-tune (a learning rate that is too large, no ImageNet normalisation, BatchNorm statistics drifting in a frozen backbone). A GPU is much faster (Colab T4, 10 to 15 minutes); torchvision downloads the data (about 90 MB).
 
 ## 14. Multi-task learning
 
-**Multi-task learning (MTL)**: one network for several related tasks, a shared backbone (trunk) $\mathbf{h}=f_{\mathbf{w}}(\mathbf{x})$ and one small head per task, $\hat y_k=g_{\boldsymbol{\phi}_k}(\mathbf{h})$. In the face lab: eye coordinates (regression), gender (binary classification) and age (regression) from one ResNet-50. The loss is a weighted sum, so the trunk receives gradient from every task:
+**Multi-task learning (MTL)**: one network for several related tasks, a shared backbone (trunk) $\mathbf{h}=f_{\mathbf{w}}(\mathbf{x})$ and one small head per task, $\hat y_k=g_{\boldsymbol{\phi}_k}(\mathbf{h})$. In the face demos: eye coordinates (regression), gender (binary classification) and age (regression) from one ResNet-50. The loss is a weighted sum, so the trunk receives gradient from every task:
 $$
 J=\sum_k\lambda_kJ_k\qquad\Rightarrow\qquad\nabla_{\mathbf{w}}J=\sum_k\lambda_k\nabla_{\mathbf{w}}J_k,\qquad\nabla_{\boldsymbol{\phi}_k}J=\lambda_k\nabla_{\boldsymbol{\phi}_k}J_k .
 $$
@@ -821,7 +821,7 @@ $$
 
 ### 14.1 The practical problem: loss scales
 
-The trunk gradient is a sum, so the task with the largest loss (and gradient) magnitude dominates. In the face lab the raw losses at the start differ by six orders of magnitude: eye MSE on $[0,1]$ coordinates of order $10^{-4}$ (about $6\times10^{-5}$ in the lab run), gender BCE $\approx\log2=0.69$ (chance), age MSE in years² $\approx73$. With all $\lambda_k=1$ the age term dominates and the eyes are not trained at all.
+The trunk gradient is a sum, so the task with the largest loss (and gradient) magnitude dominates. In the face demo the raw losses at the start differ by six orders of magnitude: eye MSE on $[0,1]$ coordinates of order $10^{-4}$ (about $6\times10^{-5}$ in the demo run), gender BCE $\approx\log2=0.69$ (chance), age MSE in years² $\approx73$. With all $\lambda_k=1$ the age term dominates and the eyes are not trained at all.
 
 **Fix 1: standardise the targets.** Train each regression head on $z$-scores $z=(y-\mu_k)/\sigma_k$, with the training-set statistics. Then every MSE starts around 1, comparable to the BCE at chance. For an MSE this is the same as choosing $\lambda_k=1/\sigma_k^2$: with the prediction mapped back, $\hat y=\mu_k+\sigma_k\hat z$,
 $$
@@ -936,7 +936,7 @@ trainer = L.Trainer(max_epochs=20, gradient_clip_val=1.0,
 trainer.fit(model, datamodule=dm)
 ```
 
-**Lab 13 · Multi-task face analysis with Lightning** ([open in Colab](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 13 - Multitask face analysis Lightning.ipynb)). The faces and backbone of Lab 12 with three tasks at once: a trivial baseline for every task first; a `LightningDataModule` that computes the target statistics on the training split only; a `LightningModule` with the shared trunk, three heads, standardised targets and a weighted loss, with TorchMetrics; a `Trainer` with early stopping, checkpointing and a CSV logger; test evaluation against the baseline, learning curves and predictions on new faces. Needs a GPU (Colab T4).
+**Demo · Multi-task face analysis** (open in Colab: [plain PyTorch](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/demo - multitask face analysis plain PyTorch.ipynb), [Lightning](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/demo - multitask face analysis Lightning.ipynb)). Not a lab: a worked solution to the multi-task face problem, in two versions. The plain-PyTorch notebook does transfer learning with a ResNet-50 on real photos: eye positions as a regression problem, a hand-written training loop with gradient clipping and checkpointing, and the predicted eyes drawn on test faces. The Lightning notebook uses the same faces with three tasks at once: a trivial baseline for every task first; a `LightningDataModule` that computes the target statistics on the training split only; a `LightningModule` with the shared trunk, three heads, standardised targets and a weighted loss, with TorchMetrics; a `Trainer` with early stopping, checkpointing and a CSV logger; test evaluation against the baseline, learning curves and predictions on new faces. Both need a GPU (Colab T4).
 
 ## 15. Semantic segmentation
 
@@ -1330,7 +1330,7 @@ print(f"AP (area under the interpolated curve) = {ap:.4f};  COCO-style 101-point
 
 The staircase has five steps, one per true positive, each of width $1/6$ in recall: $\mathrm{AP}=\frac16(1+1+0.75+0.667+0.625)=0.674$. The false positives lower the precision of the later steps, and the sixth object is never found, so recall stops at $5/6$ and AP can be at most $5/6$. COCO computes the same area by averaging the interpolated precision at 101 recall levels $0,0.01,\dots,1$, which gives almost the same number here.
 
-**Lab 10b · Object detection with YOLO** ([open in Colab](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 10b - Object detection with YOLO.ipynb)). Detect buffaloes, elephants, rhinos and zebras: box formats and IoU from scratch; how the YOLO11 head works (the grids, the box as 4 distances, the loss and the assigner); NMS and mAP from scratch, checked against the library; a baseline with the COCO-pre-trained model, then fine-tuning YOLO11n on the African Wildlife dataset; evaluation on the test set, the errors, the speed, export to ONNX and a small Gradio app. A GPU is strongly recommended (Colab T4); about 100 MB of images and weights are downloaded by Ultralytics.
+**Lab 13 · Object detection with YOLO** ([open in Colab](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 13 - Object detection with YOLO.ipynb)). Detect buffaloes, elephants, rhinos and zebras: box formats and IoU from scratch; how the YOLO11 head works (the grids, the box as 4 distances, the loss and the assigner); NMS and mAP from scratch, checked against the library; a baseline with the COCO-pre-trained model, then fine-tuning YOLO11n on the African Wildlife dataset; evaluation on the test set, the errors, the speed, export to ONNX and a small Gradio app. A GPU is strongly recommended (Colab T4); about 100 MB of images and weights are downloaded by Ultralytics.
 
 ## 17. Vision tasks at a glance
 
@@ -1569,9 +1569,9 @@ Lower the backbone's learning rate (discriminative learning rates), warm up (NN 
 ## 21. Labs
 
 - **Lab 10** · CNNs for image classification (Fashion-MNIST): [open in Colab](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 10 - CNNs for image classification.ipynb) (section 9).
-- **Lab 10b** · Object detection with YOLO: [open in Colab](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 10b - Object detection with YOLO.ipynb) (section 16).
-- **Lab 12** · Transfer learning: eye positions with a ResNet-50: [open in Colab](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 12 - Multitask face analysis plain PyTorch.ipynb) (section 13).
-- **Lab 13** · Multi-task face analysis with Lightning: [open in Colab](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 13 - Multitask face analysis Lightning.ipynb) (section 14).
+- **Lab 12** · Fine-tuning a ResNet: pre-trained or from scratch: [open in Colab](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 12 - Fine-tuning ResNet pretrained vs scratch.ipynb) (section 13).
+- **Demo** · Multi-task face analysis: [plain PyTorch](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/demo - multitask face analysis plain PyTorch.ipynb), [Lightning](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/demo - multitask face analysis Lightning.ipynb) (section 14).
+- **Lab 13** · Object detection with YOLO: [open in Colab](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 13 - Object detection with YOLO.ipynb) (section 16).
 
 ## Summary
 

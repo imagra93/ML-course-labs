@@ -58,6 +58,12 @@ a.colab .co{font-family:var(--mono);font-size:19px;background:#1f1f1f;color:#f9a
 /* small "lab later / lab now" pointer line used on plan and vocabulary slides */
 .labline{font-size:17px;color:#385723;background:#f2f8ee;border-left:4px solid #548235;padding:5px 12px}
 .labline a{color:#385723;font-weight:700}
+/* demo slides: a worked solution to read and run, not a lab (class "slide lab demo": orange instead of green) */
+.slide.demo{background:linear-gradient(90deg,#fdf1e7 0,#fff 42%)}
+.slide.demo .labtag{background:#c55a11}
+.slide.demo .labcard{border-top-color:#c55a11}
+.slide.demo .labcard .gloss dt{color:#c55a11}
+.demo ol.todo li::before{background:#fbe5d6;color:#843c0c}
 /* derivations: numbered steps with a short comment on the right */
 .deriv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;align-items:center}
 .deriv .eq{font-size:20px}

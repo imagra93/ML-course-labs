@@ -1,4 +1,4 @@
-"""A small object-detection web app around a trained YOLO model (notebooks/neural_networks/lab 10b - Object detection with YOLO.ipynb).
+"""A small object-detection web app around a trained YOLO model (notebooks/neural_networks/lab 13 - Object detection with YOLO.ipynb).
 
 Usage, from the notebooks/neural_networks folder:
     python yolo_app.py --weights runs/wildlife/weights/best.pt

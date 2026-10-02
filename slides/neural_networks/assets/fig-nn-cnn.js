@@ -246,7 +246,7 @@ FIG['dense-vs-conv']=root=>{const svg=initSvg(svgOf(root),960,300);const n=7,m=5
     T(svg,gx+n*cs+14,gy+62,conv?'= 3 parameters (the kernel)':'','lab','start')};
   panel(10,'dense layer: each output sees every input',false);panel(490,'convolution: local + the same weights everywhere',true);
   E('line',{x1:478,y1:30,x2:478,y2:290,stroke:'#d0d0d0','stroke-dasharray':'4 4'},svg)};
-/* multi-task learning: one backbone, three heads, one weighted loss (Lab 13) */
+/* multi-task learning: one backbone, three heads, one weighted loss (demo - multitask) */
 FIG['multitask']=root=>{const svg=initSvg(svgOf(root),960,270);
   E('rect',{x:10,y:95,width:80,height:80,rx:6,fill:'#e2f0d9',stroke:'#7f7f7f'},svg);E('circle',{cx:50,cy:128,r:22,fill:'#f4b183'},svg);E('circle',{cx:42,cy:124,r:3,fill:'#000'},svg);E('circle',{cx:58,cy:124,r:3,fill:'#000'},svg);E('rect',{x:34,y:152,width:32,height:18,rx:6,fill:'#70ad47'},svg);T(svg,50,192,'face image','','middle');
   arrowPx(svg,92,135,118,135,'ln thin sk','fk');cube(svg,120,95,150,80,40,'#8ea9db','shared backbone (ResNet-50)','23.5 M parameters, pre-trained',{cls:'lab'});

@@ -56,7 +56,7 @@ All of these are built from the **same few blocks**. The slides are organised in
 | 1 · Neurons and layers | a neuron is a logistic regression; stack them into an MLP; why the non-linearity matters | this note | |
 | 2 · Forward and backward | how the prediction is computed and how every weight gets its gradient (backpropagation), with numbers | [NN note 01](01_backpropagation.html) | Lab 7: an MLP from scratch in NumPy |
 | 3 · Training | mini-batches, optimisers (momentum, Adam), learning-rate schedules, dropout, BatchNorm, the layer zoo | [NN note 02](02_training_optimization_regularization.html) | Labs 8, 9 |
-| 4 · Images: CNNs | convolutions, pooling, architectures, transfer learning, segmentation, detection | [NN note 03](03_cnn_transfer_multitask.html) | Labs 10, 12, 13, 10b |
+| 4 · Images: CNNs | convolutions, pooling, architectures, transfer learning, segmentation, detection | [NN note 03](03_cnn_transfer_multitask.html) | Labs 10, 12, 13 + a multi-task demo |
 | 5 · Sequences | embeddings, RNNs, LSTMs | [NN note 04](04_rnn_lstm.html) | Lab 11 |
 | 6 · Attention and transformers | every token looks at every other token; GPT, decoding, RAG | [NN notes 05](05_attention_transformers.html), [06](06_embeddings_rag.html) | Labs 14, 15 |
 
