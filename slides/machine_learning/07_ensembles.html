@@ -46,19 +46,29 @@
 
 <section class="slide">
   <h2>Ensemble methods: why averaging works (proof)</h2>
-  <div class="cols c64">
+  <div class="cols">
     <div class="stack" style="gap:8px">
       <p class="small">$B$ models at a fixed point $\bx$. Each has variance $\mathrm{Var}(h_b)=\sigma^2$, and any two have correlation $\rho$, i.e. covariance $\mathrm{Cov}(h_b,h_{b'})=\rho\,\sigma\cdot\sigma=\rho\sigma^2$.</p>
       <div class="step"><p class="small"><b>1 · Variance of a sum</b> = all the variances + the covariances of all pairs:</p>
         <div class="eq s">$$\mathrm{Var}\Big(\sum_{b=1}^Bh_b\Big)=\sum_b\mathrm{Var}(h_b)+\sum_{b\ne b'}\mathrm{Cov}(h_b,h_{b'})$$</div></div>
-      <div class="step"><p class="small"><b>2 · Count the terms:</b> $B$ variances, and $B(B-1)$ ordered pairs with $b\ne b'$:</p>
+      <div class="step"><p class="small"><b>2 · Count the terms</b>, in plain words. Squaring a sum multiplies <b>every term by every term</b>: $(a+b+c)(a+b+c)$ gives $3\times3=9$ products. Three are a term with itself ($a^2,b^2,c^2$), six are two different terms ($ab,ba,ac,ca,bc,cb$). The variance of a sum works the same way, with covariances. Here $B=3$ models, one cell for each "model $\times$ model":</p>
+        <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
+          <div style="display:grid;grid-template-columns:44px repeat(3,76px);gap:3px;text-align:center;font-size:18px;flex:none">
+            <div></div><div class="muted">$h_1$</div><div class="muted">$h_2$</div><div class="muted">$h_3$</div>
+            <div class="muted">$h_1$</div><div style="background:var(--blue-soft);padding:4px 0">$\sigma^2$</div><div style="background:var(--orange-soft);padding:4px 0">$\rho\sigma^2$</div><div style="background:var(--orange-soft);padding:4px 0">$\rho\sigma^2$</div>
+            <div class="muted">$h_2$</div><div style="background:var(--orange-soft);padding:4px 0">$\rho\sigma^2$</div><div style="background:var(--blue-soft);padding:4px 0">$\sigma^2$</div><div style="background:var(--orange-soft);padding:4px 0">$\rho\sigma^2$</div>
+            <div class="muted">$h_3$</div><div style="background:var(--orange-soft);padding:4px 0">$\rho\sigma^2$</div><div style="background:var(--orange-soft);padding:4px 0">$\rho\sigma^2$</div><div style="background:var(--blue-soft);padding:4px 0">$\sigma^2$</div>
+          </div>
+          <p class="small" style="flex:1 1 230px;min-width:0"><b style="color:var(--blue)">Blue diagonal</b>: a model with itself, its variance $\sigma^2$. $B$ cells.<br><b style="color:var(--orange)">Orange</b>: two different models, their covariance $\rho\sigma^2$. The table has $B\cdot B$ cells, so $B\cdot B-B=B(B-1)$ of them: $3\cdot2=6$.</p>
+        </div></div>
+      <div class="step"><p class="small"><b>The variance of the sum is the sum of the whole table</b>: $B$ blue cells and $B(B-1)$ orange cells. For $B=10$: 10 blue and $10\cdot9=90$ orange.</p>
         <div class="eq s">$$=B\sigma^2+B(B-1)\,\rho\sigma^2$$</div></div>
+    </div>
+    <div class="stack" style="gap:8px">
       <div class="step"><p class="small"><b>3 · The average</b> is the sum times $\frac1B$, and $\mathrm{Var}(cX)=c^2\,\mathrm{Var}(X)$:</p>
         <div class="eq s">$$\mathrm{Var}(\bar h)=\frac{B\sigma^2+B(B-1)\rho\sigma^2}{B^2}=\frac{\sigma^2}{B}+\frac{B-1}{B}\,\rho\sigma^2$$</div></div>
       <div class="step"><p class="small"><b>4 · Rearrange</b>, using $\frac{B-1}{B}=1-\frac1B$:</p>
         <div class="eq s">$$=\frac{\sigma^2}{B}+\rho\sigma^2-\frac{\rho\sigma^2}{B}=\rho\sigma^2+\frac{1-\rho}{B}\,\sigma^2\quad\blacksquare$$</div></div>
-    </div>
-    <div class="stack" style="gap:12px">
       <div class="note step"><p class="small"><b>Numbers:</b> $\sigma^2=1$, $\rho=0.3$. One model: 1. &nbsp;$B=10$: $0.3+0.07=0.37$. &nbsp;$B=100$: $0.307$. &nbsp;$B\to\infty$: $0.3$.</p></div>
       <ul class="small step">
         <li>Averaging does not change the <b>bias</b> (the average of the models has the same expected value as one model), so average <b>low-bias</b> models: deep trees.</li>
@@ -81,13 +91,13 @@
       <div class="ro"><div class="m"><span>samples</span><b data-r="n">–</b></div><div class="m"><span>left out, this one</span><b data-r="o">–</b></div><div class="m"><span>left out, average</span><b data-r="a">–</b></div></div>
     </div>
     <div class="stack" style="gap:6px">
-      <p>We have <b>one</b> training set of $m$ examples. To get "different" ones, draw $m$ examples <b>with replacement</b>: a <b>bootstrap sample</b>.</p>
-      <p class="step small">One draw misses a given example with probability $1-\frac1m$. The $m$ draws are independent, so:</p>
-      <div class="eq step">$$P(\text{left out})=\Big(1-\frac1m\Big)^m$$</div>
-      <div class="step"><div class="eq s">$$\ln\Big(1-\frac1m\Big)^m=m\ln\Big(1-\frac1m\Big)\approx m\cdot\Big(-\frac1m\Big)=-1$$</div><p class="why">for a small $u$, $\ln(1-u)\approx-u$</p></div>
-      <div class="bluebox step" style="font-size:21px">$$P(\text{left out})\xrightarrow{m\to\infty}e^{-1}\approx0.368$$</div>
+      <p class="small">We have <b>one</b> training set of $m$ examples. To get "different" ones, draw $m$ examples <b>with replacement</b>: a <b>bootstrap sample</b>. How likely is an example to be <b>left out</b>? Follow example #1.</p>
+      <p class="small step"><b>One draw.</b> We pick one of the $m$ examples at random. It is #1 with probability $\frac1m$, so it is <b>not</b> #1 with probability $1-\frac1m$. With $m=10$: $1-\frac1{10}=\frac9{10}$.</p>
+      <p class="small step"><b>All the draws.</b> The example goes back after each draw, so the $m$ draws are independent, each with the same chance of missing #1. To be left out, #1 must be missed <b>every time</b>: multiply the $m$ chances.</p>
+      <div class="eq s step">$$P(\text{left out})=\underbrace{\Big(1-\frac1m\Big)\cdots\Big(1-\frac1m\Big)}_{m\text{ factors}}=\Big(1-\frac1m\Big)^m$$</div>
+      <p class="why step">$m=10$: $0.9\times0.9\times\dots$ (ten times) $=0.9^{10}=0.349$, about 35 %.</p>
       <table class="t step" style="font-size:17px;width:auto"><tr><th>$m$</th><th>10</th><th>100</th><th>1000</th></tr><tr><td>$(1-1/m)^m$</td><td>0.349</td><td>0.366</td><td>0.368</td></tr></table>
-      <p class="small step">Each bootstrap sample holds about <b>63 %</b> of the distinct examples (65 % for $m=10$). The other ~37 % are its <b>out-of-bag</b> (OOB) examples.</p>
+      <p class="small step">For larger $m$ it settles at $e^{-1}\approx0.368$ (proof in the notes). A bootstrap sample holds about <b>63 %</b> of the distinct examples (65 % for $m=10$); the other ~37 % are its <b>out-of-bag</b> (OOB) examples.</p>
     </div>
   </div>
 </section>
@@ -194,7 +204,7 @@ predict:
   <h2>Random Forest – Lab</h2>
   <div class="stack center grow" style="gap:20px">
     <div class="note" style="max-width:840px;text-align:left"><p class="small"><b>Decision Trees and Random Forests.</b> Random forests are a powerful non-parametric algorithm: an ensemble of simpler estimators (decision trees). The sum can be greater than the parts: a majority vote among many estimators can end up better than any individual one.</p></div>
-    <p style="font-size:28px"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%204b%20-%20Decision%20Trees%20and%20Random%20Forests.ipynb" target="_blank" rel="noopener">Lab Trees</a> &nbsp;·&nbsp; <a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%204%20-%20Decision%20Trees%20from%20scratch.ipynb" target="_blank" rel="noopener">Trees from scratch</a></p>
+    <p style="font-size:28px"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%204b%20-%20Decision%20Trees%20and%20Random%20Forests.ipynb" target="_blank" rel="noopener">Lab: Decision Trees and Random Forests</a></p>
   </div>
 </section>
 
@@ -213,23 +223,32 @@ predict:
 </section>
 
 <section class="slide">
-  <h2>AdaBoost: the algorithm</h2>
+  <h2>AdaBoost: the algorithm, in words</h2>
   <div class="cols">
-    <div class="stack" style="gap:6px">
-      <p class="small">Labels $y^{(i)}\in\{-1,+1\}$. Weak learners $h_t(\bx)\in\{-1,+1\}$, usually <b>stumps</b> (trees with a single split). Start with equal weights $w_i=\frac1m$. For $t=1,\dots,M$:</p>
-      <div class="step"><p class="small"><b>1 · Fit</b> the stump with the smallest <b>weighted error</b>:</p><div class="eq s">$$\varepsilon_t=\sum_{i:\ h_t(\bx^{(i)})\ne y^{(i)}}w_i$$</div></div>
-      <div class="step"><p class="small"><b>2 · Its vote</b>, large when its error is small:</p><div class="eq s">$$\alpha_t=\frac12\ln\frac{1-\varepsilon_t}{\varepsilon_t}$$</div></div>
-      <div class="step"><p class="small"><b>3 · Re-weight</b>: mistakes up by $e^{\alpha_t}$, hits down by $e^{-\alpha_t}$, then divide by the total so the weights add up to 1:</p><div class="eq s">$$w_i\leftarrow w_i\,e^{-\alpha_t\,y^{(i)}h_t(\bx^{(i)})}$$</div><p class="why">$y\,h(\bx)=+1$ if the stump is right, $-1$ if it is wrong</p></div>
-      <div class="step"><p class="small"><b>Predict</b> with the weighted vote:</p><div class="eq s">$$H(\bx)=\operatorname{sign}\Big(\sum_{t=1}^M\alpha_t\,h_t(\bx)\Big)$$</div></div>
+    <div class="stack" style="gap:8px">
+      <p>AdaBoost combines <b>stumps</b>: trees with a single question. Every training point carries a <b>weight</b>, how much it matters. At the start all weights are equal.</p>
+      <p class="step"><b>Round after round:</b></p>
+      <ol>
+        <li class="step"><b>Train a stump</b> on the weighted data. Heavy points are the ones it must get right.</li>
+        <li class="step"><b>Count its mistakes</b>: add up the weights of the points it got wrong. This is its <b>weighted error</b>.</li>
+        <li class="step"><b>Give it a vote.</b> The fewer its mistakes, the bigger its say. A stump no better than a coin flip gets no say at all.</li>
+        <li class="step"><b>Re-weight the points.</b> The ones it got wrong become heavier, the ones it got right lighter. The next stump is forced to look at the hard cases.</li>
+      </ol>
+      <p class="step"><b>Final answer:</b> all the stumps vote, and a stump's vote counts as much as its say: the best stumps decide.</p>
     </div>
-    <div class="stack" style="gap:6px">
-      <p class="step small"><b>Round 1 of the next demo.</b> $m=30$, all $w_i=\frac1{30}$. The best stump misclassifies 5 points:</p>
-      <div class="step"><div class="eq s">$$\varepsilon_1=\tfrac{5}{30}=\tfrac16,\qquad\alpha_1=\tfrac12\ln\frac{5/6}{1/6}=\tfrac12\ln5=0.80$$</div></div>
-      <div class="step"><div class="eq s">$$e^{\alpha_1}=\sqrt5,\qquad e^{-\alpha_1}=\tfrac1{\sqrt5}$$</div><p class="why">$e^{\frac12\ln5}=5^{1/2}$</p></div>
-      <div class="step"><div class="eq s">$$\text{mistakes: }5\cdot\tfrac{\sqrt5}{30}=0.373\qquad\text{hits: }25\cdot\tfrac{1}{30\sqrt5}=0.373$$</div><p class="why">the new weights add up to $0.745$: divide each one by it</p></div>
-      <div class="bluebox step" style="font-size:20px">each mistake: $\frac1{30}\to\frac1{10}$ &nbsp;·&nbsp; each hit: $\frac1{30}\to\frac1{50}$</div>
-      <p class="small step">The 5 mistakes now carry <b>half</b> of the total weight (this always happens), so the next stump cannot ignore them.</p>
-      <p class="small step">A coin flip, $\varepsilon_t=\frac12$, gets $\alpha_t=\frac12\ln1=0$: no vote. Each weak learner only has to be a little better than chance.</p>
+    <div class="stack" style="gap:7px">
+      <p class="small step"><b>Round 1 of the next demo.</b> 30 points, each with weight $\frac1{30}$. The best stump gets <b>5</b> of them wrong.</p>
+      <p class="small step"><b>Its error</b> is 5 out of 30, about 17 %: much better than a coin flip (50 %), so it earns a good say. In the demo this number is the <i>weighted error</i> $\varepsilon$ and its say is the <i>vote</i> $\alpha=0.80$ (a coin flip would get 0).</p>
+      <p class="small step"><b>New weights:</b> mistakes up, hits down.</p>
+      <table class="t step" style="font-size:18px;text-align:center">
+        <tr><th></th><th>before</th><th>after</th></tr>
+        <tr><td>each of the 5 mistakes</td><td>1/30</td><td>1/10</td></tr>
+        <tr><td>each of the 25 hits</td><td>1/30</td><td>1/50</td></tr>
+        <tr><td>the 5 mistakes together</td><td>17 %</td><td><b>50 %</b></td></tr>
+        <tr><td>the 25 hits together</td><td>83 %</td><td>50 %</td></tr>
+      </table>
+      <p class="small step">A mistake now counts 5 times more than a hit, and the 5 mistakes hold <b>half</b> of all the weight (this always happens). The next stump cannot ignore them.</p>
+      <p class="why step">The exact formulas for the vote and the new weights are in the notes.</p>
     </div>
   </div>
 </section>
@@ -247,26 +266,27 @@ predict:
   <h2>Gradient boosting: fit the residuals</h2>
   <div class="cols c46">
     <div class="stack" style="gap:10px">
-      <p>Regression with the squared loss. Instead of re-weighting points, <b>each new tree predicts what is still missing</b>: the residual.</p>
+      <p>Regression. Instead of re-weighting points, <b>each new tree learns what is still missing</b>: the error the current model still makes on every example.</p>
       <ol class="small">
-        <li>Start with a constant: $F_0=\bar y$.</li>
-        <li>Compute the residuals $r^{(i)}=y^{(i)}-F_{t-1}(\bx^{(i)})$.</li>
-        <li>Fit a small tree $h_t$ to the pairs $(\bx^{(i)},r^{(i)})$.</li>
-        <li>Update with a learning rate $\nu$ ("shrinkage"): $F_t=F_{t-1}+\nu\,h_t$. Back to 2.</li>
+        <li>Start with a boring prediction: the <b>average</b> of all the targets, the same for everybody.</li>
+        <li>For each example, compute the <b>residual</b>: real value minus current prediction. Positive: we predict too low. Negative: too high.</li>
+        <li>Train a <b>small tree</b> to predict those residuals from the features.</li>
+        <li>Add a <b>fraction</b> of the tree's answer to the current prediction (the fraction is the <b>learning rate</b> $\nu$, here $\frac12$). Go back to 2.</li>
       </ol>
-      <p class="small step">Why $\nu\lt1$? Many small corrections generalize better than a few big ones.</p>
+      <p class="small step">Why only a fraction? Many small corrections generalize better than a few big ones.</p>
     </div>
     <div class="stack" style="gap:10px">
-      <p class="small step"><b>By hand:</b> 4 points, stumps, $\nu=0.5$. Start: $F_0=\bar y=\frac{2+4+8+10}{4}=6$.</p>
+      <p class="small step"><b>By hand:</b> 4 points, stumps, learning rate $\frac12$. The start is the average $\frac{2+4+8+10}{4}=6$.</p>
       <table class="t step" style="font-size:18px;text-align:center">
-        <tr><th>$x$</th><th>$y$</th><th>$F_0$</th><th>$r_1=y-F_0$</th><th>$h_1(x)$</th><th>$F_1=F_0+0.5\,h_1$</th><th>$r_2=y-F_1$</th></tr>
+        <tr><th>$x$</th><th>real $y$</th><th>start</th><th>error</th><th>tree 1 says</th><th>new prediction</th><th>new error</th></tr>
         <tr><td>1</td><td>2</td><td>6</td><td>−4</td><td>−3</td><td>4.5</td><td>−2.5</td></tr>
         <tr><td>2</td><td>4</td><td>6</td><td>−2</td><td>−3</td><td>4.5</td><td>−0.5</td></tr>
         <tr><td>3</td><td>8</td><td>6</td><td>+2</td><td>+3</td><td>7.5</td><td>+0.5</td></tr>
         <tr><td>4</td><td>10</td><td>6</td><td>+4</td><td>+3</td><td>7.5</td><td>+2.5</td></tr>
       </table>
-      <p class="small step">$h_1$: the best stump on the residuals splits at $x\le2.5$ and predicts the mean residual on each side: $\frac{-4-2}{2}=-3$ and $\frac{2+4}{2}=+3$.</p>
-      <p class="small step">Squared error: $\sum r_1^2=16+4+4+16=40$, then $\sum r_2^2=6.25+0.25+0.25+6.25=13$. The next tree is fitted to $r_2$, and so on.</p>
+      <p class="small step"><b>Tree 1:</b> the best stump splits at $x\le2.5$ and answers, on each side, the average error there: $\frac{-4-2}{2}=-3$ on the left, $\frac{2+4}{2}=+3$ on the right.</p>
+      <p class="small step"><b>New prediction</b> = start + $\frac12$ × tree: for $x=1$, $6+\frac12\cdot(-3)=4.5$.</p>
+      <p class="small step">Total squared error: $16+4+4+16=40$ before, $6.25+0.25+0.25+6.25=13$ after one tree. The next tree is trained on the new errors, and so on.</p>
     </div>
   </div>
 </section>
@@ -274,19 +294,22 @@ predict:
 <section class="slide">
   <h2>Gradient boosting: why "gradient"?</h2>
   <div class="cols">
-    <div class="stack" style="gap:8px">
-      <p>Treat the predictions at the training points, $F(\bx^{(i)})$, as the parameters, and do a gradient descent step on the loss $\sum_i\ell\big(y^{(i)},F(\bx^{(i)})\big)$:</p>
-      <div class="eq">$$F(\bx^{(i)})\ \leftarrow\ F(\bx^{(i)})-\nu\,\frac{\partial\ell}{\partial F(\bx^{(i)})}$$</div>
-      <p class="step"><b>Squared loss</b> $\ell=\frac12(y-F)^2$:</p>
-      <div class="step"><div class="eq">$$\frac{\partial\ell}{\partial F}=-(y-F)\ \ \Rightarrow\ \ -\frac{\partial\ell}{\partial F}=y-F=r$$</div><p class="why">the negative gradient <b>is</b> the residual</p></div>
-      <p class="step">A tree $h_t$ fitted to the negative gradients lets us apply the step at <b>any</b> $\bx$, not only at the training points: $F_t=F_{t-1}+\nu h_t$. Gradient descent "in function space".</p>
+    <div class="stack" style="gap:9px">
+      <p>Remember <b>gradient descent</b>: to lower a loss, nudge what you can change a little in the direction where the loss goes down fastest.</p>
+      <p class="step">Boosting does the same, but what it nudges is not a weight: it is the <b>prediction for every training example</b>. The loss says, for each example, in which direction its prediction should move.</p>
+      <p class="step"><b>Squared error:</b> that direction is simply <b>real value − prediction</b>, the residual. So fitting the residuals <b>is</b> a gradient-descent step.</p>
+      <p class="step">Why a tree? Nudging predictions directly only works on the training examples. A small tree learns the <i>pattern</i> of the nudges from the features, so the step also works for a <b>new</b> $\bx$. It is gradient descent on functions instead of on numbers.</p>
     </div>
-    <div class="stack" style="gap:8px">
-      <p class="step"><b>Any differentiable loss</b> works: fit each tree to the <b>pseudo-residuals</b> $r^{(i)}=-\partial\ell/\partial F$, evaluated at $F_{t-1}(\bx^{(i)})$.</p>
-      <p class="step"><b>Log-loss</b> (classification), with $F$ = log-odds and $p=\sigma(F)$:</p>
-      <div class="step"><div class="eq s">$$\frac{\partial\ell}{\partial p}=-\frac yp+\frac{1-y}{1-p}=\frac{p-y}{p(1-p)},\qquad\frac{\partial p}{\partial F}=p(1-p)$$</div></div>
-      <div class="step"><div class="eq s">$$\frac{\partial\ell}{\partial F}=\frac{p-y}{p(1-p)}\cdot p(1-p)=p-y\ \ \Rightarrow\ \ r=y-p$$</div><p class="why">chain rule; the same cancellation as in logistic regression</p></div>
-      <p class="small step">$F_0$ is the best constant: the mean of $y$ (squared loss) or the log-odds of the base rate (log-loss).</p>
+    <div class="stack" style="gap:9px">
+      <p class="step"><b>Any loss works.</b> Use the direction in which that loss goes down (the <b>pseudo-residual</b>) and fit the tree to it. Same recipe, another loss.</p>
+      <p class="step"><b>Classification</b> (log-loss): the direction is <b>real label (0 or 1) − predicted probability</b>. The same "prediction minus target" as in logistic regression, with the sign flipped.</p>
+      <table class="t step" style="font-size:18px;text-align:center">
+        <tr><th>real label</th><th>predicted probability</th><th>direction</th></tr>
+        <tr><td>1</td><td>0.8</td><td>+0.2: push up a little</td></tr>
+        <tr><td>0</td><td>0.8</td><td>−0.8: push down hard</td></tr>
+      </table>
+      <p class="small step">A confident mistake gets a big push, a good prediction a small one.</p>
+      <p class="small step">The starting guess is the best constant: the average of the targets (squared error) or the overall rate of positives (classification).</p>
     </div>
   </div>
 </section>
@@ -316,20 +339,20 @@ predict:
   <h2>XGBoost</h2>
   <div class="cols">
     <div class="stack" style="gap:8px">
-      <p><b>eXtreme Gradient Boosting</b>: gradient boosting with regularized trees and a very fast implementation.</p>
+      <p><b>eXtreme Gradient Boosting</b>: gradient boosting with <b>penalties on complex trees</b> and a very fast implementation.</p>
       <ul class="small">
-        <li>Penalizes complex trees: $\lambda$ (<code>reg_lambda</code>) shrinks the leaf values, and $\gamma$ (<code>gamma</code>) is the minimum gain needed to make a split.</li>
-        <li>Uses the first <b>and second</b> derivatives of the loss (a Newton step).</li>
+        <li>$\lambda$ (<code>reg_lambda</code>) shrinks the leaf values (right). $\gamma$ (<code>gamma</code>) is the minimum improvement a split must bring, or it is not made.</li>
+        <li>It looks at the slope of the loss <b>and</b> at how curved it is (first and second derivatives): a smarter step, called a Newton step.</li>
         <li>Learning rate <code>eta</code>, row and column subsampling, early stopping, missing values, parallel split search.</li>
         <li>A top choice for <b>tabular</b> data, with LightGBM and CatBoost. For images, audio and text, deep learning wins.</li>
       </ul>
     </div>
     <div class="stack" style="gap:8px">
-      <p class="step"><b>The value of a leaf</b> (squared loss): the constant $w$ that best fits the leaf's residuals, with an L2 penalty on $w$:</p>
-      <div class="eq s step">$$\min_w\ \sum_{i\in\text{leaf}}\tfrac12\big(r^{(i)}-w\big)^2+\tfrac12\lambda w^2$$</div>
-      <div class="step"><div class="eq s">$$-\sum_{i\in\text{leaf}}\big(r^{(i)}-w\big)+\lambda w=0\ \ \Rightarrow\ \ w\,\big(N_{\text{leaf}}+\lambda\big)=\sum_{i\in\text{leaf}}r^{(i)}$$</div><p class="why">derivative with respect to $w$ set to zero, and $\sum_{i\in\text{leaf}}w=N_{\text{leaf}}\,w$</p></div>
-      <div class="bluebox step">$$w=\frac{\sum_{i\in\text{leaf}}r^{(i)}}{N_{\text{leaf}}+\lambda}$$</div>
-      <p class="small step">$\lambda=0$ gives the mean residual, as in plain gradient boosting. $\lambda\gt0$ shrinks it towards 0, more for small leaves. Example: residuals $\{2,4\}$ and $\lambda=1$ give $w=\frac{6}{3}=2$ instead of 3.</p>
+      <p class="step"><b>The value of a leaf</b> (squared loss). In plain gradient boosting a leaf answers the <b>average residual</b> of the examples that fall in it.</p>
+      <p class="step">XGBoost penalizes big leaf values. The effect is easy to picture: <b>as if $\lambda$ extra examples with residual 0 had fallen in the leaf</b>, and then we take the average:</p>
+      <div class="bluebox step">$$\text{leaf value}=\frac{\text{sum of the residuals}}{\text{number of examples}+\lambda}$$</div>
+      <p class="small step">$\lambda=0$: the plain average. $\lambda\gt0$: pulled towards 0, much more for a leaf with few examples (little evidence) than for a big one.</p>
+      <p class="small step">Example: residuals $\{2,4\}$ and $\lambda=1$: $\frac{6}{2+1}=2$ instead of 3. A leaf with 100 examples is barely touched: $\frac{100}{101}\approx0.99$ of its average.</p>
     </div>
   </div>
 </section>
