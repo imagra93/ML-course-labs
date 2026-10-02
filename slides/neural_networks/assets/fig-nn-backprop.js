@@ -42,9 +42,10 @@ FIG['neuron-bp']=root=>{const svg=svgOf(root);const x=2,w=-0.5,b=0.3,y=1,al=0.5;
     arrowPx(svg,74,80,166,112,'ln thin sk','fk');arrowPx(svg,74,170,166,138,'ln thin sk','fk');arrowPx(svg,214,125,286,158,'ln thin sk','fk');arrowPx(svg,74,260,286,182,'ln thin sk','fk');arrowPx(svg,334,170,406,170,'ln thin sk','fk');arrowPx(svg,454,170,526,170,'ln thin sk','fk');
     T(svg,250,128,'w·x','');T(svg,370,152,'z','');T(svg,490,152,'a','');T(svg,550,215,'y = 1','');T(svg,550,232,'L = −log a','');
     fw(50,44,'x = 2');fw(50,134,N?'w = '+f3(w2):'w = −0.5');fw(50,224,N?'b = '+f3(b2):'b = 0.3');fw(190,88,N?f3(w2*x):'−1.0');fw(310,133,N?'z = '+f3(z2):'z = −0.7');fw(430,133,N?'a = '+f3(a2):'a = 0.332');fw(550,133,N?'L = '+f3(L2):'L = 1.103');
-    if(s>=1&&!N)bw(530,196,'∂L/∂a = −1/a = '+f3(dLda));if(s>=2&&!N){bw(350,196,'∂L/∂z = '+f3(dLda)+' · '+f3(dadz)+' = '+f3(dLdz));T(svg,430,215,'σ′ = a(1−a) = '+f3(dadz),'')}
-    if(s>=3&&!N){bw(120,205,'∂L/∂w = ∂L/∂z · x = '+f3(dLdw));bw(150,290,'∂L/∂b = ∂L/∂z · 1 = '+f3(dLdb))}
-    if(s>=4&&!N){box(svg,318,240,292,44,'w ← w − 0.5·(−1.336) = 0.168\nb ← b − 0.5·(−0.668) = 0.634','#fff2cc',{lh:18,cls:''})}
+    const bws=(xx,yy,t)=>{const tt=T(svg,xx,yy,t,'lab','start');tt.style.fill='#c00000'};
+    if(s>=1&&!N){bw(492,212,'∂L/∂a');bw(492,230,'= '+f3(dLda))}if(s>=2&&!N){bw(368,212,'∂L/∂z');bw(368,230,'= '+f3(dLdz));T(svg,430,252,'σ′ = a(1−a) = '+f3(dadz),'')}
+    if(s>=3&&!N){bws(84,200,'∂L/∂w = '+f3(dLdw));bws(84,286,'∂L/∂b = '+f3(dLdb))}
+    if(s>=4&&!N){box(svg,318,258,292,40,'w ← w − 0.5·(−1.336) = 0.168\nb ← b − 0.5·(−0.668) = 0.634','#fff2cc',{lh:17,cls:''})}
     if(N)box(svg,262,240,348,44,'after one step the loss fell from 1.103 to 0.321\nand a rose from 0.332 to 0.725','#e2f0d9',{lh:18,cls:''})})};
 /* ---- the tiny 2-2-1 network: backward with numbers ---- */
 FIG['net-num']=root=>{const svg=svgOf(root);const N=NET;const F=tinyForward(N);const al=0.5;
@@ -53,10 +54,10 @@ FIG['net-num']=root=>{const svg=svgOf(root);const N=NET;const F=tinyForward(N);c
   setR(root,'l0',f3(F.L));setR(root,'l1',f3(F2.L));
   stepper(root,s=>{initSvg(svg,600,420);const upd=s>=6;const pos=drawTiny(svg,upd?N2:N,upd?F2:F,5,{hiEdge:(s===2||s===3)?2:s===5?1:0});
     const X=[pos[0][0][0],pos[1][0][0],pos[2][0][0]];E('rect',{x:10,y:292,width:580,height:122,rx:8,fill:'#fdf2f2',stroke:'#e6b8b8'},svg);
-    T(svg,20,310,upd?'updated parameters (α = 0.5)':'gradients (backward pass, right to left)','lab','start').style.fill='#c00000';
+    T(svg,20,310,upd?'updated parameters (α = 0.5)':'gradients of the loss L (backward pass, right to left)','lab','start').style.fill='#c00000';
     const bw=(col,row,t)=>{const tt=TT(svg,X[col],330+row*21+10,t,'','middle',15);tt.style.fill='#c00000';tt.style.fontSize='15px'};const mj=a=>a.map(v=>String(v).replace('-','−')).join(', ');
     if(!upd){if(s>=1)bw(2,0,'δ^{[2]} = ŷ − y = '+f3(d2));if(s>=2){bw(2,1,'∂W^{[2]} = ('+f3(dW2[0])+', '+f3(dW2[1])+')');bw(2,2,'∂b^{[2]} = '+f3(db2))}
-      if(s>=3)bw(1,0,'∂a^{[1]} = ('+f3(dA1[0])+', '+f3(dA1[1])+')');if(s>=4)bw(1,1,'δ^{[1]} = ('+f3(d1[0])+', '+f3(d1[1])+')');
+      if(s>=3)bw(1,0,'∂L/∂a^{[1]} = ('+f3(dA1[0])+', '+f3(dA1[1])+')');if(s>=4)bw(1,1,'δ^{[1]} = ('+f3(d1[0])+', '+f3(d1[1])+')');
       if(s>=5){bw(0,0,'∂W^{[1]} = ['+f3(dW1[0][0])+', '+f3(dW1[0][1])+']');bw(0,1,'['+f3(dW1[1][0])+', '+f3(dW1[1][1])+']');bw(0,2,'∂b^{[1]} = ('+f3(d1[0])+', '+f3(d1[1])+')')}
       if(s===0)T(svg,300,360,'forward pass done: every z and a is stored','','middle')}
     else{bw(2,0,'W^{[2]} = ('+mj([N2.W2[0][0],N2.W2[1][0]])+')');bw(2,1,'b^{[2]} = '+N2.b2[0]);bw(0,0,'W^{[1]} = ['+mj(N2.W1[0])+']');bw(0,1,'['+mj(N2.W1[1])+']');bw(1,0,'b^{[1]} = ('+mj(N2.b1)+')');
@@ -76,10 +77,22 @@ FIG['init']=root=>{const svg=initSvg(svgOf(root),600,300);let act='tanh',mode='g
     setR(root,'a',fmt(R.stdA[9],4));setR(root,'g',fmt(R.stdG[0],4));setR(root,'v',mode==='good'?(act==='relu'?'He: Var(w) = 2/n':'Xavier: Var(w) = 1/n'):mode==='small'?'too small':'too large')}
   b1.forEach(b=>b.addEventListener('click',()=>{act=b.dataset.v;b1.forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));draw()}));
   b2.forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.v;b2.forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));draw()}));draw()};
-FIG['graph-chain']=root=>{const svg=initSvg(svgOf(root),680,220);const node=(x,y,t,c)=>{E('circle',{cx:x,cy:y,r:24,fill:c,stroke:'#fff'},svg);T(svg,x,y+5,t,'lab').style.fill='#fff'};
-  [[60,50,'θ₁'],[60,170,'θ₂']].forEach(p=>node(p[0],p[1],p[2],'#70ad47'));[[230,40,'g₁'],[230,110,'g₂'],[230,180,'g₃']].forEach(p=>node(p[0],p[1],p[2],'#4472c4'));node(420,110,'J','#ed7d31');
+FIG['graph-chain']=root=>{const W=root.hasAttribute('data-w')?'w':'θ';const svg=initSvg(svgOf(root),680,220);const node=(x,y,t,c)=>{E('circle',{cx:x,cy:y,r:24,fill:c,stroke:'#fff'},svg);T(svg,x,y+5,t,'lab').style.fill='#fff'};
+  [[60,50,W+'₁'],[60,170,W+'₂']].forEach(p=>node(p[0],p[1],p[2],'#70ad47'));[[230,40,'g₁'],[230,110,'g₂'],[230,180,'g₃']].forEach(p=>node(p[0],p[1],p[2],'#4472c4'));node(420,110,'J','#ed7d31');
   [[60,50],[60,170]].forEach(a=>[[230,40],[230,110],[230,180]].forEach(b=>arrowPx(svg,a[0]+24,a[1],b[0]-26,b[1],'ln thin sm','fm')));[[230,40],[230,110],[230,180]].forEach(b=>arrowPx(svg,b[0]+24,b[1],394,110,'ln thin sm','fm'));
-  T(svg,450,106,'∂J/∂θ₁ = Σⱼ (∂J/∂gⱼ)(∂gⱼ/∂θ₁)','lab','start');T(svg,450,130,'one term per path from θ₁ to J','','start')};
+  T(svg,450,106,'∂J/∂'+W+'₁ = Σⱼ (∂J/∂gⱼ)(∂gⱼ/∂'+W+'₁)','lab','start');T(svg,450,130,'one term per path from '+W+'₁ to J','','start')};
+/* the chain from layer l-1 to the loss, with the local derivative of every link (the derivation slide) */
+FIG['bp-chain']=root=>{const svg=initSvg(svgOf(root),580,230);const row=92;
+  const bx=(x,y,t,c,w)=>{w=w||76;E('rect',{x:x-w/2,y:y-18,width:w,height:36,rx:7,fill:c,stroke:'#404040'},svg);TT(svg,x,y+5,t,'lab','middle')};
+  const red=(x,y,t,a)=>{const tt=TT(svg,x,y,t,'lab',a||'middle');tt.style.fill='#c00000';return tt};
+  const xs=[62,188,314,440];bx(xs[0],row,'Z^{[l−1]}','#dae3f3');bx(xs[1],row,'A^{[l−1]}','#dae3f3');bx(xs[2],row,'Z^{[l]}','#dae3f3');bx(xs[3],row,'A^{[l]}','#dae3f3');bx(546,row,'J','#fbe5d6',50);bx(xs[2],24,'W^{[l]}','#ffe699');
+  [[xs[0]+38,xs[1]-38],[xs[1]+38,xs[2]-38],[xs[2]+38,xs[3]-38]].forEach(a=>arrowPx(svg,a[0],row,a[1],row,'ln thin sk','fk'));
+  arrowPx(svg,xs[3]+38,row,519,row,'ln thin sk','fk');T(svg,497,row-9,'…','lab');arrowPx(svg,xs[2],44,xs[2],row-20,'ln thin sk','fk');
+  T(svg,125,row-24,'g','');T(svg,251,row-24,'× W','');
+  red(125,row+36,'g′(Z^{[l−1]})');red(251,row+36,'W^{[l]}');red(xs[2]+10,63,'A^{[l−1]}','start');
+  /* the two error signals */
+  const br=(x1,x2,y,c,t)=>{E('path',{d:'M'+x1+','+(y-8)+' L'+x1+','+y+' L'+x2+','+y+' L'+x2+','+(y-8),fill:'none',stroke:c,'stroke-width':2},svg);const tt=TT(svg,(x1+x2)/2,y+19,t,'lab','middle');tt.style.fill=c};
+  br(xs[2]-30,576-6,row+66,'#4472c4','δ^{[l]} = ∂J/∂Z^{[l]}: already known');br(xs[0]-30,576-6,row+112,'#c55a11','δ^{[l−1]} = δ^{[l]} · W^{[l]} · g′(Z^{[l−1]}): what we want')};
 /* product of many factors: why gradients vanish or explode */
 FIG['vanish-chain']=root=>{const svg=initSvg(svgOf(root),940,200);
   [['sigmoid, 10 layers: each factor ≤ 0.25',0.25,'#c00000',30],['ReLU + He init: each factor ≈ 1',1,'#548235',120]].forEach(([lab,f,c,y])=>{T(svg,16,y-10,lab,'lab','start');

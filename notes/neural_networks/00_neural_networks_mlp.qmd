@@ -205,7 +205,7 @@ $$
 So the border between two classes is the hyperplane $(\mathbf{w}_k-\mathbf{w}_j)^\top\mathbf{x} + (b_k-b_j) = 0$, and the region where class $k$ wins is an intersection of $K-1$ half-spaces: a convex polygon with straight sides. **One layer, however wide, cannot draw curved borders.**
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="softmax-layer" aria-label="Three inputs fully connected to three neurons whose scores go through a softmax into three probabilities"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#35">slide 35</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="softmax-layer" aria-label="Three inputs fully connected to three neurons whose scores go through a softmax into three probabilities"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#37">slide 37</a> of the Neural Networks deck.</p></div>
 ```
 
 ## 6. The limit of linear models: XOR
@@ -578,7 +578,7 @@ with maximum $1$ at $z = 0$. *Proof that $\tanh(z) = 2\sigma(2z) - 1$:* $2\sigma
 **Two things to remember.** (1) The derivatives can be written with the **output** $a = g(z)$: $a(1-a)$ for the sigmoid, $1-a^2$ for tanh, $\mathbb{1}[a>0]$ for ReLU. Backpropagation reuses the $a$ it stored in the forward pass. (2) $\sigma'\le\frac14$ always **shrinks** the gradient, while ReLU lets it through unchanged for $z > 0$.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="act-deriv" style="max-height:215px" aria-label="Sigmoid, tanh and ReLU with their derivatives"></svg><div class="legend" style="justify-content:center"><span><i style="background:var(--blue)"></i>function g(z)</span><span><i style="background:var(--red)"></i>derivative g′(z)</span></div><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#23">slide 23</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="act-deriv" style="max-height:215px" aria-label="Sigmoid, tanh and ReLU with their derivatives"></svg><div class="legend" style="justify-content:center"><span><i style="background:var(--blue)"></i>function g(z)</span><span><i style="background:var(--red)"></i>derivative g′(z)</span></div><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#25">slide 25</a> of the Neural Networks deck.</p></div>
 ```
 
 **Saturation.** Where the curve is flat ($|z|$ large for sigmoid/tanh), $g'(z)\approx0$. In backpropagation every layer multiplies the gradient by $g'$ ([NN note 01](01_backpropagation.html)), so flat regions stop learning. ReLU's derivative is exactly 1 for $z>0$.
@@ -657,7 +657,7 @@ print("two linear layers == one layer:", np.allclose((Xr @ W1_t + b1_t) @ W2_t +
       <div class="ctl"><label for="pg-l">hidden layers</label><input type="range" id="pg-l" data-k="l" min="1" max="3" step="1" value="1"><span class="v" data-v="l">1</span></div>
       <div class="ctl"><span class="seg" role="group" aria-label="Activation"><button type="button" data-a="tanh" aria-pressed="true">Tanh</button><button type="button" data-a="relu" aria-pressed="false">ReLU</button><button type="button" data-a="linear" aria-pressed="false">Linear</button></span></div>
       <div class="ro"><div class="m"><span>model</span><b data-r="what" style="font-size:18px">–</b></div><div class="m"><span>parameters</span><b data-r="np">–</b></div><div class="m"><span>train accuracy</span><b data-r="acc">–</b></div><div class="m"><span>loss</span><b data-r="loss">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#26">slide 26</a> of the Neural Networks deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#28">slide 28</a> of the Neural Networks deck.</p>
 </div>
 ```
 
@@ -666,7 +666,7 @@ We can learn non-linear functions **without feature engineering**.
 **What did the hidden units learn?** The figure below shows the same kind of network (4 tanh units, one layer) trained on the circle data. Each hidden unit on its own is a logistic regression: a soft line through the plane, and none of them can see a circle. The output unit is **another logistic regression on the four hidden activations**: added with the right signs, four half-planes fence in a region. With ReLU the walls are sharp; with more units the fence is rounder.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="hidden-feats" style="max-height:330px" aria-label="The response of each of four hidden units over the plane, and the output that combines them"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#27">slide 27</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="hidden-feats" style="max-height:330px" aria-label="The response of each of four hidden units over the plane, and the output that combines them"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#29">slide 29</a> of the Neural Networks deck.</p></div>
 ```
 
 **A trained MLP on the XOR data.** Trained with backpropagation ([NN note 01](01_backpropagation.html), here via scikit-learn's `MLPClassifier`). Each hidden unit learns a line, and the output combines them into a non-linear boundary.
@@ -696,7 +696,7 @@ Two hidden units are enough for the four XOR corner points (section 8), but not 
 - **Deep learning**: many layers learn features of features (edges → shapes → objects, [NN note 03](03_cnn_transfer_multitask.html)), and feature extraction and classification are learned **together, end to end**.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="pipeline" aria-label="Traditional machine learning with hand-made features versus deep learning that learns them"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#28">slide 28</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="pipeline" aria-label="Traditional machine learning with hand-made features versus deep learning that learns them"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#30">slide 30</a> of the Neural Networks deck.</p></div>
 ```
 
 **Deep learning is not magic.** The applications of section 1 are simply a combination of linear combinations, simple non-linear functions, and a stack of the previous two. The most complex computer-vision networks are combinations of many small and easy blocks that you can understand and even program. And the tools to find the best weights are the ones you already have from machine learning: a loss, its gradient, and gradient descent. *Keep calm and do linear algebra; keep calm and optimise.* We will understand small blocks, then build complex networks by abstracting each block, like LEGO.
@@ -742,7 +742,7 @@ $$
 so an outlier's pull on the gradient is capped at $\delta$ (the two pieces meet with equal value $\frac12\delta^2$ and slope $\delta$ at $|e| = \delta$). It is used for box regression in object detection. **Rule: pick the loss from the type of $y$, not from taste.**
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="loss-shapes" aria-label="Binary cross-entropy against the predicted probability, and squared versus absolute error"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#31">slide 31</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="loss-shapes" aria-label="Binary cross-entropy against the predicted probability, and squared versus absolute error"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#33">slide 33</a> of the Neural Networks deck.</p></div>
 ```
 
 ```{python}
@@ -770,7 +770,7 @@ $$
 "**Prediction minus target**": large when the network is confidently wrong, about 0 when it is right. For a positive example ($y = 1$) the slope is $\sigma(z) - 1$: at $z = -3$ (wrong and confident) it is $\sigma(-3) - 1 = -0.953$, close to $-1$; at $z = 3$ it is $-0.047$, close to 0. With $m$ examples and the averaged loss $J = \frac1m\sum_i L^{(i)}$, each example contributes $\frac1m(\hat y^{(i)} - y^{(i)})$. The same happens for softmax + cross-entropy (section 20) and for a linear output + $\frac12$MSE; [NN note 01](01_backpropagation.html) starts from here.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="bce-grad" aria-label="The cross-entropy loss as a function of the logit for a positive example, and its slope sigma of z minus one"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#32">slide 32</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="bce-grad" aria-label="The cross-entropy loss as a function of the logit for a positive example, and its slope sigma of z minus one"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#34">slide 34</a> of the Neural Networks deck.</p></div>
 ```
 
 ```{python}
@@ -800,7 +800,7 @@ $$
 with $\mathbf{y}$ one-hot. Every $\hat y_k$ is positive and they add up to 1 (same denominator), so the output reads as a probability distribution that "looks like" a soft one-hot vector. The exponential makes the biggest score dominate but never sends the others to exactly 0. In the figure the five scores $(1.3, 5.1, 2.2, 0.7, 1.1)$ of the classes (cat, dog, car, tree, boat) become the probabilities $(0.020, 0.903, 0.050, 0.011, 0.017)$: $e^{5.1} = 164.0$ out of a total $\sum_j e^{z_j} = 181.7$ goes to "dog".
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="softmax-demo" aria-label="Five scores turned into five probabilities by the softmax"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#36">slide 36</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="softmax-demo" aria-label="Five scores turned into five probabilities by the softmax"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#38">slide 38</a> of the Neural Networks deck.</p></div>
 ```
 
 **Shift invariance** (why libraries subtract $\max_k z_k$): for any constant $c$,
@@ -867,7 +867,7 @@ a one-hidden-layer network with $2N$ sigmoid units (two per bump) whose output w
       <svg class="fig" aria-label="A curve approximated by a sum of sigmoid bumps"></svg>
       <div class="ctl"><label for="ua-n">bumps</label><input type="range" id="ua-n" data-k="n" min="1" max="30" step="1" value="4"><span class="v" data-v="n">4</span></div>
       <div class="ro"><div class="m"><span>hidden units used</span><b data-r="h">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#43">slide 43</a> of the Neural Networks deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#45">slide 45</a> of the Neural Networks deck.</p>
 </div>
 ```
 
@@ -920,7 +920,7 @@ Consequences:
 - In practice, for large networks most local minima found by stochastic gradient descent are about as good as each other; the harder problems are saddle points, plateaus and bad conditioning.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="nonconvex" aria-label="A loss curve with a local and a global minimum"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#44">slide 44</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="nonconvex" aria-label="A loss curve with a local and a global minimum"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#46">slide 46</a> of the Neural Networks deck.</p></div>
 ```
 
 ```{python}
@@ -956,7 +956,7 @@ plt.title("The chord between two minima lies below the loss: not convex"); plt.t
 The engine of neural networks is **gradient-based optimisation**, and we no longer mention the word "convex". The first step of gradient-based optimisation is to find the **gradients**: [NN note 01](01_backpropagation.html).
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="workflow" aria-label="Input, layers with weights, predictions, loss function, optimizer and weight update"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#45">slide 45</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="workflow" aria-label="Input, layers with weights, predictions, loss function, optimizer and weight update"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#47">slide 47</a> of the Neural Networks deck.</p></div>
 ```
 
 ## 24. Assumptions: what they mean, how to check them, what to do

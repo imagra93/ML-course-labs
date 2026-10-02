@@ -282,11 +282,26 @@
       </table>
       <p class="why">ReLU is not differentiable at 0; we use a sub-derivative (0 or 1). It never matters in practice. Sigmoid and tanh <b>saturate</b>: their derivative is almost 0 for large $|z|$ (chapter 2 shows why that hurts). Press → to go through them; their derivatives come next, one by one.</p>
     </div>
-    <div class="widget" data-fig="act" data-auto="a=sigmoid :: Sigmoid: squashes any z into (0, 1). The slope (red) is at most 0.25 and almost 0 for large |z||a=tanh :: Tanh: like the sigmoid, but centred at 0 and with range (−1, 1). The slope is at most 1|a=relu :: ReLU: 0 for z &lt; 0 and z for z &gt; 0. The slope is 0 or 1, so nothing shrinks it: the default for hidden layers|a=leaky :: LeakyReLU: a small slope (here 0.2) for z &lt; 0 instead of 0, so a unit cannot die|a=gelu :: GELU: a smooth ReLU with a small dip below 0. Used in transformers|a=linear :: Linear: g(z) = z, slope 1. Only for the output of a regression">
+    <div class="widget" data-fig="act" data-auto="a=sigmoid :: Sigmoid: squashes any z into (0, 1). The slope (red) is at most 0.25 and almost 0 for large |z||a=tanh :: Tanh: like the sigmoid, but centred at 0 and with range (−1, 1). The slope is at most 1|a=relu :: ReLU: 0 for z &lt; 0 and z for z &gt; 0. The slope is 0 or 1, so nothing shrinks it: the default for hidden layers|a=leaky :: LeakyReLU: a small slope (here 0.2) for z &lt; 0 instead of 0, so a unit cannot die|a=gelu :: GELU: z times a smooth gate (between 0 and 1), a smooth ReLU with a small dip below 0. Used in transformers|a=linear :: Linear: g(z) = z, slope 1. Only for the output of a regression">
       <svg class="fig" aria-label="An activation function and its derivative"></svg>
       <div class="ctl"><span class="seg" role="group" aria-label="Activation"><button type="button" data-a="sigmoid" aria-pressed="true">Sigmoid</button><button type="button" data-a="tanh" aria-pressed="false">Tanh</button><button type="button" data-a="relu" aria-pressed="false">ReLU</button><button type="button" data-a="leaky" aria-pressed="false">LeakyReLU</button><button type="button" data-a="gelu" aria-pressed="false">GELU</button><button type="button" data-a="linear" aria-pressed="false">Linear</button></span></div>
       <div class="legend"><span><i style="background:var(--blue)"></i>g(z)</span><span><i style="background:var(--red)"></i>derivative g′(z)</span></div>
       <div class="ro"><div class="m" style="flex:1"><span>derivative</span><b data-r="d" style="font-size:18px">–</b></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Why do we need the derivatives of the activations?</h2>
+  <div class="cols">
+    <svg class="fig" data-fig="chain-neuron" style="max-height:400px" aria-label="A weight w, the input z and the output a of an activation, and the loss L, with the derivative of every link: the activation derivative da/dz in the middle"></svg>
+    <div class="stack" style="gap:9px">
+      <p>Training a network is <b>gradient descent</b>. For every weight $w$ (and every bias) we repeat</p>
+      <div class="eq">$$w\leftarrow w-\alpha\,\frac{\partial L}{\partial w}$$</div>
+      <p class="step">So we need $\dfrac{\partial L}{\partial w}$ for <b>every</b> weight. A weight sits at the start of a chain: it changes $z$, which changes the output $a=g(z)$, which changes the loss. The chain rule multiplies the slope of each link:</p>
+      <div class="eq step">$$\frac{\partial L}{\partial w}=\frac{\partial L}{\partial a}\cdot\ho{\frac{\partial a}{\partial z}}\cdot\frac{\partial z}{\partial w}$$</div>
+      <p class="step"><b>The middle link is always an activation.</b> Its slope is $\dfrac{\partial a}{\partial z}=g'(z)$: how much the output $a$ moves when its <b>input</b> $z$ is nudged. This is the derivative of the activation function, taken with respect to $z$. The next slides compute it for each activation.</p>
+      <div class="note step"><p class="small">These derivatives will be important in chapter 2: backpropagation uses them in every layer, so we calculate them once, here.</p></div>
     </div>
   </div>
 </section>
@@ -312,13 +327,13 @@
   <div class="cols">
     <svg class="fig" data-fig="act-one" data-act="tanh" style="max-height:380px" aria-label="tanh and its derivative, with the values at z = 0 and z = 3"></svg>
     <div class="stack" style="gap:7px">
-      <div class="step"><div class="eq s">$$\tanh z=\frac{u}{v},\qquad u=e^{z}-e^{-z},\quad v=e^{z}+e^{-z}$$</div><p class="why">the definition</p></div>
-      <div class="step"><div class="eq s">$$u'=e^{z}+e^{-z}=v,\qquad v'=e^{z}-e^{-z}=u$$</div><p class="why">the derivative of $e^{-z}$ is $-e^{-z}$, so the sum and the difference swap roles</p></div>
-      <div class="step"><div class="eq s">$$\tanh'z=\frac{u'v-uv'}{v^2}=\frac{v\cdot v-u\cdot u}{v^2}$$</div><p class="why">quotient rule: $\big(\frac uv\big)'=\frac{u'v-uv'}{v^2}$</p></div>
-      <div class="bluebox step">$$\tanh'z=1-\Big(\frac uv\Big)^2=1-\tanh^2z$$</div>
-      <p class="why step">divide each term by $v^2$</p>
-      <table class="t step" style="font-size:18px;text-align:center"><tr><th>$z$</th><th>0</th><th>1</th><th>3</th></tr><tr><td>$\tanh z$</td><td>0</td><td>0.762</td><td>0.995</td></tr><tr><td>$\tanh'z$</td><td><b>1</b></td><td>0.420</td><td>0.0099</td></tr></table>
-      <p class="small step">A stretched, shifted sigmoid: $\tanh z=2\sigma(2z)-1$. Its slope at 0 is 4 times larger (1 against 0.25), but it also saturates for large $|z|$.</p>
+      <div class="step"><p class="small"><b>1 · A fraction.</b> Call the top $\hl{N}$ and the bottom $\ho{D}$:</p><div class="eq s">$$\tanh z=\frac{\hl{N}}{\ho{D}},\qquad\hl{N}=e^{z}-e^{-z},\quad\ho{D}=e^{z}+e^{-z}$$</div></div>
+      <div class="step"><p class="small"><b>2 · Differentiate the pieces.</b> The derivative of $e^{-z}$ is $-e^{-z}$, so the two pieces swap:</p><div class="eq s">$$\hl{N}'=e^{z}+e^{-z}=\ho{D},\qquad\ho{D}'=e^{z}-e^{-z}=\hl{N}$$</div></div>
+      <div class="step"><p class="small"><b>3 · Quotient rule</b>, $\big(\frac{N}{D}\big)'=\frac{N'D-ND'}{D^2}$, with $N'=D$ and $D'=N$:</p><div class="eq s">$$\tanh'z=\frac{\ho{D}\cdot\ho{D}-\hl{N}\cdot\hl{N}}{\ho{D}^2}$$</div></div>
+      <div class="step"><p class="small"><b>4 · Split the fraction:</b> $\ \dfrac{D^2}{D^2}-\dfrac{N^2}{D^2}=1-\Big(\dfrac ND\Big)^2$</p>
+        <div class="bluebox" style="font-size:22px;padding:6px 16px;margin-top:10px">$$\tanh'z=1-\tanh^2z$$</div></div>
+      <p class="small step"><b>Numbers.</b> $z=0$: $\tanh=0$ and $\tanh'=1$ (the largest slope). $z=1$: $0.762$ and $1-0.762^2=0.420$. $z=3$: $0.995$ and $0.0099$, almost flat.</p>
+      <p class="why step">Check with the sigmoid: $\tanh z=2\sigma(2z)-1$, so $\tanh'z=4\,\sigma'(2z)=4\cdot\frac{1+\tanh z}{2}\cdot\frac{1-\tanh z}{2}=1-\tanh^2z$. Its slope at 0 is 4 times larger than the sigmoid's.</p>
     </div>
   </div>
 </section>
@@ -361,17 +376,38 @@
 </section>
 
 <section class="slide">
+  <h2>GELU: z times a smooth gate</h2>
+  <svg class="fig" data-fig="gelu-gate" style="max-height:215px" aria-label="The bell curve and the area to the left of z, the gate Phi of z against the hard gate of ReLU, and the outputs GELU and ReLU"></svg>
+  <div class="cols">
+    <div class="stack" style="gap:7px">
+      <p><b>ReLU is "$z$ times a hard gate":</b> $\mathrm{ReLU}(z)=z\cdot\begin{cases}0&amp;z\lt0\\1&amp;z\gt0\end{cases}$. The gate is shut for negative $z$ and open for positive $z$.</p>
+      <p class="step"><b>GELU keeps the idea, with a smooth gate:</b></p>
+      <div class="bluebox step" style="font-size:22px;padding:6px 16px">$$\mathrm{GELU}(z)=z\cdot\Phi(z)$$</div>
+      <p class="small step"><b>$\Phi(z)$</b> (capital phi) is the function that multiplies $z$. It is the share of the bell curve that lies to the left of $z$ (the shaded area, left plot), so it grows smoothly from 0 to 1.</p>
+    </div>
+    <div class="stack" style="gap:7px">
+      <table class="t step" style="font-size:18px;text-align:center"><tr><th>$z$</th><th>−3</th><th>−1</th><th>0</th><th>1</th><th>3</th></tr><tr><td>gate $\Phi(z)$</td><td>0.001</td><td>0.159</td><td>0.5</td><td>0.841</td><td>0.999</td></tr><tr><td>$z\cdot\Phi(z)$</td><td>−0.004</td><td>−0.159</td><td>0</td><td>0.841</td><td>2.996</td></tr></table>
+      <ul class="small step">
+        <li>$z$ very negative: the gate is almost shut, the output is almost 0.</li>
+        <li>$z$ very positive: the gate is almost open, the output is almost $z$.</li>
+        <li>Around 0 the gate is half open: a smooth bend, and a small dip below 0.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
   <h2>Derivative of GELU</h2>
   <div class="cols">
     <svg class="fig" data-fig="act-one" data-act="gelu" style="max-height:380px" aria-label="GELU and its derivative, with the values at z = -1 and z = 1"></svg>
     <div class="stack" style="gap:7px">
-      <div class="step"><div class="eq s">$$\mathrm{GELU}(z)=z\cdot\Phi(z)$$</div><p class="why">$\Phi(z)$ is the probability that a standard normal variable is $\le z$: a smooth gate between 0 and 1</p></div>
+      <div class="step"><div class="eq s">$$\mathrm{GELU}(z)=z\cdot\Phi(z)$$</div><p class="why">$z$ times the smooth gate $\Phi(z)$ of the previous slide</p></div>
       <div class="step"><div class="eq s">$$\mathrm{GELU}'(z)=1\cdot\Phi(z)+z\cdot\Phi'(z)$$</div><p class="why">product rule: $(uv)'=u'v+uv'$</p></div>
-      <div class="step"><div class="eq s">$$\Phi'(z)=\varphi(z)=\frac{e^{-z^2/2}}{\sqrt{2\pi}}$$</div><p class="why">the derivative of a cumulative distribution is its density: the bell curve</p></div>
+      <div class="step"><div class="eq s">$$\Phi'(z)=\varphi(z)=\frac{e^{-z^2/2}}{\sqrt{2\pi}}$$</div><p class="why">the slope of the area function $\Phi$ is the height of the bell curve $\varphi$</p></div>
       <div class="bluebox step">$$\mathrm{GELU}'(z)=\Phi(z)+z\,\varphi(z)$$</div>
       <table class="t step" style="font-size:18px;text-align:center"><tr><th>$z$</th><th>−3</th><th>−1</th><th>0</th><th>1</th><th>3</th></tr><tr><td>$\mathrm{GELU}(z)$</td><td>−0.004</td><td>−0.159</td><td>0</td><td>0.841</td><td>2.996</td></tr><tr><td>$\mathrm{GELU}'(z)$</td><td>−0.012</td><td>−0.083</td><td>0.5</td><td>1.083</td><td>1.012</td></tr></table>
       <ul class="small step">
-        <li>A <b>smooth ReLU</b>: no corner, slope about 0 for very negative $z$ and about 1 for large positive $z$. Small differences: a dip to $-0.17$ near $z=-0.75$, and a slope that overshoots 1 (up to 1.13).</li>
+        <li>No corner: the slope goes smoothly from about 0 (very negative $z$) to about 1 (large positive $z$), overshooting 1 a little (up to 1.13).</li>
         <li>The figure uses the usual tanh approximation of $\Phi$ (as in GPT-2): within 0.0005 of the exact curve.</li>
       </ul>
     </div>
@@ -382,7 +418,7 @@
   <h2>Derivatives of the activations, at a glance</h2>
   <svg class="fig" data-fig="act-deriv" style="max-height:190px" aria-label="Sigmoid, tanh and ReLU with their derivatives"></svg>
   <table class="t" style="font-size:17px">
-    <tr><th style="width:15%">activation</th><th style="width:26%">$g(z)$</th><th style="width:25%">$g'(z)$</th><th style="width:21%">$g'$ from the output $a=g(z)$</th><th>largest $g'$</th></tr>
+    <tr><th style="width:15%">activation</th><th style="width:26%">$a=g(z)$</th><th style="width:25%">$g'(z)=\partial a/\partial z$</th><th style="width:21%">$g'$ written with $a$</th><th>largest $g'$</th></tr>
     <tr><td>Sigmoid</td><td>$\dfrac1{1+e^{-z}}$</td><td>$\sigma(z)\big(1-\sigma(z)\big)$</td><td>$a\,(1-a)$</td><td>0.25</td></tr>
     <tr><td>Tanh</td><td>$\dfrac{e^z-e^{-z}}{e^z+e^{-z}}$</td><td>$1-\tanh^2z$</td><td>$1-a^2$</td><td>1</td></tr>
     <tr><td>ReLU</td><td>$\max(0,z)$</td><td>1 if $z\gt0$, else 0</td><td>1 if $a\gt0$, else 0</td><td>1</td></tr>
@@ -396,8 +432,8 @@
   <h2>Two things to remember about the derivatives</h2>
   <div class="cards c2">
     <div class="card">
-      <h3>1 · Write the derivative with the output $a$</h3>
-      <p>In the forward pass we computed $z$ and <b>stored</b> the output $a=g(z)$. The backward pass needs $g'(z)$. If it can be written with $a$, nothing has to be computed again: one multiplication.</p>
+      <h3>1 · The slope $g'(z)$ can be computed from the output $a$</h3>
+      <p>$g'(z)=\frac{\partial a}{\partial z}$ is the derivative of the output with respect to its <b>input</b> $z$. In the forward pass we computed $z$ and <b>stored</b> $a=g(z)$. If $g'$ can be written with $a$, nothing has to be computed again: one multiplication.</p>
       <table class="t step" style="font-size:18px"><tr><th>activation</th><th>$g'$ with the output</th></tr><tr><td>sigmoid</td><td>$a\,(1-a)$</td></tr><tr><td>tanh</td><td>$1-a^2$</td></tr><tr><td>ReLU</td><td>1 if $a\gt0$, else 0</td></tr></table>
       <p class="small step"><b>Sigmoid unit</b> with $z=1$: the stored output is $a=0.731$, so $g'=0.731\cdot0.269=0.197$. <b>Tanh unit</b> of the tiny network, $a=0.76$: $g'=1-0.76^2=0.42$.</p>
     </div>
@@ -504,6 +540,7 @@
       <tr><td>Regression, any value</td><td>house price</td><td>none (linear)</td><td>MSE (or L1 / Huber)</td><td><code>nn.MSELoss</code></td></tr>
       <tr><td>Regression, values in 0–1</td><td>box coordinates</td><td>sigmoid</td><td>MSE or binary cross-entropy</td><td><code>nn.MSELoss</code></td></tr>
     </table>
+    <p class="small step"><b>PyTorch</b> is the library we will use for the labs, and the standard one in deep learning. The last column lists its loss classes. We will talk about it more later.</p>
     <p class="small step why">The multiclass rows (softmax, one-hot targets, categorical cross-entropy) are explained later in this chapter, together with where these pairs come from and how PyTorch uses them.</p>
   </div>
 </section>
@@ -768,11 +805,11 @@ probs = logits.softmax(dim=1)     <span class="c"># to read answers</span></pre>
   <div class="cols">
     <div class="stack" style="gap:12px">
       <p><b>Symmetry argument.</b> Swap two hidden units (their incoming and outgoing weights). The network computes <b>exactly the same function</b>, so the loss is the same.</p>
-      <p class="step">So if $\bth^*$ is a minimum, the swapped $\bth^{**}$ is another one. Their average $\frac12(\bth^*+\bth^{**})$ gives both units the same weights: generally a <b>worse</b> network.</p>
-      <p class="step">A convex function would satisfy $J\big(\frac{\bth^*+\bth^{**}}2\big)\le\frac12J(\bth^*)+\frac12J(\bth^{**})$. It fails: <b>not convex</b>. $\blacksquare$</p>
+      <p class="step">So if $\mathbf w^*$ is a minimum, the swapped $\mathbf w^{**}$ is another one. Their average $\frac12(\mathbf w^*+\mathbf w^{**})$ gives both units the same weights: generally a <b>worse</b> network.</p>
+      <p class="step">A convex function would satisfy $J\big(\frac{\mathbf w^*+\mathbf w^{**}}2\big)\le\frac12J(\mathbf w^*)+\frac12J(\mathbf w^{**})$. It fails: <b>not convex</b>. $\blacksquare$</p>
       <ul class="small step"><li>Many equivalent minima, plus saddle points and plateaus.</li><li>The start (random initialization) matters. Large networks usually find good minima anyway.</li><li>We will need better optimizers than vanilla gradient descent (chapter 3).</li></ul>
     </div>
-    <svg class="fig" data-fig="nonconvex" aria-label="A loss curve with a local and a global minimum"></svg>
+    <svg class="fig" data-fig="nonconvex" data-w aria-label="A loss curve with a local and a global minimum"></svg>
   </div>
 </section>
 
@@ -819,7 +856,7 @@ probs = logits.softmax(dim=1)     <span class="c"># to read answers</span></pre>
 </div></div>
 <script src="../assets/figures.js?v=20260930"></script>
 <script src="assets/nn-core.js?v=20260930"></script>
-<script src="assets/fig-nn-intro.js?v=20261003"></script>
+<script src="assets/fig-nn-intro.js?v=20261004"></script>
 <script src="../assets/deck.js?v=20260930"></script>
 </body>
 </html>

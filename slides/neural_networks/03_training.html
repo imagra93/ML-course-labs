@@ -56,7 +56,7 @@
     </div>
     <div class="stack" style="gap:12px">
       <div class="note"><p class="small">In high dimensions most flat points are <b>saddle points</b>, not bad local minima: some directions go up, others go down. Noise in the gradient (mini-batches) and momentum help to leave them.</p></div>
-      <svg class="fig" data-fig="nonconvex" style="max-height:220px" aria-label="A loss curve with a local and a global minimum"></svg>
+      <svg class="fig" data-fig="nonconvex" data-w style="max-height:220px" aria-label="A loss curve with a local and a global minimum"></svg>
     </div>
   </div>
 </section>
@@ -90,10 +90,10 @@
         <li><b>Mini-batch gradient descent:</b> feed a mini-batch of samples, average the cost, calculate derivatives and update.
           <ul><li>The same benefits as stochastic, but the calculation for the mini-batch is <b>vectorized</b>: speed.</li><li>Typically 16, 32, 64 or 128 (computers are prepared to parallelize this).</li></ul></li>
       </ul>
-      <div class="eq">$$\bth:=\bth-\alpha\,\frac{1}{|\mathcal B|}\sum_{i\in\mathcal B}\nabla_{\bth}\ell\big(\bx^{(i)},y^{(i)};\bth\big)$$</div>
-      <p class="small">The mini-batch gradient is an unbiased but noisy estimate of the full one: its variance shrinks like $1/|\mathcal B|$.</p>
+      <div class="eq">$$\mathbf w:=\mathbf w-\alpha\,\frac{1}{|\mathcal B|}\sum_{i\in\mathcal B}\nabla_{\mathbf w}\ell\big(\bx^{(i)},y^{(i)};\mathbf w\big)$$</div>
+      <p class="small">Here $\mathbf w$ is the vector of all the weights and biases. The mini-batch gradient is an unbiased but noisy estimate of the full one: its variance shrinks like $1/|\mathcal B|$.</p>
     </div>
-    <div class="widget" data-fig="gd-variants" data-auto="k=batch :: batch: 30 smooth steps, each one uses all 200 rows | k=sgd :: stochastic: 400 noisy steps, each one uses a single row | k=mini :: mini-batch of 16: 39 steps, smooth enough, cheap enough">
+    <div class="widget" data-fig="gd-variants" data-wb data-auto="k=batch :: batch: 30 smooth steps, each one uses all 200 rows | k=sgd :: stochastic: 400 noisy steps, each one uses a single row | k=mini :: mini-batch of 16: 39 steps, smooth enough, cheap enough">
       <svg class="fig" aria-label="Paths of batch, stochastic and mini-batch gradient descent on the loss contours of a linear regression"></svg>
       <div class="ctl"><span class="seg" role="group" aria-label="Variant"><button type="button" data-k="batch" aria-pressed="true">Batch</button><button type="button" data-k="sgd" aria-pressed="false">Stochastic</button><button type="button" data-k="mini" aria-pressed="false">Mini-batch (16)</button></span></div>
       <div class="ro"><div class="m" style="flex:1"><span>what happens</span><b data-r="i" style="font-size:17px">–</b></div><div class="m"><span>updates</span><b data-r="n">–</b></div></div>
@@ -139,7 +139,7 @@
   <div class="cols c46">
     <div class="stack" style="gap:8px">
       <p class="small">In a narrow valley plain gradient descent zig-zags across and crawls along. Idea: <b>keep a velocity</b>.</p>
-      <div class="bluebox">$$\mathbf v\leftarrow\beta\,\mathbf v+\nabla_{\bth}J,\qquad\bth\leftarrow\bth-\alpha\,\mathbf v$$</div>
+      <div class="bluebox">$$\mathbf v\leftarrow\beta\,\mathbf v+\nabla_{\mathbf w}J,\qquad\mathbf w\leftarrow\mathbf w-\alpha\,\mathbf v$$</div>
       <p class="small step">$\mathbf v$ is a running sum of past gradients, $\ \mathbf v_t=\bg_t+\beta\bg_{t-1}+\beta^2\bg_{t-2}+\dots$</p>
       <ul class="small step">
         <li><b>Same sign every step</b> (the valley floor): $\mathbf v\to\bg/(1-\beta)$, i.e. <b>up to 10× longer steps</b> for $\beta=0.9$.</li>
@@ -161,7 +161,7 @@
   <div class="cols">
     <div class="stack" style="gap:10px">
       <p class="small">Gradients of different parameters can be <b>1000× apart</b> (a bias of the last layer vs a weight of the first). One learning rate cannot suit both. <b>RMSProp</b> divides each parameter's step by the typical size of its own gradient:</p>
-      <div class="bluebox">$$\bs\leftarrow\beta_2\bs+(1-\beta_2)\,\bg\odot\bg,\qquad\bth\leftarrow\bth-\alpha\frac{\bg}{\sqrt{\bs}+\varepsilon}$$</div>
+      <div class="bluebox">$$\bs\leftarrow\beta_2\bs+(1-\beta_2)\,\bg\odot\bg,\qquad\mathbf w\leftarrow\mathbf w-\alpha\frac{\bg}{\sqrt{\bs}+\varepsilon}$$</div>
       <ul class="small step">
         <li>$\bs$ is an <b>EMA of the squared gradient</b>, element by element; $\sqrt{\bs}$ is the root-mean-square: the typical gradient size of each parameter.</li>
         <li>Tiny gradients ($\approx0.02$) are divided by $\approx0.02$, large ones ($\approx1$) by $\approx1$: <b>every parameter moves about $\alpha$ per step</b>.</li>
@@ -181,7 +181,7 @@
     <div class="stack" style="gap:8px">
       <p class="small">Keep both averages, correct their start, and step:</p>
       <div class="eq s">$$\bm_t=\beta_1\bm_{t-1}+(1-\beta_1)\bg_t\qquad\text{(momentum: EMA of }\bg)$$$$\bs_t=\beta_2\bs_{t-1}+(1-\beta_2)\bg_t^2\qquad\text{(RMSProp: EMA of }\bg^2)$$</div>
-      <div class="bluebox" style="font-size:20px">$$\hat\bm_t=\frac{\bm_t}{1-\beta_1^t},\quad\hat\bs_t=\frac{\bs_t}{1-\beta_2^t},\qquad\bth_t=\bth_{t-1}-\alpha\frac{\hat\bm_t}{\sqrt{\hat\bs_t}+\varepsilon}$$</div>
+      <div class="bluebox" style="font-size:20px">$$\hat\bm_t=\frac{\bm_t}{1-\beta_1^t},\quad\hat\bs_t=\frac{\bs_t}{1-\beta_2^t},\qquad\mathbf w_t=\mathbf w_{t-1}-\alpha\frac{\hat\bm_t}{\sqrt{\hat\bs_t}+\varepsilon}$$</div>
       <p class="small">Defaults: $\beta_1=0.9$, $\beta_2=0.999$, $\varepsilon=10^{-8}$, $\alpha=10^{-3}$. The most popular method: it usually works without tuning anything but $\alpha$.</p>
     </div>
     <div class="stack" style="gap:8px">
@@ -534,8 +534,8 @@ loss_fn = nn.CrossEntropyLoss()  <span class="c"># softmax inside</span></pre>
 </div></div>
 <script src="../assets/figures.js?v=20260930"></script>
 <script src="assets/nn-core.js?v=20260930"></script>
-<script src="assets/fig-nn-intro.js?v=20261003"></script>
-<script src="assets/fig-nn-training.js?v=20260930"></script>
+<script src="assets/fig-nn-intro.js?v=20261004"></script>
+<script src="assets/fig-nn-training.js?v=20261004"></script>
 <script src="../assets/deck.js?v=20260930"></script>
 </body>
 </html>
