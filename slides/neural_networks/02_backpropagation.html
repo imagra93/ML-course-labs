@@ -23,11 +23,11 @@
 <section class="slide">
   <h2>Where we are</h2>
   <div class="pipe" style="justify-content:center;padding-top:10px">
-    <div class="pb g"><b>data</b>x, y</div><span class="ar">→</span><div class="pb b"><b>forward</b>ŷ = h(x)</div><span class="ar">→</span><div class="pb o"><b>loss</b>L(ŷ, y)</div><span class="ar">→</span><div class="pb y"><b>backward</b>∂L/∂θ for every θ</div><span class="ar">→</span><div class="pb k"><b>update</b>θ ← θ − α ∂L/∂θ</div>
+    <div class="pb g"><b>data</b>x, y</div><span class="ar">→</span><div class="pb b"><b>forward</b>ŷ = h(x)</div><span class="ar">→</span><div class="pb o"><b>loss</b>L(ŷ, y)</div><span class="ar">→</span><div class="pb y"><b>backward</b>∂L/∂w for every w</div><span class="ar">→</span><div class="pb k"><b>update</b>w ← w − α ∂L/∂w</div>
   </div>
   <div class="cols" style="padding-top:10px">
     <div class="stack" style="gap:12px">
-      <p>Chapter 1 gave us the <b>forward</b> pass and the <b>loss</b>. Gradient descent needs one more thing: the derivative of the loss with respect to <b>every</b> weight and bias.</p>
+      <p>Chapter 1 gave us the <b>forward</b> pass and the <b>loss</b>. Gradient descent needs one more thing: the derivative of the loss with respect to <b>every</b> weight and bias (in the formulas, $w$ stands for any of them).</p>
       <p class="step">A small MLP has thousands of parameters; GPT-2 has 124 million. We need a method that gets <b>all</b> the gradients cheaply and mechanically.</p>
     </div>
     <div class="stack" style="gap:12px">
@@ -48,7 +48,7 @@
       <p class="small"><b>Derivative</b> $\frac{dy}{dx}$: how much $y$ changes when $x$ is nudged a little, $\ \Delta y\approx\frac{dy}{dx}\,\Delta x$.</p>
       <p class="small"><b>Chain rule</b>: if $y$ depends on $u$ and $u$ depends on $x$, the sensitivities <b>multiply</b>:</p>
       <div class="bluebox">$$\frac{dy}{dx}=\frac{dy}{du}\cdot\frac{du}{dx}$$</div>
-      <p class="small"><b>Partial derivative</b> $\frac{\partial L}{\partial w}$: the same, for one input while all the others are held fixed. The <b>gradient</b> $\nabla_{\bth}L$ is the vector of all of them.</p>
+      <p class="small"><b>Partial derivative</b> $\frac{\partial L}{\partial w}$: the same, for one input while all the others are held fixed. The <b>gradient</b> $\nabla_{\mathbf w}L$ is the vector of all of them.</p>
       <p class="small why">A neural network is a long chain of simple functions. Backprop = the chain rule, applied along the chain from the loss back to each weight.</p>
     </div>
   </div>
@@ -64,11 +64,11 @@
         <li>We will use a trick named <b>back-propagation</b>.
           <ul><li>Modern DL libraries (TensorFlow / PyTorch) construct <b>computational graphs</b> that do exactly this.</li></ul></li>
       </ul>
-      <p>When a parameter reaches the loss through <b>several paths</b>, the chain rule adds one term per path. If $g_j=g_j(\theta_1,\dots,\theta_p)$ and $J=J(g_1,\dots,g_k)$:</p>
-      <div class="bluebox">$$\frac{\partial J}{\partial\theta_i}=\sum_{j=1}^k\frac{\partial J}{\partial g_j}\,\frac{\partial g_j}{\partial\theta_i}$$</div>
+      <p>When a parameter reaches the loss through <b>several paths</b>, the chain rule adds one term per path. If $g_j=g_j(w_1,\dots,w_p)$ and $J=J(g_1,\dots,g_k)$:</p>
+      <div class="bluebox">$$\frac{\partial J}{\partial w_i}=\sum_{j=1}^k\frac{\partial J}{\partial g_j}\,\frac{\partial g_j}{\partial w_i}$$</div>
     </div>
     <div class="stack" style="gap:12px">
-      <svg class="fig" data-fig="graph-chain" aria-label="A computational graph from parameters through intermediate functions to the loss"></svg>
+      <svg class="fig" data-fig="graph-chain" data-w aria-label="A computational graph from parameters through intermediate functions to the loss"></svg>
       <div class="eq">$$\frac{d f(g(x))}{dx}=\underbrace{\frac{df(g(x))}{dg(x)}}_{\text{outer, at the inner}}\cdot\underbrace{\frac{dg(x)}{dx}}_{\text{inner}}$$</div>
     </div>
   </div>
@@ -114,7 +114,7 @@
       <div class="panels" style="min-height:190px">
         <div data-i="0"><p class="small"><b>Forward.</b> $z=wx+b=-0.7$, $a=\sigma(-0.7)=0.332$, $L=-\log0.332=1.103$. The neuron says 33 % for a positive example: wrong-ish.</p></div>
         <div data-i="1"><p class="small">$\dfrac{\partial L}{\partial a}=-\dfrac1a=-3.014$. Raising $a$ would lower the loss a lot.</p></div>
-        <div data-i="2"><p class="small">$\dfrac{\partial L}{\partial z}=\dfrac{\partial L}{\partial a}\cdot\sigma'(z)=-3.014\cdot0.222=-0.668$. Note: $=a-y$, the "prediction minus target" of chapter 1.</p></div>
+        <div data-i="2"><p class="small">$\dfrac{\partial L}{\partial z}=\dfrac{\partial L}{\partial a}\cdot\sigma'(z)=-3.014\cdot0.222=-0.668$. It equals $a-y$, the "prediction minus target" we already calculated in chapter 1, and $\sigma^\prime=a(1-a)$ is the activation derivative of chapter 1.</p></div>
         <div data-i="3"><p class="small">$\dfrac{\partial L}{\partial w}=\dfrac{\partial L}{\partial z}\cdot x=-1.336$, $\ \dfrac{\partial L}{\partial b}=\dfrac{\partial L}{\partial z}=-0.668$. Both negative: increase $w$ and $b$.</p></div>
         <div data-i="4"><p class="small">$w\leftarrow-0.5-0.5\cdot(-1.336)=0.168$, $\ b\leftarrow0.3-0.5\cdot(-0.668)=0.634$.</p></div>
         <div data-i="5"><p class="small">$z=0.970$, $a=0.725$, $L=0.321$. One step of gradient descent, and the neuron went from 33 % to 73 % on this example.</p></div>
@@ -171,12 +171,12 @@
       <div data-i="3"><p><b>3 · Output layer, linear step.</b> Same move as step 1, one layer over:</p><div class="eq big">$$\bZ^{[2]}=\bA^{[1]}\bW^{[2]}+\bb^{[2]}$$</div></div>
       <div data-i="4"><p><b>4 · Output layer, activation step.</b> $\bA^{[2]}$ is the network's final prediction:</p><div class="eq big">$$\bA^{[2]}=g(\bZ^{[2]})$$</div></div>
       <div data-i="5"><p><b>5 · The loss</b> compares predictions and targets: $\ L(\bA^{[2]},\bY)$. Forward done: every $\bZ$ and $\bA$ is stored.</p></div>
-      <div data-i="6"><p><b>Backward starts at the loss.</b> The error signal travels backward, the mirror image of the forward pass.</p></div>
-      <div data-i="7"><p><b>Error term at the output, $\bdelta^{[2]}$.</b> By the chain rule:</p><div class="eq big">$$\bdelta^{[2]}=\frac{\partial L}{\partial\bZ^{[2]}}=\frac{\partial L}{\partial\bA^{[2]}}\odot g'(\bZ^{[2]})$$</div><p class="small">"How sensitive the loss is to the output layer's raw input." For sigmoid + BCE or softmax + CE it simplifies to $\frac1m(\bA^{[2]}-\bY)$ (chapter 1).</p></div>
-      <div data-i="8"><p><b>Gradient with respect to $\bW^{[2]}$ and $\bb^{[2]}$.</b> Since $\bZ^{[2]}=\bA^{[1]}\bW^{[2]}+\bb^{[2]}$ (multiply gate: "the other input"):</p><div class="eq big">$$\frac{\partial L}{\partial\bW^{[2]}}=\bA^{[1]\top}\bdelta^{[2]},\qquad\frac{\partial L}{\partial\bb^{[2]}}=\sum_{i=1}^m\bdelta^{[2]}_{i}$$</div><p class="small">The bias gradient sums $\bdelta^{[2]}$ over the $m$ rows (samples), since every sample shares the same bias.</p></div>
-      <div data-i="9"><p><b>Send the error back through $\bW^{[2]}$:</b></p><div class="eq big">$$\frac{\partial L}{\partial\bA^{[1]}}=\bdelta^{[2]}\bW^{[2]\top}$$</div><p class="small">This is why it's called back-propagation: $\bdelta^{[2]}$ flows backward through $\bW^{[2]\top}$ to reach the hidden layer.</p></div>
-      <div data-i="10"><p><b>Error term at the hidden layer, $\bdelta^{[1]}$.</b> Same chain rule, one layer further back:</p><div class="eq big">$$\bdelta^{[1]}=\frac{\partial L}{\partial\bZ^{[1]}}=\big(\bdelta^{[2]}\bW^{[2]\top}\big)\odot g'(\bZ^{[1]})$$</div></div>
-      <div data-i="11"><p><b>Gradient with respect to $\bW^{[1]}$ and $\bb^{[1]}$.</b> Exactly the same shape as step 8, one layer earlier ($\bX$ plays the role $\bA^{[1]}$ played):</p><div class="eq big">$$\frac{\partial L}{\partial\bW^{[1]}}=\bX^\top\bdelta^{[1]},\qquad\frac{\partial L}{\partial\bb^{[1]}}=\sum_{i=1}^m\bdelta^{[1]}_{i}$$</div></div>
+      <div data-i="6"><p><b>Backward starts at the loss.</b> The error signal travels backward, the mirror image of the forward pass. Every link of the chain gives one local derivative, and we multiply them.</p></div>
+      <div data-i="7"><p><b>Error term at the output, $\bdelta^{[2]}=\dfrac{\partial L}{\partial\bZ^{[2]}}$</b>: the derivative of the loss with respect to $\bZ^{[2]}$, the raw scores (logits) of the output layer. Two links, $\bZ^{[2]}\to\bA^{[2]}\to L$:</p><div class="eq">$$\bdelta^{[2]}=\frac{\partial L}{\partial\bZ^{[2]}}=\frac{\partial L}{\partial\bA^{[2]}}\odot g'(\bZ^{[2]})=\frac1m\big(\bA^{[2]}-\bY\big)$$</div><p class="small"><b>We already calculated this in chapter 1</b>: for sigmoid + BCE, softmax + CE and linear + ½MSE the product is simply prediction minus target. And $g'$ is the activation derivative of chapter 1.</p></div>
+      <div data-i="8"><p><b>Gradient with respect to $\bW^{[2]}$ and $\bb^{[2]}$.</b> Keep the term of the previous step, $\bdelta^{[2]}$, and add one more link of the chain: $\bZ^{[2]}=\bA^{[1]}\bW^{[2]}+\bb^{[2]}$.</p><div class="eq">$$\frac{\partial L}{\partial\bW^{[2]}}=\underbrace{\hl{\frac{\partial L}{\partial\bA^{[2]}}\,\frac{\partial\bA^{[2]}}{\partial\bZ^{[2]}}}}_{\bdelta^{[2]}\ \text{(previous step)}}\cdot\ \ho{\frac{\partial\bZ^{[2]}}{\partial\bW^{[2]}}}=\bA^{[1]\top}\bdelta^{[2]}$$</div><p class="small">$\partial\bZ^{[2]}/\partial\bW^{[2]}$ is the "other input" of the multiply gate, $\bA^{[1]}$ (transposed so the shapes match). For the bias, $\partial\bZ^{[2]}/\partial\bb^{[2]}=1$, and the $m$ samples share it: $\ \dfrac{\partial L}{\partial\bb^{[2]}}=\displaystyle\sum_{i=1}^m\bdelta^{[2]}_{i}$.</p></div>
+      <div data-i="9"><p><b>Send the error back through $\bW^{[2]}$.</b> One more link of the chain: $\bZ^{[2]}$ depends on $\bA^{[1]}$ through $\bW^{[2]}$.</p><div class="eq">$$\frac{\partial L}{\partial\bA^{[1]}}=\hl{\frac{\partial L}{\partial\bZ^{[2]}}}\cdot\ho{\frac{\partial\bZ^{[2]}}{\partial\bA^{[1]}}}=\hl{\bdelta^{[2]}}\,\ho{\bW^{[2]\top}}$$</div><p class="small">Again the multiply gate: the other input, $\bW^{[2]}$ (transposed). This is why it is called back-propagation: $\bdelta^{[2]}$ flows backward through $\bW^{[2]\top}$ to reach the hidden layer.</p></div>
+      <div data-i="10"><p><b>Error term at the hidden layer, $\bdelta^{[1]}=\dfrac{\partial L}{\partial\bZ^{[1]}}$.</b> One more link, the activation $\bA^{[1]}=g(\bZ^{[1]})$:</p><div class="eq">$$\bdelta^{[1]}=\hl{\frac{\partial L}{\partial\bA^{[1]}}}\odot\ho{\frac{\partial\bA^{[1]}}{\partial\bZ^{[1]}}}=\hl{\big(\bdelta^{[2]}\bW^{[2]\top}\big)}\odot\ho{g'(\bZ^{[1]})}$$</div><p class="small">$g'$ is the derivative of the activation, <b>calculated in chapter 1</b> (sigmoid $a(1-a)$, tanh $1-a^2$, ReLU 0 or 1). It acts element by element.</p></div>
+      <div data-i="11"><p><b>Gradient with respect to $\bW^{[1]}$ and $\bb^{[1]}$.</b> Same shape as for $\bW^{[2]}$, one layer earlier. The whole path from $\bW^{[1]}$ to $L$ in one line; every bracket is a term we already have:</p><div class="eq">$$\frac{\partial L}{\partial\bW^{[1]}}=\underbrace{\underbrace{\underbrace{\frac{\partial L}{\partial\bA^{[2]}}\frac{\partial\bA^{[2]}}{\partial\bZ^{[2]}}}_{\bdelta^{[2]}}\ \frac{\partial\bZ^{[2]}}{\partial\bA^{[1]}}}_{\partial L/\partial\bA^{[1]}}\ \frac{\partial\bA^{[1]}}{\partial\bZ^{[1]}}}_{\bdelta^{[1]}}\ \frac{\partial\bZ^{[1]}}{\partial\bW^{[1]}}=\bX^\top\bdelta^{[1]}$$</div><p class="small">$\partial\bZ^{[1]}/\partial\bW^{[1]}=\bX$ plays the role $\bA^{[1]}$ played before. And $\ \dfrac{\partial L}{\partial\bb^{[1]}}=\displaystyle\sum_{i=1}^m\bdelta^{[1]}_{i}$.</p></div>
     </div>
   </div>
 </section>
@@ -184,7 +184,7 @@
 <section class="slide">
   <h2>The tiny network: backward with numbers</h2>
   <div class="cols c64">
-    <div class="widget" data-fig="net-num" data-auto="s=1 :: output error: δ⁽²⁾ = ŷ − y = 0.633 − 1 = −0.367 (sigmoid + cross-entropy) | s=2 :: gradients of layer 2: ∂W⁽²⁾ = a⁽¹⁾ᵀ δ⁽²⁾, ∂b⁽²⁾ = δ⁽²⁾ (multiply gate: the other input) | s=3 :: send δ⁽²⁾ back through W⁽²⁾: ∂a⁽¹⁾ = δ⁽²⁾ · W⁽²⁾ᵀ = (−0.367·0.7, −0.367·(−0.5)) | s=4 :: through the tanh: δ⁽¹⁾ = ∂a⁽¹⁾ ⊙ (1 − a²) = (−0.257·0.420, 0.184·0.856) | s=5 :: gradients of layer 1: ∂W⁽¹⁾ = xᵀ δ⁽¹⁾ (x = (1, 2)), ∂b⁽¹⁾ = δ⁽¹⁾ | s=6 :: update every parameter: θ ← θ − 0.5 · ∂θ | s=7 :: forward again with the new weights">
+    <div class="widget" data-fig="net-num" data-auto="s=1 :: output error: δ⁽²⁾ = ∂L/∂z⁽²⁾ = ŷ − y = 0.633 − 1 = −0.367, the result we already calculated in chapter 1 (sigmoid + cross-entropy) | s=2 :: gradients of layer 2: ∂W⁽²⁾ = a⁽¹⁾ᵀ δ⁽²⁾, ∂b⁽²⁾ = δ⁽²⁾ (multiply gate: the other input) | s=3 :: send δ⁽²⁾ back through W⁽²⁾: ∂a⁽¹⁾ = δ⁽²⁾ · W⁽²⁾ᵀ = (−0.367·0.7, −0.367·(−0.5)) | s=4 :: through the tanh: δ⁽¹⁾ = ∂a⁽¹⁾ ⊙ (1 − a²) = (−0.257·0.420, 0.184·0.856), where 1 − a² is the tanh derivative of chapter 1 | s=5 :: gradients of layer 1: ∂W⁽¹⁾ = xᵀ δ⁽¹⁾ (x = (1, 2)), ∂b⁽¹⁾ = δ⁽¹⁾ | s=6 :: update every weight and bias: w ← w − 0.5 · ∂w | s=7 :: forward again with the new weights">
       <svg class="fig" aria-label="The 2-2-1 network with forward values and every gradient written next to the nodes"></svg>
       <div class="ctl"><label for="nn2-s">step</label><input type="range" id="nn2-s" data-k="s" min="0" max="7" step="1" value="0"><span class="v" data-v="s"></span></div>
     </div>
@@ -192,10 +192,10 @@
       <p class="small">Same network and example as chapter 1: $\bx=(1,2)$, $y=1$, $\hat y=0.633$, loss <b data-r="l0">–</b>.</p>
       <div class="panels" style="min-height:210px">
         <div data-i="0"><p class="small">Forward values are stored: $\bz^{[1]}=(1.0,0.4)$, $\ba^{[1]}=(0.762,0.380)$, $z^{[2]}=0.543$, $\hat y=0.633$.</p></div>
-        <div data-i="1"><p class="small">$\delta^{[2]}=\hat y-y=-0.367$. Negative: the output should go <b>up</b>.</p></div>
+        <div data-i="1"><p class="small">$\delta^{[2]}=\dfrac{\partial L}{\partial z^{[2]}}=\hat y-y=-0.367$: the chapter 1 result for sigmoid + cross-entropy. Negative: the output should go <b>up</b>.</p></div>
         <div data-i="2"><p class="small">$\partial\bW^{[2]}=\ba^{[1]\top}\delta^{[2]}$ $=(0.762,0.380)\cdot(-0.367)=(-0.280,-0.140)$. The unit with the larger activation gets the larger gradient.</p></div>
         <div data-i="3"><p class="small">$\partial\ba^{[1]}=\delta^{[2]}\bW^{[2]\top}=(-0.257,\,0.184)$: hidden unit 1 (positive weight 0.7) should grow, unit 2 (weight −0.5) should shrink.</p></div>
-        <div data-i="4"><p class="small">$\bdelta^{[1]}=(-0.257\cdot0.420,\ 0.184\cdot0.856)=(-0.108,\,0.157)$. Unit 1 is already fairly saturated ($a=0.76$), so its gradient is damped: $1-a^2=0.42$.</p></div>
+        <div data-i="4"><p class="small">$\bdelta^{[1]}=(-0.257\cdot0.420,\ 0.184\cdot0.856)=(-0.108,\,0.157)$. Unit 1 is already fairly saturated ($a=0.76$), so its gradient is damped: $g^\prime=1-a^2=0.42$ (tanh derivative, chapter 1).</p></div>
         <div data-i="5"><p class="small">$\partial\bW^{[1]}=\bx^\top\bdelta^{[1]}=\begin{pmatrix}-0.108&amp;0.157\\-0.216&amp;0.314\end{pmatrix}$, $\ \partial\bb^{[1]}=(-0.108,0.157)$. Row 2 is twice row 1 because $x_2=2x_1$.</p></div>
         <div data-i="6"><p class="small">$\bW^{[2]}\leftarrow(0.840,-0.430)$, $b^{[2]}\leftarrow0.384$, $\bW^{[1]}\leftarrow\begin{pmatrix}0.554&amp;-0.379\\0.308&amp;0.243\end{pmatrix}$, $\bb^{[1]}\leftarrow(0.154,-0.179)$.</p></div>
         <div data-i="7"><p class="small">New loss <b data-r="l1">–</b>, down from <b data-r="l0">–</b>. With a mini-batch, every gradient is the <b>average</b> of these numbers over the examples.</p></div>
@@ -206,20 +206,22 @@
 
 <section class="slide">
   <h2>Backpropagation: the derivation</h2>
-  <div class="cols">
-    <div class="stack" style="gap:7px">
-      <p class="small">Define the <b>error signal</b> of layer $l$: $\ \bdelta^{[l]}=\dfrac{\partial J}{\partial\bZ^{[l]}}\in\R^{m\times n_l}$. Three facts are enough:</p>
-      <p class="small step"><b>(a) At the output.</b> For the matching output + loss pairs of chapter 1 (sigmoid + BCE, softmax + CE, linear + ½MSE):</p>
-      <div class="eq s step">$$\bdelta^{[L]}=\tfrac1m\big(\bA^{[L]}-\bY\big)$$</div>
-      <p class="small step"><b>(b) To the weights.</b> In indices, $Z_{ik}=\sum_jA_{ij}W_{jk}+b_k$. $W_{jk}$ affects $Z_{ik}$ for every example $i$, with $\partial Z_{ik}/\partial W_{jk}=A_{ij}$:</p>
-      <div class="eq s step">$$\frac{\partial J}{\partial W_{jk}}=\sum_i\delta_{ik}A_{ij}=\big(\bA^\top\bdelta\big)_{jk}\ \Rightarrow\ \frac{\partial J}{\partial\bW^{[l]}}=\bA^{[l-1]\top}\bdelta^{[l]}$$</div>
-      <p class="small step"><b>(c) To the previous layer.</b> $A_{ij}$ affects $Z_{ik}$ for every unit $k$, with $\partial Z_{ik}/\partial A_{ij}=W_{jk}$, so $\ \dfrac{\partial J}{\partial A_{ij}}=\sum_k\delta_{ik}W_{jk}=\big(\bdelta\bW^\top\big)_{ij}$. Then $g$ acts element by element:</p>
-      <div class="bluebox step">$$\bdelta^{[l-1]}=\big(\bdelta^{[l]}\bW^{[l]\top}\big)\odot g'\big(\bZ^{[l-1]}\big)$$</div>
+  <div class="cols c64">
+    <div class="stack" style="gap:6px">
+      <p class="small">The <b>error signal</b> of layer $l$ is the derivative of the loss with respect to $\bZ^{[l]}$, the input of the activation: $\ \bdelta^{[l]}=\dfrac{\partial J}{\partial\bZ^{[l]}}\in\R^{m\times n_l}$. Each fact below is one more link of the chain on the right.</p>
+      <p class="small step"><b>(a) At the output.</b> Two links, $\bZ^{[L]}\to\bA^{[L]}\to J$: <b>already calculated in chapter 1</b>.</p>
+      <div class="eq s step">$$\bdelta^{[L]}=\frac{\partial J}{\partial\bA^{[L]}}\odot g'(\bZ^{[L]})=\tfrac1m\big(\bA^{[L]}-\bY\big)$$</div>
+      <p class="small step"><b>(b) To the weights.</b> One more link, $\bZ^{[l]}=\bA^{[l-1]}\bW^{[l]}+\bb^{[l]}$: the multiply gate, "times the other input".</p>
+      <div class="eq s step">$$\frac{\partial J}{\partial\bW^{[l]}}=\hl{\frac{\partial J}{\partial\bZ^{[l]}}}\cdot\ho{\frac{\partial\bZ^{[l]}}{\partial\bW^{[l]}}}=\hl{\bdelta^{[l]}}\cdot\ho{\bA^{[l-1]}}\ \to\ \bA^{[l-1]\top}\bdelta^{[l]}$$</div>
+      <p class="small step"><b>(c) To the previous layer.</b> Two more links: through $\bW^{[l]}$, and through the activation.</p>
+      <div class="eq s step">$$\bdelta^{[l-1]}=\hl{\frac{\partial J}{\partial\bZ^{[l]}}}\cdot\ho{\frac{\partial\bZ^{[l]}}{\partial\bA^{[l-1]}}}\cdot\ho{\frac{\partial\bA^{[l-1]}}{\partial\bZ^{[l-1]}}}$$</div>
+      <div class="bluebox step" style="font-size:22px">$$\bdelta^{[l-1]}=\big(\bdelta^{[l]}\bW^{[l]\top}\big)\odot g'\big(\bZ^{[l-1]}\big)$$</div>
     </div>
-    <div class="stack" style="gap:12px">
+    <div class="stack" style="gap:8px">
+      <svg class="fig" data-fig="bp-chain" style="max-height:220px" aria-label="The chain from layer l-1 to the loss with the local derivative of every link, and the error signals delta of layer l and l-1"></svg>
+      <p class="why step">In the formulas: blue = terms we already have, orange = the new links, $g'$ = the activation derivative of chapter 1.</p>
       <div class="note step"><p class="small"><b>Sanity check with shapes.</b> $\bA^{[l-1]\top}\bdelta^{[l]}$ is $(n_{l-1}\times m)(m\times n_l)=n_{l-1}\times n_l$, the shape of $\bW^{[l]}$. $\ \bdelta^{[l]}\bW^{[l]\top}$ is $m\times n_{l-1}$, the shape of $\bZ^{[l-1]}$. If you forget the formulas, the shapes almost force them.</p></div>
       <p class="step small"><b>Link to the ML classes.</b> With one layer ($\bA^{[0]}=\bX$): $\nabla_{\bW}J=\frac1m\bX^\top(\hat\bY-\bY)$. Exactly the gradients of linear and logistic regression: you already knew how to start!</p>
-      <p class="step small"><b>Link to the gates.</b> (b) is the multiply gate ("times the other input", summed over the batch), (c) is the multiply gate the other way round plus a sum over the units, and $\odot g'$ is the element-wise gate.</p>
     </div>
   </div>
 </section>
@@ -281,7 +283,7 @@ W2 -= lr * dW2;  b2 -= lr * db2</pre>
   <div class="cols">
     <div class="stack" style="gap:12px">
       <p>A backprop implementation can be subtly wrong and still "train". Check it against a <b>numerical derivative</b>, one parameter at a time:</p>
-      <div class="eq big">$$\frac{\partial J}{\partial\theta}\approx\frac{J(\theta+\varepsilon)-J(\theta-\varepsilon)}{2\varepsilon},\qquad\varepsilon\approx10^{-5}$$</div>
+      <div class="eq big">$$\frac{\partial J}{\partial w}\approx\frac{J(w+\varepsilon)-J(w-\varepsilon)}{2\varepsilon},\qquad\varepsilon\approx10^{-5}$$</div>
       <p class="step">The centred difference has error $O(\varepsilon^2)$, much better than the one-sided $O(\varepsilon)$.</p>
       <p class="step">Compare with the <b>relative error</b> $\dfrac{\norm{g_{\text{bp}}-g_{\text{num}}}}{\norm{g_{\text{bp}}}+\norm{g_{\text{num}}}}$: below $10^{-7}$ is correct; above $10^{-3}$ is a bug.</p>
       <p class="step small">Try it on the tiny network: $J(W^{[2]}_1+\varepsilon)-J(W^{[2]}_1-\varepsilon)$ over $2\varepsilon$ gives $-0.280$, the number of the slide before.</p>
@@ -394,7 +396,7 @@ optimizer.step()           <span class="c"># update</span></pre>
 </div></div>
 <script src="../assets/figures.js?v=20260930"></script>
 <script src="assets/nn-core.js?v=20260930"></script>
-<script src="assets/fig-nn-backprop.js?v=20260930"></script>
+<script src="assets/fig-nn-backprop.js?v=20261004"></script>
 <script src="../assets/deck.js?v=20260930"></script>
 </body>
 </html>

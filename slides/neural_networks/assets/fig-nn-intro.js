@@ -77,7 +77,7 @@ FIG['neuron-num']=root=>{const svg=svgOf(root);const X=[2,-1,0.5],W=[0.4,-0.3,1.
     if(s>=2){T(svg,290,225,'z = '+f2(z),'lab')}
     arrowPx(svg,322,150,372,150,'ln thin sk','fk');E('rect',{x:374,y:120,width:80,height:60,rx:6,fill:s>=3?'#4472c4':'#9dafd6'},svg);T(svg,414,156,'σ(z)','lab').style.fill='#fff';
     arrowPx(svg,456,150,512,150,'ln thin sk','fk');T(svg,545,156,s>=3?f3(a):'ŷ','lab big');if(s>=3)T(svg,545,182,'= ŷ','');
-    T(svg,390,298,s===0?'x = (2, −1, 0.5), θ = (0.4, −0.3, 1.0), b = 0.1':s===1?'multiply each input by its weight':s===2?'add everything up (plus the bias)':'squash into (0, 1) with the sigmoid','','middle')})};
+    T(svg,390,298,s===0?'x = (2, −1, 0.5), w = (0.4, −0.3, 1.0), b = 0.1':s===1?'multiply each input by its weight':s===2?'add everything up (plus the bias)':'squash into (0, 1) with the sigmoid','','middle')})};
 FIG['mlp']=root=>{const svg=initSvg(svgOf(root),520,330);drawNet(svg,[3,4,1],{x0:60,y0:40,w:380,h:260,r:16,titles:['Input layer','Hidden layer','Output layer'],label:(l,i)=>l===0?'x'+(i+1):l===1?'a'+(i+1):'ŷ'});
   T(svg,150,320,'W⁽¹⁾ ∈ ℝ³ˣ⁴, b⁽¹⁾ ∈ ℝ⁴','');T(svg,380,320,'W⁽²⁾ ∈ ℝ⁴ˣ¹, b⁽²⁾ ∈ ℝ','')};
 FIG['fwd-num']=root=>{const svg=svgOf(root);const F=tinyForward(NET);stepper(root,s=>{initSvg(svg,600,320);drawTiny(svg,NET,F,s,{hiEdge:s===1?1:s===3?2:0})})};
@@ -135,7 +135,7 @@ FIG['softmax-demo']=root=>{const svg=initSvg(svgOf(root),560,230);const z=[1.3,5
   z.forEach((v,i)=>{T(svg,22,41+i*40,names[i],'','end');E('rect',{x:30,y:20+i*40,width:70,height:32,fill:'#dae3f3',stroke:'#4472c4'},svg);T(svg,65,41+i*40,v.toFixed(1),'lab');const p=e[i]/s;E('rect',{x:420,y:20+i*40,width:Math.max(3,120*p),height:32,fill:'#ed7d31'},svg);T(svg,415,41+i*40,p.toFixed(2),'lab','end')});
   arrowPx(svg,105,110,165,110,'ln sk','fk');E('rect',{x:170,y:70,width:180,height:80,rx:6,fill:'#fff',stroke:'#404040'},svg);T(svg,260,103,'softmax','lab big');TT(svg,260,132,'exp(z_k) / Σ_j exp(z_j)','lab');arrowPx(svg,352,110,378,110,'ln sk','fk');
   T(svg,65,14,'scores z (logits)','');T(svg,480,14,'probabilities (sum = 1)','')};
-FIG['nonconvex']=root=>{const P=Plot(svgOf(root),{w:460,h:280,x:[-3,3],y:[-1.4,2.2],m:{l:30,r:14,t:14,b:36}});P.axes({grid:false,xl:'a parameter θ',yl:'loss'});
+FIG['nonconvex']=root=>{const P=Plot(svgOf(root),{w:460,h:280,x:[-3,3],y:[-1.4,2.2],m:{l:30,r:14,t:14,b:36}});P.axes({grid:false,xl:root.hasAttribute('data-w')?'a parameter w':'a parameter θ',yl:'loss'});
   const f=x=>0.12*x**4-0.55*x*x+0.25*x+0.2*Math.sin(3*x);P.fn(f,'ln sb',-3,3,300);let mins=[];for(let i=1;i<299;i++){const a=-3+6*(i-1)/300,b=-3+6*i/300,c=-3+6*(i+1)/300;if(f(b)<f(a)&&f(b)<f(c))mins.push(b)}
   mins.sort((a,b)=>f(a)-f(b));mins.forEach((x,k)=>{P.dot(x,f(x),5,k?'fo':'fr');P.text(x,f(x),k?'local minimum':'global minimum','', 'middle',0,20)})};
 FIG['ua']=root=>{const f=x=>Math.sin(2*Math.PI*x)+0.5*x;const P=Plot(svgOf(root),{w:540,h:330,x:[0,1],y:[-1.3,1.8],m:{l:40,r:14,t:14,b:36}});P.axes({xt:[0,0.25,0.5,0.75,1],yt:[-1,0,1],xl:'x',yl:'y'});
@@ -183,6 +183,37 @@ FIG['softmax-play']=root=>{const svg=svgOf(root);const names=['cat','dog','car']
       E('rect',{x:440,y:cy-16,width:Math.max(2,100*p[k]),height:32,fill:'#ed7d31'},svg);T(svg,440+Math.max(2,100*p[k])+6,cy+5,p[k].toFixed(2),'lab','start')});
     setR(root,'sum',sci(sum));setR(root,'tot',fmt(p.reduce((a,b)=>a+b,0),2));const b=p.indexOf(Math.max(...p));setR(root,'best',names[b]+' '+p[b].toFixed(2))}
   iz.concat([is,ic]).forEach(i=>i.addEventListener('input',draw));draw()};
+/* why we need the derivative of the activation: gradient descent needs dL/dw, and the chain rule goes w -> z -> a -> L */
+FIG['chain-neuron']=root=>{const svg=initSvg(svgOf(root),600,300);
+  const rich=(x,y,parts,anchor)=>{const t=E('text',{x:x,y:y,'text-anchor':anchor||'middle'},svg);t.setAttribute('class','lab');parts.forEach(([s,c,b])=>{const ts=E('tspan',{},t);ts.textContent=s;if(c)ts.setAttribute('fill',c);if(b)ts.setAttribute('font-weight','700')});return t};
+  const node=(x,y,t,c)=>{E('circle',{cx:x,cy:y,r:27,fill:c,stroke:'#404040'},svg);T(svg,x,y+6,t,'lab big')};
+  rich(300,24,[['gradient descent:  ','#595959'],['w ← w − α · ∂L/∂w',null,1]]);
+  const xs=[62,206,350,494],y=118;
+  node(xs[0],y,'w','#ffe699');node(xs[1],y,'z','#dae3f3');node(xs[2],y,'a','#dae3f3');node(xs[3],y,'L','#fbe5d6');
+  [0,1,2].forEach(i=>arrowPx(svg,xs[i]+30,y,xs[i+1]-30,y,'ln thin sk','fk'));
+  T(svg,xs[0],y-44,'weight','');T(svg,xs[1],y-60,'z = w·x + b','lab');T(svg,xs[1],y-42,'input of the activation','');T(svg,xs[2],y-60,'a = g(z)','lab');T(svg,xs[2],y-42,'output of the activation','');T(svg,xs[3],y-60,'L = loss(a, y)','lab');
+  /* the local derivatives, in red, under each link */
+  const red=(x,t,sub)=>{const tt=T(svg,x,y+50,t,'lab');tt.style.fill='#c00000';if(sub){const t2=T(svg,x,y+70,sub,'');t2.style.fill='#c00000'}};
+  red((xs[0]+xs[1])/2,'∂z/∂w = x');red((xs[2]+xs[3])/2,'∂L/∂a','(later layers)');
+  E('rect',{x:(xs[1]+xs[2])/2-84,y:y+30,width:168,height:60,rx:8,fill:'#fff2cc',stroke:'#ed7d31','stroke-width':2.2},svg);
+  const t1=T(svg,(xs[1]+xs[2])/2,y+54,'∂a/∂z = g′(z)','lab big');t1.style.fill='#c00000';const t2=T(svg,(xs[1]+xs[2])/2,y+77,'the activation derivative','');t2.style.fill='#c00000';
+  /* the chain rule line */
+  E('line',{x1:70,y1:222,x2:530,y2:222,stroke:'#d0d0d0'},svg);
+  rich(300,254,[['∂L/∂w  =  ',null,1],['∂L/∂a',null],['  ·  ',null],['∂a/∂z','#c00000',1],['  ·  ',null],['∂z/∂w',null]]);
+  T(svg,300,282,'the weight changes z, z changes a, a changes the loss: multiply the slope of every link','','middle')};
+
+/* GELU = z × a smooth gate Φ(z): the bell curve, the gate (against ReLU's hard gate) and the output */
+FIG['gelu-gate']=root=>{const svg=initSvg(svgOf(root),960,250);
+  const erf=x=>{const sg=Math.sign(x);x=Math.abs(x);const t=1/(1+0.3275911*x);return sg*(1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x))};
+  const Phi=z=>0.5*(1+erf(z/Math.SQRT2)),phi=z=>Math.exp(-z*z/2)/Math.sqrt(2*Math.PI);const z0=1;const mk=(k,yr,yt,title)=>{const P=Plot(svg,{at:[k*322,0],w:312,h:250,x:[-4,4],y:yr,m:{l:36,r:10,t:30,b:38}});P.axes({xt:[-4,-2,0,2,4],yt:yt,xl:'z'});T(P.root,173,16,title,'lab');return P};
+  const A=mk(0,[-0.03,0.47],[0,0.2,0.4],'bell curve φ(z)');const pts=[[-4,0]];for(let i=0;i<=80;i++){const z=-4+(z0+4)*i/80;pts.push([z,phi(z)])}pts.push([z0,0]);A.poly(pts,'fbs',A.bg);A.fn(phi,'ln sb',-4,4,300,A.bg);A.line(z0,0,z0,phi(z0),'ln thin sk dash',A.bg);
+  A.text(-3.85,0.44,'shaded area = share of the curve','', 'start',0,0,A.top);A.text(-3.85,0.395,'to the left of z = 1','', 'start',0,0,A.top);A.text(-3.85,0.34,'Φ(1) = '+fmt(Phi(z0),2),'lab','start',0,0,A.top);
+  const B=mk(1,[-0.1,1.2],[0,0.5,1],'the gate Φ(z): how much of z passes');B.line(-4,0,0,0,'ln sm dash',B.bg);B.line(0,1,4,1,'ln sm dash',B.bg);B.line(0,0,0,1,'ln thin sm dot2',B.bg);B.fn(Phi,'ln sb',-4,4,300,B.bg);
+  B.text(-3.85,1.12,'— Φ(z): smooth gate (GELU)','', 'start',0,0,B.top).style.fill='#4472c4';B.text(-3.85,1.02,'- - 0 or 1: hard gate (ReLU)','', 'start',0,0,B.top).style.fill='#6b6b6b';
+  B.dot(z0,Phi(z0),5,'fb pt',B.bg);B.text(z0,Phi(z0),fmt(Phi(z0),2),'lab','start',8,18,B.top);
+  const C=mk(2,[-0.7,4.2],[0,1,2,3,4],'output = z × gate');C.fn(z=>Math.max(0,z),'ln sm dash',-4,4,300,C.bg);C.fn(z=>z*Phi(z),'ln sb',-4,4,300,C.bg);
+  C.text(-3.85,3.9,'— GELU(z) = z · Φ(z)','', 'start',0,0,C.top).style.fill='#4472c4';C.text(-3.85,3.4,'- - ReLU(z)','', 'start',0,0,C.top).style.fill='#6b6b6b';
+  [1,-1].forEach(z=>{C.dot(z,z*Phi(z),5,'fb pt',C.bg)});C.text(1,1*Phi(1),'1 × 0.84 = 0.84','lab','end',-10,-6,C.top);C.text(-1,-1*Phi(-1),'−1 × 0.16 = −0.16','lab','start',8,18,C.top)};
 /* one activation and its derivative (blue = g, red dashed = g′), with two marked values of z. data-act = sigmoid | tanh | relu | leaky | gelu */
 const ACT1={sigmoid:{x:[-6,6],y:[-0.15,1.2],yt:[0,0.5,1],marks:[0,5]},tanh:{x:[-6,6],y:[-1.3,1.3],yt:[-1,0,1],marks:[0,3]},
   relu:{x:[-4,4],y:[-0.5,4.3],yt:[0,1,2,3,4],marks:[-2,2],step:0},leaky:{x:[-4,4],y:[-1,4.3],yt:[-1,0,1,2,3,4],marks:[-2,2],step:0.2},gelu:{x:[-4,4],y:[-0.5,4.3],yt:[0,1,2,3,4],marks:[-1,1]}};

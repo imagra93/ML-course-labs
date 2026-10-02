@@ -325,8 +325,8 @@ m.fc = nn.Linear(m.fc.in_features, n_classes)</pre>
   <svg class="fig" data-fig="multitask" style="max-height:270px" aria-label="A face image goes through a shared ResNet-50 backbone into a feature vector read by three small heads for eyes, gender and age, whose losses are added with weights"></svg>
   <div class="cols">
     <div class="stack" style="gap:6px">
-      <p class="small">Train <b>one network for several related tasks</b>: a shared backbone $\bh=f_{\theta}(\bx)$ and a small head per task, $\hat y_k=g_k(\bh)$. The loss is a weighted sum,</p>
-      <div class="eq s">$$L=\sum_k\lambda_kL_k\quad\Rightarrow\quad\nabla_\theta L=\sum_k\lambda_k\nabla_\theta L_k$$</div>
+      <p class="small">Train <b>one network for several related tasks</b>: a shared backbone $\bh=f_{\mathbf w}(\bx)$ and a small head per task, $\hat y_k=g_k(\bh)$. The loss is a weighted sum,</p>
+      <div class="eq s">$$L=\sum_k\lambda_kL_k\quad\Rightarrow\quad\nabla_{\mathbf w}L=\sum_k\lambda_k\nabla_{\mathbf w}L_k$$</div>
       <p class="small">so the backbone receives gradient from every task. Benefits: one forward pass for three outputs, and each task acts as a regularizer for the others.</p>
     </div>
     <div class="stack" style="gap:6px">
