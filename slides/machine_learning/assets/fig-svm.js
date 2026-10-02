@@ -9,13 +9,17 @@ function lineAt(P,u,s,cls){const d=[-u[1],u[0]],p=[s*u[0],s*u[1]];return P.line(
 function bandAt(P,u,s1,s2,cls){const d=[-u[1],u[0]],e=30;const a=[s1*u[0],s1*u[1]],b=[s2*u[0],s2*u[1]];P.poly([[a[0]-e*d[0],a[1]-e*d[1]],[a[0]+e*d[0],a[1]+e*d[1]],[b[0]+e*d[0],b[1]+e*d[1]],[b[0]-e*d[0],b[1]-e*d[1]]],cls)}
 const dotC=(P,p,r)=>p[2]>0?P.dot(p[0],p[1],r||6,'pt fb'):P.rect(p[0]-0.09,p[1]-0.09,p[0]+0.09,p[1]+0.09,'fr');
 /* text with a white halo, readable on top of lines; optional rotation (degrees) */
-function label(P,x,y,s,o){o=o||{};const e=P.text(x,y,s,o.cls||'',o.anchor||'middle',o.dx||0,o.dy||0);e.setAttribute('style','paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round');
+function label(P,x,y,s,o){o=o||{};const e=P.text(x,y,s,o.cls||'',o.anchor||'middle',o.dx||0,o.dy||0,o.g);e.setAttribute('style','paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round');
   if(o.rot)e.setAttribute('transform','rotate('+o.rot+' '+P.X(x)+' '+P.Y(y)+')');return e}
 
-FIG['manylines']=root=>{const pts=svmData();const svg=initSvg(svgOf(root),900,380);const m={l:14,r:14,t:30,b:14};const xr=[-3.2,4.8];
+/* data-later: the right panel is a .step of the slide (deck.js reveals it with →). Lines A–D are named so the class can discuss them. */
+FIG['manylines']=root=>{const later=root.hasAttribute('data-later');const pts=svmData();const svg=initSvg(svgOf(root),900,380);const m={l:14,r:14,t:30,b:14};const xr=[-3.2,4.8];
   let best=null;for(let a=0;a<3600;a++){const g=maxGap(pts,a*Math.PI/1800);if(!best||g.g>best.g)best=Object.assign({phi:a*Math.PI/1800},g)}
-  [0,1].forEach(k=>{const P=Plot(svg,{at:[k*455,0],w:440,h:380,x:xr,y:equalY(440,380,m,xr,0.8),m:m});P.axes({grid:false});T(P.root,220,18,k?'The optimal hyperplane: maximum margin':'Many lines separate the data','lab');
-    if(!k)[-0.5,-0.2,0.25,0.5].forEach((dp,j)=>{const g=maxGap(pts,best.phi+dp);if(g.g>0)lineAt(P,g.u,g.nmax+[0.15,0.8,0.3,0.6][j]*g.g,'ln thin sg')});
+  [0,1].forEach(k=>{const yr=equalY(440,380,m,xr,0.8);const P=Plot(svg,{at:[k*455,0],w:440,h:380,x:xr,y:yr,m:m});if(k&&later)P.root.setAttribute('class','step');P.axes({grid:false});T(P.root,220,18,k?'The optimal hyperplane: maximum margin':'Many lines separate the data','lab');
+    if(!k)[-0.5,-0.2,0.25,0.5].forEach((dp,j)=>{const g=maxGap(pts,best.phi+dp);if(g.g>0){const s0=g.nmax+[0.15,0.8,0.3,0.6][j]*g.g;lineAt(P,g.u,s0,'ln thin sg');
+      /* name the line at its upper-left end, away from the points */
+      let pos=null;for(let x=xr[0]+0.5;x<xr[1]-0.5;x+=0.1){const y=(s0-g.u[0]*x)/g.u[1];if(y>yr[1]-0.5||y<yr[0]+0.5)continue;if(pts.every(p=>Math.hypot(p[0]-x,p[1]-y)>0.55)){pos=[x,y];break}}
+      if(pos)label(P,pos[0],pos[1],'ABCD'[j],{cls:'lab big'})}});
     else{bandAt(P,best.u,best.nmax,best.pmin,'fgs');lineAt(P,best.u,best.nmax,'ln thin sg dash');lineAt(P,best.u,best.pmin,'ln thin sg dash');lineAt(P,best.u,(best.pmin+best.nmax)/2,'ln sg');
       [best.ip,best.iq].forEach(i=>E('circle',{cx:P.X(pts[i][0]),cy:P.Y(pts[i][1]),r:11,class:'ln thin sk'},P.dyn))}
     pts.forEach(p=>dotC(P,p))})};
@@ -52,14 +56,16 @@ FIG['dotprod']=root=>{const m={l:30,r:14,t:14,b:30};const xr=[-0.5,4];const P=Pl
   P.text(x[0],x[1],'x = (0.6, 2.6)','lab','start',8,0);P.text(w[0],w[1],'w = (2, 1)','lab','start',8,5);
   P.text(f[0]*0.55,f[1]*0.55,'shadow = ‖x‖ cos α = '+fmt(s,2),'','start',14,24)};
 
-FIG['margin']=root=>{const m={l:36,r:14,t:14,b:34};const xr=[-0.3,5];const P=Plot(svgOf(root),{w:500,h:420,x:xr,y:equalY(500,420,m,xr,2),m:m});P.axes({xt:[0,1,2,3,4,5],yt:[0,1,2,3,4],xl:'x₁',yl:'x₂',grid:false});
-  P.poly([[-1,3],[3,-1],[5,-1],[-1,5]],'fgs');P.line(-1,3,3,-1,'ln thin sg dash');P.line(-1,5,5,-1,'ln thin sg dash');P.line(-1,4,4,-1,'ln sk');
+/* data-hide: only the points at first; the band, the lines and the circled support vectors are one .step (the answer) */
+FIG['margin']=root=>{const hide=root.hasAttribute('data-hide');const m={l:36,r:14,t:14,b:34};const xr=[-0.3,5];const P=Plot(svgOf(root),{w:500,h:420,x:xr,y:equalY(500,420,m,xr,2),m:m});P.axes({xt:[0,1,2,3,4,5],yt:[0,1,2,3,4],xl:'x₁',yl:'x₂',grid:false});
   const pos=[[3,1],[1.2,2.8],[3.5,2],[4.2,1.4],[2.6,3.1],[4.3,2.8],[3.8,3.4]],neg=[[1,1],[0.4,1.6],[0.3,0.4],[1.2,0.2],[0.2,1.0],[0.9,0.5]];
-  pos.forEach(p=>P.dot(p[0],p[1],6,'pt fb'));neg.forEach(p=>P.rect(p[0]-0.09,p[1]-0.09,p[0]+0.09,p[1]+0.09,'fr'));
-  [[3,1],[1.2,2.8],[1,1],[0.4,1.6]].forEach(p=>E('circle',{cx:P.X(p[0]),cy:P.Y(p[1]),r:11,class:'ln thin sk'},P.dyn));
-  arrow(P,0.7,1.3,1.7,2.3,'ln thin sk','fk');arrow(P,1.7,2.3,0.7,1.3,'ln thin sk','fk');label(P,1.66,1.34,'2/‖w‖',{cls:'lab',dy:5});
-  [[1.65,'w·x + b = −1'],[2.65,'w·x + b = 0'],[3.75,'w·x + b = +1']].forEach(([x1,t],k)=>label(P,x1,[2,3,4][k]-x1,t,{rot:45,dy:-5}));
-  P.text(4.9,4.0,'support vectors (circled)','','end')};
+  const band=g=>{P.poly([[-1,3],[3,-1],[5,-1],[-1,5]],'fgs',g);P.line(-1,3,3,-1,'ln thin sg dash',g);P.line(-1,5,5,-1,'ln thin sg dash',g);P.line(-1,4,4,-1,'ln sk',g)};
+  const pts=g=>{pos.forEach(p=>P.dot(p[0],p[1],6,'pt fb',g));neg.forEach(p=>P.rect(p[0]-0.09,p[1]-0.09,p[0]+0.09,p[1]+0.09,'fr',g))};
+  const notes=g=>{[[3,1],[1.2,2.8],[1,1],[0.4,1.6]].forEach(p=>E('circle',{cx:P.X(p[0]),cy:P.Y(p[1]),r:11,class:'ln thin sk'},g||P.dyn));
+    arrow(P,0.7,1.3,1.7,2.3,'ln thin sk','fk',g);arrow(P,1.7,2.3,0.7,1.3,'ln thin sk','fk',g);label(P,1.66,1.34,'2/‖w‖',{cls:'lab',dy:5,g:g});
+    [[1.65,'w·x + b = −1'],[2.65,'w·x + b = 0'],[3.75,'w·x + b = +1']].forEach(([x1,t],k)=>label(P,x1,[2,3,4][k]-x1,t,{rot:45,dy:-5,g:g}));
+    P.text(4.9,4.0,'support vectors (circled)','','end',0,0,g)};
+  if(hide){pts();const G=E('g',{class:'step'},P.dyn);band(G);pts(G);notes(G)}else{band();pts();notes()}};
 
 FIG['angle']=root=>{const pts=svmData();const m={l:14,r:14,t:14,b:14};const xr=[-3.6,5.2];const svg=initSvg(svgOf(root),900,420);
   const P=Plot(svg,{at:[0,0],w:470,h:420,x:xr,y:equalY(470,420,m,xr,0.8),m:m});
@@ -72,6 +78,44 @@ FIG['angle']=root=>{const pts=svmData();const m={l:14,r:14,t:14,b:14};const xr=[
     P.line(c0[0]-9*u[0],c0[1]-9*u[1],c0[0]+9*u[0],c0[1]+9*u[1],'ln thin sm');pts.forEach(p=>{const s=(p[0]-c0[0])*u[0]+(p[1]-c0[1])*u[1];P.dot(c0[0]+s*u[0],c0[1]+s*u[1],3,p[2]>0?'fb':'fr')});
     arrow(P,c0[0],c0[1],c0[0]+1.3*u[0],c0[1]+1.3*u[1],'ln sk','fk');pts.forEach(p=>dotC(P,p));[g.ip,g.iq].forEach(i=>E('circle',{cx:P.X(pts[i][0]),cy:P.Y(pts[i][1]),r:11,class:'ln thin sk'},P.dyn));
     Q.clear();Q.dot(a,g.g,6,'fr pt');setR(root,'w',g.g>0?fmt(g.g,2):'no margin')}inp.addEventListener('input',draw);draw()};
+
+/* The dot product, by angle: w = (2, 1) is fixed, x has the same length and turns from 0° to 180° */
+FIG['dotangle']=root=>{const m={l:30,r:14,t:14,b:30};const xr=[-3.9,3.4];const P=Plot(svgOf(root),{w:480,h:400,x:xr,y:equalY(480,400,m,xr,0),m:m});P.axes({xt:[-2,0,2],yt:[-2,0,2]});
+  const w=[2,1],nw=Math.hypot(w[0],w[1]),a0=Math.atan2(w[1],w[0]),u=[w[0]/nw,w[1]/nw],d=[-u[1],u[0]],inp=q(root,'a');
+  P.poly([[-5*d[0],-5*d[1]],[5*d[0],5*d[1]],[5*d[0]+5*u[0],5*d[1]+5*u[1]],[-5*d[0]+5*u[0],-5*d[1]+5*u[1]]],'fbs',P.bgc);
+  P.poly([[-5*d[0],-5*d[1]],[5*d[0],5*d[1]],[5*d[0]-5*u[0],5*d[1]-5*u[1]],[-5*d[0]-5*u[0],-5*d[1]-5*u[1]]],'fos',P.bgc);
+  P.line(-5*d[0],-5*d[1],5*d[0],5*d[1],'ln thin sm dash',P.bgc);label(P,1.2,-2.3,'w·x = 0',{cls:'',anchor:'start',dx:6,g:P.bg});
+  function draw(){const al=+inp.value,rad=al*Math.PI/180,t=a0+rad,x=[nw*Math.cos(t),nw*Math.sin(t)],dot=w[0]*x[0]+w[1]*x[1];setV(root,'a',al+'°');P.clear();
+    arrow(P,0,0,w[0],w[1],'ln sb','fb');arrow(P,0,0,x[0],x[1],'ln sk','fk');
+    if(al>0){const arc=[];for(let i=0;i<=30;i++){const tt=a0+rad*i/30;arc.push([0.8*Math.cos(tt),0.8*Math.sin(tt)])}P.path(arc,'ln thin sk');const am=a0+rad/2;if(al>=20)label(P,1.1*Math.cos(am),1.1*Math.sin(am),'α',{cls:'lab',dy:5})}
+    label(P,w[0],w[1],'w = (2, 1)',{cls:'lab',anchor:'start',dx:9,dy:-5});
+    label(P,x[0],x[1],'x = ('+fmt(x[0],1)+', '+fmt(x[1],1)+')',{cls:'lab',anchor:x[0]>=0?'start':'end',dx:x[0]>=0?9:-9,dy:al<35?22:(x[1]>=0.6?-8:16)});
+    setR(root,'d',fmt(dot,2));setR(root,'c',fmt(Math.cos(rad),2));
+    setR(root,'v',al===90?'perpendicular: zero':al<90?'same general direction: positive':'opposite general direction: negative')}
+  inp.addEventListener('input',draw);draw()};
+
+/* Distance to a hyperplane as a difference of shadows: w = (1, 1), b = −3, the line x₁ + x₂ = 3 */
+FIG['dist']=root=>{const m={l:30,r:14,t:14,b:30};const xr=[-0.6,5.2];const P=Plot(svgOf(root),{w:520,h:420,x:xr,y:equalY(520,420,m,xr,1.7),m:m});P.axes({xt:[0,1,2,3,4,5],yt:[0,1,2,3,4],grid:true});
+  const S0=[1.5,1.5],S1=[3,3],X=[4,2],F=[2.5,0.5];
+  P.line(-0.4,-0.4,4.6,4.6,'ln thin sm dot2');label(P,3.5,3.5,'axis of w',{cls:'',anchor:'start',dx:8,dy:-2});
+  P.line(-0.6,3.6,3.6,-0.6,'ln sk');label(P,5.15,0.5,'black line: the hyperplane f(x) = 0',{cls:'',anchor:'end'});
+  arrow(P,0,0,1,1,'ln sb','fb');label(P,0.95,0.95,'w = (1, 1)',{cls:'lab',anchor:'start',dx:8,dy:14});
+  P.line(S0[0],S0[1],S1[0],S1[1],'ln so').setAttribute('style','stroke-width:8;stroke-opacity:.7');
+  P.line(X[0],X[1],S1[0],S1[1],'ln thin sk dash');P.line(X[0],X[1],F[0],F[1],'ln thin sr dash');
+  [[0.5,2.5,'A'],[3,0,'B']].forEach(([x1,y1,t])=>{P.dot(x1,y1,5,'fk pt');label(P,x1,y1,t,{cls:'lab',dx:(t==='A'?-12:12),dy:(t==='A'?-6:-8)})});
+  P.dot(S0[0],S0[1],5,'fw pt').setAttribute('style','stroke:#000;stroke-width:1.4');P.dot(S1[0],S1[1],5,'fw pt').setAttribute('style','stroke:#000;stroke-width:1.4');
+  P.dot(X[0],X[1],7,'fb pt');label(P,X[0],X[1],'x = (4, 2)',{cls:'lab',anchor:'start',dx:10,dy:6});
+  label(P,S0[0],S0[1],'shadow of the line: 2.12',{cls:'',anchor:'end',dx:-9,dy:20});label(P,S1[0],S1[1],'shadow of x: 4.24',{cls:'',anchor:'end',dx:-10,dy:-8});
+  label(P,2.25,2.25,'2.12',{cls:'lab',anchor:'start',dx:6,dy:-6,});label(P,3.25,1.25,'r = 2.12',{cls:'lab',anchor:'start',dx:4,dy:20})};
+
+/* Lagrange multipliers with an equality constraint: f = ½(w₁² + w₂²), g = w₁ + w₂ − 1 = 0 */
+FIG['lageq']=root=>{const m={l:36,r:14,t:14,b:34};const xr=[-0.5,1.8];const P=Plot(svgOf(root),{w:500,h:440,x:xr,y:equalY(500,440,m,xr,0.6),m:m});P.axes({xt:[0,0.5,1,1.5],yt:[0,0.5,1],xl:'w₁',yl:'w₂'});
+  const rt=Math.SQRT1_2;[0.35,0.5,rt,0.95,1.2,1.5].forEach(r=>{const pts=[];for(let i=0;i<=120;i++){const t=2*Math.PI*i/120;pts.push([r*Math.cos(t),r*Math.sin(t)])}P.path(pts,r===rt?'ln sb':'ln thin sb',P.bgc).setAttribute('opacity',r===rt?'1':'0.45')});
+  label(P,-0.38,0.2,'rings of f',{cls:'',anchor:'start'});
+  P.line(-0.5,1.5,1.8,-0.8,'ln sg');label(P,1.0,-0.02,'g = w₁ + w₂ − 1 = 0',{cls:'lab',anchor:'start',rot:-45,dy:-6,dx:6});
+  arrow(P,0.5,0.5,1.0,1.0,'ln sb','fb');arrow(P,0.56,0.44,1.56,1.44,'ln so','fo');
+  label(P,1.0,1.0,'∇f = (½, ½)',{cls:'lab',anchor:'end',dx:-10,dy:-8});label(P,1.56,1.44,'∇g = (1, 1)',{cls:'lab',anchor:'end',dx:-10,dy:-8});
+  P.dot(0.5,0.5,7,'fr pt');label(P,0.5,0.5,'w* = (½, ½)',{cls:'lab',anchor:'end',dx:-12,dy:4})};
 
 /* Lagrange multipliers in 1-D: an active and an inactive constraint */
 FIG['lag1d']=root=>{const svg=initSvg(svgOf(root),520,430);

@@ -9,6 +9,14 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
 <link rel="stylesheet" href="../assets/deck.css">
+<style>
+.road{display:flex;gap:8px;flex-wrap:wrap;font-size:16px;margin-top:-6px}
+.road span{padding:2px 10px;border:1px solid #cfcfcf;color:#7a7a7a;background:#fff;white-space:nowrap}
+.road span.done{background:var(--blue-soft);border-color:var(--blue-soft);color:#44546a}
+.road span.on{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:700}
+pre.snip{font-family:var(--mono);font-size:15px;line-height:1.5;background:#f2f2f2;padding:10px 16px;margin:0;white-space:pre;max-width:100%}
+pre.snip .c{color:#6b6b6b}
+</style>
 <script src="../assets/mathjax-config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
 </head>
@@ -18,6 +26,7 @@
   <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Support Vector Machines</p></div>
   <p class="mail">imanolgranada@gmail.com</p>
 </section>
+
 <section class="slide divider">
   <div class="card blue"><h1><b>Support Vector</b><br><b>Machines</b></h1><div class="eq big" style="text-align:center">$$\max\ \frac{2}{\norm{\mathbf w}}$$</div></div>
 </section>
@@ -30,13 +39,14 @@
     <div class="note"><h3>Clothing images</h3><p class="small">Fashion-MNIST: ankle boot, T-shirt, dress, pullover, sneaker, sandal…</p></div>
   </div>
   <p class="why">A strong classifier for small and medium datasets, and the standard choice before deep learning took over images and text.</p>
-  <div class="note" style="margin-top:20px"><p class="small"><b>The plan.</b> (1) Build the SVM from geometry: hyperplane, projection, margin. (2) Solve it with Lagrange multipliers: the dual and the support vectors. (3) Kernels, for curved boundaries. (4) Soft margin and the hinge loss: the SVM as "loss + regularization", like logistic regression.</p></div>
+  <div class="note" style="margin-top:20px"><p class="small"><b>The plan.</b> (1) Build the SVM from geometry: hyperplane, dot product, margin. (2) Solve it with Lagrange multipliers: the dual and the support vectors. (3) Kernels, for curved boundaries. (4) Soft margin: the parameter $C$, and how to use it in scikit-learn.</p></div>
 </section>
 
 <section class="slide">
   <h2>SVM: motivation</h2>
-  <svg class="fig" data-fig="manylines" aria-label="Several separating lines, and the optimal hyperplane with maximum margin"></svg>
-  <p>Many lines separate the data. Which one should we pick? The SVM chooses the one that stays <b>as far as possible from the closest points</b>: the maximum margin.</p>
+  <svg class="fig" data-fig="manylines" data-later aria-label="Several separating lines named A to D, and then the optimal hyperplane with maximum margin"></svg>
+  <p>Many lines separate the data perfectly. <b>Which one would you pick?</b> A, B, C or D?</p>
+  <p class="step">The SVM chooses the one that stays <b>as far as possible from the closest points</b> of both classes: the maximum margin.</p>
 </section>
 
 <section class="slide">
@@ -61,17 +71,54 @@
 </section>
 
 <section class="slide">
-  <h2>SVM: the dot product is a projection</h2>
+  <h2>SVM: the dot product, what it means</h2>
   <div class="cols">
-    <svg class="fig" data-fig="dotprod" style="max-height:340px" aria-label="The shadow of x on the direction of w"></svg>
-    <div class="stack" style="gap:8px">
-      <div class="eq s">$$\mathbf w\cdot\bx=w_1x_1+\dots+w_nx_n=\norm{\mathbf w}\,\norm{\bx}\cos\alpha$$</div>
-      <p class="small">$\norm{\mathbf w}=\sqrt{\sum_jw_j^2}$ is the length of $\mathbf w$, and $\norm{\bx}\cos\alpha$ is the length of the <b>shadow</b> of $\bx$ on the direction of $\mathbf w$. Divide by $\norm{\mathbf w}$ to read it directly:</p>
-      <div class="eq">$$\text{shadow}(\bx)=\frac{\mathbf w\cdot\bx}{\norm{\mathbf w}}$$</div>
-      <p class="small step"><b>1 ·</b> On the hyperplane $\mathbf w\cdot\bx=-b$, so <b>all</b> its points have the same shadow, $-b/\norm{\mathbf w}$. That is why $\mathbf w$ is perpendicular to the hyperplane.</p>
-      <p class="small step"><b>2 ·</b> Distances along $\mathbf w$ are differences of shadows. The signed distance from $\bx$ to the hyperplane:</p>
-      <div class="step"><div class="eq s">$$r(\bx)=\frac{\mathbf w\cdot\bx}{\norm{\mathbf w}}-\frac{-b}{\norm{\mathbf w}}=\frac{\mathbf w\cdot\bx+b}{\norm{\mathbf w}}=\frac{f(\bx)}{\norm{\mathbf w}}$$</div></div>
-      <p class="small step"><b>Check:</b> $\mathbf w=(1,1)$, $b=-3$, $\bx=(4,2)$: $r=\frac{4+2-3}{\sqrt2}=2.12$. The closest point of the line is $(2.5,0.5)$, at distance $\sqrt{1.5^2+1.5^2}=2.12$ ✓. The sign of $r$ tells the side.</p>
+    <div class="widget" data-fig="dotangle" data-auto="a=0 :: Same direction (α = 0°): w·x = 5, as large as it gets|a=60 :: α = 60°: still roughly the same direction, w·x = 2.5|a=90 :: Perpendicular (α = 90°): w·x = 0|a=135 :: α = 135°: pointing away from w, w·x = −3.54|a=180 :: Opposite direction (α = 180°): w·x = −5">
+      <svg class="fig" aria-label="The vector w and a vector x of the same length turning around the origin, with their dot product"></svg>
+      <div class="ctl"><label for="da-a">Angle α between w and x</label><input type="range" id="da-a" data-k="a" min="0" max="180" step="5" value="45"><span class="v" data-v="a">45°</span></div>
+      <div class="ro"><div class="m"><span>w · x</span><b data-r="d">–</b></div><div class="m"><span>cos α</span><b data-r="c">–</b></div><div class="m" style="flex:1"><span>what it says</span><b data-r="v" style="font-size:18px">–</b></div></div>
+    </div>
+    <div class="stack" style="gap:10px">
+      <p>The <b>dot product</b> of two vectors: multiply the matching coordinates and add.</p>
+      <div class="eq">$$\mathbf w\cdot\bx=w_1x_1+w_2x_2+\dots+w_nx_n$$</div>
+      <p class="small">Example: $\mathbf w=(2,1)$ and $\bx=(1,3)$ give $\ \mathbf w\cdot\bx=2\cdot1+1\cdot3=5$.</p>
+      <p>It is one number that says <b>how much two vectors point the same way</b>:</p>
+      <ul class="small">
+        <li><b>positive</b>: roughly the same direction. $(2,1)\cdot(2,1)=5$.</li>
+        <li><b>zero</b>: perpendicular. $(2,1)\cdot(-1,2)=-2+2=0$.</li>
+        <li><b>negative</b>: roughly opposite directions. $(2,1)\cdot(-2,-1)=-5$.</li>
+      </ul>
+      <div class="note step"><p class="small">In one formula, with $\alpha$ the angle between the vectors and $\norm{\mathbf w}=\sqrt{w_1^2+\dots+w_n^2}$ the length of $\mathbf w$: $\ \mathbf w\cdot\bx=\norm{\mathbf w}\,\norm{\bx}\cos\alpha$. In the figure both lengths are $\sqrt5$, so $\mathbf w\cdot\bx=5\cos\alpha$.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>SVM: the dot product is a shadow</h2>
+  <div class="cols">
+    <svg class="fig" data-fig="dotprod" style="max-height:380px" aria-label="The shadow of x on the direction of w"></svg>
+    <div class="stack" style="gap:10px">
+      <p>Shine a light perpendicular to $\mathbf w$: the vector $\bx$ casts a <b>shadow</b> on the line of $\mathbf w$ (orange).</p>
+      <p class="small step">Its length is $\norm{\bx}\cos\alpha$ (the side of the right triangle next to the angle). Compare with $\mathbf w\cdot\bx=\norm{\mathbf w}\,\norm{\bx}\cos\alpha$:</p>
+      <div class="bluebox step">$$\mathbf w\cdot\bx=\norm{\mathbf w}\times\text{shadow}\quad\Rightarrow\quad\text{shadow}=\frac{\mathbf w\cdot\bx}{\norm{\mathbf w}}$$</div>
+      <p class="small step"><b>Check:</b> $\mathbf w=(2,1)$ and $\bx=(0.6,2.6)$. Then $\mathbf w\cdot\bx=2\cdot0.6+1\cdot2.6=3.8$ and $\norm{\mathbf w}=\sqrt5=2.24$, so the shadow is $\frac{3.8}{2.24}=1.70$, as in the figure.</p>
+      <p class="small step">If $\bx$ points away from $\mathbf w$ the dot product is negative: the shadow falls on the <b>other side</b> of the origin.</p>
+      <p class="why step">Dividing by $\norm{\mathbf w}$ turns the score $\mathbf w\cdot\bx$ into a <b>length</b>. Next: the distance to a hyperplane.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>SVM: the hyperplane is a wall of equal shadows</h2>
+  <div class="cols">
+    <svg class="fig" data-fig="dist" style="max-height:400px" aria-label="The line x1 + x2 = 3, the axis of w, the shadows of the line and of a point, and the distance between them"></svg>
+    <div class="stack" style="gap:9px">
+      <p>The hyperplane is where $f(\bx)=\mathbf w\cdot\bx+b=0$, that is, $\mathbf w\cdot\bx=-b$. Dividing by $\norm{\mathbf w}$, <b>every point of the hyperplane has the same shadow</b>:</p>
+      <div class="eq s">$$\text{shadow}(\bx)=\frac{\mathbf w\cdot\bx}{\norm{\mathbf w}}=\frac{-b}{\norm{\mathbf w}}$$</div>
+      <p class="small step"><b>1 ·</b> Points A and B of the figure project to the same spot on the axis of $\mathbf w$. So the hyperplane is a straight wall <b>perpendicular to $\mathbf w$</b>.</p>
+      <p class="small step"><b>2 ·</b> The distance from $\bx$ to the wall is the difference of two shadows, the one of $\bx$ and the one of the wall:</p>
+      <div class="eq s step">$$r(\bx)=\frac{\mathbf w\cdot\bx}{\norm{\mathbf w}}-\frac{-b}{\norm{\mathbf w}}=\frac{\mathbf w\cdot\bx+b}{\norm{\mathbf w}}=\frac{f(\bx)}{\norm{\mathbf w}}$$</div>
+      <p class="small step"><b>Check:</b> $\mathbf w=(1,1)$, $b=-3$, $\bx=(4,2)$. $f=4+2-3=3$, so $r=\frac{3}{\sqrt2}=2.12$. The closest point of the line is $(2.5,0.5)$, at distance $\sqrt{1.5^2+1.5^2}=2.12$ ✓. The sign of $r$ tells the side.</p>
     </div>
   </div>
 </section>
@@ -123,50 +170,120 @@
       <p class="small step">Maximizing $2/a$ (for $a\gt0$) is minimizing $a$, which is minimizing $\frac12a^2$: no square root, and the $\frac12$ cancels the 2 of the derivative.</p>
       <div class="bluebox step" style="font-size:20px">$$\min_{\mathbf w,b}\ \frac12\norm{\mathbf w}^2\quad\text{s.t. }\ y^{(i)}\big(\mathbf w\cdot\bx^{(i)}+b\big)\ge1\ \ \forall i$$</div>
       <p class="small step">A <b>convex quadratic program</b>: one global optimum, and standard QP solvers find it. Only the constraints of the closest points end up mattering.</p>
-      <p class="small step">Next: solve it by hand with <b>Lagrange multipliers</b>. First, the idea in one dimension.</p>
+      <p class="small step">Next: <b>Lagrange multipliers</b>, the tool to solve a problem with constraints. First a quick review, then the SVM.</p>
     </div>
   </div>
 </section>
 
 <section class="slide">
-  <h2>SVM: Lagrange multipliers in one dimension</h2>
+  <h2>Review: Lagrange multipliers</h2>
   <div class="cols c46">
-    <svg class="fig" data-fig="lag1d" aria-label="Minimizing one half w squared with the constraint w at least 1 (active) and w at least minus 1 (inactive)"></svg>
+    <svg class="fig" data-fig="lageq" style="max-height:420px" aria-label="Rings of equal f and a straight constraint line that touch at one point where the gradients of f and g point the same way"></svg>
     <div class="stack" style="gap:8px">
-      <p>Toy problem: $\min_w\frac12w^2$ subject to $w\ge1$. The answer is clearly $w=1$. Let's find it the Lagrange way.</p>
-      <div class="step"><p class="small"><b>1 ·</b> Write the constraint as $g(w)=w-1\ge0$, and give it a multiplier $\alpha\ge0$:</p><div class="eq s">$$\mathcal L(w,\alpha)=\tfrac12w^2-\alpha\,(w-1)$$</div></div>
-      <div class="step"><p class="small"><b>2 ·</b> Minimize over $w$:</p><div class="eq s">$$\frac{\partial\mathcal L}{\partial w}=w-\alpha=0\ \ \Rightarrow\ \ w=\alpha$$</div></div>
-      <div class="step"><p class="small"><b>3 ·</b> Substitute $w=\alpha$ back: the <b>dual</b>, a function of $\alpha$ only:</p><div class="eq s">$$\tfrac12\alpha^2-\alpha(\alpha-1)=\alpha-\tfrac12\alpha^2$$</div></div>
-      <p class="small step"><b>4 ·</b> Maximize over $\alpha\ge0$: derivative $1-\alpha=0$, so $\alpha=1$ and $w=\alpha=1$ ✓.</p>
-      <p class="small step">The constraint is <b>active</b> (the optimum is pressed against it) and $\alpha=1\gt0$. With $w\ge-1$ instead, the free minimum $w=0$ is allowed: the constraint is <b>inactive</b> and $\alpha=0$. In both cases $\alpha\cdot g(w)=0$: <b>complementary slackness</b>.</p>
+      <p>Minimize $f(\mathbf w)$ <b>subject to</b> a constraint $g(\mathbf w)=0$. Example: $f=\frac12(w_1^2+w_2^2)$ and $g=w_1+w_2-1$.</p>
+      <p class="small step"><b>The picture.</b> The blue rings join the points with the same $f$. The green line is where the constraint holds. The best allowed point is where a ring <b>just touches</b> the line, and there $\nabla f$ and $\nabla g$ point the same way: $\ \nabla f=\lambda\,\nabla g$.</p>
+      <div class="step"><p class="small"><b>The recipe.</b> Build the <b>Lagrangian</b> with a multiplier $\lambda$, and set its derivatives to zero:</p><div class="eq s">$$\mathcal L(\mathbf w,\lambda)=f(\mathbf w)-\lambda\,g(\mathbf w)$$</div></div>
+      <p class="small step"><b>The example.</b> $\ \frac{\partial\mathcal L}{\partial w_1}=w_1-\lambda=0\ $ and $\ \frac{\partial\mathcal L}{\partial w_2}=w_2-\lambda=0$, so $w_1=w_2=\lambda$. The constraint $w_1+w_2=1$ then gives $2\lambda=1$:</p>
+      <div class="bluebox step" style="font-size:21px">$$\lambda=\tfrac12,\qquad\mathbf w^*=\big(\tfrac12,\tfrac12\big)$$</div>
+      <p class="small step">In the picture, $\nabla f=\mathbf w^*=(\frac12,\frac12)$ and $\nabla g=(1,1)$: $\ \nabla f=\frac12\nabla g$ ✓.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Lagrange multipliers: an inequality, in pictures</h2>
+  <div class="cols c46">
+    <svg class="fig" data-fig="lag1d" style="max-height:430px" aria-label="Minimizing one half w squared with the constraint w at least 1 (active) and w at least minus 1 (inactive)"></svg>
+    <div class="stack" style="gap:10px">
+      <p>The SVM has <b>inequality</b> constraints ($\ge1$), not equalities. One dimension first: minimize $\frac12w^2$, a bowl with its bottom at $w=0$.</p>
+      <p class="step"><b>Top: $w\ge1$.</b> The orange zone is forbidden, and it holds the bottom of the bowl. The best allowed point is the nearest edge, $w^*=1$: the constraint is <b>active</b>, the solution is pressed against it.</p>
+      <p class="step"><b>Bottom: $w\ge-1$.</b> The bottom of the bowl is allowed. $w^*=0$, as if the constraint did not exist: <b>inactive</b>.</p>
+      <div class="note step"><p class="small">Each constraint $g(w)\ge0$ gets a multiplier $\alpha\ge0$. <b>Active</b>: the constraint pushes, $\alpha\gt0$. <b>Inactive</b>: it does nothing, $\alpha=0$. In both cases $\ \alpha\cdot g(w^*)=0$. This is the rule that will pick the support vectors.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Lagrange multipliers: an inequality, the maths</h2>
+  <div class="cols c46">
+    <svg class="fig" data-fig="lag1d" style="max-height:430px" aria-label="Minimizing one half w squared with the constraint w at least 1 (active) and w at least minus 1 (inactive)"></svg>
+    <div class="stack" style="gap:6px">
+      <p>Top problem: $\min_w\tfrac12w^2$ subject to $g(w)=w-1\ge0$.</p>
+      <div class="step"><p><b>1 ·</b> Lagrangian, with a multiplier $\alpha\ge0$:</p><div class="eq s">$$\mathcal L(w,\alpha)=\tfrac12w^2-\alpha\,(w-1)$$</div></div>
+      <div class="step"><p><b>2 ·</b> Minimize over $w$ (derivative to zero):</p><div class="eq s">$$\frac{\partial\mathcal L}{\partial w}=w-\alpha=0\ \ \Rightarrow\ \ w=\alpha$$</div></div>
+      <div class="step"><p><b>3 ·</b> Substitute: the <b>dual</b>, a function of $\alpha$ only:</p><div class="eq s">$$\tfrac12\alpha^2-\alpha(\alpha-1)=\alpha-\tfrac12\alpha^2$$</div></div>
+      <p class="step"><b>4 ·</b> Maximize over $\alpha\ge0$: the derivative $1-\alpha=0$ gives $\alpha=1$, so $w=\alpha=1$ ✓. Active constraint, $\alpha\gt0$.</p>
+      <p class="small step"><b>Bottom problem</b> ($w\ge-1$): the same steps give $w=\alpha$ and the dual $-\alpha-\frac12\alpha^2$. It only decreases for $\alpha\ge0$, so its maximum is at $\alpha=0$ and $w=0$ ✓. Inactive.</p>
+      <p class="small step">Both cases: $\ \alpha\cdot g(w^*)=0$, <b>complementary slackness</b>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>SVM: when we know the support vectors</h2>
+  <div class="cols c46">
+    <svg class="fig" data-fig="svm2pts" style="max-height:430px" aria-label="Two points, (1,1) of class plus one and (−1,−1) of class minus one, with the max-margin line x1 + x2 = 0"></svg>
+    <div class="stack" style="gap:6px">
+      <p class="small">Two points: $\bx_1=(1,1)$ with $y_1=+1$, and $\bx_2=(-1,-1)$ with $y_2=-1$. Both obviously sit on the margin, so both constraints are <b>equalities</b>, exactly as in the review: $\ y_1(\mathbf w\cdot\bx_1+b)=1\ $ and $\ y_2(\mathbf w\cdot\bx_2+b)=1$.</p>
+      <div class="step"><p class="small"><b>1 ·</b> Lagrangian, one multiplier per point:</p><div class="eq xs">$$\mathcal L=\tfrac12\norm{\mathbf w}^2-\alpha_1\big[y_1(\mathbf w\cdot\bx_1+b)-1\big]-\alpha_2\big[y_2(\mathbf w\cdot\bx_2+b)-1\big]$$</div></div>
+      <div class="step"><p class="small"><b>2 ·</b> $\dfrac{\partial\mathcal L}{\partial\mathbf w}=\mathbf w-\alpha_1y_1\bx_1-\alpha_2y_2\bx_2=\bzero$. Since $y_1\bx_1=y_2\bx_2=(1,1)$, we get</p><div class="eq s">$$\mathbf w=\alpha_1y_1\bx_1+\alpha_2y_2\bx_2=(\alpha_1+\alpha_2)\,(1,1)$$</div></div>
+      <div class="step"><p class="small"><b>3 ·</b> $\dfrac{\partial\mathcal L}{\partial b}=-\alpha_1y_1-\alpha_2y_2=-\alpha_1+\alpha_2=0$, so $\alpha_1=\alpha_2=\alpha$ and $\mathbf w=(2\alpha,2\alpha)$.</p></div>
+      <div class="step"><p class="small"><b>4 ·</b> Use the two equalities: $\ \mathbf w\cdot\bx_1+b=4\alpha+b=1\ $ and $\ \mathbf w\cdot\bx_2+b=-4\alpha+b=-1$. Adding them: $b=0$, and then $\alpha=\frac14$.</p></div>
+      <div class="bluebox step" style="font-size:20px">$$\mathbf w=\big(\tfrac12,\tfrac12\big),\quad b=0,\quad\alpha_1=\alpha_2=\tfrac14$$</div>
+      <p class="small step">Margin $\frac{2}{\norm{\mathbf w}}=2\sqrt2=2.83$, the distance between the two points ✓. And $\mathbf w=\frac14\bx_1-\frac14\bx_2$ is built from the two support vectors.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>SVM: in general we do not know the support vectors</h2>
+  <div class="road"><span class="on">1 · Lagrangian</span><span>2 · minimize over $\mathbf w,b$</span><span>3 · the dual</span><span>4 · solve for $\boldsymbol\alpha$</span><span>5 · $\mathbf w$, $b$, predict</span></div>
+  <div class="cols c46">
+    <svg class="fig" data-fig="margin" data-hide style="max-height:380px" aria-label="Two classes of points; then the maximum-margin line, its margin and the points on the margin"></svg>
+    <div class="stack" style="gap:8px">
+      <p>With two points it was obvious. With 13 points, or 13,000, <b>which ones</b> end up on the margin? We cannot know before solving.</p>
+      <p class="step"><b>The fix:</b> one multiplier $\alpha_i\ge0$ <b>per point</b>, and let the maths decide. For a problem with constraints $g_i(\mathbf w)\ge0$:</p>
+      <div class="eq s step">$$\mathcal L(\mathbf w,\boldsymbol\alpha)=f(\mathbf w)-\sum_i\alpha_i\,g_i(\mathbf w),\qquad\alpha_i\ge0$$</div>
+      <p class="small step"><b>Why it works.</b> Fix $\mathbf w$ and make $\mathcal L$ as large as possible over the $\alpha_i$:</p>
+      <ul class="small step">
+        <li>a constraint is violated ($g_i\lt0$): then $-\alpha_ig_i$ grows without limit as $\alpha_i$ grows. An <b>infinite penalty</b>;</li>
+        <li>all constraints hold: the best is $\alpha_i=0$, and we get $f(\mathbf w)$ back.</li>
+      </ul>
+      <div class="note step"><p class="small">So minimizing over $\mathbf w$ the maximum over $\boldsymbol\alpha$ is exactly the constrained problem. And at the optimum $\alpha_ig_i=0$: <b>points off the margin get $\alpha_i=0$</b>; the others are the support vectors.</p></div>
     </div>
   </div>
 </section>
 
 <section class="slide">
   <h2>SVM: the Lagrangian</h2>
+  <div class="road"><span class="on">1 · Lagrangian</span><span>2 · minimize over $\mathbf w,b$</span><span>3 · the dual</span><span>4 · solve for $\boldsymbol\alpha$</span><span>5 · $\mathbf w$, $b$, predict</span></div>
   <div class="cols">
-    <div class="stack" style="gap:8px">
-      <p>The general recipe: minimize $f(\mathbf w)$ subject to $g_i(\mathbf w)\ge0$ for $i=1,\dots,m$. One multiplier $\alpha_i\ge0$ per constraint:</p>
-      <div class="eq">$$\mathcal L(\mathbf w,\boldsymbol\alpha)=f(\mathbf w)-\sum_{i=1}^m\alpha_i\,g_i(\mathbf w)$$</div>
-      <p class="step"><b>Why it works.</b> Fix $\mathbf w$ and maximize $\mathcal L$ over the $\alpha_i\ge0$:</p>
-      <ul class="small step"><li>if some constraint is violated, $g_i(\mathbf w)\lt0$, then $-\alpha_ig_i\to+\infty$ as $\alpha_i$ grows: an infinite penalty;</li><li>if all constraints hold, the best is $\alpha_i=0$, and we get $f(\mathbf w)$ back.</li></ul>
-      <p class="small step">So $\min_{\mathbf w}\max_{\boldsymbol\alpha\ge0}\mathcal L$ is exactly the constrained problem. For convex problems like this one we may swap the order: $\max_{\boldsymbol\alpha}\min_{\mathbf w}\mathcal L$, the <b>dual</b>. At the optimum, $\alpha_i\,g_i(\mathbf w)=0$ for every $i$.</p>
-    </div>
-    <div class="stack" style="gap:8px">
-      <p class="step"><b>For the SVM:</b> $f=\frac12\norm{\mathbf w}^2$, and one constraint per training point: $g_i=y_i(\mathbf w\cdot\bx_i+b)-1\ge0$.</p>
-      <p class="small step">Shorthand from now on: $\bx_i,y_i$ = the $i$-th training example (so far $\bx^{(i)},y^{(i)}$), for $i=1,\dots,m$.</p>
+    <div class="stack" style="gap:10px">
+      <p>For the SVM: $f=\frac12\norm{\mathbf w}^2$, and one constraint per training point, $g_i=y_i(\mathbf w\cdot\bx_i+b)-1\ge0$.</p>
+      <p class="small step">Shorthand from now on: $\bx_i,y_i$ is the $i$-th training example (so far $\bx^{(i)},y^{(i)}$), for $i=1,\dots,m$.</p>
       <div class="bluebox step" style="font-size:21px">$$\mathcal L(\mathbf w,b,\boldsymbol\alpha)=\frac12\norm{\mathbf w}^2-\sum_{i=1}^m\alpha_i\big[y_i(\mathbf w\cdot\bx_i+b)-1\big]$$</div>
-      <p class="small step">Plan, exactly as in 1-D: <b>minimize</b> over $\mathbf w$ and $b$ (set the derivatives to zero), substitute back, then <b>maximize</b> over the $\alpha_i\ge0$.</p>
+      <p class="small step">The same expression as for the two points, with $m$ terms instead of 2. The multipliers must satisfy $\alpha_i\ge0$.</p>
+    </div>
+    <div class="stack" style="gap:10px">
+      <p class="step">Expand it and group the terms:</p>
+      <div class="eq s step">$$\mathcal L=\frac12\,\mathbf w\cdot\mathbf w-\sum_i\alpha_iy_i\,\mathbf w\cdot\bx_i-b\sum_i\alpha_iy_i+\sum_i\alpha_i$$</div>
+      <p class="step"><b>The plan</b>, as in 1-D:</p>
+      <ol class="small step">
+        <li><b>minimize</b> over $\mathbf w$ and $b$: derivatives to zero;</li>
+        <li><b>substitute</b> the result back: a function of $\boldsymbol\alpha$ only, the <b>dual</b>;</li>
+        <li><b>maximize</b> it over $\alpha_i\ge0$.</li>
+      </ol>
+      <p class="small step why">For convex problems like this one, minimizing first and maximizing afterwards gives the same answer as the constrained problem.</p>
     </div>
   </div>
 </section>
 
 <section class="slide">
   <h2>SVM: minimizing over w and b</h2>
+  <div class="road"><span class="done">1 · Lagrangian</span><span class="on">2 · minimize over $\mathbf w,b$</span><span>3 · the dual</span><span>4 · solve for $\boldsymbol\alpha$</span><span>5 · $\mathbf w$, $b$, predict</span></div>
   <div class="cols">
     <div class="stack" style="gap:8px">
-      <p>Expand the Lagrangian and group the terms:</p>
+      <p class="small">The expanded Lagrangian:</p>
       <div class="eq s">$$\mathcal L=\frac12\,\mathbf w\cdot\mathbf w-\sum_i\alpha_iy_i\,\mathbf w\cdot\bx_i-b\sum_i\alpha_iy_i+\sum_i\alpha_i$$</div>
       <div class="hint"><div class="hd">HINT</div><div class="bd">$\dfrac{\partial}{\partial\mathbf w}\big(\tfrac12\,\mathbf w\cdot\mathbf w\big)=\mathbf w$ &nbsp; and &nbsp; $\dfrac{\partial}{\partial\mathbf w}\big(\mathbf w\cdot\bx_i\big)=\bx_i$, the vector versions of $\frac{d}{dw}\frac12w^2=w$ and $\frac{d}{dw}wx=x$.</div></div>
       <p class="step"><b>With respect to $\mathbf w$:</b></p>
@@ -174,7 +291,7 @@
     </div>
     <div class="stack" style="gap:8px">
       <div class="bluebox step">$$\mathbf w=\sum_{i=1}^m\alpha_iy_i\bx_i$$</div>
-      <p class="small step">The optimal $\mathbf w$ is a <b>weighted sum of the training points</b>.</p>
+      <p class="small step">The optimal $\mathbf w$ is a <b>weighted sum of the training points</b>: the formula we found for the two points.</p>
       <p class="step"><b>With respect to $b$</b> (only the third term contains $b$):</p>
       <div class="eq step">$$\frac{\partial\mathcal L}{\partial b}=-\sum_{i=1}^m\alpha_iy_i=0$$</div>
       <div class="bluebox step">$$\sum_{i=1}^m\alpha_iy_i=0$$</div>
@@ -185,35 +302,38 @@
 
 <section class="slide">
   <h2>SVM: the dual problem</h2>
+  <div class="road"><span class="done">1 · Lagrangian</span><span class="done">2 · minimize over $\mathbf w,b$</span><span class="on">3 · the dual</span><span>4 · solve for $\boldsymbol\alpha$</span><span>5 · $\mathbf w$, $b$, predict</span></div>
   <div class="stack" style="gap:8px">
-    <p>Substitute both results into the expanded Lagrangian. The $b$ term is $b\cdot0=0$, and the two $\mathbf w$ terms become the same double sum:</p>
+    <p>Substitute both results into the Lagrangian. The $b$ term is $b\cdot0=0$, and the two $\mathbf w$ terms become the same double sum:</p>
     <div class="step"><div class="eq s">$$\tfrac12\,\mathbf w\cdot\mathbf w=\tfrac12\Big(\sum_i\alpha_iy_i\bx_i\Big)\cdot\Big(\sum_j\alpha_jy_j\bx_j\Big)=\tfrac12\sum_{i,j}\alpha_i\alpha_jy_iy_j\,\bx_i\cdot\bx_j$$</div></div>
     <div class="step"><div class="eq s">$$\sum_i\alpha_iy_i\,\mathbf w\cdot\bx_i=\sum_i\alpha_iy_i\Big(\sum_j\alpha_jy_j\bx_j\Big)\cdot\bx_i=\sum_{i,j}\alpha_i\alpha_jy_iy_j\,\bx_i\cdot\bx_j$$</div></div>
     <p class="step">Half of the double sum, minus all of it, leaves <b>minus half</b>. The <b>dual problem</b>:</p>
     <div class="bluebox step">$$\max_{\boldsymbol\alpha}\ \sum_{i=1}^m\alpha_i-\frac12\sum_{i=1}^m\sum_{j=1}^m\alpha_i\alpha_jy_iy_j\,\hl{\bx_i\cdot\bx_j}\qquad\text{s.t. }\ \alpha_i\ge0,\ \ \sum_{i=1}^m\alpha_iy_i=0$$</div>
-    <ul class="small step"><li>A quadratic program in $m$ unknowns, one $\alpha_i$ per training point, with simple constraints.</li><li>The data enter <b>only through the dot products</b> $\bx_i\cdot\bx_j$ (in gold). Keep an eye on them: they are the door to kernels.</li></ul>
+    <ul class="small step"><li>A problem in $m$ unknowns, one $\alpha_i$ per training point, with simple constraints. Solvers (SMO) handle it well.</li><li>The data enter <b>only through the dot products</b> $\bx_i\cdot\bx_j$ (highlighted). More on this soon.</li></ul>
   </div>
 </section>
 
 <section class="slide">
-  <h2>SVM: a dual by hand</h2>
+  <h2>SVM: the same two points, through the dual</h2>
+  <div class="road"><span class="done">1 · Lagrangian</span><span class="done">2 · minimize over $\mathbf w,b$</span><span class="done">3 · the dual</span><span class="on">4 · solve for $\boldsymbol\alpha$</span><span>5 · $\mathbf w$, $b$, predict</span></div>
   <div class="cols c46">
-    <svg class="fig" data-fig="svm2pts" aria-label="Two points, (1,1) of class plus one and (−1,−1) of class minus one, with the max-margin line x1 + x2 = 0"></svg>
+    <svg class="fig" data-fig="svm2pts" style="max-height:400px" aria-label="Two points, (1,1) of class plus one and (−1,−1) of class minus one, with the max-margin line x1 + x2 = 0"></svg>
     <div class="stack" style="gap:6px">
-      <p class="small">Two points: $\bx_1=(1,1)$ with $y_1=+1$, and $\bx_2=(-1,-1)$ with $y_2=-1$.</p>
+      <p class="small">Same two points as before. The dual has one unknown per point, and we can solve it by hand.</p>
       <p class="small step"><b>1 ·</b> The constraint $\sum_i\alpha_iy_i=\alpha_1-\alpha_2=0$ gives $\alpha_1=\alpha_2=\alpha$.</p>
       <p class="small step"><b>2 ·</b> Dot products: $\bx_1\cdot\bx_1=2$, $\bx_2\cdot\bx_2=2$, $\bx_1\cdot\bx_2=-2$. The double sum has 4 terms:</p>
       <div class="eq s step">$$\sum_{i,j}\alpha_i\alpha_jy_iy_j\,\bx_i\cdot\bx_j=\alpha^2\big(2+2+2\cdot(-1)(-2)\big)=8\alpha^2$$</div>
       <p class="small step"><b>3 ·</b> Dual objective: $2\alpha-\frac12\cdot8\alpha^2=2\alpha-4\alpha^2$. Its derivative $2-8\alpha=0$ gives $\alpha=\frac14$.</p>
       <div class="eq s step">$$\mathbf w=\sum_i\alpha_iy_i\bx_i=\tfrac14(1,1)-\tfrac14(-1,-1)=\big(\tfrac12,\tfrac12\big)$$</div>
       <p class="small step"><b>4 ·</b> $b$ from a support vector: $b=y_1-\mathbf w\cdot\bx_1=1-\big(\tfrac12+\tfrac12\big)=0$.</p>
-      <p class="small step"><b>Check:</b> boundary $\frac12x_1+\frac12x_2=0$, margin $\frac{2}{\norm{\mathbf w}}=\frac{2}{\sqrt{1/2}}=2\sqrt2=2.83$, exactly the distance between the two points ✓. Both are support vectors ($\alpha\gt0$).</p>
+      <p class="small step"><b>Same answer as with the Lagrangian directly.</b> Boundary $\frac12x_1+\frac12x_2=0$, margin $\frac{2}{\norm{\mathbf w}}=\frac{2}{\sqrt{1/2}}=2\sqrt2=2.83$, exactly the distance between the two points ✓. Both are support vectors ($\alpha\gt0$).</p>
     </div>
   </div>
 </section>
 
 <section class="slide">
   <h2>SVM: support vectors and prediction</h2>
+  <div class="road"><span class="done">1 · Lagrangian</span><span class="done">2 · minimize over $\mathbf w,b$</span><span class="done">3 · the dual</span><span class="done">4 · solve for $\boldsymbol\alpha$</span><span class="on">5 · $\mathbf w$, $b$, predict</span></div>
   <div class="cols">
     <div class="stack" style="gap:10px">
       <p><b>Complementary slackness</b> (KKT), for every training point:</p>
@@ -227,6 +347,24 @@
       <div class="bluebox step">$$f(\bx)=\sum_{i\in\text{SV}}\alpha_iy_i\,\hl{\bx_i\cdot\bx}+b,\qquad\hat y=\operatorname{sign}f(\bx)$$</div>
       <p class="small step">Again only dot products, now between the new point and the support vectors.</p>
       <p class="small step">In the two-point example: $f(\bx)=\frac14\,\bx_1\cdot\bx-\frac14\,\bx_2\cdot\bx+0=\frac12x_1+\frac12x_2$ ✓</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>SVM: the data only enter through inner products</h2>
+  <div class="cols">
+    <div class="stack" style="gap:12px">
+      <p><b>Training</b>: the dual problem.</p>
+      <div class="bluebox" style="font-size:21px">$$\max_{\boldsymbol\alpha}\ \sum_i\alpha_i-\frac12\sum_{i,j}\alpha_i\alpha_jy_iy_j\,\hl{\bx_i\cdot\bx_j}$$ $$\text{s.t. }\ \alpha_i\ge0,\ \ \sum_i\alpha_iy_i=0$$</div>
+      <p><b>Prediction</b> for a new point $\bx$:</p>
+      <div class="bluebox" style="font-size:21px">$$f(\bx)=\sum_{i\in\text{SV}}\alpha_iy_i\,\hl{\bx_i\cdot\bx}+b$$</div>
+    </div>
+    <div class="stack" style="gap:12px">
+      <p>Look at where the data appear: only inside the highlighted <b>inner products</b> (dot products) of pairs of points.</p>
+      <div class="step"><p class="small">Not the coordinates themselves, and not even how many features there are. Only the table of inner products between every pair of training points, the <b>Gram matrix</b>. For the two points of before:</p>
+        <table class="t" style="font-size:19px;width:auto;text-align:center"><tr><th></th><th>$\bx_1$</th><th>$\bx_2$</th></tr><tr><td>$\bx_1$</td><td>$\bx_1\cdot\bx_1=2$</td><td>$\bx_1\cdot\bx_2=-2$</td></tr><tr><td>$\bx_2$</td><td>$\bx_2\cdot\bx_1=-2$</td><td>$\bx_2\cdot\bx_2=2$</td></tr></table></div>
+      <div class="note step"><p class="small">Give the algorithm that table and it can train and predict. If we replace the table by a different one, we get a different model, with <b>no change to the algorithm</b>. That is the door to <b>kernels</b>: the next topic.</p></div>
     </div>
   </div>
 </section>
@@ -321,72 +459,41 @@
         <li>$\xi_i=0$: on the correct side, outside or on the margin. $0\lt\xi_i\le1$: correct side, but inside the margin. $\xi_i\gt1$: misclassified.</li>
         <li>$C$ is the <b>regularization parameter</b>: margin width against violations.
           <ul><li>Large $C$: violations are expensive → narrow margin, fits the training data tightly. $C\to\infty$ is the hard margin.</li><li>Small $C$: wide margin, many violations tolerated.</li></ul></li>
-        <li>The dual is the same, with a box: $0\le\alpha_i\le C$ (next slide).</li>
       </ul>
     </div>
   </div>
 </section>
 
 <section class="slide">
-  <h2>SVM: the soft-margin dual</h2>
+  <h2>SVM: the soft margin in scikit-learn</h2>
   <div class="cols">
-    <div class="stack" style="gap:8px">
-      <p class="small">Same recipe as before, with a second multiplier $\nu_i\ge0$ for each constraint $\xi_i\ge0$:</p>
-      <div class="eq s">$$\mathcal L=\frac12\norm{\mathbf w}^2+C\sum_i\xi_i$$ $$\qquad-\sum_i\alpha_i\big[y_i(\mathbf w\cdot\bx_i+b)-1+\xi_i\big]-\sum_i\nu_i\xi_i$$</div>
-      <p class="small step">Setting $\partial\mathcal L/\partial\mathbf w=\bzero$ and $\partial\mathcal L/\partial b=0$ gives the same two results as before: $\mathbf w=\sum_i\alpha_iy_i\bx_i$ and $\sum_i\alpha_iy_i=0$.</p>
-      <p class="small step"><b>The new condition</b>, one per slack:</p>
-      <div class="step"><div class="eq s">$$\frac{\partial\mathcal L}{\partial\xi_i}=C-\alpha_i-\nu_i=0\ \ \Rightarrow\ \ \alpha_i=C-\nu_i\le C$$</div><p class="why">because $\nu_i\ge0$</p></div>
-      <p class="small step">Substituting back, every $\xi_i$ is multiplied by $C-\alpha_i-\nu_i=0$ and disappears. The dual is <b>exactly the hard-margin dual</b>, with a single change:</p>
-      <div class="bluebox step" style="font-size:21px">$$0\le\alpha_i\le C$$</div>
-    </div>
-    <div class="stack" style="gap:8px">
-      <p class="step small"><b>Reading the multipliers.</b> With $\mu_i=y_if(\bx_i)$, complementary slackness says $\alpha_i\,(\mu_i-1+\xi_i)=0$ and $\nu_i\,\xi_i=0$:</p>
-      <table class="t step" style="font-size:17px">
-        <tr><th>multiplier</th><th>where the point is</th></tr>
-        <tr><td>$\alpha_i=0$</td><td>on the correct side of its margin line, $\mu_i\ge1$: no influence</td></tr>
-        <tr><td>$0\lt\alpha_i\lt C$</td><td>then $\nu_i\gt0$, so $\xi_i=0$ and $\mu_i=1$: exactly on the margin</td></tr>
-        <tr><td>$\alpha_i=C$</td><td>$\mu_i=1-\xi_i\le1$: inside the margin, or misclassified if $\xi_i\gt1$</td></tr>
+    <div class="stack" style="gap:10px">
+      <p>The $C$ of the previous slide is exactly the <code>C</code> hyperparameter of <code>SVC</code>. It minimizes the margin term plus $C$ times the total violation:</p>
+      <div class="eq s">$$\frac12\norm{\mathbf w}^2+C\sum_i\xi_i$$</div>
+      <pre class="snip">from sklearn.svm import SVC
+model = SVC(kernel="linear", C=1.0)   <span class="c"># C = 1 is the default</span>
+model.fit(X_train, y_train)</pre>
+      <table class="t" style="font-size:18px">
+        <tr><th></th><th>small $C$</th><th>large $C$</th></tr>
+        <tr><td>a violation costs</td><td>little</td><td>a lot</td></tr>
+        <tr><td>margin</td><td>wide</td><td>narrow</td></tr>
+        <tr><td>support vectors</td><td>many</td><td>few</td></tr>
+        <tr><td>risk</td><td>underfitting</td><td>overfitting</td></tr>
       </table>
-      <p class="small step">The <b>support vectors</b> are all the points with $\alpha_i\gt0$: on, inside or beyond the margin. They are the circled points of the previous demo.</p>
-      <p class="small step">A misclassified point has $\mu_i\lt0$, so $\xi_i\ge1-\mu_i\gt1$. Hence $\sum_i\xi_i$ is at least the number of training mistakes, and $C$ sets their price.</p>
-    </div>
-  </div>
-</section>
-
-<section class="slide">
-  <h2>SVM: the hinge loss</h2>
-  <div class="cols c46">
-    <div class="stack" style="gap:6px">
-      <svg class="fig" data-fig="hinge" aria-label="Zero-one loss, hinge loss and logistic loss as functions of the margin"></svg>
-      <div class="legend"><span><i style="background:var(--blue)"></i>hinge $\max(0,1-\mu)$</span><span><i style="background:var(--orange)"></i>logistic $\log_2(1+e^{-\mu})$</span><span><i style="background:var(--muted)"></i>0–1 loss</span></div>
-    </div>
-    <div class="stack" style="gap:8px">
-      <p><b>Eliminate the slacks.</b> Write $\mu_i=y_if(\bx_i)$. Each $\xi_i$ has two constraints, and the objective wants it as small as possible:</p>
-      <div class="eq s step">$$\xi_i\ge1-\mu_i\ \text{ and }\ \xi_i\ge0\quad\Rightarrow\quad\xi_i=\max(0,\,1-\mu_i)\quad\text{: the hinge loss}$$</div>
-      <p class="small step">Substitute into $\frac12\norm{\mathbf w}^2+C\sum_i\xi_i$, divide by $Cm$ (the minimizer doesn't change), and set $\lambda=\frac1{Cm}$:</p>
-      <div class="bluebox step">$$J=\frac1m\sum_{i=1}^m\max\big(0,\,1-y_i(\mathbf w\cdot\bx_i+b)\big)+\frac\lambda2\norm{\mathbf w}^2$$</div>
-      <p class="small step">Average loss + L2: the same template as regularized logistic regression. Here the L2 term <b>is</b> the margin.</p>
-      <ul class="small step"><li>$\mu\ge1$: loss 0, <b>no influence</b> at all.</li><li>$0\le\mu\lt1$: correct but inside the margin: a small penalty.</li><li>$\mu\lt0$: misclassified: the penalty grows linearly.</li></ul>
-      <p class="small step">The logistic loss is never exactly 0, so every point pulls on $\mathbf w$. The flat part of the hinge is where SVM <b>sparsity</b> comes from.</p>
-    </div>
-  </div>
-</section>
-
-<section class="slide">
-  <h2>SVM: training with (sub)gradient descent</h2>
-  <div class="cols">
-    <div class="stack" style="gap:8px">
-      <p>$J$ is convex, but the hinge has a kink at $\mu=1$. Use the slope of the side we are on (a <b>sub-gradient</b>):</p>
-      <div class="eq s">$$\frac{\partial}{\partial\mathbf w}\max(0,1-\mu_i)=\begin{cases}-y_i\bx_i&amp;\text{if }\mu_i\lt1\\\bzero&amp;\text{if }\mu_i\ge1\end{cases}$$</div>
-      <p class="why">$\mu_i=y_i(\mathbf w\cdot\bx_i+b)$, so the derivative of $1-\mu_i$ is $-y_i\bx_i$; for $b$, replace $\bx_i$ by 1</p>
-      <p class="step">Let $V$ be the <b>margin violators</b>, the points with $\mu_i\lt1$. A gradient step with learning rate $\eta$:</p>
-      <div class="eq s step">$$\mathbf w\leftarrow\mathbf w-\eta\Big(\lambda\mathbf w-\frac1m\sum_{i\in V}y_i\bx_i\Big)=(1-\eta\lambda)\,\mathbf w+\frac{\eta}{m}\sum_{i\in V}y_i\bx_i$$</div>
-      <div class="eq s step">$$b\leftarrow b+\frac{\eta}{m}\sum_{i\in V}y_i$$</div>
     </div>
     <div class="stack" style="gap:10px">
-      <ul class="step"><li>$(1-\eta\lambda)\,\mathbf w$: <b>weight decay</b> shortens $\mathbf w$, which widens the margin.</li><li>Each violator <b>pulls</b> the boundary away from itself.</li><li>Points with $\mu\ge1$ exert <b>no force</b> at all.</li></ul>
-      <p class="step">At the optimum the two forces balance. And $\mathbf w$ is again a weighted sum of the points with $\mu\le1$: the support vectors, now seen from the loss side.</p>
-      <p class="small step">Use a decaying step size (e.g. $\eta_t\propto1/\sqrt t$), or one random example per step (Pegasos, <code>SGDClassifier(loss="hinge")</code>): it scales to millions of examples.</p>
+      <ul class="small">
+        <li>Choose <code>C</code> on a <b>log grid</b> (0.01, 0.1, 1, 10, 100) with cross-validation. It is the slider of the previous slide: $\log_{10}C$ from −2 to 2.</li>
+        <li><b>Scale the features first</b> (<code>StandardScaler</code>): the margin is a distance. Put the scaler and the SVM in one <code>Pipeline</code>.</li>
+        <li>With the RBF kernel, tune <code>C</code> and <code>gamma</code> together (<code>gamma="scale"</code> is the default).</li>
+        <li>As in <code>LogisticRegression(C=…)</code>: a big <code>C</code> means <b>weak</b> regularization.</li>
+      </ul>
+      <pre class="snip">pipe = make_pipeline(StandardScaler(), SVC(kernel="rbf"))
+grid = {"svc__C": [0.1, 1, 10, 100],
+        "svc__gamma": [0.01, 0.1, 1]}
+search = GridSearchCV(pipe, grid, cv=5)
+search.fit(X_train, y_train)
+search.best_params_</pre>
     </div>
   </div>
 </section>
@@ -401,10 +508,9 @@
       <ul class="small"><li>Kernel training is slow on big data: roughly $O(m^2)$ to $O(m^3)$. Beyond ~$10^5$ examples, use a linear SVM.</li><li>Prediction with kernels costs one $K$ per support vector.</li><li>Binary only: one-vs-rest or one-vs-one for more classes.</li><li>No probabilities out of the box (Platt scaling fits a sigmoid on top).</li><li><b>Scale the features</b>: the margin is a Euclidean distance.</li><li>Hyperparameters $C$ and $\gamma$ must be tuned by cross-validation.</li></ul>
     </div>
     <div class="stack" style="gap:12px">
-      <table class="t" style="font-size:17px"><tr><th></th><th>Logistic regression</th><th>Linear SVM</th></tr><tr><td>loss of the margin μ</td><td>$\log(1+e^{-\mu})$</td><td>$\max(0,1-\mu)$</td></tr><tr><td>regularizer</td><td>L2 (usually)</td><td>L2 (always: it is the margin)</td></tr><tr><td>points that matter</td><td>all</td><td>support vectors</td></tr><tr><td>output</td><td>probability</td><td>score / class</td></tr></table>
+      <table class="t" style="font-size:17px"><tr><th></th><th>Logistic regression</th><th>Linear SVM</th></tr><tr><td>regularizer</td><td>L2 (usually)</td><td>L2 (always: it is the margin)</td></tr><tr><td>points that matter</td><td>all</td><td>support vectors</td></tr><tr><td>output</td><td>probability</td><td>score / class</td></tr></table>
       <p><b>Interesting reads:</b></p>
       <ul class="small">
-        <li>Hinge loss and SVM with gradient descent: <a href="https://towardsdatascience.com/support-vector-machine-introduction-to-machine-learning-algorithms-934a444fca47" target="_blank" rel="noopener">towardsdatascience.com</a></li>
         <li>Support Vector Regression: <a href="https://scikit-learn.org/stable/modules/svm.html#regression" target="_blank" rel="noopener">scikit-learn user guide, §1.4.2</a></li>
       </ul>
     </div>
@@ -431,6 +537,7 @@
     <p style="font-size:30px"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%205%20-%20Support%20Vector%20Machines.ipynb" target="_blank" rel="noopener">Lab SVM</a></p>
   </div>
 </section>
+
 <section class="slide cover">
   <div class="inner"><h1>Machine Learning</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Thank you!</p></div>
   <p class="mail">imanolgranada@gmail.com</p>

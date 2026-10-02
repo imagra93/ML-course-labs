@@ -266,7 +266,7 @@
 <section class="slide">
   <h2>Decision Trees: regularization</h2>
   <div class="cols">
-    <div class="stack" style="gap:8px">
+    <div class="stack" style="gap:10px">
       <p><b>1 · Stop early</b> (pre-pruning). The scikit-learn hyperparameters:</p>
       <ul class="small">
         <li><code>max_depth</code>: at most this many questions on any path (typically 3 to 10).</li>
@@ -274,17 +274,11 @@
         <li><code>min_impurity_decrease</code>: skip splits with a small gain. <code>max_leaf_nodes</code>.</li>
       </ul>
       <p class="small">Simple, but short-sighted: a split that looks useless may enable very good ones below it (XOR is the classic case).</p>
-      <p><b>2 · Grow, then prune</b> (post-pruning): collapse the branches that do not pay for themselves.</p>
-      <svg class="fig" data-fig="prune" style="max-height:170px" aria-label="A branch of a tree collapsed into a single leaf"></svg>
     </div>
-    <div class="stack" style="gap:8px">
-      <p class="step"><b>Cost-complexity pruning</b> (CART's own method). For a penalty $\alpha\ge0$, keep the subtree $T$ of the big tree that minimizes</p>
-      <div class="bluebox step">$$R_\alpha(T)=R(T)+\alpha\,|T|$$</div>
-      <p class="small step">$R(T)$ = training error, $|T|$ = number of leaves. Fit + $\alpha$ × complexity: regularization again.</p>
-      <p class="small step"><b>Is a branch worth it?</b> Branch $T_t$ below node $t$. Keeping it costs $R(T_t)+\alpha|T_t|$; collapsing it into one leaf costs $R(t)+\alpha\cdot1$. Collapse when</p>
-      <div class="eq s step">$$R(t)+\alpha\le R(T_t)+\alpha|T_t|\iff\alpha\ge\frac{R(t)-R(T_t)}{|T_t|-1}$$</div>
-      <p class="small step"><b>Example:</b> a branch with 3 leaves lowers the error from 0.20 to 0.14. It is collapsed as soon as $\alpha\ge\frac{0.20-0.14}{3-1}=0.03$.</p>
-      <p class="small step">Larger $\alpha$ → smaller tree. Choose $\alpha$ (<code>ccp_alpha</code>) by cross-validation.</p>
+    <div class="stack" style="gap:10px">
+      <p><b>2 · Grow, then prune</b> (post-pruning): let the tree grow, then collapse the branches that do not pay for themselves.</p>
+      <svg class="fig" data-fig="prune" style="max-height:230px" aria-label="A branch of a tree collapsed into a single leaf"></svg>
+      <p class="small">A branch is worth keeping only if it lowers the error enough to justify its extra leaves. How to decide, precisely (<b>cost-complexity pruning</b>), is in the <a href="../../notes/machine_learning/06_decision_trees_cart.html#cost-complexity-pruning" target="_blank" rel="noopener">notes</a>.</p>
     </div>
   </div>
 </section>
@@ -325,15 +319,10 @@
 
 <section class="slide">
   <h2>Decision Trees – Lab</h2>
-  <div class="cols" style="padding-top:40px">
-    <div class="stack center" style="gap:16px">
-      <div class="note" style="text-align:left"><p class="small"><b>Decision Trees from scratch.</b> Impurity measures, a <code>Node</code> class, best-split search, recursive growth, prediction and a scikit-learn-style wrapper; then Iris, regression trees, <code>max_depth</code> and feature importance.</p></div>
-      <p style="font-size:26px"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%204%20-%20Decision%20Trees%20from%20scratch.ipynb" target="_blank" rel="noopener">Trees from scratch</a></p>
-    </div>
-    <div class="stack center" style="gap:16px">
-      <div class="note" style="text-align:left"><p class="small"><b>Decision Trees and Random Forests.</b> How a tree decides, depth and overfitting, why one tree is unstable, bagging, random forests, OOB score, forest regression and feature importance.</p></div>
-      <p style="font-size:26px"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%204b%20-%20Decision%20Trees%20and%20Random%20Forests.ipynb" target="_blank" rel="noopener">Lab Trees</a></p>
-    </div>
+  <div class="stack center grow" style="gap:20px">
+    <div class="note" style="max-width:840px;text-align:left"><p class="small"><b>Decision Trees from scratch.</b> Impurity measures, a <code>Node</code> class, best-split search, recursive growth, prediction and a scikit-learn-style wrapper; then Iris, regression trees, <code>max_depth</code> and feature importance.</p></div>
+    <p style="font-size:28px"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%204%20-%20Decision%20Trees%20from%20scratch.ipynb" target="_blank" rel="noopener">Trees from scratch</a></p>
+    <p class="small muted">The second tree lab, <i>Decision Trees and Random Forests</i>, comes after random forests are explained (next topic).</p>
   </div>
 </section>
 <section class="slide cover">

@@ -20,7 +20,7 @@ This note builds the **support vector machine (SVM)** for classification from fi
 - train an SVM from scratch (dual QP, or sub-gradient descent on the hinge loss) and check it against scikit-learn;
 - use SVMs in practice: scale the features, tune $C$ and $\gamma$, handle imbalanced classes, get probabilities, and know when to switch to a linear SVM or to logistic regression.
 
-**Notation.** $m$ training examples $(\mathbf{x}^{(i)}, y^{(i)})$ with $\mathbf{x}^{(i)}\in\mathbb{R}^n$ and labels $y^{(i)}\in\{-1,+1\}$. The score is $f(\mathbf{x}) = \boldsymbol{\theta}^\top\mathbf{x} + \theta_0$ with weights $\boldsymbol{\theta}\in\mathbb{R}^n$ and intercept $\theta_0$. **The deck writes the same score as $\mathbf{w}\cdot\mathbf{x} + b$: our $\boldsymbol{\theta}$ is its $\mathbf{w}$ and our $\theta_0$ is its $b$**, so every formula below becomes the deck's by renaming (from its slide 12 on, the deck also shortens $\mathbf{x}^{(i)}, y^{(i)}$ to $\mathbf{x}_i, y_i$). Class $+1$ is drawn as blue circles and class $-1$ as red squares, as in the slides.
+**Notation.** $m$ training examples $(\mathbf{x}^{(i)}, y^{(i)})$ with $\mathbf{x}^{(i)}\in\mathbb{R}^n$ and labels $y^{(i)}\in\{-1,+1\}$. The score is $f(\mathbf{x}) = \boldsymbol{\theta}^\top\mathbf{x} + \theta_0$ with weights $\boldsymbol{\theta}\in\mathbb{R}^n$ and intercept $\theta_0$. **The deck writes the same score as $\mathbf{w}\cdot\mathbf{x} + b$: our $\boldsymbol{\theta}$ is its $\mathbf{w}$ and our $\theta_0$ is its $b$**, so every formula below becomes the deck's by renaming (from its slide 18 on, the deck also shortens $\mathbf{x}^{(i)}, y^{(i)}$ to $\mathbf{x}_i, y_i$). Class $+1$ is drawn as blue circles and class $-1$ as red squares, as in the slides.
 
 We build the SVM **step by step, with a picture at every step**:
 
@@ -175,7 +175,7 @@ $$
 \text{shadow of } \mathbf{x} \text{ on } \boldsymbol{\theta} \;=\; \hat{\boldsymbol{\theta}}^\top\mathbf{x} \;=\; \frac{\boldsymbol{\theta}^\top\mathbf{x}}{\lVert\boldsymbol{\theta}\rVert}.
 $$
 
-*Example* (the vectors of slide 7): $\boldsymbol{\theta} = (2, 1)$ and $\mathbf{x} = (0.6, 2.6)$. Then $\boldsymbol{\theta}^\top\mathbf{x} = 1.2 + 2.6 = 3.8$, $\lVert\boldsymbol{\theta}\rVert = \sqrt5 = 2.236$, and the shadow is $3.8/2.236 = 1.70$.
+*Example* (the vectors of slide 8): $\boldsymbol{\theta} = (2, 1)$ and $\mathbf{x} = (0.6, 2.6)$. Then $\boldsymbol{\theta}^\top\mathbf{x} = 1.2 + 2.6 = 3.8$, $\lVert\boldsymbol{\theta}\rVert = \sqrt5 = 2.236$, and the shadow is $3.8/2.236 = 1.70$.
 
 Now rewrite the score with it: $f(\mathbf{x}) = \lVert\boldsymbol{\theta}\rVert\big(\hat{\boldsymbol{\theta}}^\top\mathbf{x} + \theta_0/\lVert\boldsymbol{\theta}\rVert\big)$. Two consequences (right figure):
 
@@ -206,7 +206,7 @@ fig, axes = plt.subplots(1, 2, figsize=(13, 6.2))
 arrow = lambda ax, tip, tail=(0, 0), c="k": ax.annotate("", xy=tip, xytext=tail,
                                                         arrowprops=dict(arrowstyle="-|>", color=c, lw=2.2))
 
-# --- left: dot product = length of the shadow (same vectors as slide 7)
+# --- left: dot product = length of the shadow (same vectors as slide 8)
 ax = axes[0]
 th, xv = np.array([2.0, 1.0]), np.array([0.6, 2.6])
 th_hat = th / np.linalg.norm(th); shadow = th_hat @ xv; foot = shadow * th_hat
@@ -249,7 +249,7 @@ plt.tight_layout(); plt.show()
 
 **Scale invariance.** Multiply $(\boldsymbol{\theta}, \theta_0)$ by any $c > 0$:
 $\;c\,\boldsymbol{\theta}^\top\mathbf{x} + c\,\theta_0 = 0 \iff \boldsymbol{\theta}^\top\mathbf{x} + \theta_0 = 0$.
-Same hyperplane, same predictions, same distances $r = f/\lVert\boldsymbol{\theta}\rVert$ (numerator and denominator both scale by $c$). Only the numbers $f(\mathbf{x})$ change. Example (slide 8): $\boldsymbol{\theta} = (1,1), \theta_0 = -3$ and $\boldsymbol{\theta} = (2,2), \theta_0 = -6$ give the same line $x_1 + x_2 = 3$; at $\mathbf{x} = (4,2)$ the scores are $3$ and $6$, but the distances are $3/\sqrt2 = 6/\sqrt8 = 2.12$. So $\boldsymbol{\theta}$ has one "free knob", its length, that does not change the classifier (figure: the solid line never moves).
+Same hyperplane, same predictions, same distances $r = f/\lVert\boldsymbol{\theta}\rVert$ (numerator and denominator both scale by $c$). Only the numbers $f(\mathbf{x})$ change. Example (slide 10): $\boldsymbol{\theta} = (1,1), \theta_0 = -3$ and $\boldsymbol{\theta} = (2,2), \theta_0 = -6$ give the same line $x_1 + x_2 = 3$; at $\mathbf{x} = (4,2)$ the scores are $3$ and $6$, but the distances are $3/\sqrt2 = 6/\sqrt8 = 2.12$. So $\boldsymbol{\theta}$ has one "free knob", its length, that does not change the classifier (figure: the solid line never moves).
 
 **We spend that freedom.** Take a separating hyperplane placed halfway between the two classes (sliding it with $\theta_0$ to the middle can only increase the smallest distance, so the best one is there anyway). Choose $c$ so that the **closest points** of each class have $f = +1$ and $f = -1$. Then every point satisfies
 
@@ -311,14 +311,14 @@ $\theta_0$ cancels, and so does the choice of which support vectors we took. The
 
 > **Key idea.** Once the scale is fixed, **a short $\boldsymbol{\theta}$ means a wide margin.**
 
-**Check on the slide's figure.** The figure below (slides 8 and 9) has 7 points of class $+1$, 6 of class $-1$, and the line $x_1 + x_2 - 3 = 0$, i.e. $\boldsymbol{\theta} = (1,1)$, $\theta_0 = -3$. The circled $\mathbf{x}_+ = (3,1)$ and $\mathbf{x}_- = (1,1)$ have $f = 3 + 1 - 3 = +1$ and $f = 1 + 1 - 3 = -1$, so
+**Check on the slide's figure.** The figure below (slides 10 and 11) has 7 points of class $+1$, 6 of class $-1$, and the line $x_1 + x_2 - 3 = 0$, i.e. $\boldsymbol{\theta} = (1,1)$, $\theta_0 = -3$. The circled $\mathbf{x}_+ = (3,1)$ and $\mathbf{x}_- = (1,1)$ have $f = 3 + 1 - 3 = +1$ and $f = 1 + 1 - 3 = -1$, so
 
 $$
 d = \frac{\boldsymbol{\theta}^\top\mathbf{x}_+ - \boldsymbol{\theta}^\top\mathbf{x}_-}{\lVert\boldsymbol{\theta}\rVert} = \frac{4 - 2}{\sqrt2} = \sqrt2 = \frac{2}{\sqrt2} = 1.41 \ \checkmark
 $$
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="margin" aria-label="Separating line with dashed margin lines at plus and minus one through the circled support vectors"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/08_svm.html#8">slides 8 and 9</a> of the Support Vector Machines deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="margin" aria-label="Separating line with dashed margin lines at plus and minus one through the circled support vectors"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/08_svm.html#10">slides 10 and 11</a> of the Support Vector Machines deck.</p></div>
 ```
 
 The code solves the SVM on the same 13 points and finds exactly that line, so the slide's line is the maximum-margin one.
@@ -393,7 +393,7 @@ $$
   <svg class="fig" aria-label="Points projected on a direction; the widest band in that direction; the gap for every direction"></svg>
   <div class="ctl"><label for="an-p">Direction of w</label><input type="range" id="an-p" data-k="p" min="0" max="359" step="1" value="20"><span class="v" data-v="p">20°</span></div>
   <div class="ro"><div class="m"><span>margin in this direction</span><b data-r="w">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/machine_learning/08_svm.html#10">slide 10</a> of the Support Vector Machines deck.</p>
+  <p class="from">Same figure as <a href="../../slides/machine_learning/08_svm.html#12">slide 12</a> of the Support Vector Machines deck.</p>
 </div>
 ```
 
@@ -443,7 +443,7 @@ The QP of section 6 could be handed to any QP solver. Solving it "by hand" with 
 
 ## 7. Lagrange multipliers in one dimension
 
-**Toy problem** (slide 11): minimise $\frac12\theta^2$ subject to $\theta \ge 1$. The answer is clearly $\theta^* = 1$: the free minimum $\theta = 0$ is not allowed, and the objective grows as we move right. Let's find it the Lagrange way (the figure below calls the variable $w$, as the deck does).
+**Toy problem** (slides 14 and 15): minimise $\frac12\theta^2$ subject to $\theta \ge 1$. The answer is clearly $\theta^* = 1$: the free minimum $\theta = 0$ is not allowed, and the objective grows as we move right. Let's find it the Lagrange way (the figure below calls the variable $w$, as the deck does).
 
 **1 · Constraint and multiplier.** Write the constraint as $g(\theta) = \theta - 1 \ge 0$ and give it a multiplier $\alpha \ge 0$. The **Lagrangian** is
 
@@ -479,7 +479,7 @@ In both cases $\alpha^*\,g(\theta^*) = 0$ (either the multiplier or the constrai
 **What the multiplier measures.** With the constraint $\theta \ge c$ for some $c > 0$, the optimum is $\theta^* = c$ with value $p^*(c) = \frac12c^2$, so $\frac{d p^*}{dc} = c$, which at $c = 1$ equals $\alpha^* = 1$. The multiplier is the price of the constraint: how much the optimal value would rise if the constraint were tightened a little. An inactive constraint costs nothing, so its price is $0$.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="lag1d" aria-label="Minimizing one half w squared with the constraint w at least 1 (active) and w at least minus 1 (inactive)"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/08_svm.html#11">slide 11</a> of the Support Vector Machines deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="lag1d" aria-label="Minimizing one half w squared with the constraint w at least 1 (active) and w at least minus 1 (inactive)"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/08_svm.html#14">slides 14 and 15</a> of the Support Vector Machines deck.</p></div>
 ```
 
 The next figure draws, for both toys, the primal objective on its feasible set and the dual function on $\alpha \ge 0$. The dual curve always lies **below** the primal one and they meet at the optimum: this is weak and strong duality, proved in the next section.
@@ -518,7 +518,7 @@ For the SVM, $J = \frac12\lVert\boldsymbol{\theta}\rVert^2$ and $g_i = y^{(i)}(\
 
 ### 8.1 Why min–max is the constrained problem
 
-Fix $\boldsymbol{\theta}$ and maximise $\mathcal{L}$ over $\boldsymbol{\alpha} \ge \mathbf{0}$ (slide 12):
+Fix $\boldsymbol{\theta}$ and maximise $\mathcal{L}$ over $\boldsymbol{\alpha} \ge \mathbf{0}$ (slide 17):
 
 - if some constraint is violated, $g_i(\boldsymbol{\theta}) < 0$, then $-\alpha_ig_i(\boldsymbol{\theta}) = \alpha_i|g_i(\boldsymbol{\theta})| \to +\infty$ as $\alpha_i \to \infty$: an infinite penalty;
 - if all constraints hold, every term $-\alpha_ig_i(\boldsymbol{\theta})$ is $\le 0$, so the best is $\boldsymbol{\alpha} = \mathbf{0}$ and we get $J(\boldsymbol{\theta})$ back.
@@ -628,7 +628,7 @@ $$
 \mathcal{L}(\boldsymbol{\theta},\theta_0,\boldsymbol{\alpha}) = \frac12\lVert\boldsymbol{\theta}\rVert^2 - \sum_{i=1}^m\alpha_i\Big[y^{(i)}\big(\boldsymbol{\theta}^\top\mathbf{x}^{(i)} + \theta_0\big) - 1\Big].
 $$
 
-The plan, exactly as in 1-D (slides 12–14): **minimise** over $\boldsymbol{\theta}$ and $\theta_0$ (set the derivatives to zero), substitute back, then **maximise** over the $\alpha_i \ge 0$.
+The plan, exactly as in 1-D (slides 18–20): **minimise** over $\boldsymbol{\theta}$ and $\theta_0$ (set the derivatives to zero), substitute back, then **maximise** over the $\alpha_i \ge 0$.
 
 **Expand and group the terms:**
 
@@ -727,7 +727,7 @@ print("support vectors:", sv_idx, " α =", np.abs(alpha_y).round(4), " Σ α_i y
 
 ## 10. A dual by hand: two points
 
-The smallest possible example (slide 15): $\mathbf{x}^{(1)} = (1, 1)$ with $y^{(1)} = +1$, and $\mathbf{x}^{(2)} = (-1, -1)$ with $y^{(2)} = -1$.
+The smallest possible example (slide 21; slide 16 first solves it directly with the Lagrangian, since both points are obviously on the margin): $\mathbf{x}^{(1)} = (1, 1)$ with $y^{(1)} = +1$, and $\mathbf{x}^{(2)} = (-1, -1)$ with $y^{(2)} = -1$.
 
 **1 · The equality constraint.** $\sum_i\alpha_iy^{(i)} = \alpha_1 - \alpha_2 = 0$, so $\alpha_1 = \alpha_2 = \alpha$.
 
@@ -752,7 +752,7 @@ $$
 **Check.** The boundary is $\frac12x_1 + \frac12x_2 = 0$, the perpendicular bisector of the two points. The margin is $2/\lVert\boldsymbol{\theta}\rVert = 2/\sqrt{1/2} = 2\sqrt2 = 2.83$, exactly the distance $\lVert\mathbf{x}^{(1)} - \mathbf{x}^{(2)}\rVert = \sqrt{2^2 + 2^2} = 2.83$ between the two points ✓. Both are support vectors ($\alpha > 0$). The primal value is $\frac12\lVert\boldsymbol{\theta}\rVert^2 = \frac12\cdot\frac12 = \frac14 = D(\frac14)$: zero duality gap, as section 8.3 promised.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="svm2pts" aria-label="Two points, (1,1) of class plus one and (−1,−1) of class minus one, with the max-margin line x1 + x2 = 0"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/08_svm.html#15">slide 15</a> of the Support Vector Machines deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="svm2pts" aria-label="Two points, (1,1) of class plus one and (−1,−1) of class minus one, with the max-margin line x1 + x2 = 0"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/08_svm.html#16">slides 16 and 21</a> of the Support Vector Machines deck.</p></div>
 ```
 
 **Solving the dual with a generic solver.** For small $m$ a general-purpose optimiser is enough. We write the solver with a kernel argument $K(\mathbf{x}, \mathbf{z})$ (for now the plain dot product) so we can reuse it with kernels in section 17, and with a box $0 \le \alpha_i \le C$ that section 14 explains ($C = \infty$ is the hard margin). It minimises $-D(\boldsymbol{\alpha})$ with SLSQP, and computes $\theta_0$ as in section 11. First, the two points:
@@ -867,7 +867,7 @@ where "clip" keeps both multipliers inside $[0, C]$ along the line. Everything n
 
 ## 13. Soft margin: slack variables and $C$
 
-Real data overlap, and then no $\boldsymbol{\theta}$ satisfies all the constraints $y^{(i)}f(\mathbf{x}^{(i)}) \ge 1$: the hard-margin problem is infeasible. Allow each point a **slack** $\xi^{(i)}\ge0$ and pay for it (slide 22):
+Real data overlap, and then no $\boldsymbol{\theta}$ satisfies all the constraints $y^{(i)}f(\mathbf{x}^{(i)}) \ge 1$: the hard-margin problem is infeasible. Allow each point a **slack** $\xi^{(i)}\ge0$ and pay for it (slide 29):
 
 $$
 \boxed{\min_{\boldsymbol{\theta},\theta_0,\boldsymbol{\xi}}\;\frac12\lVert\boldsymbol{\theta}\rVert^2 + C\sum_{i=1}^m\xi^{(i)} \quad\text{s.t.}\quad y^{(i)}(\boldsymbol{\theta}^\top\mathbf{x}^{(i)} + \theta_0) \ge 1 - \xi^{(i)},\quad \xi^{(i)}\ge0}
@@ -893,7 +893,7 @@ $\sum_i\xi^{(i)}$ is an upper bound on the number of training mistakes (a miscla
   <svg class="fig" aria-label="Soft-margin SVM on overlapping data with support vectors circled"></svg>
   <div class="ctl"><label for="sc-c">C (log scale)</label><input type="range" id="sc-c" data-k="c" min="-2" max="2" step="0.1" value="0"><span class="v" data-v="c">1.00</span></div>
   <div class="ro"><div class="m"><span>margin 2/‖w‖</span><b data-r="w">–</b></div><div class="m"><span>support vectors</span><b data-r="s">–</b></div><div class="m"><span>inside margin</span><b data-r="i">–</b></div><div class="m"><span>misclassified</span><b data-r="e">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/machine_learning/08_svm.html#22">slide 22</a> of the Support Vector Machines deck.</p>
+  <p class="from">Same figure as <a href="../../slides/machine_learning/08_svm.html#29">slide 29</a> of the Support Vector Machines deck.</p>
 </div>
 ```
 
@@ -937,7 +937,7 @@ plt.tight_layout(); plt.show()
 
 ## 14. The soft-margin dual and the three kinds of points
 
-Same recipe as section 9, with a second multiplier $\nu_i \ge 0$ for each constraint $\xi^{(i)} \ge 0$ (slide 23). Writing the constraint as $y^{(i)}f(\mathbf{x}^{(i)}) - 1 + \xi^{(i)} \ge 0$:
+Same recipe as section 9, with a second multiplier $\nu_i \ge 0$ for each constraint $\xi^{(i)} \ge 0$. Writing the constraint as $y^{(i)}f(\mathbf{x}^{(i)}) - 1 + \xi^{(i)} \ge 0$:
 
 $$
 \mathcal{L} = \frac12\lVert\boldsymbol{\theta}\rVert^2 + C\sum_i\xi^{(i)} - \sum_i\alpha_i\Big[y^{(i)}\big(\boldsymbol{\theta}^\top\mathbf{x}^{(i)} + \theta_0\big) - 1 + \xi^{(i)}\Big] - \sum_i\nu_i\,\xi^{(i)} .
@@ -1006,7 +1006,7 @@ print(f"500 random dual-feasible α: max D = {max(D_rand):.3f}  ≤  500 random 
 
 **The problem.** Some data cannot be separated by any hyperplane. **The fix:** map every point to a richer feature space, $\mathbf{x}\mapsto\phi(\mathbf{x})$, where a hyperplane *does* separate them, and run the linear SVM there. A hyperplane in $\phi$-space is a curved boundary back in $\mathbf{x}$-space.
 
-The simplest example is 1-D (slide 17). The $+1$ class is in the middle and $-1$ on both sides, so no single threshold works. Add the feature $x^2$: in the plane $(x, x^2)$ the points lie on a parabola and a horizontal line separates them. Back on the original axis, that line becomes **two** thresholds.
+The simplest example is 1-D (slide 24). The $+1$ class is in the middle and $-1$ on both sides, so no single threshold works. Add the feature $x^2$: in the plane $(x, x^2)$ the points lie on a parabola and a horizontal line separates them. Back on the original axis, that line becomes **two** thresholds.
 
 ```{python}
 x1d = np.r_[rng.uniform(-1, 1, 14), rng.uniform(1.6, 3, 8), rng.uniform(-3, -1.6, 8)]
@@ -1033,7 +1033,7 @@ ax.set_title(f"back in 1-D: the line x² = {cut:.2f} is two thresholds x = ±{r:
 plt.tight_layout(); plt.show()
 ```
 
-**The same trick in 2-D** (slide 18): one class in the middle, the other on a ring around it. No line separates them, but a third coordinate that measures closeness to the origin does. The slide uses
+**The same trick in 2-D** (slide 25): one class in the middle, the other on a ring around it. No line separates them, but a third coordinate that measures closeness to the origin does. The slide uses
 
 $$
 \phi(\mathbf{x}) = \big(x_1,\ x_2,\ e^{-(x_1^2+x_2^2)}\big)\in\mathbb{R}^3,
@@ -1045,14 +1045,14 @@ $$
 - The dot product in $\mathbb{R}^3$ can be computed **directly from the 2-D vectors**, as the formula shows. We never need to build $\phi(\mathbf{x})$ itself: that is the kernel trick (section 16).
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="circles" style="max-height:290px" aria-label="Concentric classes that no line separates, and the same data lifted with a third feature"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/08_svm.html#18">slide 18</a> of the Support Vector Machines deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="circles" style="max-height:290px" aria-label="Concentric classes that no line separates, and the same data lifted with a third feature"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/08_svm.html#25">slide 25</a> of the Support Vector Machines deck.</p></div>
 ```
 
 Below, the same idea on scikit-learn's `make_circles` with the simpler third feature $z = x_1^2 + x_2^2$ (squared distance to the origin). The plane $\theta_1x_1 + \theta_2x_2 + \theta_3(x_1^2+x_2^2) + \theta_0 = 0$ is a circle in the original plane.
 
 ```{python}
 import math
-print(f"slide 18: −ln 0.72 = {-math.log(0.72):.4f}, radius = {math.sqrt(-math.log(0.72)):.4f}")
+print(f"slide 25: −ln 0.72 = {-math.log(0.72):.4f}, radius = {math.sqrt(-math.log(0.72)):.4f}")
 
 from sklearn.datasets import make_circles
 Xc, yc = make_circles(n_samples=200, noise=0.1, factor=0.4, random_state=0)
@@ -1100,7 +1100,7 @@ $$
 
 This is a linear SVM in $\phi$-space, at the cost of the original space: we compute $K$, never $\phi(\mathbf{x})$ (and never $\boldsymbol{\theta}$, which lives in $\phi$-space; the prediction formula does not need it). The intercept is computed as before with $K$ in place of the dot product.
 
-**Common kernels** (slide 19):
+**Common kernels** (slide 26):
 
 - linear: $K(\mathbf{x},\mathbf{z}) = \mathbf{x}^\top\mathbf{z}$ (the plain SVM);
 - polynomial: $K(\mathbf{x},\mathbf{z}) = (\mathbf{x}^\top\mathbf{z} + c)^d$, with $c \ge 0$ and degree $d$;
@@ -1118,7 +1118,7 @@ $$
 \phi(\mathbf{x}) = \big(1,\ \sqrt2x_1,\ \sqrt2x_2,\ x_1^2,\ x_2^2,\ \sqrt2x_1x_2\big):
 $$
 
-all monomials of degree ≤ 2. **Check with numbers** (slide 19): $\mathbf{x} = (1, 2)$, $\mathbf{z} = (3, 1)$. Kernel: $(3 + 2 + 1)^2 = 36$. Explicitly, $\phi(\mathbf{x}) = (1, \sqrt2, 2\sqrt2, 1, 4, 2\sqrt2)$ and $\phi(\mathbf{z}) = (1, 3\sqrt2, \sqrt2, 9, 1, 3\sqrt2)$, and the coordinate products are $1 + 6 + 4 + 9 + 4 + 12 = 36$ ✓.
+all monomials of degree ≤ 2. **Check with numbers** (slide 26): $\mathbf{x} = (1, 2)$, $\mathbf{z} = (3, 1)$. Kernel: $(3 + 2 + 1)^2 = 36$. Explicitly, $\phi(\mathbf{x}) = (1, \sqrt2, 2\sqrt2, 1, 4, 2\sqrt2)$ and $\phi(\mathbf{z}) = (1, 3\sqrt2, \sqrt2, 9, 1, 3\sqrt2)$, and the coordinate products are $1 + 6 + 4 + 9 + 4 + 12 = 36$ ✓.
 
 **The saving.** The kernel costs one $n$-dimensional dot product. $\phi$ has one coordinate per monomial of degree ≤ $d$ in $n$ variables, and there are $\binom{n+d}{d}$ of them. For $n = 100$ features and degree 3 that is $\binom{103}{3} = \frac{103\cdot102\cdot101}{6} = 176{,}851$ coordinates, while the kernel still costs one 100-D dot product.
 
@@ -1127,7 +1127,7 @@ def phi2(v):                                       # explicit feature map of (x�
     x1, x2 = v
     return np.array([1, np.sqrt(2) * x1, np.sqrt(2) * x2, x1 ** 2, x2 ** 2, np.sqrt(2) * x1 * x2])
 xk, zk = np.array([1.0, 2.0]), np.array([3.0, 1.0])
-print(f"slide 19: (x·z + 1)² = {(xk @ zk + 1) ** 2:.0f},  φ(x)·φ(z) = {phi2(xk) @ phi2(zk):.6f}")
+print(f"slide 26: (x·z + 1)² = {(xk @ zk + 1) ** 2:.0f},  φ(x)·φ(z) = {phi2(xk) @ phi2(zk):.6f}")
 a, b = rng.normal(size=2), rng.normal(size=2)
 print(f"random  : (a·b + 1)² = {(a @ b + 1) ** 2:.6f},  φ(a)·φ(b) = {phi2(a) @ phi2(b):.6f}")
 print(f"monomials of degree ≤ 3 in 100 variables: C(103, 3) = {math.comb(103, 3):,}")
@@ -1160,14 +1160,14 @@ So $K(x, z) = \sum_{k\ge0}\phi_k(x)\phi_k(z)$: a dot product with one coordinate
 
 **Reading the prediction.** It is easier from the prediction formula: $K(\mathbf{x}^{(i)}, \mathbf{x})$ is a bump centred on $\mathbf{x}^{(i)}$, so $f(\mathbf{x})$ is a **sum of Gaussian bumps**, one centred on each support vector, pointing up for $+1$ and down for $-1$, with height $\alpha_i$. $\gamma$ sets their width.
 
-**Try it** (slide 20). Eight support vectors with all $\alpha_i = 1$ and $\theta_0 = 0$, to show the shape only. At small $\gamma$ (the left end of the slider, $\gamma = 0.03$) the bumps are wide and merge into a smooth $f$; at large $\gamma$ ($\gamma = 10^{1.3} \approx 20$) each support vector has its own narrow bump, and between them $f$ falls back to $0$: the model has memorised the training points.
+**Try it** (slide 27). Eight support vectors with all $\alpha_i = 1$ and $\theta_0 = 0$, to show the shape only. At small $\gamma$ (the left end of the slider, $\gamma = 0.03$) the bumps are wide and merge into a smooth $f$; at large $\gamma$ ($\gamma = 10^{1.3} \approx 20$) each support vector has its own narrow bump, and between them $f$ falls back to $0$: the model has memorised the training points.
 
 ```{=html}
 <div class="widget" data-fig="rbf" data-auto="g=-1.5 :: Small γ: wide bumps, a smooth boundary (may underfit)|g=0 :: γ = 1|g=1.3 :: Large γ: narrow bumps around each support vector: it memorizes the training set">
   <svg class="fig" aria-label="Gaussian bumps centred on support vectors and their sum"></svg>
   <div class="ctl"><label for="rbf-g">γ (log scale)</label><input type="range" id="rbf-g" data-k="g" min="-1.5" max="1.3" step="0.05" value="0"><span class="v" data-v="g">1.00</span></div>
   <p class="why">Here all \(\alpha_i=1\) and \(b=0\), to show the shape. Tune \(C\) and \(\gamma\) together by cross-validation on a log grid.</p>
-  <p class="from">Same figure as <a href="../../slides/machine_learning/08_svm.html#20">slide 20</a> of the Support Vector Machines deck.</p>
+  <p class="from">Same figure as <a href="../../slides/machine_learning/08_svm.html#27">slide 27</a> of the Support Vector Machines deck.</p>
 </div>
 ```
 
@@ -1224,7 +1224,7 @@ Tune $C$ and $\gamma$ together by cross-validation on a log grid (section 23.1).
 
 ## 18. Which functions are kernels? Mercer's condition
 
-A function $K$ is a valid kernel only if it really is a dot product $\phi(\mathbf{x})^\top\phi(\mathbf{z})$ in some feature space. Checking that by finding $\phi$ is usually impossible. **Mercer's condition** gives a test on the **kernel (Gram) matrix** $\mathbf{K}$ of any finite set of points $\mathbf{x}^{(1)},\dots,\mathbf{x}^{(m)}$, with entries $K_{ij} = K(\mathbf{x}^{(i)}, \mathbf{x}^{(j)})$ (slide 21):
+A function $K$ is a valid kernel only if it really is a dot product $\phi(\mathbf{x})^\top\phi(\mathbf{z})$ in some feature space. Checking that by finding $\phi$ is usually impossible. **Mercer's condition** gives a test on the **kernel (Gram) matrix** $\mathbf{K}$ of any finite set of points $\mathbf{x}^{(1)},\dots,\mathbf{x}^{(m)}$, with entries $K_{ij} = K(\mathbf{x}^{(i)}, \mathbf{x}^{(j)})$ (slide 28):
 
 > $K$ is a valid kernel **if and only if** $K$ is symmetric and, for every finite set of points, $\mathbf{K}$ is **positive semi-definite (PSD)**: $\mathbf{v}^\top\mathbf{K}\mathbf{v} \ge 0$ for every $\mathbf{v}\in\mathbb{R}^m$ (equivalently: all eigenvalues of $\mathbf{K}$ are $\ge 0$).
 
@@ -1307,7 +1307,7 @@ for name, K_try in [("sigmoid tanh(x·z)", np.tanh(Xc @ Xc.T)), ("sigmoid tanh(x
 
 ## 19. The hinge loss
 
-So far the SVM came from geometry. Now we show that it is also an ordinary **"loss + regulariser"** model, just like regularised linear and logistic regression (slide 24).
+So far the SVM came from geometry. Now we show that it is also an ordinary **"loss + regulariser"** model, just like regularised linear and logistic regression.
 
 **Eliminate the slacks.** In the soft-margin problem, for fixed $(\boldsymbol{\theta},\theta_0)$ each $\xi^{(i)}$ appears only in its own two constraints $\xi^{(i)}\ge 1-\mu^{(i)}$ and $\xi^{(i)}\ge0$, and the objective wants it as small as possible. So at the optimum
 
@@ -1373,7 +1373,7 @@ $$
 -\log\sigma(yf) = \log\big(1 + e^{-yf}\big) = \log\big(1 + e^{-\mu}\big),
 $$
 
-which is just binary cross-entropy rewritten. Now both methods are "regularised loss of the margin $\mu$", and they differ only in the shape of the loss (figure below, slide 24):
+which is just binary cross-entropy rewritten. Now both methods are "regularised loss of the margin $\mu$", and they differ only in the shape of the loss (figure below):
 
 - Both are convex upper bounds (the logistic one after dividing by $\ln 2$, i.e. using $\log_2$) of the **0–1 loss** $\mathbb{1}[\mu\le 0]$, which is what we really want to minimise but which has zero gradient almost everywhere.
 - The logistic loss is **never exactly 0**: every point, however well classified, still pulls on $\boldsymbol{\theta}$. The hinge loss is exactly 0 for $\mu\ge1$, so only points on or inside the margin matter. That is where the **sparsity** of SVMs comes from.
@@ -1414,7 +1414,7 @@ $$
 g_{\theta_0} = -\frac{1}{m}\sum_{i\in V}y^{(i)}.
 $$
 
-**Update rule** (slide 25), with step size $\eta_t$:
+**Update rule**, with step size $\eta_t$:
 $$
 \begin{gathered}
 \boldsymbol{\theta} \leftarrow \boldsymbol{\theta} - \eta_t\,\mathbf{g}_{\boldsymbol{\theta}} = \underbrace{(1 - \eta_t\lambda)\,\boldsymbol{\theta}}_{\text{weight decay: widens the margin}} + \underbrace{\frac{\eta_t}{m}\sum_{i\in V}y^{(i)}\mathbf{x}^{(i)}}_{\text{each violator pulls the boundary away from itself}}, \\
@@ -1517,10 +1517,10 @@ print("theta before:", s1.coef_[0].round(4), " after:", s2.coef_[0].round(4))
 
 ## 21. Multiclass SVMs: one-vs-rest and one-vs-one
 
-The SVM is a binary classifier. With $K > 2$ classes there are two standard reductions (slide 27):
+The SVM is a binary classifier. With $K > 2$ classes there are two standard reductions (slide 32):
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="ovr" data-pm aria-label="Three binary classifiers, one per class"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/08_svm.html#27">slide 27</a> of the Support Vector Machines deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="ovr" data-pm aria-label="Three binary classifiers, one per class"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/08_svm.html#32">slide 32</a> of the Support Vector Machines deck.</p></div>
 ```
 
 - **One-vs-rest (OvR)**: train $K$ binary SVMs, one per class, with $y = +1$ for class $k$ and $-1$ for all the others. **Winner takes all**: predict $\hat{y} = \arg\max_kf_k(\mathbf{x})$ with $f_k(\mathbf{x}) = \boldsymbol{\theta}_k^\top\mathbf{x} + \theta_{0k}$. The argmax is needed because the signs alone can disagree: a point may be claimed by several classifiers ($f_k > 0$ for more than one $k$) or by none. Two caveats: each classifier sees an imbalanced problem (one class against $K - 1$), and the scores of different classifiers are not calibrated against each other, so comparing them is a heuristic. (This is the same scheme as one-vs-rest logistic regression in [note 04](04_softmax_regression.html); softmax regression, which trains the $K$ scores jointly, has no direct SVM counterpart in scikit-learn, although multiclass SVM formulations such as Crammer–Singer exist.)
@@ -1986,6 +1986,6 @@ plt.legend(); plt.title("How hard each point pulls on θ"); plt.tight_layout(); 
 | Output | calibrated probability | score / class (Platt scaling for probabilities) |
 | Solver | GD, Newton, L-BFGS | sub-gradient (primal) or QP/SMO (dual) |
 
-**Review** (slide 26). *Pros:* kernels give flexible, non-linear boundaries while training stays a convex problem with one global optimum; the maximum margin gives good results even on small and medium datasets; the model is sparse, it only keeps the support vectors. *Cons:* kernel training is slow on big data (roughly $O(m^2)$–$O(m^3)$; beyond about $10^5$ examples use a linear SVM or a kernel approximation); prediction with kernels costs one $K$ per support vector; binary only (one-vs-rest or one-vs-one for more classes); no probabilities out of the box (Platt scaling); the features must be scaled; $C$ and $\gamma$ must be tuned by cross-validation. For regression, the same ideas give support vector regression (`SVR`, with an $\varepsilon$-insensitive loss instead of the hinge).
+**Review** (slide 31). *Pros:* kernels give flexible, non-linear boundaries while training stays a convex problem with one global optimum; the maximum margin gives good results even on small and medium datasets; the model is sparse, it only keeps the support vectors. *Cons:* kernel training is slow on big data (roughly $O(m^2)$–$O(m^3)$; beyond about $10^5$ examples use a linear SVM or a kernel approximation); prediction with kernels costs one $K$ per support vector; binary only (one-vs-rest or one-vs-one for more classes); no probabilities out of the box (Platt scaling); the features must be scaled; $C$ and $\gamma$ must be tuned by cross-validation. For regression, the same ideas give support vector regression (`SVR`, with an $\varepsilon$-insensitive loss instead of the hinge).
 
 **Lab:** [Support Vector Machines](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%205%20-%20Support%20Vector%20Machines.ipynb): maximising the margin, fitting an SVM with scikit-learn, support vectors, the kernel trick, soft margins and tuning $C$ and $\gamma$ with cross-validation.
