@@ -169,6 +169,20 @@ FIG['nn-zoo']=root=>{const svg=initSvg(svgOf(root),960,290);const W=226;
   const xs=[0,1,2,3,4].map(i=>x0+30+i*41);xs.forEach((x,i)=>{for(let j=i+1;j<5;j++){const x2=xs[j];const hi=i===0&&j===4;E('path',{d:'M'+x+',150 Q'+((x+x2)/2)+','+(150-(x2-x)*0.62)+' '+x2+',150',fill:'none',stroke:hi?'#c00000':'#9dafd6','stroke-width':hi?2.2:1},svg)}});
   xs.forEach(x=>E('circle',{cx:x,cy:160,r:12,fill:'#bdd7ee',stroke:'#404040'},svg));
 };
+/* softmax on three scores: z′ = s·z + c, then exp(z′), then the probabilities. Sliders data-k = z1 z2 z3 s c */
+FIG['softmax-play']=root=>{const svg=svgOf(root);const names=['cat','dog','car'];const iz=['z1','z2','z3'].map(k=>q(root,k)),is=q(root,'s'),ic=q(root,'c');
+  const sci=v=>(v>=1000||v<0.01)?v.toExponential(1).replace('e+','e'):(v<10?v.toFixed(2):v.toFixed(1));
+  function draw(){const z=iz.map(i=>+i.value),s=+is.value,c=+ic.value;iz.forEach((i,k)=>setV(root,'z'+(k+1),(+i.value).toFixed(1)));setV(root,'s',s.toFixed(1));setV(root,'c',String(c));
+    const zp=z.map(v=>s*v+c),e=zp.map(Math.exp),sum=e.reduce((a,b)=>a+b,0),p=e.map(v=>v/sum);initSvg(svg,620,250);
+    const mx=Math.max(4,...zp.map(Math.abs)),px=60/mx,x0=135,eMax=Math.max(...e);
+    T(svg,x0,18,'score z′ = s·z + c','lab');T(svg,345,18,'exp(z′)','lab');T(svg,520,18,'probability','lab');
+    E('line',{x1:x0,y1:34,x2:x0,y2:232,stroke:'#595959'},svg);
+    zp.forEach((v,k)=>{const cy=68+k*68;T(svg,8,cy+5,names[k],'lab','start');
+      E('rect',{x:v>=0?x0:x0+v*px,y:cy-16,width:Math.max(2,Math.abs(v)*px),height:32,fill:'#dae3f3',stroke:'#4472c4'},svg);T(svg,v>=0?x0+v*px+6:x0+v*px-6,cy+5,v.toFixed(1),'',v>=0?'start':'end');
+      E('rect',{x:270,y:cy-16,width:Math.max(2,90*e[k]/eMax),height:32,fill:'#fbe5d6',stroke:'#ed7d31'},svg);T(svg,270+Math.max(2,90*e[k]/eMax)+6,cy+5,sci(e[k]),'','start');
+      E('rect',{x:440,y:cy-16,width:Math.max(2,100*p[k]),height:32,fill:'#ed7d31'},svg);T(svg,440+Math.max(2,100*p[k])+6,cy+5,p[k].toFixed(2),'lab','start')});
+    setR(root,'sum',sci(sum));setR(root,'tot',fmt(p.reduce((a,b)=>a+b,0),2));const b=p.indexOf(Math.max(...p));setR(root,'best',names[b]+' '+p[b].toFixed(2))}
+  iz.concat([is,ic]).forEach(i=>i.addEventListener('input',draw));draw()};
 /* one activation and its derivative (blue = g, red dashed = g′), with two marked values of z. data-act = sigmoid | tanh | relu | leaky | gelu */
 const ACT1={sigmoid:{x:[-6,6],y:[-0.15,1.2],yt:[0,0.5,1],marks:[0,5]},tanh:{x:[-6,6],y:[-1.3,1.3],yt:[-1,0,1],marks:[0,3]},
   relu:{x:[-4,4],y:[-0.5,4.3],yt:[0,1,2,3,4],marks:[-2,2],step:0},leaky:{x:[-4,4],y:[-1,4.3],yt:[-1,0,1,2,3,4],marks:[-2,2],step:0.2},gelu:{x:[-4,4],y:[-0.5,4.3],yt:[0,1,2,3,4],marks:[-1,1]}};

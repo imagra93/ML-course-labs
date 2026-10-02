@@ -867,7 +867,7 @@ a one-hidden-layer network with $2N$ sigmoid units (two per bump) whose output w
       <svg class="fig" aria-label="A curve approximated by a sum of sigmoid bumps"></svg>
       <div class="ctl"><label for="ua-n">bumps</label><input type="range" id="ua-n" data-k="n" min="1" max="30" step="1" value="4"><span class="v" data-v="n">4</span></div>
       <div class="ro"><div class="m"><span>hidden units used</span><b data-r="h">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#41">slide 41</a> of the Neural Networks deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#43">slide 43</a> of the Neural Networks deck.</p>
 </div>
 ```
 
@@ -920,7 +920,7 @@ Consequences:
 - In practice, for large networks most local minima found by stochastic gradient descent are about as good as each other; the harder problems are saddle points, plateaus and bad conditioning.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="nonconvex" aria-label="A loss curve with a local and a global minimum"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#42">slide 42</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="nonconvex" aria-label="A loss curve with a local and a global minimum"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#44">slide 44</a> of the Neural Networks deck.</p></div>
 ```
 
 ```{python}
@@ -956,7 +956,7 @@ plt.title("The chord between two minima lies below the loss: not convex"); plt.t
 The engine of neural networks is **gradient-based optimisation**, and we no longer mention the word "convex". The first step of gradient-based optimisation is to find the **gradients**: [NN note 01](01_backpropagation.html).
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="workflow" aria-label="Input, layers with weights, predictions, loss function, optimizer and weight update"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#43">slide 43</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="workflow" aria-label="Input, layers with weights, predictions, loss function, optimizer and weight update"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#45">slide 45</a> of the Neural Networks deck.</p></div>
 ```
 
 ## 24. Assumptions: what they mean, how to check them, what to do
