@@ -132,20 +132,6 @@
 </section>
 
 <section class="slide">
-  <h2>Several classes: a layer of neurons</h2>
-  <div class="cols c64">
-    <svg class="fig" data-fig="softmax-layer" aria-label="Three inputs fully connected to three neurons whose scores go through a softmax into three probabilities"></svg>
-    <div class="stack" style="gap:10px">
-      <p class="small">$K$ classes → $K$ neurons side by side, each with its own weights: one <b>score</b> (logit) per class,</p>
-      <div class="eq">$$z_k=\mathbf w_k^\top\bx+b_k,\qquad k=1,\dots,K$$</div>
-      <p class="small">and the <b>softmax</b> turns the scores into probabilities: $\hat y_k=e^{z_k}/\sum_je^{z_j}$ (details at the end of this chapter).</p>
-      <p class="small">All the weights together form a matrix: $\bz=\bx\bW+\bb$, with $\bW$ of size $n\times K$. This is the <b>softmax regression</b> of the ML part.</p>
-      <div class="warnbox step"><p class="small"><b>Still linear.</b> The border between two classes is where $z_k=z_j$, i.e. $(\mathbf w_k-\mathbf w_j)^\top\bx+(b_k-b_j)=0$: a straight line. One layer, however wide, cannot draw curved borders.</p></div>
-    </div>
-  </div>
-</section>
-
-<section class="slide">
   <h2>The limit of linear models: XOR</h2>
   <div class="cols c64">
     <svg class="fig" data-fig="xor" aria-label="XOR points that no line separates, and two lines that do"></svg>
@@ -294,9 +280,9 @@
         <tr><td>GELU</td><td>≈ [−0.17, ∞)</td><td>transformers (a smooth ReLU)</td></tr>
         <tr><td>Linear</td><td>ℝ</td><td>output of regression only</td></tr>
       </table>
-      <p class="why">ReLU is not differentiable at 0; we use a sub-derivative (0 or 1). It never matters in practice. Sigmoid and tanh <b>saturate</b>: their derivative is almost 0 for large $|z|$ (chapter 2 shows why that hurts).</p>
+      <p class="why">ReLU is not differentiable at 0; we use a sub-derivative (0 or 1). It never matters in practice. Sigmoid and tanh <b>saturate</b>: their derivative is almost 0 for large $|z|$ (chapter 2 shows why that hurts). Press → to go through them; their derivatives come next, one by one.</p>
     </div>
-    <div class="widget" data-fig="act">
+    <div class="widget" data-fig="act" data-auto="a=sigmoid :: Sigmoid: squashes any z into (0, 1). The slope (red) is at most 0.25 and almost 0 for large |z||a=tanh :: Tanh: like the sigmoid, but centred at 0 and with range (−1, 1). The slope is at most 1|a=relu :: ReLU: 0 for z &lt; 0 and z for z &gt; 0. The slope is 0 or 1, so nothing shrinks it: the default for hidden layers|a=leaky :: LeakyReLU: a small slope (here 0.2) for z &lt; 0 instead of 0, so a unit cannot die|a=gelu :: GELU: a smooth ReLU with a small dip below 0. Used in transformers|a=linear :: Linear: g(z) = z, slope 1. Only for the output of a regression">
       <svg class="fig" aria-label="An activation function and its derivative"></svg>
       <div class="ctl"><span class="seg" role="group" aria-label="Activation"><button type="button" data-a="sigmoid" aria-pressed="true">Sigmoid</button><button type="button" data-a="tanh" aria-pressed="false">Tanh</button><button type="button" data-a="relu" aria-pressed="false">ReLU</button><button type="button" data-a="leaky" aria-pressed="false">LeakyReLU</button><button type="button" data-a="gelu" aria-pressed="false">GELU</button><button type="button" data-a="linear" aria-pressed="false">Linear</button></span></div>
       <div class="legend"><span><i style="background:var(--blue)"></i>g(z)</span><span><i style="background:var(--red)"></i>derivative g′(z)</span></div>
@@ -306,27 +292,123 @@
 </section>
 
 <section class="slide">
-  <h2>Derivatives of the activations</h2>
-  <svg class="fig" data-fig="act-deriv" style="max-height:215px" aria-label="Sigmoid, tanh and ReLU with their derivatives"></svg>
-  <div class="legend" style="justify-content:center;margin-top:-8px"><span><i style="background:var(--blue)"></i>function g(z)</span><span><i style="background:var(--red)"></i>derivative g′(z)</span></div>
-  <div class="cols c3" style="gap:22px">
-    <div class="stack" style="gap:2px">
-      <p class="small"><b>Sigmoid</b>, $\sigma(z)=(1+e^{-z})^{-1}$:</p>
-      <div class="eq xs">$$\sigma'(z)=\frac{e^{-z}}{(1+e^{-z})^2}=\underbrace{\frac{1}{1+e^{-z}}}_{\sigma(z)}\cdot\underbrace{\frac{e^{-z}}{1+e^{-z}}}_{1-\sigma(z)}$$</div>
-      <div class="bluebox" style="font-size:19px;padding:4px 12px">$\sigma'(z)=\sigma(z)\,\big(1-\sigma(z)\big)$</div>
-    </div>
-    <div class="stack" style="gap:2px">
-      <p class="small"><b>Tanh</b>, $\tanh z=\dfrac{e^z-e^{-z}}{e^z+e^{-z}}$, quotient rule:</p>
-      <div class="eq xs">$$\tanh'z=\frac{(e^z+e^{-z})^2-(e^z-e^{-z})^2}{(e^z+e^{-z})^2}$$$$=1-\frac{(e^z-e^{-z})^2}{(e^z+e^{-z})^2}=1-\tanh^2z$$</div>
-      <div class="bluebox" style="font-size:19px;padding:4px 12px">$\tanh'(z)=1-\tanh^2(z)$</div>
-    </div>
-    <div class="stack" style="gap:4px">
-      <p class="small"><b>ReLU</b>, $\max(0,z)$: a line of slope 0, then a line of slope 1.</p>
-      <div class="bluebox" style="font-size:19px;padding:4px 12px">$\mathrm{ReLU}'(z)=\begin{cases}1&z\gt0\\0&z\lt0\end{cases}$</div>
-      <p class="small why">LeakyReLU: slope $0.01$–$0.2$ instead of 0 for $z\lt0$.</p>
+  <h2>Derivative of the sigmoid</h2>
+  <div class="cols">
+    <svg class="fig" data-fig="act-one" data-act="sigmoid" style="max-height:380px" aria-label="The sigmoid and its derivative, with the values at z = 0 and z = 5"></svg>
+    <div class="stack" style="gap:7px">
+      <div class="step"><div class="eq s">$$\sigma(z)=\frac{1}{1+e^{-z}}=\big(1+e^{-z}\big)^{-1}$$</div><p class="why">write the fraction as a power</p></div>
+      <div class="step"><div class="eq s">$$\sigma'(z)=-\big(1+e^{-z}\big)^{-2}\cdot\big(-e^{-z}\big)=\frac{e^{-z}}{\big(1+e^{-z}\big)^2}$$</div><p class="why">chain rule: $(u^{-1})'=-u^{-2}\,u'$, and for $u=1+e^{-z}$ we have $u'=-e^{-z}$</p></div>
+      <div class="step"><div class="eq s">$$=\frac{1}{1+e^{-z}}\cdot\frac{e^{-z}}{1+e^{-z}}$$</div><p class="why">split the square into two factors</p></div>
+      <div class="bluebox step">$$\sigma'(z)=\sigma(z)\,\big(1-\sigma(z)\big)$$</div>
+      <p class="why step">the first factor is $\sigma(z)$; the second is $1-\sigma(z)$, because $1-\frac{1}{1+e^{-z}}=\frac{e^{-z}}{1+e^{-z}}$</p>
+      <table class="t step" style="font-size:18px;text-align:center"><tr><th>$z$</th><th>−5</th><th>0</th><th>1</th><th>5</th></tr><tr><td>$\sigma(z)$</td><td>0.007</td><td>0.5</td><td>0.731</td><td>0.993</td></tr><tr><td>$\sigma'(z)$</td><td>0.0066</td><td><b>0.25</b></td><td>0.197</td><td>0.0066</td></tr></table>
+      <p class="small step">The slope is largest at $z=0$ (0.25) and almost 0 when $|z|$ is large: the sigmoid <b>saturates</b>.</p>
     </div>
   </div>
-  <p class="small step"><b>Two things to remember.</b> (1) The derivatives are written with the <b>output</b> $a=g(z)$: $a(1-a)$, $1-a^2$. Backprop reuses the $a$ it stored in the forward pass. (2) $\sigma'\le\frac14$ always <b>shrinks</b> the gradient; ReLU lets it through unchanged (chapter 2).</p>
+</section>
+
+<section class="slide">
+  <h2>Derivative of tanh</h2>
+  <div class="cols">
+    <svg class="fig" data-fig="act-one" data-act="tanh" style="max-height:380px" aria-label="tanh and its derivative, with the values at z = 0 and z = 3"></svg>
+    <div class="stack" style="gap:7px">
+      <div class="step"><div class="eq s">$$\tanh z=\frac{u}{v},\qquad u=e^{z}-e^{-z},\quad v=e^{z}+e^{-z}$$</div><p class="why">the definition</p></div>
+      <div class="step"><div class="eq s">$$u'=e^{z}+e^{-z}=v,\qquad v'=e^{z}-e^{-z}=u$$</div><p class="why">the derivative of $e^{-z}$ is $-e^{-z}$, so the sum and the difference swap roles</p></div>
+      <div class="step"><div class="eq s">$$\tanh'z=\frac{u'v-uv'}{v^2}=\frac{v\cdot v-u\cdot u}{v^2}$$</div><p class="why">quotient rule: $\big(\frac uv\big)'=\frac{u'v-uv'}{v^2}$</p></div>
+      <div class="bluebox step">$$\tanh'z=1-\Big(\frac uv\Big)^2=1-\tanh^2z$$</div>
+      <p class="why step">divide each term by $v^2$</p>
+      <table class="t step" style="font-size:18px;text-align:center"><tr><th>$z$</th><th>0</th><th>1</th><th>3</th></tr><tr><td>$\tanh z$</td><td>0</td><td>0.762</td><td>0.995</td></tr><tr><td>$\tanh'z$</td><td><b>1</b></td><td>0.420</td><td>0.0099</td></tr></table>
+      <p class="small step">A stretched, shifted sigmoid: $\tanh z=2\sigma(2z)-1$. Its slope at 0 is 4 times larger (1 against 0.25), but it also saturates for large $|z|$.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Derivative of ReLU</h2>
+  <div class="cols">
+    <svg class="fig" data-fig="act-one" data-act="relu" style="max-height:380px" aria-label="ReLU and its derivative, with the values at z = -2 and z = 2"></svg>
+    <div class="stack" style="gap:9px">
+      <p>$\mathrm{ReLU}(z)=\max(0,z)$ is made of two straight pieces:</p>
+      <div class="eq s">$$\mathrm{ReLU}(z)=\begin{cases}0&amp;z\lt0\\z&amp;z\gt0\end{cases}\qquad\Rightarrow\qquad\mathrm{ReLU}'(z)=\begin{cases}0&amp;z\lt0\\1&amp;z\gt0\end{cases}$$</div>
+      <p class="why">the slope of each piece: a flat line has slope 0, the line $y=z$ has slope 1</p>
+      <p class="step"><b>At $z=0$</b> the two pieces meet in a corner: no derivative. We simply choose one (PyTorch uses 0). It never matters: $z$ is almost never exactly 0.</p>
+      <table class="t step" style="font-size:18px;text-align:center"><tr><th>$z$</th><th>−2</th><th>0</th><th>3</th></tr><tr><td>$\mathrm{ReLU}(z)$</td><td>0</td><td>0</td><td>3</td></tr><tr><td>$\mathrm{ReLU}'(z)$</td><td>0</td><td>0 (chosen)</td><td>1</td></tr></table>
+      <ul class="small step">
+        <li><b>Cheap</b>: a comparison, no exponential.</li>
+        <li><b>Never shrinks</b> a gradient it lets through: the slope is exactly 1.</li>
+        <li><b>The catch</b>: a unit with $z\lt0$ for every example has slope 0 everywhere and stops learning (a "dead" ReLU). Fix: next slide.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Derivative of LeakyReLU</h2>
+  <div class="cols">
+    <svg class="fig" data-fig="act-one" data-act="leaky" style="max-height:380px" aria-label="LeakyReLU with slope 0.2 for negative z, and its derivative"></svg>
+    <div class="stack" style="gap:9px">
+      <p>Same as ReLU, but the left piece is not flat: it has a small slope $\alpha$.</p>
+      <div class="eq s">$$\mathrm{LeakyReLU}(z)=\begin{cases}\alpha z&amp;z\lt0\\z&amp;z\gt0\end{cases}\qquad\Rightarrow\qquad\mathrm{LeakyReLU}'(z)=\begin{cases}\alpha&amp;z\lt0\\1&amp;z\gt0\end{cases}$$</div>
+      <p class="why">again the slope of each straight piece</p>
+      <table class="t step" style="font-size:18px;text-align:center"><tr><th>$z$ (with $\alpha=0.2$)</th><th>−3</th><th>2</th></tr><tr><td>$\mathrm{LeakyReLU}(z)$</td><td>−0.6</td><td>2</td></tr><tr><td>$\mathrm{LeakyReLU}'(z)$</td><td>0.2</td><td>1</td></tr></table>
+      <ul class="small step">
+        <li>The slope is <b>never 0</b>, so a unit can always recover: no dead units.</li>
+        <li>$\alpha$ is a small fixed number: 0.01 is the PyTorch default (the figure uses 0.2 so that you can see it).</li>
+        <li>$\alpha=0$ is ReLU, $\alpha=1$ would be the linear activation.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Derivative of GELU</h2>
+  <div class="cols">
+    <svg class="fig" data-fig="act-one" data-act="gelu" style="max-height:380px" aria-label="GELU and its derivative, with the values at z = -1 and z = 1"></svg>
+    <div class="stack" style="gap:7px">
+      <div class="step"><div class="eq s">$$\mathrm{GELU}(z)=z\cdot\Phi(z)$$</div><p class="why">$\Phi(z)$ is the probability that a standard normal variable is $\le z$: a smooth gate between 0 and 1</p></div>
+      <div class="step"><div class="eq s">$$\mathrm{GELU}'(z)=1\cdot\Phi(z)+z\cdot\Phi'(z)$$</div><p class="why">product rule: $(uv)'=u'v+uv'$</p></div>
+      <div class="step"><div class="eq s">$$\Phi'(z)=\varphi(z)=\frac{e^{-z^2/2}}{\sqrt{2\pi}}$$</div><p class="why">the derivative of a cumulative distribution is its density: the bell curve</p></div>
+      <div class="bluebox step">$$\mathrm{GELU}'(z)=\Phi(z)+z\,\varphi(z)$$</div>
+      <table class="t step" style="font-size:18px;text-align:center"><tr><th>$z$</th><th>−3</th><th>−1</th><th>0</th><th>1</th><th>3</th></tr><tr><td>$\mathrm{GELU}(z)$</td><td>−0.004</td><td>−0.159</td><td>0</td><td>0.841</td><td>2.996</td></tr><tr><td>$\mathrm{GELU}'(z)$</td><td>−0.012</td><td>−0.083</td><td>0.5</td><td>1.083</td><td>1.012</td></tr></table>
+      <ul class="small step">
+        <li>A <b>smooth ReLU</b>: no corner, slope about 0 for very negative $z$ and about 1 for large positive $z$. Small differences: a dip to $-0.17$ near $z=-0.75$, and a slope that overshoots 1 (up to 1.13).</li>
+        <li>The figure uses the usual tanh approximation of $\Phi$ (as in GPT-2): within 0.0005 of the exact curve.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Derivatives of the activations, at a glance</h2>
+  <svg class="fig" data-fig="act-deriv" style="max-height:190px" aria-label="Sigmoid, tanh and ReLU with their derivatives"></svg>
+  <table class="t" style="font-size:17px">
+    <tr><th style="width:15%">activation</th><th style="width:26%">$g(z)$</th><th style="width:25%">$g'(z)$</th><th style="width:21%">$g'$ from the output $a=g(z)$</th><th>largest $g'$</th></tr>
+    <tr><td>Sigmoid</td><td>$\dfrac1{1+e^{-z}}$</td><td>$\sigma(z)\big(1-\sigma(z)\big)$</td><td>$a\,(1-a)$</td><td>0.25</td></tr>
+    <tr><td>Tanh</td><td>$\dfrac{e^z-e^{-z}}{e^z+e^{-z}}$</td><td>$1-\tanh^2z$</td><td>$1-a^2$</td><td>1</td></tr>
+    <tr><td>ReLU</td><td>$\max(0,z)$</td><td>1 if $z\gt0$, else 0</td><td>1 if $a\gt0$, else 0</td><td>1</td></tr>
+    <tr><td>LeakyReLU</td><td>$z$ if $z\gt0$, else $\alpha z$</td><td>1 if $z\gt0$, else $\alpha$</td><td>1 if $a\gt0$, else $\alpha$</td><td>1</td></tr>
+    <tr><td>GELU</td><td>$z\,\Phi(z)$</td><td>$\Phi(z)+z\,\varphi(z)$</td><td>needs $z$ itself</td><td>1.13</td></tr>
+    <tr><td>Linear</td><td>$z$</td><td>1</td><td>1</td><td>1</td></tr>
+  </table>
+</section>
+
+<section class="slide">
+  <h2>Two things to remember about the derivatives</h2>
+  <div class="cards c2">
+    <div class="card">
+      <h3>1 · Write the derivative with the output $a$</h3>
+      <p>In the forward pass we computed $z$ and <b>stored</b> the output $a=g(z)$. The backward pass needs $g'(z)$. If it can be written with $a$, nothing has to be computed again: one multiplication.</p>
+      <table class="t step" style="font-size:18px"><tr><th>activation</th><th>$g'$ with the output</th></tr><tr><td>sigmoid</td><td>$a\,(1-a)$</td></tr><tr><td>tanh</td><td>$1-a^2$</td></tr><tr><td>ReLU</td><td>1 if $a\gt0$, else 0</td></tr></table>
+      <p class="small step"><b>Sigmoid unit</b> with $z=1$: the stored output is $a=0.731$, so $g'=0.731\cdot0.269=0.197$. <b>Tanh unit</b> of the tiny network, $a=0.76$: $g'=1-0.76^2=0.42$.</p>
+    </div>
+    <div class="card o">
+      <h3>2 · Sigmoid shrinks the gradient, ReLU lets it through</h3>
+      <p>In backpropagation (chapter 2) the gradient is multiplied by one $g'$ <b>per layer</b>. The sigmoid never gives more than 0.25:</p>
+      <table class="t step" style="font-size:18px;text-align:center"><tr><th>layers crossed</th><th>1</th><th>2</th><th>5</th><th>10</th></tr><tr><td>sigmoid, at most</td><td>0.25</td><td>0.063</td><td>0.001</td><td>0.000001</td></tr><tr><td>ReLU, active unit</td><td>1</td><td>1</td><td>1</td><td>1</td></tr></table>
+      <p class="small step">After 10 sigmoid layers a gradient is at most a millionth of what it was: the first layers barely learn. A ReLU passes it on <b>unchanged</b> wherever the unit is active.</p>
+      <p class="small step why">This is the <b>vanishing gradient</b>, and the main reason why ReLU is the default activation of hidden layers.</p>
+    </div>
+  </div>
 </section>
 
 <section class="slide">
@@ -340,7 +422,7 @@
     </div>
     <div class="stack" style="gap:10px">
       <div class="note step"><p>This is why every hidden layer has an activation. The non-linearity is what lets a stack of layers build new features instead of one big linear map.</p></div>
-      <p class="step small"><b>With the numbers of the tiny network</b> (previous slides), if we removed the tanh:</p>
+      <p class="step small"><b>With the numbers of the tiny network</b> (the forward-pass example), if we removed the tanh:</p>
       <div class="eq s step">$$\tilde\bW=\begin{pmatrix}0.5&amp;-0.3\\0.2&amp;0.4\end{pmatrix}\begin{pmatrix}0.7\\-0.5\end{pmatrix}=\begin{pmatrix}0.50\\-0.06\end{pmatrix}$$$$\tilde b=0.1\cdot0.7+(-0.1)\cdot(-0.5)+0.2=0.32$$</div>
       <p class="step small">The two-layer "network" is just the single neuron $\hat y=0.50\,x_1-0.06\,x_2+0.32$.</p>
       <p class="step small">Try it on the next slide: set the activation to <b>Linear</b> and add as many units as you like. The boundary stays a straight line.</p>
@@ -411,7 +493,7 @@
 </section>
 
 <section class="slide">
-  <h2>Output layer and loss = maximum likelihood</h2>
+  <h2>Output layer and loss: which pair?</h2>
   <div class="stack" style="gap:12px">
     <p>The last layer and the loss go together, exactly as in the GLMs of the ML part:</p>
     <table class="t" style="font-size:18px">
@@ -422,8 +504,7 @@
       <tr><td>Regression, any value</td><td>house price</td><td>none (linear)</td><td>MSE (or L1 / Huber)</td><td><code>nn.MSELoss</code></td></tr>
       <tr><td>Regression, values in 0–1</td><td>box coordinates</td><td>sigmoid</td><td>MSE or binary cross-entropy</td><td><code>nn.MSELoss</code></td></tr>
     </table>
-    <p class="small step">Each pair is "minus the log-likelihood" of a distribution: Gaussian → MSE, Bernoulli → BCE, categorical → CE. For the first four ("matching") pairs the gradient at the logits is the same simple error, $\ \frac{\partial J}{\partial\bZ^{[L]}}=\frac1m\big(\bA^{[L]}-\bY\big)$ (with MSE written as $\frac12(\hat y-y)^2$). Derivation in two slides.</p>
-    <p class="small step why"><code>nn.CrossEntropyLoss</code> and <code>BCEWithLogitsLoss</code> take the raw logits and apply softmax / sigmoid inside, which is numerically safer. <code>nn.NLLLoss</code> expects log-probabilities.</p>
+    <p class="small step why">The multiclass rows (softmax, one-hot targets, categorical cross-entropy) are explained later in this chapter, together with where these pairs come from and how PyTorch uses them.</p>
   </div>
 </section>
 
@@ -448,13 +529,68 @@
       <div class="eq s">$$L=-\big[y\log\hat y+(1-y)\log(1-\hat y)\big]$$</div>
       <p class="small step"><b>1 ·</b> Derivative with respect to the prediction:</p>
       <div class="eq s step">$$\frac{\partial L}{\partial\hat y}=-\frac{y}{\hat y}+\frac{1-y}{1-\hat y}=\frac{\hat y-y}{\hat y(1-\hat y)}$$</div>
-      <p class="small step"><b>2 ·</b> Derivative of the sigmoid (two slides ago): $\ \dfrac{\partial\hat y}{\partial z}=\hat y(1-\hat y)$</p>
+      <p class="small step"><b>2 ·</b> The slope of the sigmoid, $\sigma'(z)=\sigma(z)\big(1-\sigma(z)\big)$, with $\hat y=\sigma(z)$: $\ \dfrac{\partial\hat y}{\partial z}=\hat y(1-\hat y)$</p>
       <p class="small step"><b>3 ·</b> Chain rule: the two $\hat y(1-\hat y)$ cancel:</p>
       <div class="bluebox step">$$\frac{\partial L}{\partial z}=\frac{\hat y-y}{\hat y(1-\hat y)}\cdot\hat y(1-\hat y)=\hat y-y$$</div>
     </div>
     <div class="stack" style="gap:8px">
       <svg class="fig" data-fig="bce-grad" aria-label="The cross-entropy loss as a function of the logit for a positive example, and its slope sigma of z minus one"></svg>
-      <p class="small step">"Prediction minus target": large when the network is confidently wrong, about 0 when it is right. The same happens for softmax + cross-entropy (next slides) and for a linear output + $\frac12$MSE. Chapter 2 starts from here.</p>
+      <p class="small step">"Prediction minus target": large when the network is confidently wrong, about 0 when it is right. The same happens for softmax + cross-entropy (coming up) and for a linear output + $\frac12$MSE. Chapter 2 starts from here.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>More than two classes</h2>
+  <div class="cards c2">
+    <div class="card">
+      <h3>Binary: two classes</h3>
+      <p>Is this email spam? <b>One</b> output is enough: $\hat y=P(\text{spam})$, a number in $(0,1)$. The other class gets $1-\hat y$.</p>
+    </div>
+    <div class="card o">
+      <h3>Multiclass: $K$ classes, one is right</h3>
+      <p>What is in this photo: a <i>cat</i>, a <i>dog</i>, a <i>car</i>, a <i>tree</i> or a <i>boat</i>? We need <b>$K$ numbers</b>: $P(\text{cat}),\dots,P(\text{boat})$. All $\ge0$, and adding up to 1.</p>
+    </div>
+  </div>
+  <ul class="step">
+    <li>Digits 0–9 ($K=10$) · iris species ($K=3$) · damage severity: minor, moderate, severe ($K=3$) · the next word of a sentence ($K\approx50\,000$).</li>
+    <li><b>Multi-label</b> is different: several classes can be true at once (the tags of a photo). Each tag then gets its own independent sigmoid.</li>
+  </ul>
+  <div class="idea step">The plan: <b>one output neuron per class</b>, and a way to turn the $K$ scores into $K$ probabilities that add up to 1.</div>
+</section>
+
+<section class="slide">
+  <h2>The classes as one-hot vectors</h2>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p>A label is a name. How do we write it as numbers? PyTorch counts classes from 0.</p>
+      <table class="t" style="font-size:19px;text-align:center"><tr><th>label</th><th>integer</th><th>one-hot vector</th></tr>
+        <tr><td>cat</td><td>0</td><td>(1, 0, 0, 0, 0)</td></tr><tr><td>dog</td><td>1</td><td>(0, 1, 0, 0, 0)</td></tr><tr><td>car</td><td>2</td><td>(0, 0, 1, 0, 0)</td></tr><tr><td>tree</td><td>3</td><td>(0, 0, 0, 1, 0)</td></tr><tr><td>boat</td><td>4</td><td>(0, 0, 0, 0, 1)</td></tr></table>
+      <p class="small step"><b>Integers</b> are compact, but they invent an order and distances: "car = 2" looks like twice a dog. None of that is true.</p>
+      <p class="small step"><b>One-hot</b>: $K$ entries, a 1 in the position of the true class and 0 elsewhere. No order, every class equally far from the others.</p>
+    </div>
+    <div class="stack" style="gap:10px">
+      <p class="step">A one-hot vector is also a <b>probability distribution</b>: all the probability on the true class. The network will output another one, $\hat{\mathbf y}$, and training pushes it towards the target $\mathbf y$ (true class: dog):</p>
+      <table class="t step" style="font-size:17px;text-align:center;table-layout:fixed">
+        <tr><th></th><th>cat</th><th>dog</th><th>car</th><th>tree</th><th>boat</th></tr>
+        <tr><td>target $\mathbf y$</td><td style="background:#fff">0</td><td style="background:#ed7d31;color:#fff"><b>1</b></td><td>0</td><td>0</td><td>0</td></tr>
+        <tr><td>prediction $\hat{\mathbf y}$</td><td style="background:linear-gradient(to top,#dae3f3 2%,#fff 0)">0.02</td><td style="background:linear-gradient(to top,#8ea9db 90%,#fff 0)"><b>0.90</b></td><td style="background:linear-gradient(to top,#dae3f3 5%,#fff 0)">0.05</td><td style="background:linear-gradient(to top,#dae3f3 1%,#fff 0)">0.01</td><td style="background:linear-gradient(to top,#dae3f3 2%,#fff 0)">0.02</td></tr></table>
+      <p class="small step">Both are vectors of $K$ numbers that add up to 1, so they can be compared entry by entry.</p>
+      <p class="small step">For a whole dataset the targets form a matrix $\bY$ with $m$ rows (one per example) and $K$ columns. Each row has a single 1.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>A layer of neurons: one score per class</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="softmax-layer" data-later aria-label="Three inputs fully connected to three neurons, one score per class; then a softmax block turning the three scores into three probabilities"></svg>
+    <div class="stack" style="gap:10px">
+      <p class="small">$K$ classes → $K$ neurons side by side, each with its own weights. Each one computes the <b>score</b> of its class, called a <b>logit</b>:</p>
+      <div class="eq">$$z_k=\mathbf w_k^\top\bx+b_k,\qquad k=1,\dots,K$$</div>
+      <p class="small">All the weights together form a matrix $\bW$ of size $n\times K$, and the whole layer is $\ \bz=\bx\bW+\bb$.</p>
+      <div class="warnbox"><p class="small"><b>Still linear.</b> The border between two classes is where $z_k=z_j$, i.e. $(\mathbf w_k-\mathbf w_j)^\top\bx+(b_k-b_j)=0$: a straight line. One layer, however wide, cannot draw curved borders.</p></div>
+      <p class="step"><b>The scores are not probabilities</b>: they can be negative and they do not add up to 1. One more block turns them into $K$ probabilities: the <b>softmax</b>. (You met this model in the ML part as softmax regression.)</p>
     </div>
   </div>
 </section>
@@ -496,6 +632,75 @@
       <p class="step"><b>Vectorized form</b>, for all classes:</p>
       <div class="bluebox step">$$\frac{\partial L}{\partial z_j}=\hat y_j-y_j$$</div>
       <p class="step small">With the example above and true class "dog": gradient $=(0.02,\,0.90-1,\,0.05,\,0.01,\,0.02)$: push the dog score up, all the others slightly down.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Where the losses come from: maximum likelihood</h2>
+  <div class="stack" style="gap:10px">
+    <p>Say how likely each label is, according to the network. The loss is <b>minus the log</b> of the probability of the label that really happened. Three kinds of label, three losses:</p>
+    <table class="t" style="font-size:18px">
+      <tr><th style="width:15%">label</th><th style="width:22%">the network says</th><th style="width:28%">probability of the true label</th><th>minus the log = the loss</th></tr>
+      <tr class="step"><td>a real number</td><td>a bell curve centred on $\hat y$</td><td>$\propto\exp\!\Big(-\dfrac{(y-\hat y)^2}{2\sigma^2}\Big)$</td><td>$\tfrac12(y-\hat y)^2$ + constant: the <b>MSE</b></td></tr>
+      <tr class="step"><td>0 or 1</td><td>Bernoulli: $P(1)=\hat y$</td><td>$\hat y^{\,y}\,(1-\hat y)^{1-y}$</td><td>$-y\log\hat y-(1-y)\log(1-\hat y)$: the <b>BCE</b></td></tr>
+      <tr class="step"><td>one of $K$</td><td>categorical: $P(k)=\hat y_k$</td><td>$\prod_k\hat y_k^{\,y_k}=\hat y_{\text{true}}$</td><td>$-\sum_ky_k\log\hat y_k$: the <b>cross-entropy</b></td></tr>
+    </table>
+    <ul class="small step">
+      <li>Over a dataset the likelihood is a <b>product</b> over examples. The log turns it into a sum, and the minus turns "maximize" into "minimize".</li>
+      <li>Numbers: label 1 and $\hat y=0.8$ costs $-\ln0.8=0.22$; with $\hat y=0.1$ it costs $-\ln0.1=2.30$. Label 3 and $\hat y=2.5$ costs $\tfrac12\cdot0.5^2=0.125$.</li>
+      <li>Same recipe as in the ML part: least squares and logistic regression were maximum likelihood too.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The matching pairs: the gradient is prediction − target</h2>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p>Pair each output layer with its loss, and the derivative with respect to the logit $z$ is always the same simple error:</p>
+      <table class="t" style="font-size:18px;text-align:center"><tr><th>output layer</th><th>loss</th><th>$\partial L/\partial z$</th></tr>
+        <tr><td>linear</td><td>$\tfrac12(\hat y-y)^2$</td><td>$\hat y-y$</td></tr>
+        <tr><td>sigmoid</td><td>binary cross-entropy</td><td>$\hat y-y$</td></tr>
+        <tr><td>softmax</td><td>categorical cross-entropy</td><td>$\hat y_k-y_k$ for each class</td></tr></table>
+      <p class="small step">The last two are the derivations we did for sigmoid + cross-entropy and for softmax + cross-entropy. For the first: $\hat y=z$, so $\frac{\partial}{\partial z}\tfrac12(z-y)^2=z-y$.</p>
+      <div class="bluebox step" style="font-size:21px">$$\frac{\partial J}{\partial\bZ^{[L]}}=\frac1m\big(\bA^{[L]}-\bY\big)$$</div>
+      <p class="small step">For a mini-batch: predictions minus targets, divided by $m$. This is the <b>first line of backpropagation</b> (chapter 2).</p>
+    </div>
+    <div class="stack" style="gap:10px">
+      <p class="step"><b>A mismatched pair is worse.</b> Sigmoid with the squared error: the derivative gets an extra factor $\hat y(1-\hat y)$.</p>
+      <table class="t step" style="font-size:18px;text-align:center"><tr><th colspan="2">label $y=1$, logit $z=-5$ ($\hat y=0.0067$)</th></tr><tr><td>sigmoid + BCE</td><td>$\hat y-y=-0.993$</td></tr><tr><td>sigmoid + ½ MSE</td><td>$(\hat y-y)\,\hat y(1-\hat y)=-0.0066$</td></tr></table>
+      <p class="small step">A confidently wrong prediction gets a gradient <b>150 times smaller</b>: it learns slowly exactly when it should learn fast. Cross-entropy cancels the sigmoid's flat tails.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Losses in PyTorch take the logits</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:8px">
+      <table class="t" style="font-size:17px">
+        <tr><th>task</th><th>the model ends with</th><th>loss</th><th>targets</th></tr>
+        <tr><td>binary</td><td>raw logit $z$</td><td><code>nn.BCEWithLogitsLoss</code></td><td>floats 0. / 1.</td></tr>
+        <tr><td>multiclass</td><td>raw logits $\bz$, $[B,K]$</td><td><code>nn.CrossEntropyLoss</code></td><td>class indices, $[B]$</td></tr>
+        <tr><td>multiclass</td><td><code>LogSoftmax</code></td><td><code>nn.NLLLoss</code></td><td>class indices, $[B]$</td></tr>
+        <tr><td>regression</td><td>the value $\hat y$</td><td><code>nn.MSELoss</code></td><td>real numbers</td></tr>
+      </table>
+      <ul class="small step">
+        <li><code>CrossEntropyLoss</code> = softmax + log + <code>NLLLoss</code> in one step. <code>BCEWithLogitsLoss</code> = sigmoid + BCE in one step. <code>NLLLoss</code> expects <b>log-probabilities</b>, not probabilities.</li>
+        <li><b>No softmax or sigmoid at the end of the model</b> when you use them. Applying softmax first, and then <code>CrossEntropyLoss</code>, applies it twice: it still trains, but worse.</li>
+        <li>Probabilities, only when you need them (prediction time): <code>logits.softmax(dim=1)</code>, <code>torch.sigmoid(z)</code>.</li>
+      </ul>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small step"><b>Why logits are safer.</b> Computed in two steps, the exponentials overflow or underflow:</p>
+      <table class="t step" style="font-size:16px"><tr><th>case</th><th>two steps</th><th>one step</th></tr>
+        <tr><td>logits (1000, 0, 0)</td><td><code>exp(1000)</code> overflows: <code>nan</code></td><td>log-probabilities (0, −1000, −1000)</td></tr>
+        <tr><td>logit −200, label 1</td><td><code>BCELoss(sigmoid)</code>: 100 (capped)</td><td><code>BCEWithLogitsLoss</code>: 200</td></tr></table>
+      <p class="small step why">The one-step versions subtract the largest logit before exponentiating (the log-sum-exp trick).</p>
+      <pre class="code s step">logits = model(x)                 <span class="c"># raw scores [B, K]</span>
+loss = nn.CrossEntropyLoss()(logits, y)
+probs = logits.softmax(dim=1)     <span class="c"># to read answers</span></pre>
     </div>
   </div>
 </section>
@@ -556,8 +761,10 @@
     </dl>
     <dl class="gloss">
       <dt>forward pass</dt><dd>computing $\hat y$ from $\bx$, layer by layer, storing every $\bZ$ and $\bA$.</dd>
+      <dt>one-hot</dt><dd>a vector with a 1 at the true class and 0 elsewhere: the target of a multiclass problem.</dd>
       <dt>logits</dt><dd>the output layer's $\bZ$ before softmax / sigmoid. What the PyTorch losses expect.</dd>
       <dt>loss</dt><dd>how wrong $\hat y$ is; minus a log-likelihood. Averaged over the batch.</dd>
+      <dt>softmax</dt><dd>turns $K$ scores into $K$ probabilities that add up to 1.</dd>
       <dt>MLP</dt><dd>multi-layer perceptron: a stack of dense layers with activations.</dd>
       <dt>deep learning</dt><dd>many layers: features of features, learned end to end.</dd>
     </dl>
@@ -572,7 +779,7 @@
 </div></div>
 <script src="../assets/figures.js?v=20260930"></script>
 <script src="assets/nn-core.js?v=20260930"></script>
-<script src="assets/fig-nn-intro.js?v=20260930"></script>
+<script src="assets/fig-nn-intro.js?v=20261002"></script>
 <script src="../assets/deck.js?v=20260930"></script>
 </body>
 </html>
