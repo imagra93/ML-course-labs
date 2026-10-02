@@ -329,14 +329,14 @@
     <svg class="fig" data-fig="act-one" data-act="relu" style="max-height:380px" aria-label="ReLU and its derivative, with the values at z = -2 and z = 2"></svg>
     <div class="stack" style="gap:9px">
       <p>$\mathrm{ReLU}(z)=\max(0,z)$ is made of two straight pieces:</p>
-      <div class="eq s">$$\mathrm{ReLU}(z)=\begin{cases}0&amp;z\lt0\\z&amp;z\gt0\end{cases}\qquad\Rightarrow\qquad\mathrm{ReLU}'(z)=\begin{cases}0&amp;z\lt0\\1&amp;z\gt0\end{cases}$$</div>
+      <div class="eq s">$$\mathrm{ReLU}(z)=\begin{cases}0&amp;z\lt0\\z&amp;z\gt0\end{cases}\qquad\qquad\mathrm{ReLU}'(z)=\begin{cases}0&amp;z\lt0\\1&amp;z\gt0\end{cases}$$</div>
       <p class="why">the slope of each piece: a flat line has slope 0, the line $y=z$ has slope 1</p>
       <p class="step"><b>At $z=0$</b> the two pieces meet in a corner: no derivative. We simply choose one (PyTorch uses 0). It never matters: $z$ is almost never exactly 0.</p>
       <table class="t step" style="font-size:18px;text-align:center"><tr><th>$z$</th><th>−2</th><th>0</th><th>3</th></tr><tr><td>$\mathrm{ReLU}(z)$</td><td>0</td><td>0</td><td>3</td></tr><tr><td>$\mathrm{ReLU}'(z)$</td><td>0</td><td>0 (chosen)</td><td>1</td></tr></table>
       <ul class="small step">
         <li><b>Cheap</b>: a comparison, no exponential.</li>
         <li><b>Never shrinks</b> a gradient it lets through: the slope is exactly 1.</li>
-        <li><b>The catch</b>: a unit with $z\lt0$ for every example has slope 0 everywhere and stops learning (a "dead" ReLU). Fix: next slide.</li>
+        <li><b>The catch</b>: a unit with $z\lt0$ for every example has slope 0 everywhere and stops learning (a "dead" ReLU). The fix is LeakyReLU.</li>
       </ul>
     </div>
   </div>
@@ -348,7 +348,7 @@
     <svg class="fig" data-fig="act-one" data-act="leaky" style="max-height:380px" aria-label="LeakyReLU with slope 0.2 for negative z, and its derivative"></svg>
     <div class="stack" style="gap:9px">
       <p>Same as ReLU, but the left piece is not flat: it has a small slope $\alpha$.</p>
-      <div class="eq s">$$\mathrm{LeakyReLU}(z)=\begin{cases}\alpha z&amp;z\lt0\\z&amp;z\gt0\end{cases}\qquad\Rightarrow\qquad\mathrm{LeakyReLU}'(z)=\begin{cases}\alpha&amp;z\lt0\\1&amp;z\gt0\end{cases}$$</div>
+      <div class="eq s">$$\mathrm{LeakyReLU}(z)=\begin{cases}\alpha z&amp;z\lt0\\z&amp;z\gt0\end{cases}$$ $$\mathrm{LeakyReLU}'(z)=\begin{cases}\alpha&amp;z\lt0\\1&amp;z\gt0\end{cases}$$</div>
       <p class="why">again the slope of each straight piece</p>
       <table class="t step" style="font-size:18px;text-align:center"><tr><th>$z$ (with $\alpha=0.2$)</th><th>−3</th><th>2</th></tr><tr><td>$\mathrm{LeakyReLU}(z)$</td><td>−0.6</td><td>2</td></tr><tr><td>$\mathrm{LeakyReLU}'(z)$</td><td>0.2</td><td>1</td></tr></table>
       <ul class="small step">
@@ -600,16 +600,56 @@
   <div class="cols">
     <div class="stack" style="gap:12px">
       <ul>
-        <li>Used for multi-class classification problems (exclusive categories).</li>
-        <li>It is applied to a <b>vector</b> input.</li>
-        <li>Probabilistic interpretation of the output:
-          <ul><li>Looks like a one-hot encoding.</li><li>Used with the cross-entropy loss.</li></ul></li>
+        <li>Turns the $K$ scores (logits) of the last layer into $K$ <b>probabilities</b>: all positive, adding up to 1.</li>
+        <li>It is applied to the whole <b>vector</b> of scores at once, not to each number separately like ReLU or the sigmoid.</li>
+        <li>For problems where exactly one class is right.</li>
+        <li>The output is a "soft" version of the one-hot target, and the cross-entropy loss compares the two.</li>
       </ul>
       <div class="eq">$$\hat y_k=\frac{e^{z_k}}{\sum_je^{z_j}}$$</div><div class="eq">$$L=-\sum_ky_k\log\hat y_k=-\log\hat y_{\text{true class}}$$</div>
     </div>
     <div class="stack">
       <svg class="fig" data-fig="softmax-demo" aria-label="Five scores turned into five probabilities by the softmax"></svg>
-      <p class="small why">The exponential makes the biggest score dominate (5.1 → 0.90) but never sends the others to exactly 0. Subtract $\max_kz_k$ before exponentiating to avoid overflow (PyTorch does).</p>
+      <p class="small why">The exponential makes the biggest score dominate (5.1 → 0.90) but never sends the others to exactly 0.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Softmax, step by step with numbers</h2>
+  <table class="t" style="font-size:21px;text-align:center">
+    <tr><th style="width:27%"></th><th>cat</th><th>dog</th><th>car</th><th>tree</th><th>boat</th><th>sum</th></tr>
+    <tr><td style="text-align:left"><b>scores</b> $z_k$</td><td>1.3</td><td>5.1</td><td>2.2</td><td>0.7</td><td>1.1</td><td></td></tr>
+    <tr class="step"><td style="text-align:left"><b>1 ·</b> exponentiate: $e^{z_k}$</td><td>3.67</td><td><b>164.02</b></td><td>9.03</td><td>2.01</td><td>3.00</td><td><b>181.73</b></td></tr>
+    <tr class="step"><td style="text-align:left"><b>2 ·</b> divide by the sum</td><td>0.02</td><td><b>0.90</b></td><td>0.05</td><td>0.01</td><td>0.02</td><td><b>1.00</b></td></tr>
+  </table>
+  <ul>
+    <li class="step"><b>Exponentiate.</b> $e^{z}$ is always positive, even for a negative score, and it <b>stretches the gaps</b>: dog is 2.9 points of score above car, but $e^{2.9}\approx18$ times above it in $e^{z}$ (164.02 against 9.03).</li>
+    <li class="step"><b>Divide by the sum</b> (181.73): the five numbers now add up to 1. For dog: $\dfrac{164.02}{181.73}=0.90$. (Rounded to two decimals here.)</li>
+    <li class="step"><b>The loss.</b> If the true class is dog, the cross-entropy is $-\ln0.90=0.10$: small. If it had been cat: $-\ln0.02=3.9$: large. The softmax gradient calculation reuses these probabilities.</li>
+  </ul>
+</section>
+
+<section class="slide">
+  <h2>Softmax: playing with the scores</h2>
+  <div class="cols">
+    <div class="widget" data-fig="softmax-play" data-auto="z1=2;z2=1;z3=-1;s=1;c=0 :: Scores 2, 1, −1 give probabilities 0.71, 0.26, 0.04: positive, and they add up to 1|c=10 :: Add 10 to every score: the exponentials are huge, but the probabilities are exactly the same|c=0;s=4 :: Multiply the scores by 4: the largest takes almost everything (0.98)|s=0.2 :: Multiply them by 0.2: much flatter (0.42, 0.35, 0.23). The model is unsure|s=1;z2=2 :: A tie between the two largest scores: equal probabilities (0.49 and 0.49)">
+      <svg class="fig" style="max-height:230px" aria-label="Three scores, their exponentials and the softmax probabilities, with sliders"></svg>
+      <div class="ctl"><label for="sx-1">z₁ (cat)</label><input type="range" id="sx-1" data-k="z1" min="-4" max="4" step="0.1" value="2"><span class="v" data-v="z1">2.0</span></div>
+      <div class="ctl"><label for="sx-2">z₂ (dog)</label><input type="range" id="sx-2" data-k="z2" min="-4" max="4" step="0.1" value="1"><span class="v" data-v="z2">1.0</span></div>
+      <div class="ctl"><label for="sx-3">z₃ (car)</label><input type="range" id="sx-3" data-k="z3" min="-4" max="4" step="0.1" value="-1"><span class="v" data-v="z3">−1.0</span></div>
+      <div class="ctl"><label for="sx-s">multiply all scores by</label><input type="range" id="sx-s" data-k="s" min="0.1" max="5" step="0.1" value="1"><span class="v" data-v="s">1.0</span></div>
+      <div class="ctl"><label for="sx-c">add to all scores</label><input type="range" id="sx-c" data-k="c" min="-10" max="10" step="1" value="0"><span class="v" data-v="c">0</span></div>
+      <div class="ro"><div class="m"><span>Σ exp(z′)</span><b data-r="sum">–</b></div><div class="m"><span>sum of probabilities</span><b data-r="tot">–</b></div><div class="m" style="flex:1"><span>most likely</span><b data-r="best">–</b></div></div>
+    </div>
+    <div class="stack" style="gap:9px">
+      <p><b>What softmax does to the scores:</b></p>
+      <ul class="small">
+        <li><b>Probabilities, always</b>: positive and adding up to 1, whatever the scores, negative ones included.</li>
+        <li><b>The order is kept</b>: the largest score gets the largest probability, so the arg-max of the scores is the predicted class.</li>
+        <li><b>Only differences matter</b>: adding the same number to every score changes nothing (slider "add"). In code the maximum score is subtracted first, so $e^{z}$ cannot overflow.</li>
+        <li><b>The scale sets the confidence</b>: large scores give a nearly one-hot answer, small ones a nearly uniform one. In chapter 6 the scores are divided by a <b>temperature</b> $T$: the same thing with $s=1/T$.</li>
+        <li><b>Two classes = sigmoid</b>: for $K=2$, $\hat y_1=\sigma(z_1-z_2)$. Scores $(2,1)$: $\frac{e^2}{e^2+e^1}=0.73=\sigma(1)$.</li>
+      </ul>
     </div>
   </div>
 </section>
@@ -779,7 +819,7 @@ probs = logits.softmax(dim=1)     <span class="c"># to read answers</span></pre>
 </div></div>
 <script src="../assets/figures.js?v=20260930"></script>
 <script src="assets/nn-core.js?v=20260930"></script>
-<script src="assets/fig-nn-intro.js?v=20261002"></script>
+<script src="assets/fig-nn-intro.js?v=20261003"></script>
 <script src="../assets/deck.js?v=20260930"></script>
 </body>
 </html>
