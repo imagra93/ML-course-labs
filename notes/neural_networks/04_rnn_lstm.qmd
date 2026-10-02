@@ -126,7 +126,7 @@ $$
 
 - $\mathbf{x}_t$: the input at time $t$ (e.g. the embedding of the $t$-th word). $\hat{\mathbf{y}}_t$: the output at time $t$ (e.g. "is this word a named entity?").
 - $g_1$ is usually $\tanh$; $g_2$ is the output activation of the task (sigmoid, softmax or identity, [NN note 00](00_neural_networks_mlp.html)).
-- The parameters $\boldsymbol{\theta} = \{\mathbf{W}_x\in\mathbb{R}^{d\times d_h},\ \mathbf{W}_h\in\mathbb{R}^{d_h\times d_h},\ \mathbf{b}_h,\ \mathbf{W}_y,\ \mathbf{b}_y\}$ are **shared by all time steps**.
+- The parameters $\mathbf{w} = \{\mathbf{W}_x\in\mathbb{R}^{d\times d_h},\ \mathbf{W}_h\in\mathbb{R}^{d_h\times d_h},\ \mathbf{b}_h,\ \mathbf{W}_y,\ \mathbf{b}_y\}$ are **shared by all time steps**.
 
 Unrolled over time, an RNN is a very deep feed-forward network, one layer per time step, whose layers share their weights.
 
@@ -410,7 +410,7 @@ for name, factor in [("RNN, factor 0.8", 0.8), ("RNN, factor 0.9", 0.9), ("RNN, 
 
 ## 6. Exploding gradients and clipping by norm
 
-**Symptom.** Training goes well, then the loss jumps by orders of magnitude or becomes `nan`. The recurrent loss surface has **cliffs** (Pascanu, Mikolov & Bengio, 2013): regions where a tiny change of $\mathbf{W}_h$ changes $\mathbf{h}_T$ enormously, because the product of section 5.2 is large. There the gradient $\mathbf{g} = \nabla_{\boldsymbol{\theta}}J$ is huge, and the step $-\alpha\mathbf{g}$ throws the parameters far away, into a region where the loss is worse and the gradients may be larger still.
+**Symptom.** Training goes well, then the loss jumps by orders of magnitude or becomes `nan`. The recurrent loss surface has **cliffs** (Pascanu, Mikolov & Bengio, 2013): regions where a tiny change of $\mathbf{W}_h$ changes $\mathbf{h}_T$ enormously, because the product of section 5.2 is large. There the gradient $\mathbf{g} = \nabla_{\mathbf{w}}J$ is huge, and the step $-\alpha\mathbf{g}$ throws the parameters far away, into a region where the loss is worse and the gradients may be larger still.
 
 **Clipping by norm.** Before the update, rescale the gradient if its norm exceeds a threshold $\tau$:
 

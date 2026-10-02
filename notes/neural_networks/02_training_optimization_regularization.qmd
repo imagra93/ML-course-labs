@@ -14,14 +14,14 @@ Backpropagation ([NN note 01](01_backpropagation.html)) gives the gradient of th
 **What you need.**
 
 - [NN note 00](00_neural_networks_mlp.html): the MLP forward pass in the row convention, $\mathbf{Z}^{[l]} = \mathbf{A}^{[l-1]}\mathbf{W}^{[l]} + \mathbf{b}^{[l]}$, $\mathbf{A}^{[l]} = g^{[l]}(\mathbf{Z}^{[l]})$, and the fact that the loss is a negative log-likelihood (cross-entropy for classification).
-- [NN note 01](01_backpropagation.html): backprop computes $\nabla_{\boldsymbol{\theta}}J$ in one backward pass; initialisation; vanishing and exploding gradients.
-- [ML note 01](../machine_learning/01_linear_regression.html): gradient descent $\boldsymbol{\theta}\leftarrow\boldsymbol{\theta}-\alpha\nabla J$. On a quadratic whose Hessian has largest eigenvalue $\lambda_{\max}$ it converges if and only if $0<\alpha<2/\lambda_{\max}$, and the condition number $\kappa=\lambda_{\max}/\lambda_{\min}$ controls the zig-zag. Both facts are restated where they are used.
+- [NN note 01](01_backpropagation.html): backprop computes $\nabla_{\mathbf{w}}J$ in one backward pass; initialisation; vanishing and exploding gradients.
+- [ML note 01](../machine_learning/01_linear_regression.html): gradient descent $\mathbf{w}\leftarrow\mathbf{w}-\alpha\nabla J$ (written with $\boldsymbol{\theta}$ in the ML notes). On a quadratic whose Hessian has largest eigenvalue $\lambda_{\max}$ it converges if and only if $0<\alpha<2/\lambda_{\max}$, and the condition number $\kappa=\lambda_{\max}/\lambda_{\min}$ controls the zig-zag. Both facts are restated where they are used.
 - [ML note 03](../machine_learning/03_regularization_inputs_assumptions.html): L2 (ridge) and L1 regularisation, and regularisation as a prior.
 - Probability: expectation and variance of sums of independent random variables.
 
 **After this note you will be able to** choose an optimiser, a learning rate, a batch size and a schedule and justify them; derive the update rules of momentum, RMSProp, Adam and AdamW, including the bias correction; write and read a PyTorch training loop; regularise a network and explain what each regulariser does mathematically; implement and differentiate BatchNorm by hand; diagnose a failing training run from its loss curve; and check the assumptions (shuffled batches, stationary data, clean labels, balanced classes, reproducibility) that training relies on.
 
-**Notation.** $\boldsymbol{\theta}\in\mathbb{R}^p$ collects all weights and biases. The training loss is the average of per-example losses, $J(\boldsymbol{\theta})=\frac1m\sum_{i=1}^m\ell^{(i)}(\boldsymbol{\theta})$, where $\ell^{(i)}$ is the loss on example $(\mathbf{x}^{(i)},y^{(i)})$. A mini-batch $\mathcal{B}\subset\{1,\dots,m\}$ has $B=|\mathcal{B}|$ examples (the slides write $|\mathcal{B}|$); $\mathbf{g}_t$ is the mini-batch gradient at step $t$; $\alpha$ is the learning rate, $\lambda$ the weight-decay strength, $\beta,\beta_1,\beta_2\in[0,1)$ averaging factors, $K$ the number of classes. Squares, square roots and divisions of vectors ($\mathbf{g}^2$, $\sqrt{\mathbf{s}}$, $\mathbf{g}/\sqrt{\mathbf{s}}$) are element-wise, and $\odot$ is the element-wise product.
+**Notation.** $\mathbf{w}\in\mathbb{R}^p$ collects all weights and biases. The training loss is the average of per-example losses, $J(\mathbf{w})=\frac1m\sum_{i=1}^m\ell^{(i)}(\mathbf{w})$, where $\ell^{(i)}$ is the loss on example $(\mathbf{x}^{(i)},y^{(i)})$. A mini-batch $\mathcal{B}\subset\{1,\dots,m\}$ has $B=|\mathcal{B}|$ examples (the slides write $|\mathcal{B}|$); $\mathbf{g}_t$ is the mini-batch gradient at step $t$; $\alpha$ is the learning rate, $\lambda$ the weight-decay strength, $\beta,\beta_1,\beta_2\in[0,1)$ averaging factors, $K$ the number of classes. Squares, square roots and divisions of vectors ($\mathbf{g}^2$, $\sqrt{\mathbf{s}}$, $\mathbf{g}/\sqrt{\mathbf{s}}$) are element-wise, and $\odot$ is the element-wise product.
 
 ```{python}
 import time
@@ -42,7 +42,7 @@ For linear and logistic regression the loss is convex ([ML note 01](../machine_l
 2. **Saddle points.** A critical point ($\nabla J=\mathbf{0}$) is a local minimum only if all $p$ eigenvalues of the Hessian are positive. With millions of parameters that is rare, and most flat points are **saddles**: some directions go up, others go down. The noise of mini-batch gradients and momentum (section 4) help to leave them.
 3. **Initialisation matters.** Where you start decides which minimum you reach. Small networks are worth restarting from a few random seeds; large networks have more freedom, and empirically most of the minima they reach are about equally good.
 
-**Why convexity fails, in numbers.** A function is convex if, for any two points, $J\big(\tfrac12\boldsymbol{\theta}_a+\tfrac12\boldsymbol{\theta}_b\big)\le\tfrac12J(\boldsymbol{\theta}_a)+\tfrac12J(\boldsymbol{\theta}_b)$. Take a trained network $\boldsymbol{\theta}_a$ and its copy $\boldsymbol{\theta}_b$ with the hidden units permuted. Both have the same loss, so convexity would require the midpoint to be at least as good. The midpoint network averages pairs of unrelated hidden units, and it is much worse:
+**Why convexity fails, in numbers.** A function is convex if, for any two points, $J\big(\tfrac12\mathbf{w}_a+\tfrac12\mathbf{w}_b\big)\le\tfrac12J(\mathbf{w}_a)+\tfrac12J(\mathbf{w}_b)$. Take a trained network $\mathbf{w}_a$ and its copy $\mathbf{w}_b$ with the hidden units permuted. Both have the same loss, so convexity would require the midpoint to be at least as good. The midpoint network averages pairs of unrelated hidden units, and it is much worse:
 
 ```{python}
 from sklearn.datasets import make_moons
@@ -61,24 +61,24 @@ with torch.no_grad():
     net_p[0].weight.copy_(net[0].weight[perm]); net_p[0].bias.copy_(net[0].bias[perm])
     net_p[2].weight.copy_(net[2].weight[:, perm]); net_p[2].bias.copy_(net[2].bias)
 vec = torch.nn.utils.parameters_to_vector
-th_a, th_b = vec(net.parameters()).detach(), vec(net_p.parameters()).detach()
+w_a, w_b = vec(net.parameters()).detach(), vec(net_p.parameters()).detach()
 
-def J_at(theta):                                       # loss of the network with parameters theta
-    torch.nn.utils.vector_to_parameters(theta, net_p.parameters())
+def J_at(params):                                      # loss of the network with parameters params
+    torch.nn.utils.vector_to_parameters(params, net_p.parameters())
     with torch.no_grad(): return bce(net_p(Xm_t).squeeze(1), ym_t).item()
 
 ts = np.linspace(0, 1, 41)
-Js = [J_at((1 - t) * th_a + t * th_b) for t in ts]
-print(f"J(theta_a) = {Js[0]:.4f}, J(theta_b) = {Js[-1]:.4f}, J(midpoint) = {Js[20]:.4f}")
+Js = [J_at((1 - t) * w_a + t * w_b) for t in ts]
+print(f"J(w_a) = {Js[0]:.4f}, J(w_b) = {Js[-1]:.4f}, J(midpoint) = {Js[20]:.4f}")
 plt.figure(figsize=(6, 3.2)); plt.plot(ts, Js)
-plt.xlabel(r"$t$ in $(1-t)\,\theta_a + t\,\theta_b$"); plt.ylabel("training loss")
+plt.xlabel(r"$t$ in $(1-t)\,\mathbf{w}_a + t\,\mathbf{w}_b$"); plt.ylabel("training loss")
 plt.title("Two equivalent minima, a bump in between"); plt.tight_layout(); plt.show()
 ```
 
 The segment between two global minima rises well above them, which a convex function cannot do. This is a counterexample, so the loss of this network is not convex.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="nonconvex" style="max-height:220px" aria-label="A loss curve with a local and a global minimum"></svg>
+<div class="widget"><svg class="fig" data-fig="nonconvex" data-w style="max-height:220px" aria-label="A loss curve with a local and a global minimum"></svg>
 <p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#3">slide 3</a> of the Training deck.</p></div>
 ```
 
@@ -112,8 +112,8 @@ The loss is an average over examples, so its gradient is an average of per-examp
 - **Stochastic gradient descent (SGD)**: one example per step. Many cheap updates, each only roughly towards the minimum. The noise can be useful on a non-convex loss (it shakes the parameters out of saddles and sharp minima), but a single example cannot use vectorised hardware.
 - **Mini-batch gradient descent**: a mini-batch per step,
 $$
-\boldsymbol{\theta}\leftarrow\boldsymbol{\theta}-\alpha\,\mathbf{g},\qquad
-\mathbf{g}=\frac{1}{B}\sum_{i\in\mathcal{B}}\nabla_{\boldsymbol{\theta}}\ell^{(i)}(\boldsymbol{\theta}).
+\mathbf{w}\leftarrow\mathbf{w}-\alpha\,\mathbf{g},\qquad
+\mathbf{g}=\frac{1}{B}\sum_{i\in\mathcal{B}}\nabla_{\mathbf{w}}\ell^{(i)}(\mathbf{w}).
 $$
 It keeps most of the benefits of SGD, and the $B$ examples are computed as one matrix product: the same cost per step as one example on a GPU, up to the memory limit. Typical $B$: 16, 32, 64, 128. In deep learning "SGD" almost always means this mini-batch version.
 
@@ -123,10 +123,10 @@ It keeps most of the benefits of SGD, and the $B$ examples are computed as one m
 | $B = 1$ (pure SGD) | cheapest step | very noisy, cannot use vectorised hardware |
 | $B = 16$–$512$ (mini-batch) | GPU-efficient, noise helps escape saddles and sharp minima | the usual choice |
 
-**Try it.** Linear regression with 200 rows, loss contours in the $(\theta_0,\theta_1)$ plane (the minimum is the black dot). Batch GD makes 30 smooth steps of 200 rows each; SGD makes 400 noisy steps (two epochs of single rows); mini-batches of 16 make 39 steps (three epochs of $\lceil200/16\rceil=13$ mini-batches), almost as smooth as batch GD.
+**Try it.** Linear regression with 200 rows, loss contours in the $(b,w)$ plane (intercept and slope) (the minimum is the black dot). Batch GD makes 30 smooth steps of 200 rows each; SGD makes 400 noisy steps (two epochs of single rows); mini-batches of 16 make 39 steps (three epochs of $\lceil200/16\rceil=13$ mini-batches), almost as smooth as batch GD.
 
 ```{=html}
-<div class="widget" data-fig="gd-variants" data-auto="k=batch :: batch: 30 smooth steps, each one uses all 200 rows | k=sgd :: stochastic: 400 noisy steps, each one uses a single row | k=mini :: mini-batch of 16: 39 steps, smooth enough, cheap enough">
+<div class="widget" data-fig="gd-variants" data-wb data-auto="k=batch :: batch: 30 smooth steps, each one uses all 200 rows | k=sgd :: stochastic: 400 noisy steps, each one uses a single row | k=mini :: mini-batch of 16: 39 steps, smooth enough, cheap enough">
   <svg class="fig" aria-label="Paths of batch, stochastic and mini-batch gradient descent on the loss contours of a linear regression"></svg>
   <div class="ctl"><span class="seg" role="group" aria-label="Variant"><button type="button" data-k="batch" aria-pressed="true">Batch</button><button type="button" data-k="sgd" aria-pressed="false">Stochastic</button><button type="button" data-k="mini" aria-pressed="false">Mini-batch (16)</button></span></div>
   <div class="ro"><div class="m" style="flex:1"><span>what happens</span><b data-r="i" style="font-size:17px">–</b></div><div class="m"><span>updates</span><b data-r="n">–</b></div></div>
@@ -136,7 +136,7 @@ It keeps most of the benefits of SGD, and the $B$ examples are computed as one m
 
 ### 2.3 The mini-batch gradient is unbiased
 
-**Claim.** If the mini-batch is drawn uniformly at random, $\mathbb{E}[\mathbf{g}]=\nabla J(\boldsymbol{\theta})$.
+**Claim.** If the mini-batch is drawn uniformly at random, $\mathbb{E}[\mathbf{g}]=\nabla J(\mathbf{w})$.
 
 **Proof.** Write the mini-batch as indices $i_1,\dots,i_B$. Whether they are drawn with replacement or by shuffling and cutting (without replacement), each $i_b$ on its own is uniform on $\{1,\dots,m\}$. Then
 $$
@@ -153,7 +153,7 @@ $\blacksquare$ On average every step points the right way. The proof uses only "
 
 ### 2.4 Its noise shrinks like $1/B$
 
-Let $\mathbf{u}_i=\nabla\ell^{(i)}-\nabla J$ be the deviation of example $i$'s gradient from the full gradient, and $\boldsymbol{\Sigma}=\frac1m\sum_{i=1}^m\mathbf{u}_i\mathbf{u}_i^\top$ the covariance of per-example gradients (a property of the data and of $\boldsymbol{\theta}$, not of $B$).
+Let $\mathbf{u}_i=\nabla\ell^{(i)}-\nabla J$ be the deviation of example $i$'s gradient from the full gradient, and $\boldsymbol{\Sigma}=\frac1m\sum_{i=1}^m\mathbf{u}_i\mathbf{u}_i^\top$ the covariance of per-example gradients (a property of the data and of $\mathbf{w}$, not of $B$).
 
 **Claim.** With indices drawn independently (with replacement), $\mathrm{Cov}(\mathbf{g})=\boldsymbol{\Sigma}/B$.
 
@@ -177,8 +177,8 @@ So the standard deviation of the gradient noise falls like $1/\sqrt{B}$: four ti
 ```{python}
 m_g = 1000
 x_g = rng.normal(size=m_g); y_g = 2 + 3 * x_g + rng.normal(size=m_g)
-Xg = np.c_[np.ones(m_g), x_g]; theta_g = np.array([0.0, 0.0])
-G = (Xg @ theta_g - y_g)[:, None] * Xg            # per-example gradients of 0.5*(x.theta - y)^2, shape (m, 2)
+Xg = np.c_[np.ones(m_g), x_g]; w_g = np.array([0.0, 0.0])
+G = (Xg @ w_g - y_g)[:, None] * Xg            # per-example gradients of 0.5*(x.w - y)^2, shape (m, 2)
 full = G.mean(0); Sigma = np.cov(G.T, bias=True)   # full gradient and per-example covariance
 print(f"trace(Sigma) = {np.trace(Sigma):.3f}")
 print("   B   with replacement   Sigma/B   without replacement   FPC formula")
@@ -193,15 +193,15 @@ The column "with replacement" follows $\mathrm{tr}\,\boldsymbol{\Sigma}/B$ and t
 
 ### 2.5 Batch size in practice: the noise scale $\alpha/B$, linear scaling and warm-up
 
-**Constant-$\alpha$ SGD does not converge to a point.** Take the simplest loss, one parameter with curvature $h>0$: $J(\theta)=\frac12h\theta^2$, minimum at $0$. The mini-batch gradient is $g_t=h\theta_t+\xi_t$, with noise $\xi_t$ of mean $0$ and variance $\sigma^2/B$ (section 2.4), independent across steps. Then
+**Constant-$\alpha$ SGD does not converge to a point.** Take the simplest loss, one parameter with curvature $h>0$: $J(w)=\frac12hw^2$, minimum at $0$. The mini-batch gradient is $g_t=hw_t+\xi_t$, with noise $\xi_t$ of mean $0$ and variance $\sigma^2/B$ (section 2.4), independent across steps. Then
 $$
 \begin{aligned}
-\theta_{t+1} &= \theta_t-\alpha(h\theta_t+\xi_t)=(1-\alpha h)\,\theta_t-\alpha\,\xi_t \\
+w_{t+1} &= w_t-\alpha(hw_t+\xi_t)=(1-\alpha h)\,w_t-\alpha\,\xi_t \\
 &\quad\small \text{SGD step}\\
-\mathbb{E}[\theta_{t+1}] &= (1-\alpha h)\,\mathbb{E}[\theta_t] \\
+\mathbb{E}[w_{t+1}] &= (1-\alpha h)\,\mathbb{E}[w_t] \\
 &\quad\small \mathbb{E}[\xi_t]=0\\
-v_{t+1}:=\mathrm{Var}(\theta_{t+1}) &= (1-\alpha h)^2\,v_t+\alpha^2\sigma^2/B . \\
-&\quad\small \theta_t \text{ and } \xi_t \text{ are independent}
+v_{t+1}:=\mathrm{Var}(w_{t+1}) &= (1-\alpha h)^2\,v_t+\alpha^2\sigma^2/B . \\
+&\quad\small w_t \text{ and } \xi_t \text{ are independent}
 \end{aligned}
 $$
 The mean goes to $0$ when $|1-\alpha h|<1$ (the same condition as for gradient descent), but the variance settles at the fixed point $v=(1-\alpha h)^2v+\alpha^2\sigma^2/B$:
@@ -222,20 +222,20 @@ h, sig, a_, B_ = 1.0, 1.0, 0.1, 4
 noise = rng.normal(scale=sig / np.sqrt(B_), size=200_000)   # xi_t, variance sigma^2 / B
 th, samples = 0.0, []
 for t, xi in enumerate(noise):
-    th = th - a_ * (h * th + xi)                              # SGD step on J = h theta^2 / 2
+    th = th - a_ * (h * th + xi)                              # SGD step on J = h w^2 / 2
     if t > 1000: samples.append(th)
-print(f"simulated Var(theta) = {np.var(samples):.5f};  formula alpha*sigma^2/(B h (2 - alpha h)) = "
+print(f"simulated Var(w) = {np.var(samples):.5f};  formula alpha*sigma^2/(B h (2 - alpha h)) = "
       f"{a_ * sig**2 / (B_ * h * (2 - a_ * h)):.5f}")
 ```
 
 **The linear scaling rule.** Compare $k$ small steps of size $\alpha$ on mini-batches $\mathcal{B}_1,\dots,\mathcal{B}_k$ (each of size $B$) with one big step of size $k\alpha$ on their union (size $kB$):
 $$
 \begin{aligned}
-\boldsymbol{\theta}_{t+k} &= \boldsymbol{\theta}_t-\alpha\sum_{j=1}^{k}\frac1B\sum_{i\in\mathcal{B}_j}\nabla\ell^{(i)}(\boldsymbol{\theta}_{t+j-1}) \\
+\mathbf{w}_{t+k} &= \mathbf{w}_t-\alpha\sum_{j=1}^{k}\frac1B\sum_{i\in\mathcal{B}_j}\nabla\ell^{(i)}(\mathbf{w}_{t+j-1}) \\
 &\quad\small k \text{ small steps}\\
-&\approx \boldsymbol{\theta}_t-\alpha\sum_{j=1}^{k}\frac1B\sum_{i\in\mathcal{B}_j}\nabla\ell^{(i)}(\boldsymbol{\theta}_{t}) \\
+&\approx \mathbf{w}_t-\alpha\sum_{j=1}^{k}\frac1B\sum_{i\in\mathcal{B}_j}\nabla\ell^{(i)}(\mathbf{w}_{t}) \\
 &\quad\small \text{if the gradients barely change in } k \text{ steps}\\
-&= \boldsymbol{\theta}_t-k\alpha\cdot\frac{1}{kB}\sum_{i\in\mathcal{B}_1\cup\dots\cup\mathcal{B}_k}\nabla\ell^{(i)}(\boldsymbol{\theta}_t). \\
+&= \mathbf{w}_t-k\alpha\cdot\frac{1}{kB}\sum_{i\in\mathcal{B}_1\cup\dots\cup\mathcal{B}_k}\nabla\ell^{(i)}(\mathbf{w}_t). \\
 &\quad\small \text{multiply and divide by } k
 \end{aligned}
 $$
@@ -295,7 +295,7 @@ The four scaled runs follow nearly the same curve per epoch, although the $B=128
 
 ## 3. The learning rate is the most important knob
 
-**Recap from [ML note 01](../machine_learning/01_linear_regression.html).** On a one-parameter quadratic $J(\theta)=\frac12h(\theta-\theta^*)^2$, a gradient step multiplies the error by a constant: $\theta_{t+1}-\theta^*=\theta_t-\alpha h(\theta_t-\theta^*)-\theta^*=(1-\alpha h)(\theta_t-\theta^*)$. It converges iff $|1-\alpha h|<1$, i.e. $0<\alpha<2/h$; the fastest choice is $\alpha=1/h$ (one step); for $1/h<\alpha<2/h$ it overshoots and oscillates; above $2/h$ it diverges. With many parameters, $h$ is replaced by the largest eigenvalue of the Hessian. For a network that curvature is unknown and changes during training, so $\alpha$ is found by trial.
+**Recap from [ML note 01](../machine_learning/01_linear_regression.html).** On a one-parameter quadratic $J(w)=\frac12h(w-w^*)^2$, a gradient step multiplies the error by a constant: $w_{t+1}-w^*=w_t-\alpha h(w_t-w^*)-w^*=(1-\alpha h)(w_t-w^*)$. It converges iff $|1-\alpha h|<1$, i.e. $0<\alpha<2/h$; the fastest choice is $\alpha=1/h$ (one step); for $1/h<\alpha<2/h$ it overshoots and oscillates; above $2/h$ it diverges. With many parameters, $h$ is replaced by the largest eigenvalue of the Hessian. For a network that curvature is unknown and changes during training, so $\alpha$ is found by trial.
 
 ```{=html}
 <div class="widget"><svg class="fig" data-fig="alpha3" style="max-height:250px" aria-label="Gradient descent steps on a bowl with a too low, a good and a too high learning rate"></svg>
@@ -419,7 +419,7 @@ Momentum averages $\mathbf{g}$; RMSProp averages $\mathbf{g}^2$; Adam does both,
 
 Idea: **keep a velocity**. PyTorch's form is
 $$
-\mathbf{v}\leftarrow\beta\,\mathbf{v}+\mathbf{g},\qquad\boldsymbol{\theta}\leftarrow\boldsymbol{\theta}-\alpha\,\mathbf{v},\qquad\mathbf{v}_0=\mathbf{0},\ \beta\approx0.9 .
+\mathbf{v}\leftarrow\beta\,\mathbf{v}+\mathbf{g},\qquad\mathbf{w}\leftarrow\mathbf{w}-\alpha\,\mathbf{v},\qquad\mathbf{v}_0=\mathbf{0},\ \beta\approx0.9 .
 $$
 Unrolled as in section 4.1 (without the $1-\beta$ factor), $\mathbf{v}_t=\mathbf{g}_t+\beta\mathbf{g}_{t-1}+\beta^2\mathbf{g}_{t-2}+\dots+\beta^{t-1}\mathbf{g}_1$: a running sum of past gradients that forgets geometrically. Two cases explain its behaviour.
 
@@ -472,7 +472,7 @@ print(f"steps to shrink the error 1000x: GD ≈ {np.log(1e-3)/np.log((kap-1)/(ka
 Gradients of different parameters can be 1,000× apart, and one learning rate cannot suit both. **RMSProp** divides each parameter's step by the typical size of its own recent gradients:
 $$
 \mathbf{s}\leftarrow\beta_2\,\mathbf{s}+(1-\beta_2)\,\mathbf{g}\odot\mathbf{g},\qquad
-\boldsymbol{\theta}\leftarrow\boldsymbol{\theta}-\alpha\,\frac{\mathbf{g}}{\sqrt{\mathbf{s}}+\varepsilon}.
+\mathbf{w}\leftarrow\mathbf{w}-\alpha\,\frac{\mathbf{g}}{\sqrt{\mathbf{s}}+\varepsilon}.
 $$
 
 - $\mathbf{s}$ is an EMA (section 4.1) of the squared gradient, element by element, and $\sqrt{\mathbf{s}}$ is the **root-mean-square** (RMS) of recent gradients: the typical gradient size of each parameter. Typical $\beta_2=0.9$–$0.999$; $\varepsilon\approx10^{-8}$ only avoids dividing by zero.
@@ -496,7 +496,7 @@ $$
 &\quad\small \text{RMSProp: EMA of } \mathbf{g}^2\\
 \hat{\mathbf{m}}_t &= \frac{\mathbf{m}_t}{1-\beta_1^t},\qquad\hat{\mathbf{s}}_t=\frac{\mathbf{s}_t}{1-\beta_2^t} \\
 &\quad\small \text{bias correction (section 4.1)}\\
-\boldsymbol{\theta}_t &= \boldsymbol{\theta}_{t-1}-\alpha\,\frac{\hat{\mathbf{m}}_t}{\sqrt{\hat{\mathbf{s}}_t}+\varepsilon}
+\mathbf{w}_t &= \mathbf{w}_{t-1}-\alpha\,\frac{\hat{\mathbf{m}}_t}{\sqrt{\hat{\mathbf{s}}_t}+\varepsilon}
 \end{aligned}
 $$
 with defaults $\beta_1=0.9$, $\beta_2=0.999$, $\varepsilon=10^{-8}$, $\alpha=10^{-3}$ (Kingma & Ba, 2015). It is the most popular optimiser because it usually works without tuning anything but $\alpha$.
@@ -508,7 +508,7 @@ $$
 &\quad\small \text{one EMA step from } \mathbf{0}\\
 \hat{\mathbf{m}}_1 &= \mathbf{g}_1,\qquad\ \ \hat{\mathbf{s}}_1=\mathbf{g}_1^2 \\
 &\quad\small \text{divide by } 1-0.9 \text{ and } 1-0.999\\
-\boldsymbol{\theta}_1-\boldsymbol{\theta}_0 &= -\alpha\,\frac{\mathbf{g}_1}{|\mathbf{g}_1|+\varepsilon}\approx-\alpha\,\mathrm{sign}(\mathbf{g}_1). \\
+\mathbf{w}_1-\mathbf{w}_0 &= -\alpha\,\frac{\mathbf{g}_1}{|\mathbf{g}_1|+\varepsilon}\approx-\alpha\,\mathrm{sign}(\mathbf{g}_1). \\
 &\quad\small \sqrt{\mathbf{g}_1^2}=|\mathbf{g}_1|
 \end{aligned}
 $$
@@ -553,7 +553,7 @@ print("first Adam step in PyTorch:", (w_.detach() - torch.tensor([1.0, -2.0, 3.0
 </div>
 ```
 
-The same experiment in code, on a bowl with condition number 25 ($J=\frac12(\theta_1^2+25\theta_2^2)$), with the update rules written out by hand:
+The same experiment in code, on a bowl with condition number 25 ($J=\frac12(w_1^2+25w_2^2)$), with the update rules written out by hand:
 
 ```{python}
 # Optimisers on an ill-conditioned quadratic J = 0.5*(a*t1^2 + b*t2^2)
@@ -580,11 +580,11 @@ plt.contour(T1, T2, 0.5 * (a_ * T1 ** 2 + b_ * T2 ** 2), levels=np.logspace(-2, 
 for fn, name in [(gd, "gradient descent"), (momentum, "momentum β=0.6"), (rmsprop, "RMSProp"), (adam, "Adam")]:
     p = run(fn); plt.plot(p[:, 0], p[:, 1], ".-", ms=4, label=name)
     print(f"{name:17s}: loss after 60 steps {0.5 * (a_ * p[-1, 0]**2 + b_ * p[-1, 1]**2):.2e}")
-plt.plot(0, 0, "k*", ms=12); plt.legend(); plt.xlabel(r"$\theta_1$"); plt.ylabel(r"$\theta_2$")
+plt.plot(0, 0, "k*", ms=12); plt.legend(); plt.xlabel(r"$w_1$"); plt.ylabel(r"$w_2$")
 plt.title("60 steps on an elongated bowl (condition number 25)"); plt.tight_layout(); plt.show()
 ```
 
-Gradient descent ($\alpha=0.075$: factors $0.925$ along $\theta_1$ and $1-25\cdot0.075=-0.875$ along $\theta_2$) zig-zags across the narrow direction and crawls along the long one. Momentum damps the zig-zag and reaches the minimum (on a small quadratic like this one it wins clearly). Too much momentum (e.g. $\beta=0.9$ here) overshoots and spirals, so $\alpha$ and $\beta$ are tuned together. RMSProp and Adam rescale both directions to a similar step size, so they head diagonally towards the minimum without zig-zagging: RMSProp walks straight in. Adam's momentum carries it past the minimum (to $\theta_1\approx0.8$) and after 60 steps it is still coming back, with the largest final loss of the four. Its steps have size about $\alpha$ whatever the gradient, so with a large constant $\alpha$ it needs a decaying schedule (section 5) to settle.
+Gradient descent ($\alpha=0.075$: factors $0.925$ along $w_1$ and $1-25\cdot0.075=-0.875$ along $w_2$) zig-zags across the narrow direction and crawls along the long one. Momentum damps the zig-zag and reaches the minimum (on a small quadratic like this one it wins clearly). Too much momentum (e.g. $\beta=0.9$ here) overshoots and spirals, so $\alpha$ and $\beta$ are tuned together. RMSProp and Adam rescale both directions to a similar step size, so they head diagonally towards the minimum without zig-zagging: RMSProp walks straight in. Adam's momentum carries it past the minimum (to $w_1\approx0.8$) and after 60 steps it is still coming back, with the largest final loss of the four. Its steps have size about $\alpha$ whatever the gradient, so with a large constant $\alpha$ it needs a decaying schedule (section 5) to settle.
 
 ### 4.6 Which optimiser, which learning rate?
 
@@ -882,12 +882,12 @@ Apply random, **label-preserving** transformations to the training inputs, a new
 **Noise injection is ridge regression in disguise.** For a linear model, train on inputs corrupted by independent noise $\boldsymbol{\epsilon}\sim\mathcal{N}(\mathbf{0},\sigma^2\mathbf{I})$ and average the squared error over the noise:
 $$
 \begin{aligned}
-\mathbb{E}_{\boldsymbol{\epsilon}}\big[(y-\boldsymbol{\theta}^\top(\mathbf{x}+\boldsymbol{\epsilon}))^2\big]
-&= \mathbb{E}\big[(r-\boldsymbol{\theta}^\top\boldsymbol{\epsilon})^2\big] \\
-&\quad\small r:=y-\boldsymbol{\theta}^\top\mathbf{x}\\
-&= r^2-2r\,\boldsymbol{\theta}^\top\mathbb{E}[\boldsymbol{\epsilon}]+\boldsymbol{\theta}^\top\mathbb{E}[\boldsymbol{\epsilon}\boldsymbol{\epsilon}^\top]\boldsymbol{\theta} \\
+\mathbb{E}_{\boldsymbol{\epsilon}}\big[(y-\mathbf{w}^\top(\mathbf{x}+\boldsymbol{\epsilon}))^2\big]
+&= \mathbb{E}\big[(r-\mathbf{w}^\top\boldsymbol{\epsilon})^2\big] \\
+&\quad\small r:=y-\mathbf{w}^\top\mathbf{x}\\
+&= r^2-2r\,\mathbf{w}^\top\mathbb{E}[\boldsymbol{\epsilon}]+\mathbf{w}^\top\mathbb{E}[\boldsymbol{\epsilon}\boldsymbol{\epsilon}^\top]\mathbf{w} \\
 &\quad\small \text{expand the square}\\
-&= r^2+\sigma^2\lVert\boldsymbol{\theta}\rVert^2 . \\
+&= r^2+\sigma^2\lVert\mathbf{w}\rVert^2 . \\
 &\quad\small \mathbb{E}[\boldsymbol{\epsilon}]=\mathbf{0},\ \mathbb{E}[\boldsymbol{\epsilon}\boldsymbol{\epsilon}^\top]=\sigma^2\mathbf{I}
 \end{aligned}
 $$
@@ -897,29 +897,29 @@ The noisy-input loss $\frac1{2m}\sum_i\mathbb{E}[\cdot]$ is the ridge loss with 
 Xn = rng.normal(size=(100, 5)); yn = Xn @ np.array([1.0, -2.0, 0.5, 0.0, 3.0]) + rng.normal(size=100)
 sig_n, copies = 0.5, 2000
 Xbig = np.repeat(Xn, copies, axis=0) + sig_n * rng.normal(size=(100 * copies, 5)); ybig = np.repeat(yn, copies)
-theta_noise = np.linalg.lstsq(Xbig, ybig, rcond=None)[0]                     # least squares on noisy copies
-theta_ridge = np.linalg.solve(Xn.T @ Xn / 100 + sig_n**2 * np.eye(5), Xn.T @ yn / 100)   # ridge, λ = σ²
-print("noisy-input fit:", theta_noise.round(3)); print("ridge, λ = σ²  :", theta_ridge.round(3))
+w_noise = np.linalg.lstsq(Xbig, ybig, rcond=None)[0]                     # least squares on noisy copies
+w_ridge = np.linalg.solve(Xn.T @ Xn / 100 + sig_n**2 * np.eye(5), Xn.T @ yn / 100)   # ridge, λ = σ²
+print("noisy-input fit:", w_noise.round(3)); print("ridge, λ = σ²  :", w_ridge.round(3))
 ```
 
 ### 8.4 Early stopping, and why it is a regulariser
 
 Monitor the validation loss, keep the best checkpoint, and stop after `patience` epochs without improvement (the `train` function of section 6.2 does this). It costs nothing and is almost always on.
 
-**Why training time acts like L2.** Near a minimum $\boldsymbol{\theta}^*$ of the training loss, approximate $J$ by a quadratic, $J(\boldsymbol{\theta})\approx J(\boldsymbol{\theta}^*)+\frac12(\boldsymbol{\theta}-\boldsymbol{\theta}^*)^\top\mathbf{H}(\boldsymbol{\theta}-\boldsymbol{\theta}^*)$, with Hessian $\mathbf{H}=\mathbf{Q}\,\mathrm{diag}(h_1,\dots,h_p)\,\mathbf{Q}^\top$ (orthonormal eigenvectors $\mathbf{Q}$, eigenvalues $h_j>0$), so $\nabla J=\mathbf{H}(\boldsymbol{\theta}-\boldsymbol{\theta}^*)$. Start gradient descent at $\boldsymbol{\theta}_0=\mathbf{0}$ (small initial weights):
+**Why training time acts like L2.** Near a minimum $\mathbf{w}^*$ of the training loss, approximate $J$ by a quadratic, $J(\mathbf{w})\approx J(\mathbf{w}^*)+\frac12(\mathbf{w}-\mathbf{w}^*)^\top\mathbf{H}(\mathbf{w}-\mathbf{w}^*)$, with Hessian $\mathbf{H}=\mathbf{Q}\,\mathrm{diag}(h_1,\dots,h_p)\,\mathbf{Q}^\top$ (orthonormal eigenvectors $\mathbf{Q}$, eigenvalues $h_j>0$), so $\nabla J=\mathbf{H}(\mathbf{w}-\mathbf{w}^*)$. Start gradient descent at $\mathbf{w}_0=\mathbf{0}$ (small initial weights):
 $$
 \begin{aligned}
-\boldsymbol{\theta}_t-\boldsymbol{\theta}^* &= \boldsymbol{\theta}_{t-1}-\alpha\mathbf{H}(\boldsymbol{\theta}_{t-1}-\boldsymbol{\theta}^*)-\boldsymbol{\theta}^*=(\mathbf{I}-\alpha\mathbf{H})(\boldsymbol{\theta}_{t-1}-\boldsymbol{\theta}^*) \\
+\mathbf{w}_t-\mathbf{w}^* &= \mathbf{w}_{t-1}-\alpha\mathbf{H}(\mathbf{w}_{t-1}-\mathbf{w}^*)-\mathbf{w}^*=(\mathbf{I}-\alpha\mathbf{H})(\mathbf{w}_{t-1}-\mathbf{w}^*) \\
 &\quad\small \text{one GD step}\\
-&= (\mathbf{I}-\alpha\mathbf{H})^t(\boldsymbol{\theta}_0-\boldsymbol{\theta}^*)=-(\mathbf{I}-\alpha\mathbf{H})^t\boldsymbol{\theta}^* \\
-&\quad\small \text{repeat } t \text{ times; } \boldsymbol{\theta}_0=\mathbf{0}\\
-\tilde\theta_{t,j} &= \big[1-(1-\alpha h_j)^t\big]\,\tilde\theta^*_j \\
-&\quad\small \text{in eigen-coordinates } \tilde{\boldsymbol{\theta}}=\mathbf{Q}^\top\boldsymbol{\theta}
+&= (\mathbf{I}-\alpha\mathbf{H})^t(\mathbf{w}_0-\mathbf{w}^*)=-(\mathbf{I}-\alpha\mathbf{H})^t\mathbf{w}^* \\
+&\quad\small \text{repeat } t \text{ times; } \mathbf{w}_0=\mathbf{0}\\
+\tilde w_{t,j} &= \big[1-(1-\alpha h_j)^t\big]\,\tilde w^*_j \\
+&\quad\small \text{in eigen-coordinates } \tilde{\mathbf{w}}=\mathbf{Q}^\top\mathbf{w}
 \end{aligned}
 $$
-Ridge instead minimises $J+\frac\lambda2\lVert\boldsymbol{\theta}\rVert^2$: setting the gradient to zero, $\mathbf{H}(\boldsymbol{\theta}-\boldsymbol{\theta}^*)+\lambda\boldsymbol{\theta}=\mathbf{0}$, so $(\mathbf{H}+\lambda\mathbf{I})\boldsymbol{\theta}=\mathbf{H}\boldsymbol{\theta}^*$ and, in the same coordinates,
+Ridge instead minimises $J+\frac\lambda2\lVert\mathbf{w}\rVert^2$: setting the gradient to zero, $\mathbf{H}(\mathbf{w}-\mathbf{w}^*)+\lambda\mathbf{w}=\mathbf{0}$, so $(\mathbf{H}+\lambda\mathbf{I})\mathbf{w}=\mathbf{H}\mathbf{w}^*$ and, in the same coordinates,
 $$
-\tilde\theta_{\text{ridge},j}=\frac{h_j}{h_j+\lambda}\,\tilde\theta^*_j .
+\tilde w_{\text{ridge},j}=\frac{h_j}{h_j+\lambda}\,\tilde w^*_j .
 $$
 Both shrink every eigen-direction of the solution by a factor between 0 and 1: directions of high curvature (well determined by the data) are kept, flat directions are shrunk. With $(1-\alpha h_j)^t\approx e^{-\alpha h_jt}$ for small $\alpha h_j$, write $u=\alpha t\,h_j$ for early stopping and $u=h_j/\lambda$ for ridge: the two factors are $1-e^{-u}$ and $u/(1+u)$, which are both $\approx u$ for $u\ll1$ and both $\to1$ for $u\gg1$. So
 $$
@@ -943,8 +943,8 @@ path_gd = np.array(path_gd)
 path_ridge = np.array([np.linalg.solve(He + np.eye(n_e) / (alpha_e * t_), be) for t_ in ts_e])
 
 fig, axes = plt.subplots(1, 3, figsize=(14, 3.6))
-axes[0].plot(ts_e, path_gd); axes[0].set_xscale("log"); axes[0].set_xlabel("GD step t"); axes[0].set_title("early stopping: θ_t")
-axes[1].plot(ts_e, path_ridge); axes[1].set_xscale("log"); axes[1].set_xlabel("1/(αλ)"); axes[1].set_title("ridge: θ(λ = 1/(αt))")
+axes[0].plot(ts_e, path_gd); axes[0].set_xscale("log"); axes[0].set_xlabel("GD step t"); axes[0].set_title("early stopping: w_t")
+axes[1].plot(ts_e, path_ridge); axes[1].set_xscale("log"); axes[1].set_xlabel("1/(αλ)"); axes[1].set_title("ridge: w(λ = 1/(αt))")
 u = np.logspace(-2, 2, 200)
 axes[2].plot(u, 1 - np.exp(-u), label="early stopping: 1 − e^(−u)"); axes[2].plot(u, u / (1 + u), label="ridge: u/(1+u)")
 axes[2].set_xscale("log"); axes[2].set_xlabel("u"); axes[2].set_title("shrinkage factor per eigen-direction"); axes[2].legend(fontsize=8)
@@ -953,7 +953,7 @@ plt.tight_layout(); plt.show()
 print(f"Hessian eigenvalues: {h_eig.round(3)}; alpha = {alpha_e:.3f}")
 for k in [15, 30, 45]:
     d = np.linalg.norm(path_gd[k] - path_ridge[k]) / np.linalg.norm(path_ridge[k])
-    print(f"t = {ts_e[k]:5d} (λ = {1/(alpha_e*ts_e[k]):.4f}): ‖θ_GD − θ_ridge‖ / ‖θ_ridge‖ = {d:.2f}")
+    print(f"t = {ts_e[k]:5d} (λ = {1/(alpha_e*ts_e[k]):.4f}): ‖w_GD − w_ridge‖ / ‖w_ridge‖ = {d:.2f}")
 ```
 
 The two sets of paths have the same shape: coefficients enter in the same order and grow as the regularisation weakens. They do not coincide exactly (the two shrinkage curves differ by up to ~0.2 in the middle), which is why the result is "early stopping behaves like L2", not "is L2".

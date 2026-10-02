@@ -36,12 +36,12 @@ rng = np.random.default_rng(0)
 | $\hat y$, $\hat{\mathbf{Y}}$ | the network's prediction for one example, for all examples |
 | $L$ | number of layers (hidden + output); $n_l$ = number of units in layer $l$, $n_0 = n$ |
 | $\mathbf{W}^{[l]}\in\mathbb{R}^{n_{l-1}\times n_l}$, $\mathbf{b}^{[l]}\in\mathbb{R}^{1\times n_l}$ | weights and bias of layer $l$ |
-| $\boldsymbol{\theta} = \{\mathbf{W}^{[l]}, \mathbf{b}^{[l]}\}_{l=1}^L$ | **all** parameters of the network; $P$ = how many numbers that is |
+| $\mathbf{w} = \{\mathbf{W}^{[l]}, \mathbf{b}^{[l]}\}_{l=1}^L$ | **all** parameters of the network (weights and biases; called $\boldsymbol{\theta}$ in the ML notes); $P$ = how many numbers that is. In formulas such as $w\leftarrow w-\alpha\,\partial J/\partial w$, $w$ stands for any one of them |
 | $\mathbf{Z}^{[l]}, \mathbf{A}^{[l]}$ | pre-activation and activation of layer $l$ (one row per example); $\mathbf{A}^{[0]} = \mathbf{X}$ |
 | $g^{[l]}$, $g'$ | activation function of layer $l$ (applied element-wise) and its derivative |
 | $\sigma(z) = 1/(1+e^{-z})$ | the sigmoid (logistic) function |
 | $K$ | number of classes in a classification problem |
-| $J(\boldsymbol{\theta})$ | loss (averaged over the examples), $\alpha$ learning rate |
+| $J(\mathbf{w})$ | loss (averaged over the examples), $\alpha$ learning rate |
 
 Unlike the ML notes, the bias is kept as a separate vector $\mathbf{b}$ instead of a column of ones in $\mathbf{X}$. This is the convention of every deep learning library. For one example we write $\mathbf{x}^\top\mathbf{w}$ with column vectors; inside layer formulas an example is a **row** $\mathbf{x}\in\mathbb{R}^{1\times n}$, so that $\mathbf{x}\mathbf{W}^{[1]}$ is $(1\times n)(n\times n_1)$, exactly like one row of $\mathbf{X}\mathbf{W}^{[1]}$.
 
@@ -481,7 +481,7 @@ $$
 
 Example: a 784 → 128 → 10 network (the Fashion-MNIST lab) has $785\cdot128 + 129\cdot10 = 100{,}480 + 1{,}290 = 101{,}770$ parameters.
 
-The network is just a composed function $h_{\boldsymbol{\theta}}(\mathbf{x}) = g^{[L]}\big(\cdots g^{[1]}(\mathbf{x}\mathbf{W}^{[1]} + \mathbf{b}^{[1]})\cdots\big)$.
+The network is just a composed function $h_{\mathbf{w}}(\mathbf{x}) = g^{[L]}\big(\cdots g^{[1]}(\mathbf{x}\mathbf{W}^{[1]} + \mathbf{b}^{[1]})\cdots\big)$.
 
 ```{=html}
 <div class="widget"><svg class="fig" data-fig="shapes" aria-label="Block diagram of X times W plus b equals Z with the matrix shapes"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#16">slide 16</a> of the Neural Networks deck.</p></div>
@@ -519,7 +519,7 @@ print("lin(x) equals x @ weight.T + bias:", torch.allclose(lin(xb), xb @ lin.wei
 
 ## 14. Activation functions and their derivatives
 
-Activation layers apply a **non-linearity**, element by element. They must be fast to compute and have fast-to-compute derivatives, because gradient descent needs $g'$ at every unit ([NN note 01](01_backpropagation.html)).
+Activation layers apply a **non-linearity**, element by element. They must be fast to compute and have fast-to-compute derivatives, because gradient descent needs $g'$ at every unit ([NN note 01](01_backpropagation.html)). Here $g'(z)=\partial a/\partial z$ is the derivative of the output $a=g(z)$ with respect to its **input** $z$. For the sigmoid and tanh it can be written with the stored output ($\sigma'=a(1-a)$, $\tanh'=1-a^2$), so the forward pass already gives it.
 
 | Name | $g(z)$ | $g'(z)$ | Range | Use it for |
 |---|---|---|---|---|
@@ -705,7 +705,7 @@ Two hidden units are enough for the four XOR corner points (section 8), but not 
 
 The hidden layers are generic. The **output layer and loss are chosen by the task**, with exactly the reasoning of the GLMs of the ML notes: pick a distribution for $y$ given the network's output, and minimise the negative log-likelihood.
 
-| Problem type | Example | Output layer $g^{[L]}$ | Distribution of $y\mid\mathbf{x}$ | Loss $J(\boldsymbol{\theta})$ | PyTorch |
+| Problem type | Example | Output layer $g^{[L]}$ | Distribution of $y\mid\mathbf{x}$ | Loss $J(\mathbf{w})$ | PyTorch |
 |---|---|---|---|---|---|
 | Binary classification | fraud / not fraud | sigmoid, 1 unit | Bernoulli | binary cross-entropy | `BCEWithLogitsLoss` |
 | Multiclass, single-label | which car part, digit 0–9 | softmax, $K$ units | categorical | categorical cross-entropy | `CrossEntropyLoss` |
@@ -905,10 +905,10 @@ plt.tight_layout(); plt.show()
 
 Linear, logistic and softmax regression have convex losses (ML notes), so gradient descent with a small enough step reaches the global minimum. Neural networks do not.
 
-**Proof (hidden-unit symmetry).** Swap hidden units $j$ and $k$ of a layer: swap columns $j,k$ of $\mathbf{W}^{[l]}$ and entries $j,k$ of $\mathbf{b}^{[l]}$, and rows $j,k$ of $\mathbf{W}^{[l+1]}$. The network computes exactly the same function, so if $\boldsymbol{\theta}^*$ is a minimiser, so is the swapped $\boldsymbol{\theta}'$. If $J$ were convex, the midpoint would satisfy
+**Proof (hidden-unit symmetry).** Swap hidden units $j$ and $k$ of a layer: swap columns $j,k$ of $\mathbf{W}^{[l]}$ and entries $j,k$ of $\mathbf{b}^{[l]}$, and rows $j,k$ of $\mathbf{W}^{[l+1]}$. The network computes exactly the same function, so if $\mathbf{w}^*$ is a minimiser, so is the swapped $\mathbf{w}'$. If $J$ were convex, the midpoint would satisfy
 
 $$
-J\Big(\tfrac12\boldsymbol{\theta}^* + \tfrac12\boldsymbol{\theta}'\Big) \le \tfrac12 J(\boldsymbol{\theta}^*) + \tfrac12 J(\boldsymbol{\theta}') = J(\boldsymbol{\theta}^*),
+J\Big(\tfrac12\mathbf{w}^* + \tfrac12\mathbf{w}'\Big) \le \tfrac12 J(\mathbf{w}^*) + \tfrac12 J(\mathbf{w}') = J(\mathbf{w}^*),
 $$
 
 so the midpoint would also be a minimiser. But at the midpoint units $j$ and $k$ have **identical** weights (each is the average of the two), so they compute the same feature, and the network has lost one unit of capacity. Generically this raises the loss. So $J$ is not convex. $\blacksquare$
@@ -920,7 +920,7 @@ Consequences:
 - In practice, for large networks most local minima found by stochastic gradient descent are about as good as each other; the harder problems are saddle points, plateaus and bad conditioning.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="nonconvex" aria-label="A loss curve with a local and a global minimum"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#46">slide 46</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="nonconvex" data-w aria-label="A loss curve with a local and a global minimum"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#46">slide 46</a> of the Neural Networks deck.</p></div>
 ```
 
 ```{python}
@@ -929,19 +929,19 @@ Xt, yt = X[:400], y[:400]
 net = MLPClassifier(hidden_layer_sizes=(4,), activation="relu", max_iter=5000, random_state=1).fit(Xt, yt)
 W1, W2 = net.coefs_; b1, b2 = net.intercepts_
 perm = [1, 0, 2, 3]
-theta_a = [W1, b1, W2, b2]
-theta_b = [W1[:, perm], b1[perm], W2[perm, :], b2]
+w_a = [W1, b1, W2, b2]
+w_b = [W1[:, perm], b1[perm], W2[perm, :], b2]
 
-def bce_at(theta):
-    W1_, b1_, W2_, b2_ = theta
+def bce_at(params):
+    W1_, b1_, W2_, b2_ = params
     p = sigmoid(relu(Xt @ W1_ + b1_) @ W2_ + b2_).ravel()
     return -np.mean(yt * np.log(p + 1e-12) + (1 - yt) * np.log(1 - p + 1e-12))
 
 ts = np.linspace(-0.2, 1.2, 141)
-loss = [bce_at([(1 - t) * a + t * b for a, b in zip(theta_a, theta_b)]) for t in ts]
+loss = [bce_at([(1 - t) * a + t * b for a, b in zip(w_a, w_b)]) for t in ts]
 plt.figure(figsize=(6.5, 3.6)); plt.plot(ts, loss, lw=2)
-plt.scatter([0, 1], [bce_at(theta_a), bce_at(theta_b)], color="C3", zorder=3, label="two equivalent minima")
-plt.xlabel(r"$t$ in $(1-t)\,\theta^* + t\,\theta'$"); plt.ylabel(r"$J$"); plt.legend()
+plt.scatter([0, 1], [bce_at(w_a), bce_at(w_b)], color="C3", zorder=3, label="two equivalent minima")
+plt.xlabel(r"$t$ in $(1-t)\,\mathbf{w}^* + t\,\mathbf{w}'$"); plt.ylabel(r"$J$"); plt.legend()
 plt.title("The chord between two minima lies below the loss: not convex"); plt.tight_layout(); plt.show()
 ```
 

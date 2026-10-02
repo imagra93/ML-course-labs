@@ -504,7 +504,7 @@ $$
 So it is enough to learn one thing: the distribution of the **next token given the previous ones**. That is a $|V|$-class classification problem with softmax and cross-entropy ([ML note 04](../machine_learning/04_softmax_regression.html)). The network outputs logits $\mathbf{z}_t\in\mathbb{R}^{|V|}$, $P(x_{t+1}\mid x_{\le t}) = \mathrm{softmax}(\mathbf{z}_t)$, and training minimises the **cross-entropy** of the actual next token, i.e. maximum likelihood on the text:
 
 $$
-J(\boldsymbol{\theta}) = -\frac{1}{T}\sum_{t=1}^{T}\log P_{\boldsymbol{\theta}}(x_t\mid x_{<t}).
+J(\mathbf{w}) = -\frac{1}{T}\sum_{t=1}^{T}\log P_{\mathbf{w}}(x_t\mid x_{<t}).
 $$
 
 This is **self-supervised**: the targets are the inputs shifted by one, so any amount of raw text is training data. One sequence of 6 tokens gives 5 classification problems, all trained in a single forward pass thanks to the causal mask.
