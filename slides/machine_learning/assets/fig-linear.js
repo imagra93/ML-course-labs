@@ -40,4 +40,45 @@ FIG['reg-errors']=root=>{const Y=[200,150,300,250,100],P0=[210,140,280,260,110],
     setR(root,'mae',fmt(e.reduce((s,v)=>s+Math.abs(v),0)/n,1));setR(root,'rmse',fmt(Math.sqrt(sse/n),1));setR(root,'r2',fmt(1-sse/sst,3));
     setR(root,'mape',fmt(100*e.reduce((s,v,i)=>s+Math.abs(v)/Y[i],0)/n,1)+' %')}
   btns.forEach(b=>b.addEventListener('click',()=>{o=+b.dataset.o;btns.forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));draw()}));draw()};
+/* One gradient-descent step on the bowl J = ½(θ−2)² (curvature a = 1): the distance to the minimum is multiplied by ρ = 1 − α */
+FIG['step-bowl']=root=>{const J=t=>0.5*(t-2)*(t-2),ts=2,t0=5;
+  const P=Plot(svgOf(root),{w:560,h:380,x:[-2.8,6.4],y:[-2.3,9.4],m:{l:14,r:14,t:10,b:10}});
+  P.axes({noaxes:true,grid:false});P.fn(J,'ln sb',-2.8,6.4,200,P.bgc);P.line(-2.8,0,6.4,0,'ln thin sk',P.bg);
+  P.line(ts,-0.2,ts,9.4,'ln thin sm dash',P.bg);P.text(ts,9.4,'θ*','lab','middle',0,12,P.bg);P.text(6.4,0,'θ','', 'end',0,-6,P.bg);
+  const inp=q(root,'a');
+  const seg=(y,a,b,cls,txt)=>{P.line(a,y,b,y,'ln '+cls);P.line(a,y-0.22,a,y+0.22,'ln thin '+cls);P.line(b,y-0.22,b,y+0.22,'ln thin '+cls);P.text((a+b)/2,y,txt,'lab','middle',0,-6)};
+  function draw(){const al=+inp.value;setV(root,'a',fmt(al));P.clear();
+    const t1=t0-al*(t0-ts),rho=1-al,e0=t0-ts,e1=t1-ts;
+    P.line(t0,J(t0),t0,-1.55,'ln thin sm dot2');P.line(t1,J(t1),t1,-1.55,'ln thin sm dot2');
+    arrow(P,t0,J(t0),t1,J(t1),'ln thin sr','fr');P.dot(t0,J(t0),6,'fy');P.dot(t1,J(t1),6,'fr');
+    seg(-0.75,ts,t0,'sb','e = '+fmt(e0));seg(-1.55,ts,t1,'so','ρ·e = '+fmt(e1));
+    setR(root,'rho',fmt(rho));setR(root,'e1',fmt(e1));
+    setR(root,'b',Math.abs(rho)<1e-9?'Lands on the minimum':Math.abs(rho)<1?(rho>0?'Closer, same side':'Closer, other side'):'Farther away: diverges')}
+  inp.addEventListener('input',draw);draw()};
+
+/* The distance to the minimum after k steps, e_k = ρ^k e_0, for the three learning rates of the previous slide (e_0 = 3) */
+FIG['err-steps']=root=>{const P=Plot(svgOf(root),{w:560,h:300,x:[0,10.4],y:[-7.5,7.5],m:{l:46,r:14,t:12,b:38}});
+  P.axes({xt:[0,2,4,6,8,10],yt:[-6,-3,0,3,6],xl:'step k',yl:'e after k steps'});P.line(0,0,10.4,0,'ln thin sk',P.bg);
+  [[0.88,'sb','fb'],[0.3,'sg','fgr'],[-1.08,'sr','fr']].forEach(([rho,s,f])=>{const pts=[];for(let k=0;k<=10;k++)pts.push([k,3*Math.pow(rho,k)]);
+    P.path(pts,'ln thin '+s);pts.forEach(p=>P.dot(p[0],p[1],4,f))})};
+
+/* A feature is just a column: y = θ0 + θ1·φ(x) with φ(x) = x, x² or x³. Left: the model as a function of x. Right: the same points against φ(x). */
+const FP_X=[0.4,0.9,1.5,2.1,2.7,3.3,3.9,4.5],FP_N=[0.08,-0.10,0.10,-0.07,0.09,-0.11,0.06,-0.04];
+const FP_Y=FP_X.map((x,i)=>0.3+0.12*x*x+FP_N[i]);
+function fitLine(u,y){const m=u.length,mu=u.reduce((a,b)=>a+b,0)/m,my=y.reduce((a,b)=>a+b,0)/m;
+  let sxx=0,sxy=0;u.forEach((v,i)=>{sxx+=(v-mu)**2;sxy+=(v-mu)*(y[i]-my)});const t1=sxy/sxx,t0=my-t1*mu;
+  return {t0,t1,J:u.reduce((s,v,i)=>s+(t0+t1*v-y[i])**2,0)/(2*m)}}
+FIG['feat-pow']=root=>{const svg=svgOf(root);const sup={1:'x',2:'x²',3:'x³'};
+  const btns=root.querySelectorAll('.seg button'),tab=(root.closest('.slide')||root).querySelector('[data-tab]');let p=2;
+  function draw(){const phi=FP_X.map(x=>Math.pow(x,p)),f=fitLine(phi,FP_Y),top=Math.pow(5,p);initSvg(svg,600,290);
+    const L=Plot(svg,{at:[0,0],w:300,h:290,x:[0,5],y:[0,3.6],m:{l:40,r:10,t:30,b:40}}),R=Plot(svg,{at:[300,0],w:300,h:290,x:[0,top],y:[0,3.6],m:{l:40,r:10,t:30,b:40}});
+    L.axes({xt:[0,1,2,3,4,5],yt:[0,1,2,3],xl:'x',yl:'y',title:'As a function of x'});
+    R.axes({xt:[0,top/5,2*top/5,3*top/5,4*top/5,top],yt:[0,1,2,3],xl:'φ(x) = '+sup[p],yl:'y',title:'Against the new feature '+sup[p]});
+    L.fn(x=>f.t0+f.t1*Math.pow(x,p),'ln sr',0,5,200);R.line(0,f.t0,top,f.t0+f.t1*top,'ln sr');
+    FP_X.forEach((x,i)=>{L.dot(x,FP_Y[i],4.5,'pt fb');R.dot(phi[i],FP_Y[i],4.5,'pt fb')});
+    setR(root,'t0',fmt(f.t0));setR(root,'t1',fmt(f.t1));setR(root,'j',fmt(f.J,3));
+    if(tab){const rows=FP_X.slice(0,4).map((x,i)=>'<tr><td>1</td><td>'+fmt(phi[i],2)+'</td><td>'+fmt(FP_Y[i])+'</td></tr>').join('');
+      tab.innerHTML='<table class="t" data-quarto-disable-processing="true" style="font-size:16px"><thead><tr><th>x₀</th><th>x₁ = '+sup[p]+'</th><th>y</th></tr></thead><tbody>'+rows+'<tr><td colspan="3" style="text-align:center">⋮</td></tr></tbody></table>'}}
+  btns.forEach(b=>b.addEventListener('click',()=>{p=+b.dataset.p;btns.forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));draw()}));draw()};
+
 })();

@@ -109,4 +109,24 @@ FIG['homo']=root=>{const svg=initSvg(svgOf(root),520,190);const r=rng(9);[['Homo
   const P=Plot(svg,{at:[k*265,0],w:255,h:190,x:[0,1],y:[-1,3.2],m:{l:10,r:6,t:24,b:10}});P.axes({grid:false});T(P.root,128,16,lab,'lab');P.fn(x=>0.2+2.4*x,'ln sk');for(let i=0;i<40;i++){const x=r();P.dot(x,0.2+2.4*x+sd(x)*randn(r),2.6,'fk')}})};
 FIG['steep']=root=>{const P=Plot(svgOf(root),{w:500,h:300,x:[-4,4],y:[-0.05,1.05],m:{l:40,r:14,t:14,b:36}});P.axes({xt:[-4,-2,0,2,4],yt:[0,0.5,1],xl:'z = θᵀx',yl:'g(c·z)'});
   [[1,'ln sm'],[3,'ln sb'],[10,'ln sr']].forEach(([c,cls])=>P.fn(z=>sig(c*z),cls));P.text(-2.6,sig(-2.6),'c = 1','', 'start',4,-10);P.text(-0.9,sig(-2.7),'c = 3','', 'end',-4,0);P.text(0.35,0.98,'c = 10','', 'start',6,6)};
+/* The optimum balances the errors: with the slope at its optimum, slide the intercept and watch Σh against Σy */
+FIG['prob-balance']=root=>{const r=rng(31);const D=[];for(let i=0;i<26;i++){const x=0.4+9.2*r();D.push([x,r()<sig(0.55*(x-5))?1:0])}D.sort((a,b)=>a[0]-b[0]);
+  const m=D.length,w=fitLogit(D.map(d=>[1,d[0]]),D.map(d=>d[1]),1e-9,60),b1=w[1],ybar=D.reduce((a,d)=>a+d[1],0)/m;
+  const svg=initSvg(svgOf(root),620,320);
+  const P=Plot(svg,{at:[0,0],w:420,h:320,x:[0,10],y:[-0.1,1.1],m:{l:44,r:8,t:12,b:36}});P.axes({xt:[0,2,4,6,8,10],yt:[0,0.5,1],xl:'x',yl:'P(y = 1 | x)'});
+  D.forEach(([x,y])=>P.dot(x,y,4.5,'pt '+(y?'fb':'fo'),P.bg));
+  const B=Plot(svg,{at:[430,0],w:190,h:320,x:[0,1],y:[0,2],m:{l:8,r:10,t:12,b:36}});B.axes({grid:false,xt:[0,0.5,1],xl:'probability'});
+  B.line(ybar,0.2,ybar,1.95,'ln thin sk dash',B.bg);
+  B.text(0.02,1.82,'average predicted','', 'start',0,0,B.bg);B.text(0.02,0.82,'observed positive rate','', 'start',0,0,B.bg);
+  const inp=q(root,'t'),f3=v=>fmt(Math.abs(v)<5e-4?0:v,3);
+  function draw(){const t0=+inp.value;setV(root,'t',fmt(t0));P.clear();B.clear();
+    const H=D.map(d=>sig(t0+b1*d[0]));let up=0,down=0;
+    D.forEach(([x,y],i)=>{const h=H[i];if(y){down+=1-h;P.line(x,1,x,h,'ln thin sb')}else{up+=h;P.line(x,0,x,h,'ln thin sr')}});
+    P.fn(x=>sig(t0+b1*x),'ln sk');D.forEach(([x],i)=>P.dot(x,H[i],3,D[i][1]?'fb':'fr'));
+    const pbar=H.reduce((a,h)=>a+h,0)/m;
+    B.rect(0,1.15,pbar,1.6,'fr');B.rect(0,0.15,ybar,0.6,'fb');
+    B.text(pbar,1.375,fmt(pbar,3),'lab','start',6,5);B.text(ybar,0.375,fmt(ybar,3),'lab','start',6,5);
+    setR(root,'up',fmt(up,2));setR(root,'down',fmt(down,2));setR(root,'g',f3(pbar-ybar))}
+  inp.addEventListener('input',draw);draw()};
+
 })();

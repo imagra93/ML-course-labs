@@ -262,7 +262,7 @@ Section 12.9 derives the best $\tau$ from the costs of the two errors.
   <div class="ctl"><label for="sd-z">Score z</label><input type="range" id="sd-z" data-k="z" min="-6" max="6" step="0.1" value="1"><span class="v" data-v="z">1.0</span></div>
   <div class="ctl"><label for="sd-t">Threshold</label><input type="range" id="sd-t" data-k="t" min="0.05" max="0.95" step="0.05" value="0.5"><span class="v" data-v="t">0.50</span></div>
   <div class="ro"><div class="m"><span>h(x) = g(z)</span><b data-r="p">–</b></div><div class="m"><span>prediction ŷ</span><b data-r="y">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/machine_learning/03_logistic_regression.html#18">slide 18</a> of the Logistic Regression deck.</p>
+  <p class="from">Same figure as <a href="../../slides/machine_learning/03_logistic_regression.html#19">slide 19</a> of the Logistic Regression deck.</p>
 </div>
 ```
 
@@ -287,7 +287,7 @@ For $\tau = 0.5$ the right-hand side is $\log 1 = 0$: $h_{\boldsymbol{\theta}}(\
   <svg class="fig" aria-label="Two classes in the plane with the logistic regression decision boundary"></svg>
   <div class="ctl"><label for="bd-t">Threshold</label><input type="range" id="bd-t" data-k="t" min="0.02" max="0.98" step="0.01" value="0.5"><span class="v" data-v="t">0.50</span></div>
   <div class="ro"><div class="m"><span>fitted</span><b data-r="th" style="font-size:17px">–</b></div><div class="m"><span>predicted positive</span><b data-r="n">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/machine_learning/03_logistic_regression.html#19">slide 19</a> of the Logistic Regression deck.</p>
+  <p class="from">Same figure as <a href="../../slides/machine_learning/03_logistic_regression.html#20">slide 20</a> of the Logistic Regression deck.</p>
 </div>
 ```
 
@@ -796,7 +796,7 @@ plt.tight_layout(); plt.show()
 Lowering $\tau$ flags more examples: recall goes up (never down), precision usually goes down. By varying the threshold you can improve precision or recall, but not both. So one of the two alone can be gamed: flag everything and recall is 1; flag only the surest case and precision is (usually) 1. Report both, or combine them with $F_1 = \frac{2}{1/\text{Rec} + 1/\text{Prec}}$: widely used and good for comparing, reasonable on imbalanced problems, but a low $F_1$ alone does not say which kind of error the model makes.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="pr" aria-label="Precision-recall curve"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/03_logistic_regression.html#25">slide 25</a> of the Logistic Regression deck: 900 legit and 100 fraudulent claims (the data of the next widget); the dashed line is a random classifier, whose precision is the positive rate, 10 %; the average precision is 0.691.</p></div>
+<div class="widget"><svg class="fig" data-fig="pr" aria-label="Precision-recall curve"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/03_logistic_regression.html#26">slide 26</a> of the Logistic Regression deck: 900 legit and 100 fraudulent claims (the data of the next widget); the dashed line is a random classifier, whose precision is the positive rate, 10 %; the average precision is 0.691.</p></div>
 ```
 
 ```{python}
@@ -830,7 +830,7 @@ print(f"best F1 = {max(f1):.3f} at threshold {taus[int(np.argmax(f1))]:.2f}")
         <svg class="fig" data-k="roc" aria-label="ROC curve with the current threshold marked"></svg>
       </div>
     </div>
-  <p class="from">Same figure as <a href="../../slides/machine_learning/03_logistic_regression.html#26">slide 26</a> of the Logistic Regression deck.</p>
+  <p class="from">Same figure as <a href="../../slides/machine_learning/03_logistic_regression.html#27">slide 27</a> of the Logistic Regression deck.</p>
 </div>
 ```
 
@@ -874,7 +874,7 @@ For $d = 2$: $\Phi(1.414) = 0.921$; at $t = 1$, FPR $= 1-\Phi(1) = 0.16$ and TPR
   <div class="ctl"><label for="rd-t">Threshold</label><input type="range" id="rd-t" data-k="t" min="-3" max="6" step="0.1" value="1"><span class="v" data-v="t">1.0</span></div>
   <div class="ctl"><label for="rd-d">Model quality (separation)</label><input type="range" id="rd-d" data-k="d" min="0" max="4" step="0.1" value="2"><span class="v" data-v="d">2.0</span></div>
   <div class="ro"><div class="m"><span>TPR</span><b data-r="tpr">–</b></div><div class="m"><span>FPR</span><b data-r="fpr">–</b></div><div class="m"><span>AUC</span><b data-r="auc">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/machine_learning/03_logistic_regression.html#27">slide 27</a> of the Logistic Regression deck.</p>
+  <p class="from">Same figure as <a href="../../slides/machine_learning/03_logistic_regression.html#28">slide 28</a> of the Logistic Regression deck.</p>
 </div>
 ```
 
@@ -942,7 +942,7 @@ The double sum is the **Mann–Whitney $U$ statistic** divided by $N_+N_-$, so A
   <svg class="fig" aria-label="Scores of fraud and legit claims on a line; a random pair is highlighted"></svg>
   <div class="ctl"><button type="button" class="bluebox" data-k="one" style="border:0;cursor:pointer;font:700 17px var(--font);padding:6px 16px">Draw a random pair</button><button type="button" data-k="many" style="border:1px solid var(--blue);background:#fff;color:var(--blue);cursor:pointer;font:700 17px var(--font);padding:6px 16px">Draw 200 pairs</button></div>
   <div class="ro"><div class="m"><span>pairs drawn</span><b data-r="n">–</b></div><div class="m"><span>fraud scored higher</span><b data-r="ok">–</b></div><div class="m"><span>AUC (all 98 pairs)</span><b data-r="auc">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/machine_learning/03_logistic_regression.html#28">slide 28</a> of the Logistic Regression deck.</p>
+  <p class="from">Same figure as <a href="../../slides/machine_learning/03_logistic_regression.html#29">slide 29</a> of the Logistic Regression deck.</p>
 </div>
 ```
 
@@ -1057,7 +1057,7 @@ Logistic regression gives probabilities, and often we use the numbers themselves
 - **Calibration**: among all claims with predicted $p\approx 0.3$, about 30 % should be fraud. A **reliability diagram** bins the predictions and plots the observed positive rate per bin against the mean prediction; a calibrated model lies on the diagonal. A curve *flatter* than the diagonal means over-confidence (predictions more extreme than reality; figure); a curve *steeper* than the diagonal means under-confidence (predictions squeezed towards the base rate).
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="calib" aria-label="Reliability diagram: a calibrated model on the diagonal and an over-confident one"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/03_logistic_regression.html#32">slide 32</a> of the Logistic Regression deck: a calibrated model (blue) and an over-confident one (orange).</p></div>
+<div class="widget"><svg class="fig" data-fig="calib" aria-label="Reliability diagram: a calibrated model on the diagonal and an over-confident one"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/03_logistic_regression.html#33">slide 33</a> of the Logistic Regression deck: a calibrated model (blue) and an over-confident one (orange).</p></div>
 ```
 
 Logistic regression fitted by maximum likelihood tends to be well calibrated (section 10 showed that on the training set the predictions average to the positive rate); SVMs, naive Bayes, trees and heavily regularised models often are not. In the example below the over-regularised model has almost the same AUC (the *ranking* barely changes) but its probabilities are squeezed towards the base rate: under-confident. **AUC does not see calibration.**
@@ -1119,7 +1119,7 @@ print(f"coin flip: log-loss = {np.log(2):.4f}, Brier = 0.25;   accuracy at 0.5 =
 With $K$ classes, the simplest reduction to binary problems is **one-vs-rest** (one-vs-all): for each class $k$, relabel the data with 1 for class $k$ and 0 for the rest, and learn a binary classifier $h_k$. To predict, run all $K$ classifiers and pick the class with the highest $h_k(\mathbf{x})$.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="ovr" aria-label="Three classes and three one-versus-rest binary problems"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/03_logistic_regression.html#34">slide 34</a> of the Logistic Regression deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="ovr" aria-label="Three classes and three one-versus-rest binary problems"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/03_logistic_regression.html#35">slide 35</a> of the Logistic Regression deck.</p></div>
 ```
 
 It works with any binary classifier, but the $K$ outputs are fitted separately and do not sum to 1. **Softmax regression** does multiclass in one model with one loss and outputs a proper distribution: [note 04](04_softmax_regression.html), which also compares the two.
@@ -1129,7 +1129,7 @@ It works with any binary classifier, but the $K$ outputs are fitted separately a
 Logistic regression needs **fewer** assumptions than linear regression. There is no additive error term, so there is no normality and no homoscedasticity assumption: the Bernoulli variance $p(1-p)$ is part of the model, and it changes with $\mathbf{x}$ by design. (Constant variance is an assumption of linear regression's standard errors, figure; see [note 01](01_linear_regression.html).) Nor does it assume normally distributed features, or a linear relation between $\mathbf{x}$ and $p$ itself (that relation is S-shaped by construction).
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="homo" aria-label="Constant error variance versus error variance that grows with x"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/03_logistic_regression.html#35">slide 35</a> of the Logistic Regression deck: homoscedasticity is a linear-regression assumption; logistic regression has no such error term.</p></div>
+<div class="widget"><svg class="fig" data-fig="homo" aria-label="Constant error variance versus error variance that grows with x"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/03_logistic_regression.html#36">slide 36</a> of the Logistic Regression deck: homoscedasticity is a linear-regression assumption; logistic regression has no such error term.</p></div>
 ```
 
 What it does assume, and what each assumption protects:
@@ -1675,7 +1675,7 @@ The toolbox of the slides:
 - **Resample only the training set.** Validation and test keep the real class proportions.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="imbalance" aria-label="Class counts before and after undersampling and oversampling"></svg><svg class="fig" data-fig="smote" aria-label="Imbalanced data, Tomek links and SMOTE synthetic points"></svg><p class="from">Same figures as <a href="../../slides/machine_learning/03_logistic_regression.html#31">slide 31</a> of the Logistic Regression deck: undersampling and oversampling a 950 / 50 data set; Tomek links and SMOTE.</p></div>
+<div class="widget"><svg class="fig" data-fig="imbalance" aria-label="Class counts before and after undersampling and oversampling"></svg><svg class="fig" data-fig="smote" aria-label="Imbalanced data, Tomek links and SMOTE synthetic points"></svg><p class="from">Same figures as <a href="../../slides/machine_learning/03_logistic_regression.html#32">slide 32</a> of the Logistic Regression deck: undersampling and oversampling a 950 / 50 data set; Tomek links and SMOTE.</p></div>
 ```
 
 ### 15.1 What a different class rate does to the intercept: the prior-shift correction
