@@ -152,14 +152,60 @@
 
 <section class="slide u">
   <h2>Linear Regression – Gradient Descent</h2>
-  <p>How do we select the correct $\alpha$?</p>
+  <p>How do we select the correct $\alpha$? The same bowl in all three panels; only $\alpha$ changes.</p>
   <svg class="fig" data-fig="alpha3" style="max-height:290px" aria-label="Gradient descent with a too low, a good and a too high learning rate"></svg>
   <div class="cols">
-    <div class="stack" style="gap:4px">
-      <p class="small step">For a bowl $J(\theta)=J^*+\frac a2(\theta-\theta^*)^2$ (with $a=J''$), the slope is $J'(\theta)=a(\theta-\theta^*)$. One step:</p>
-      <div class="eq s step">$$\theta_{\text{new}}-\theta^*=\theta-\theta^*-\alpha\,a(\theta-\theta^*)=(1-\alpha a)(\theta-\theta^*)$$</div>
+    <ul class="small step">
+      <li><b>Too low</b> ($\alpha=0.12$): safe but tiny steps, so it needs many updates.</li>
+      <li><b>Just right</b> ($\alpha=0.7$): a few big steps land next to the minimum.</li>
+      <li><b>Too high</b> ($\alpha=2.08$): every step jumps over the minimum and lands <i>higher</i> than before: it diverges.</li>
+    </ul>
+    <div class="note step"><p class="small"><b>Where do these numbers come from?</b> On a bowl one step can be computed exactly. The next two slides do it and end with a rule for choosing $\alpha$.</p></div>
+  </div>
+</section>
+
+<section class="slide u">
+  <h2>Linear Regression – Gradient Descent: one step on a bowl</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:6px">
+      <p class="small">Near its minimum $\theta^*$ a cost curve looks like a bowl (with one feature it is exactly a bowl, as for our three points). Let $a=J''\gt0$ be its curvature. One step of gradient descent can then be computed exactly:</p>
+      <div class="step"><div class="eq s">$$J(\theta)=J^*+\frac a2(\theta-\theta^*)^2$$</div><p class="why">the bowl: lowest point $J^*$ at $\theta^*$; a larger $a$ means a narrower bowl</p></div>
+      <div class="step"><div class="eq s">$$J'(\theta)=a\,(\theta-\theta^*)$$</div><p class="why">the 2 from differentiating the square cancels the $\frac12$: the slope is proportional to the distance from the minimum</p></div>
+      <div class="step"><div class="eq s">$$\theta_{\text{new}}=\theta-\alpha J'(\theta)=\theta-\alpha a\,(\theta-\theta^*)$$</div><p class="why">the gradient-descent update</p></div>
+      <div class="step"><div class="eq s">$$\theta_{\text{new}}-\theta^*=(\theta-\theta^*)-\alpha a(\theta-\theta^*)=(1-\alpha a)(\theta-\theta^*)$$</div><p class="why">subtract $\theta^*$ from both sides, then take $(\theta-\theta^*)$ as a common factor</p></div>
+      <div class="bluebox step">$$e_{\text{new}}=\rho\,e,\qquad e=\theta-\theta^*,\quad\rho=1-\alpha a$$</div>
+      <p class="small step">One step multiplies the <b>distance to the minimum</b> by $\rho$. Move $\alpha$ on the right (here $a=1$) and watch it.</p>
     </div>
-    <div class="note step"><p class="small">Every step multiplies the distance to the minimum by $(1-\alpha J'')$. It shrinks only if $|1-\alpha J''|\lt1$, i.e. $0\lt\alpha\lt2/J''$. Our three points: $J''=\frac{14}3$, so $\alpha\lt0.43$. With many parameters: $0\lt\alpha\lt2/\lambda_{\max}\big(\tfrac1m\bX^\top\bX\big)$.</p></div>
+    <div class="widget" data-fig="step-bowl" data-auto="a=0.5 :: α = 0.5: ρ = 0.50, the distance to the minimum is halved (3 → 1.5)|a=1 :: α = 1: ρ = 0, one step lands exactly on the minimum|a=1.5 :: α = 1.5: ρ = −0.50, it jumps to the other side but ends closer (|ρ·e| = 1.5)|a=2.2 :: α = 2.2: ρ = −1.20, it jumps to the other side and ends farther away (|ρ·e| = 3.6)">
+      <svg class="fig" style="max-height:330px" aria-label="One gradient descent step on a bowl, with the distance to the minimum before and after"></svg>
+      <div class="ctl"><label for="sb-a">Learning rate α</label><input type="range" id="sb-a" data-k="a" min="0" max="2.4" step="0.05" value="0.5"><span class="v" data-v="a">0.50</span></div>
+      <div class="ro"><div class="m"><span>ρ = 1 − α</span><b data-r="rho">–</b></div><div class="m"><span>new distance ρ·e</span><b data-r="e1">–</b></div><div class="m"><span>behaviour</span><b data-r="b">–</b></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide u">
+  <h2>Linear Regression – Gradient Descent: which α converges?</h2>
+  <div class="cols">
+    <div class="stack" style="gap:8px">
+      <p class="small">Every step multiplies the distance by the <i>same</i> $\rho$, so after $k$ steps</p>
+      <div class="bluebox step">$$e_k=\rho^{\,k}\,e_0,\qquad\rho=1-\alpha a$$</div>
+      <p class="small step">$e_k\to0$ exactly when $|\rho|\lt1$, i.e. $-1\lt1-\alpha a\lt1$, i.e. <b>$0\lt\alpha\lt2/a$</b>. The sign of $\rho$ tells how it arrives (bowl of the previous slide, $a=1$):</p>
+      <table class="t step">
+        <tr><th>$\rho$</th><th>what happens</th><th>example</th></tr>
+        <tr><td>$0\lt\rho\lt1$</td><td>creeps to $\theta^*$ from one side; near 1 is slow</td><td>$\alpha=0.12\to0.88$, $\alpha=0.7\to0.30$</td></tr>
+        <tr><td>$\rho=0$</td><td>lands on $\theta^*$ in one step</td><td>$\alpha=1$</td></tr>
+        <tr><td>$-1\lt\rho\lt0$</td><td>jumps over $\theta^*$, each time closer</td><td>$\alpha=1.5\to-0.50$</td></tr>
+        <tr><td>$\rho\lt-1$</td><td>jumps over $\theta^*$, each time farther: diverges</td><td>$\alpha=2.08\to-1.08$</td></tr>
+      </table>
+    </div>
+    <div class="stack" style="gap:6px">
+      <svg class="fig" data-fig="err-steps" style="max-height:250px" aria-label="Distance to the minimum after each step for three learning rates"></svg>
+      <div class="legend"><span><i style="background:var(--blue)"></i>α = 0.12, ρ = 0.88: slow</span><span><i style="background:var(--green)"></i>α = 0.7, ρ = 0.30: fast</span><span><i style="background:var(--red)"></i>α = 2.08, ρ = −1.08: diverges</span></div>
+      <p class="why">The three runs of the previous slides, starting at $e_0=3$: $e_k=3\rho^k$.</p>
+      <p class="small step"><b>Our three points:</b> $a=J''=\frac{14}3$, so $\rho=1-4.67\,\alpha$. $\alpha=0.1$ gives $\rho=0.53$ (converges); the fastest is $\alpha=1/a=0.21$; the limit is $2/a=0.43$; $\alpha=0.5$ gives $\rho=-1.33$ (diverges).</p>
+      <div class="note step"><p class="small"><b>With many parameters:</b> $0\lt\alpha\lt2/\lambda_{\max}\big(\tfrac1m\bX^\top\bX\big)$, the largest curvature in any direction.</p></div>
+    </div>
   </div>
 </section>
 
@@ -225,10 +271,29 @@
         <div class="eq xs">$$\nabla_{\bth}(\ba^\top\bth)=\nabla_{\bth}(a_0\theta_0+\dots+a_n\theta_n)=\ba$$
         $$\nabla_{\bth}(\bth^\top\ba)=\ba\quad\text{(same number)}$$</div><p class="why">here $\ba=\bX^\top\by$, because $\by^\top\bX\bth=(\bX^\top\by)^\top\bth$</p></div></div>
       <div class="hint"><div class="hd">HINT 2</div><div class="bd">
-        <div class="eq xs">$$\nabla_{\bth}(\bth^\top\bX^\top\bX\bth)=2\bX^\top\bX\bth$$
-        $$\bth^\top\bX^\top\bX\bth=\sum_{i=0}^n\sum_{j=0}^n[\bX^\top\bX]_{ij}\theta_i\theta_j$$
-        $$\frac{\partial}{\partial\theta_k}=\sum_{j}[\bX^\top\bX]_{kj}\theta_j+\sum_{i}[\bX^\top\bX]_{ik}\theta_i=2\big[\bX^\top\bX\bth\big]_k$$</div>
-        <p class="why">using that $\bX^\top\bX$ is symmetric.</p></div></div>
+        <div class="eq xs">$$\nabla_{\bth}(\bth^\top\bX^\top\bX\bth)=2\bX^\top\bX\bth$$</div>
+        <p class="why">$\bX^\top\bX$ is symmetric. Step by step on the next slide: first with 2 parameters, then with any number.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide u">
+  <h2>Linear Regression – Normal Equation: Hint 2 step by step</h2>
+  <p class="small">We used $\nabla_{\bth}(\bth^\top\bA\bth)=2\bA\bth$ with $\bA=\bX^\top\bX$. Why? $\bA$ is <b>symmetric</b>, $\bA^\top=\bA$, because $(\bX^\top\bX)^\top=\bX^\top\bX$. That is the only property we need.</p>
+  <div class="cols">
+    <div class="stack" style="gap:5px">
+      <h3>First, with 2 parameters</h3>
+      <div class="step"><div class="eq s">$$\bA=\begin{pmatrix}p&amp;q\\q&amp;r\end{pmatrix},\qquad\bth=\begin{pmatrix}\theta_1\\\theta_2\end{pmatrix}$$</div><p class="why">a symmetric $2\times2$ matrix: the two off-diagonal entries are equal</p></div>
+      <div class="step"><div class="eq s">$$\bth^\top\bA\bth=\begin{pmatrix}\theta_1&amp;\theta_2\end{pmatrix}\begin{pmatrix}p\theta_1+q\theta_2\\q\theta_1+r\theta_2\end{pmatrix}=p\theta_1^2+2q\,\theta_1\theta_2+r\theta_2^2$$</div><p class="why">multiply $\bA\bth$ first, then the row $\bth^\top$; the two cross terms $q\theta_1\theta_2$ are equal, so they add up to $2q\theta_1\theta_2$</p></div>
+      <div class="step"><div class="eq s">$$\frac{\partial}{\partial\theta_1}=2p\theta_1+2q\theta_2,\qquad\frac{\partial}{\partial\theta_2}=2q\theta_1+2r\theta_2$$</div><p class="why">ordinary derivatives, treating the other $\theta$ as a constant</p></div>
+      <div class="step"><div class="eq s">$$\nabla_{\bth}(\bth^\top\bA\bth)=\begin{pmatrix}2p\theta_1+2q\theta_2\\2q\theta_1+2r\theta_2\end{pmatrix}=2\begin{pmatrix}p&amp;q\\q&amp;r\end{pmatrix}\begin{pmatrix}\theta_1\\\theta_2\end{pmatrix}=2\bA\bth\ \checkmark$$</div></div>
+    </div>
+    <div class="stack" style="gap:5px">
+      <h3>Now any number of parameters</h3>
+      <div class="step"><div class="eq s">$$\bth^\top\bA\bth=\sum_{i=0}^n\sum_{j=0}^nA_{ij}\,\theta_i\theta_j$$</div><p class="why">the same product written as a double sum: every pair $(i,j)$ contributes $A_{ij}\theta_i\theta_j$ (for $2$ parameters: the four terms above)</p></div>
+      <div class="step"><p class="small">Derivative with respect to $\theta_k$: only the terms that contain $\theta_k$ survive, those with $i=k$ and those with $j=k$:</p><div class="eq s">$$\frac{\partial}{\partial\theta_k}\bth^\top\bA\bth=\sum_{j}A_{kj}\,\theta_j+\sum_{i}A_{ik}\,\theta_i$$</div><p class="why">product rule on $\theta_i\theta_j$: if $i=k$ the first factor gives 1, if $j=k$ the second does</p></div>
+      <div class="step"><div class="eq s">$$=2\sum_jA_{kj}\,\theta_j=2\,[\bA\bth]_k$$</div><p class="why">$\bA$ is symmetric, $A_{ik}=A_{ki}$, so the two sums are the same sum</p></div>
+      <div class="step"><div class="bluebox" style="padding:4px 16px;font-size:20px">$$\nabla_{\bth}(\bth^\top\bA\bth)=2\bA\bth$$</div><p class="why">entry $k$ is $2[\bA\bth]_k$ for every $k$: that is the vector $2\bA\bth$</p></div>
     </div>
   </div>
 </section>
@@ -293,6 +358,24 @@
       <svg class="fig" data-fig="lin-poly" aria-label="A straight line and a quadratic fitted to the same curved data"></svg>
       <p class="small">Still <b>linear regression</b>: linear in the parameters $\bth$, whatever the features are.</p>
       <ul><li>Feature scaling for gradient descent.</li><li>Regularization.</li></ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide u">
+  <h2>Linear Regression – A new feature is just a new column</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="feat-pow" data-auto="p=1 :: Column x₁ = x: the best straight line misses the curve, J = 0.022|p=3 :: Try x₁ = x³: too much, the points curve the other way, J = 0.012|p=2 :: Column x₁ = x²: same least squares, J drops to 0.003 (θ₁ = 0.12) and against x² the points lie on a line">
+      <div class="ctl"><label>Feature x₁ =</label><span class="seg" role="group" aria-label="Feature column"><button type="button" data-p="1" aria-pressed="false">x</button><button type="button" data-p="2" aria-pressed="true">x²</button><button type="button" data-p="3" aria-pressed="false">x³</button></span></div>
+      <svg class="fig" style="max-height:300px" aria-label="The same points seen against x and against the new feature, with the fitted model"></svg>
+      <div class="ro"><div class="m"><span>θ₀</span><b data-r="t0">–</b></div><div class="m"><span>θ₁</span><b data-r="t1">–</b></div><div class="m"><span>J(θ)</span><b data-r="j">–</b></div></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">Linear regression is linear in the <b>parameters</b> $\bth$, not in $x$. The model never changes, only the column we feed it:</p>
+      <div class="eq s">$$h(x)=\theta_0\cdot1+\theta_1\cdot x_1,\qquad x_1=\text{any function of }x$$</div>
+      <div data-tab></div>
+      <p class="small">With $x_1=x^2$ a <i>curve</i> in $x$ is a <i>straight line</i> in $x_1$. Same cost $J$, same gradient descent, same normal equation $\bth=(\bX^\top\bX)^{-1}\bX^\top\by$.</p>
+      <p class="small step">Several features at once, $x_1=x$ and $x_2=x^2$: $h=\theta_0+\theta_1x_1+\theta_2x_2$ is a <b>plane</b> in the space of features; seen from $x$ it is a parabola.</p>
     </div>
   </div>
 </section>
@@ -469,6 +552,7 @@
 
 <section class="slide">
   <h2>Linear Regression – Probabilistic interpretation</h2>
+  <div class="note"><p class="small"><b>What we want to show.</b> Why do we minimize the <i>sum of squared errors</i> and not, say, the absolute errors? Assume the targets are the line plus random noise. The $\bth$ that makes the observed data <i>most probable</i> (maximum likelihood) turns out to be the one that minimizes the squared error.</p></div>
   <div class="cols">
     <div class="stack" style="gap:6px">
       <p>Assume target variables and inputs are related via:</p>

@@ -359,7 +359,7 @@ A feature whose OLS coefficient is smaller than $\lambda$ in absolute value is *
   <div class="ctl"><label for="sh-l">λ</label><input type="range" id="sh-l" data-k="l" min="0" max="2" step="0.05" value="0.8"><span class="v" data-v="l">0.80</span></div>
   <div class="legend"><span><i style="background:var(--muted)"></i>OLS</span><span><i style="background:var(--blue)"></i>Ridge</span><span><i style="background:var(--red)"></i>Lasso</span></div>
   <p class="why">Both penalties here are per example: Ridge \(\frac12(\theta-z)^2+\frac\lambda2\theta^2\) gives \(\theta=\frac{z}{1+\lambda}\) (the \(\lambda/m\) of the Ridge slide is written \(\lambda\)).</p>
-  <p class="from">Same figure as <a href="../../slides/machine_learning/05_regularization.html#8">slide 8</a> of the Regularization deck.</p>
+  <p class="from">Same figure as <a href="../../slides/machine_learning/05_regularization.html#9">slide 9</a> of the Regularization deck.</p>
 </div>
 ```
 
@@ -368,7 +368,7 @@ A feature whose OLS coefficient is smaller than $\lambda$ in absolute value is *
 Minimising $J + \lambda R$ is equivalent to minimising $J$ subject to $R(\boldsymbol{\theta})\le t$ for some $t$ (each $\lambda$ corresponds to a budget $t$). The solution is where the elliptical contours of $J$ first touch the constraint region. The L1 ball is a diamond with **corners on the axes**, and the contours usually hit a corner, where some $\theta_j=0$. The L2 ball is round, so the contact point generically has all coordinates non-zero. The Elastic Net ball (section 5) is in between: rounded edges, but still corners.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="l1l2" style="max-height:260px" aria-label="Loss contours touching an L1 diamond at a corner, an L2 circle, and an elastic-net shape"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/05_regularization.html#9">slide 9</a> of the Regularization deck: the same loss contours (blue ellipses around the OLS solution) touching the L1 diamond at a corner, the L2 disc and the Elastic Net shape; the green dot is the constrained solution.</p></div>
+<div class="widget"><svg class="fig" data-fig="l1l2" style="max-height:260px" aria-label="Loss contours touching an L1 diamond at a corner, an L2 circle, and an elastic-net shape"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/05_regularization.html#10">slide 10</a> of the Regularization deck: the same loss contours (blue ellipses around the OLS solution) touching the L1 diamond at a corner, the L2 disc and the Elastic Net shape; the green dot is the constrained solution.</p></div>
 ```
 
 ```{python}
@@ -527,7 +527,7 @@ $$
 - **Laplace prior** $p(\theta_j)\propto e^{-|\theta_j|/b}$: $\;-\log p(\boldsymbol{\theta}) = \frac{1}{b}\sum_j|\theta_j| + \text{const}$ → **L1**. (The Laplace density has a sharp peak at 0, a "belief" that many coefficients are exactly zero.)
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="priors" style="max-height:260px" aria-label="Gaussian and Laplace prior densities"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/05_regularization.html#11">slide 11</a> of the Regularization deck: the Gaussian prior (L2) is smooth at 0; the Laplace prior (L1) has a sharp peak there.</p></div>
+<div class="widget"><svg class="fig" data-fig="priors" style="max-height:260px" aria-label="Gaussian and Laplace prior densities"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/05_regularization.html#12">slide 12</a> of the Regularization deck: the Gaussian prior (L2) is smooth at 0; the Laplace prior (L1) has a sharp peak there.</p></div>
 ```
 
 **Linear regression with a Gaussian prior is Ridge with $\lambda = \sigma^2/\tau^2$.** The negative log-likelihood of Gaussian noise with variance $\sigma^2$ is $\frac{1}{2\sigma^2}\lVert\mathbf{X}\boldsymbol{\theta} - \mathbf{y}\rVert^2 + \text{const}$ ([note 01, section 10](01_linear_regression.html)), so
@@ -550,7 +550,7 @@ which is $2m$ times the Ridge $J$ of section 3 with $\lambda = \sigma^2/\tau^2$.
 A **coefficient path** shows each $\theta_j$ as $\lambda$ varies. In the slide's version, 8 standardised features of which only 3 truly matter (solid lines, dashed = irrelevant), with feature 5 a near-copy of feature 0:
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="paths" aria-label="Ridge and Lasso coefficient paths as lambda grows"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/05_regularization.html#10">slide 10</a> of the Regularization deck: Ridge shrinks everything smoothly; Lasso switches coefficients off one by one.</p></div>
+<div class="widget"><svg class="fig" data-fig="paths" aria-label="Ridge and Lasso coefficient paths as lambda grows"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/05_regularization.html#11">slide 11</a> of the Regularization deck: Ridge shrinks everything smoothly; Lasso switches coefficients off one by one.</p></div>
 ```
 
 Below, our own version: a dataset with 10 features, only 4 of which truly matter, and feature 5 again a near-copy of feature 0. (For Ridge we pass `alpha = mλ` to scikit-learn, so that both penalties are "per example" as in the widget of section 4.1 and the two $\lambda$ axes are comparable.)
@@ -591,7 +591,7 @@ Solid lines are the true non-zero coefficients, dashed the irrelevant ones. Ridg
 Training error always prefers $\lambda = 0$: it cannot choose $\lambda$. Validation error has a minimum, and that is the $\lambda$ we want:
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="cv-lambda" style="max-height:300px" aria-label="Training and validation error as lambda varies"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/05_regularization.html#12">slide 12</a> of the Regularization deck: training (blue) and validation (orange) RMSE of the degree-15 polynomial as λ varies; the dashed line marks the best λ on validation.</p></div>
+<div class="widget"><svg class="fig" data-fig="cv-lambda" style="max-height:300px" aria-label="Training and validation error as lambda varies"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/05_regularization.html#13">slide 13</a> of the Regularization deck: training (blue) and validation (orange) RMSE of the degree-15 polynomial as λ varies; the dashed line marks the best λ on validation.</p></div>
 ```
 
 **Recipe** ([note 00](00_supervised_learning.html) explains $k$-fold CV): choose a **log grid** of $\lambda$ values (the interesting range spans several orders of magnitude; start from $\lambda_{\max}$ for Lasso, section 4.3); for each $\lambda$, fit on $k-1$ folds and measure the error on the held-out fold; average over the $k$ folds to get $\text{CV}(\lambda)$, and also compute its **standard error** $\text{SE}(\lambda) = \text{sd}_{\text{folds}}/\sqrt{k}$.
@@ -1105,7 +1105,7 @@ The assumptions themselves, with how to check each one and what to do when it fa
 The residual plots that diagnose linearity and constant variance look like this:
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="resid-diag" style="max-height:220px" aria-label="Three residual plots: healthy, curved and funnel-shaped"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/05_regularization.html#18">slide 18</a> of the Regularization deck: a healthy structureless band, a curve (non-linearity) and a funnel (heteroscedasticity). Under assumptions 1–4 and 6 of the slide's table (linearity, exogeneity, independence, constant variance, no perfect collinearity), OLS is the Best Linear Unbiased Estimator (Gauss–Markov, <a href="01_linear_regression.html#ols-statistics">note 01, section 14.8</a>).</p></div>
+<div class="widget"><svg class="fig" data-fig="resid-diag" style="max-height:220px" aria-label="Three residual plots: healthy, curved and funnel-shaped"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/05_regularization.html#21">slide 21</a> of the Regularization deck: a healthy structureless band, a curve (non-linearity) and a funnel (heteroscedasticity). Under assumptions 1–4 and 6 of the slide's table (linearity, exogeneity, independence, constant variance, no perfect collinearity), OLS is the Best Linear Unbiased Estimator (Gauss–Markov, <a href="01_linear_regression.html#ols-statistics">note 01, section 14.8</a>).</p></div>
 ```
 
 **What regularisation changes.**

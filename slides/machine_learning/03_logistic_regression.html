@@ -203,6 +203,7 @@
 
 <section class="slide">
   <h2>Logistic Regression – Probabilistic interpretation</h2>
+  <div class="note"><p class="small"><b>What we want to show.</b> As in linear regression (there, Gaussian noise gave least squares), maximum likelihood explains our cost. Here $y$ is 0 or 1, so the noise is a coin flip with $P(y=1)=h_{\bth}(\bx)$, and the same recipe gives back the cross-entropy cost.</p></div>
   <div class="cols">
     <div class="stack" style="gap:8px">
       <p>Another fit by maximum likelihood. Assume:</p>
@@ -320,11 +321,29 @@
         <li class="step">Gradient descent keeps increasing $\norm{\bth}$ forever: probabilities become over-confident.</li>
         <li class="step"><b>Fix:</b> L2 regularization, $J+\frac{\lambda}{2m}\sum_{j\ge1}\theta_j^2$. scikit-learn does this by default with $C=1/\lambda=1$ (chapter 05).</li>
       </ul>
-      <p class="step small"><b>A nice property</b> of the optimum (intercept equation): $\sum_ih_{\bth}(\bx^{(i)})=\sum_iy^{(i)}$. The predicted probabilities average to the observed positive rate.</p>
     </div>
     <div class="stack">
       <svg class="fig" data-fig="steep" aria-label="Sigmoids that get steeper as theta is scaled up"></svg>
       <p class="why">$g(c\,z)$ for $c=1,3,10$: the same boundary, ever more confident.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Logistic Regression – A nice property of the optimum</h2>
+  <div class="cols">
+    <div class="stack" style="gap:8px">
+      <p class="small">At the minimum every partial derivative of $J$ is zero. Take the first one, for the intercept $\theta_0$, whose input is $x_0^{(i)}=1$ (slide on the gradient):</p>
+      <div class="eq s step">$$\frac{\partial J}{\partial\theta_0}=\frac1m\sum_{i=1}^m\big(h^{(i)}-y^{(i)}\big)\cdot1=0\quad\Rightarrow\quad\sum_{i=1}^mh^{(i)}=\sum_{i=1}^my^{(i)}$$</div>
+      <p class="small step"><b>The predicted probabilities add up to the number of positives.</b> Divide by $m$: the average prediction equals the observed positive rate. If 30 % of the training cases are positive, the model predicts 30 % on average.</p>
+      <p class="small step">In terms of errors, $\sum_{y=0}h=\sum_{y=1}(1-h)$: the <span style="color:var(--red)"><b>over-predictions</b></span> on the negatives balance the <span style="color:var(--blue)"><b>under-predictions</b></span> on the positives. For the plain fit the same holds for every feature: $\sum_i\big(h^{(i)}-y^{(i)}\big)x_j^{(i)}=0$.</p>
+      <div class="note step"><p class="small">True on the <b>training</b> data, for the plain fit or a penalty that skips $\theta_0$ (our $j\ge1$). Class weights or resampling (SMOTE) break it on purpose: see calibration later.</p></div>
+    </div>
+    <div class="widget" data-fig="prob-balance" data-auto="t=-5.5 :: θ₀ = −5.5: the curve sits too far right and under-predicts the positives (blue 8.70) much more than it over-predicts the negatives (red 1.44)|t=-2 :: θ₀ = −2: now it over-predicts (red 8.53 against blue 1.56): the average prediction is 0.27 above the positive rate|t=-3.683 :: θ₀ = −3.68, the optimum: red = blue = 4.66, so Σh = Σy = 11 and ∂J/∂θ₀ = 0">
+      <svg class="fig" style="max-height:300px" aria-label="A sigmoid with its over-predictions on the negatives and under-predictions on the positives, and the average prediction against the positive rate"></svg>
+      <div class="ctl"><label for="pb-t">Intercept θ₀</label><input type="range" id="pb-t" data-k="t" min="-6.5" max="-1" step="0.001" value="-5"><span class="v" data-v="t">-5.00</span></div>
+      <div class="legend"><span><i style="background:var(--red)"></i>over-prediction h on a negative</span><span><i style="background:var(--blue)"></i>under-prediction 1 − h on a positive</span></div>
+      <div class="ro"><div class="m"><span>Σ over (red)</span><b data-r="up">–</b></div><div class="m"><span>Σ under (blue)</span><b data-r="down">–</b></div><div class="m"><span>average h − positive rate</span><b data-r="g">–</b></div></div>
     </div>
   </div>
 </section>

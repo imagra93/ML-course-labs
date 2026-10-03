@@ -134,15 +134,38 @@
 </section>
 
 <section class="slide">
-  <h2>Regularization – L1 (Lasso): why exact zeros?</h2>
+  <h2>Regularization – L1 (Lasso): see why exact zeros happen</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:8px">
+      <p class="small">One feature again. Without a penalty the best coefficient is the OLS value $z$. With the penalty we look for the lowest point of two costs added together:</p>
+      <ul class="small">
+        <li><b style="color:var(--muted)">Dashed parabola</b> $\tfrac12(\theta-z)^2$: the data, how far $\theta$ is from $z$.</li>
+        <li><b style="color:var(--orange)">Orange V</b> $\lambda|\theta|$: the L1 tax, $\lambda$ for every unit of $|\theta|$.</li>
+        <li><b style="color:var(--red)">Red curve</b>: their sum. Its lowest point is the Lasso coefficient. (<b style="color:var(--blue)">Blue</b>: the same with Ridge.)</li>
+      </ul>
+      <p class="small step">Look at $\theta=0$. The parabola is smooth there (slope $-z$), but the V has a <b>corner</b>: slope $+\lambda$ on the right, $-\lambda$ on the left.</p>
+      <div class="note step"><p class="small">Slope of the red curve just right of 0: $\lambda-z$. Just left of 0: $-\lambda-z$. If $|z|\le\lambda$ the red curve <b>rises on both sides</b> of 0 ($\lambda-z\ge0$ and $-\lambda-z\le0$), so its lowest point is exactly $\theta=0$.</p></div>
+      <p class="small step">Ridge has no corner (the slope of its penalty at 0 is $\lambda\cdot0=0$), so its minimum reaches 0 only when $z=0$.</p>
+    </div>
+    <div class="widget" data-fig="lasso-kink" data-auto="z=2;l=0 :: λ = 0: no tax, the lowest point of the red curve is at z = 2 (the OLS value)|z=2;l=0.5 :: λ = 0.5: the V pulls the lowest point 0.5 towards 0: Lasso 1.50 (Ridge 1.33)|z=0.3;l=0.5 :: z = 0.3 ≤ λ: the red curve rises on both sides of 0, so Lasso gives exactly 0 (Ridge only 0.20)|z=-1.2;l=0.5 :: z = −1.2: the mirror case, Lasso −0.70 (Ridge −0.80)">
+      <svg class="fig" style="max-height:330px" aria-label="The data parabola, the L1 V and their sum, with the Lasso and Ridge minima"></svg>
+      <div class="ctl"><label for="lk-z">z (OLS)</label><input type="range" id="lk-z" data-k="z" min="-3" max="3" step="0.1" value="2"><span class="v" data-v="z">2.0</span></div>
+      <div class="ctl"><label for="lk-l">λ</label><input type="range" id="lk-l" data-k="l" min="0" max="2" step="0.05" value="0.5"><span class="v" data-v="l">0.50</span></div>
+      <div class="ro"><div class="m"><span>Lasso θ (red)</span><b data-r="tl">–</b></div><div class="m"><span>Ridge θ (blue)</span><b data-r="tr">–</b></div><div class="m"><span>what happens</span><b data-r="b">–</b></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Regularization – L1 (Lasso): the formula</h2>
   <div class="cols c64">
     <div class="stack" style="gap:9px">
-      <p>Same one-feature setting: OLS coefficient $z$, and (up to a constant) the cost is a parabola centred at $z$ plus the L1 tax:</p>
+      <p>From the picture to the formula. The same cost, a parabola centred at $z$ plus the L1 tax:</p>
       <div class="eq">$$g(\theta)=\tfrac12(\theta-z)^2+\lambda|\theta|$$</div>
-      <p class="small why">$|\theta|$ has a <b>kink</b> at 0: slope $+\lambda$ on the right, $-\lambda$ on the left, no derivative at 0. So we look at the three cases separately.</p>
-      <p class="step"><b>If $\theta\gt0$:</b> $\ g'=\theta-z+\lambda=0\Rightarrow\theta=z-\lambda$, valid only if $z\gt\lambda$.</p>
-      <p class="step"><b>If $\theta\lt0$:</b> $\ g'=\theta-z-\lambda=0\Rightarrow\theta=z+\lambda$, valid only if $z\lt-\lambda$.</p>
-      <p class="step"><b>Otherwise</b> ($|z|\le\lambda$) the minimum sits at the kink: $\theta=0$.</p>
+      <p class="small why">$|\theta|$ has no derivative at its corner, so we treat the two sides and the corner separately. Examples use $\lambda=0.5$.</p>
+      <p class="step small"><b>If $\theta\gt0$:</b> $\ g'=\theta-z+\lambda=0\Rightarrow\theta=z-\lambda$, valid only if $z\gt\lambda$. <span class="why">E.g. $z=2\to1.5$.</span></p>
+      <p class="step small"><b>If $\theta\lt0$:</b> $\ g'=\theta-z-\lambda=0\Rightarrow\theta=z+\lambda$, valid only if $z\lt-\lambda$. <span class="why">E.g. $z=-1.2\to-0.7$.</span></p>
+      <p class="step small"><b>Otherwise</b> ($|z|\le\lambda$) the minimum sits at the corner: $\theta=0$. <span class="why">E.g. $z=0.3\to0$.</span></p>
       <div class="bluebox step">$$\theta_{\text{lasso}}=\mathrm{sign}(z)\,\max\big(|z|-\lambda,\,0\big)$$</div>
       <p class="step small"><b>Lasso subtracts, Ridge divides.</b> The L2 penalty's slope $2\theta$ vanishes near 0, so it never pushes all the way. The L1 penalty pushes with constant force $\lambda$, however small $\theta$ is: anything with $|z|\le\lambda$ is pushed <b>exactly</b> to 0.</p>
     </div>
@@ -193,15 +216,40 @@
 <section class="slide">
   <h2>Regularization – Choosing λ</h2>
   <div class="cols">
-    <svg class="fig" data-fig="cv-lambda" aria-label="Training and validation error as lambda varies"></svg>
-    <div class="stack" style="gap:14px">
-      <ul>
-        <li>Training error always prefers $\lambda=0$ (blue): it can't choose λ.</li>
-        <li>Validation error (orange) has a minimum: that is the λ we want.</li>
-        <li>Search λ on a <b>log grid</b> with $k$-fold cross-validation.</li>
-        <li>Put the scaling <b>inside</b> the CV loop (scikit-learn <code>Pipeline</code>), or the validation fold leaks into $\mu,\sigma$.</li>
+    <div class="stack" style="gap:8px">
+      <svg class="fig" data-fig="cv-lambda" aria-label="Training and validation error as lambda varies"></svg>
+      <p class="why">Degree-15 polynomial on 20 noisy points. RMSE is the typical error, in the units of $y$. Blue: error on the data used to fit. Orange: error on data not used to fit.</p>
+    </div>
+    <div class="stack" style="gap:10px">
+      <p class="small">$\lambda$ is a <b>hyperparameter</b>: the fit cannot learn it, we choose it. How to read the picture:</p>
+      <ul class="small">
+        <li class="step"><b>Left, $\lambda$ tiny: overfitting.</b> Training error is as low as it gets, validation error is high: the curve memorizes the noise.</li>
+        <li class="step"><b>Right, $\lambda$ huge: underfitting.</b> Both errors go up: the penalty squeezes the curve towards a constant.</li>
+        <li class="step"><b>In between</b> the validation error has a minimum (dashed green): that is the $\lambda$ we want.</li>
+        <li class="step"><b>Training error cannot choose</b> $\lambda$: it only grows with $\lambda$, so it always says $\lambda=0$. We need data the fit has not seen.</li>
       </ul>
-      <div class="note"><p class="small"><code>RidgeCV</code>, <code>LassoCV</code>, <code>LogisticRegressionCV</code> do this for you.</p></div>
+      <div class="note step"><p class="small">But we cannot keep peeking at the test set to choose $\lambda$, and a single validation split of 20 points is noisy. The next slide shows the standard answer: cross-validation.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Regularization – Choosing λ with cross-validation</h2>
+  <div class="cols">
+    <div class="stack" style="gap:8px">
+      <ol class="small">
+        <li class="step"><b>Grid.</b> Candidate values on a <b>log scale</b>, e.g. $10^{-6},10^{-4},\dots,10^{1}$: $\lambda$ acts multiplicatively, so 0.1 vs 0.2 matters as much as 10 vs 20.</li>
+        <li class="step"><b>Folds.</b> For each $\lambda$ split the training data into $k=5$ folds. Fit on 4 folds, measure the error on the 5th; repeat so each fold validates once: 5 errors.</li>
+        <li class="step"><b>Average</b> the 5 errors: one number per $\lambda$ (that is the orange curve of the previous slide).</li>
+        <li class="step"><b>Choose</b> the $\lambda$ with the lowest mean (or the largest $\lambda$ within one standard error of it: a simpler model for free).</li>
+        <li class="step"><b>Refit</b> on all the training data with that $\lambda$, and look at the test set <b>once</b>, at the end.</li>
+      </ol>
+      <div class="note step"><p class="small">Put the scaling <b>inside</b> the loop (scikit-learn <code>Pipeline</code>), or each validation fold leaks into $\mu,\sigma$. <code>RidgeCV</code>, <code>LassoCV</code>, <code>LogisticRegressionCV</code> do all of this for you.</p></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small"><b>The real numbers</b> for the 20 points of the previous slide: validation RMSE of each fold.</p>
+      <div data-fig="cv-table"></div>
+      <p class="small step">$\lambda=10^{-6}$ explodes (folds from 9 to 53: overfitting). The mean is lowest at $\lambda=1$ (0.44), highlighted, and rises again at 10: the same U shape as the orange curve.</p>
     </div>
   </div>
 </section>
@@ -252,7 +300,7 @@
     <tr><td>high error on train <b>and</b> validation</td><td>underfitting (bias)</td><td>better features ($x^2$, interactions, logs), a smaller $\lambda$, a more flexible model</td></tr>
     <tr><td>low train error, high validation error</td><td>overfitting (variance)</td><td>more data, a larger $\lambda$, fewer features, a simpler model</td></tr>
     <tr><td>validation score suspiciously good</td><td>leakage?</td><td>preprocessing inside the CV folds; drop features known only after the outcome; no duplicates across splits</td></tr>
-    <tr><td>coefficients jump between runs, odd signs</td><td>collinearity</td><td>check the VIF (next slide); drop or combine features; Ridge</td></tr>
+    <tr><td>coefficients jump between runs, odd signs</td><td>collinearity</td><td>check the VIF (collinearity slides); drop or combine features; Ridge</td></tr>
     <tr><td>residuals show a curve</td><td>non-linearity</td><td>add transforms ($x^2$, $\log x$, splines)</td></tr>
     <tr><td>residuals fan out</td><td>heteroscedasticity</td><td>model $\log y$; weighted least squares</td></tr>
     <tr><td>a skewed target (prices, claim costs)</td><td>large errors on the expensive cases</td><td>fit $\log y$; $e^{\hat y}$ is the median, so multiply by $e^{\hat\sigma^2/2}$ for the mean</td></tr>
@@ -261,7 +309,26 @@
 </section>
 
 <section class="slide">
-  <h2>Regularization – Collinearity</h2>
+  <h2>Regularization – Collinearity: what goes wrong</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:8px">
+      <p class="small"><b>Collinear</b> features carry (almost) the same information: $x_2\approx x_1$ (house area in $m^2$ and in sq ft; height and arm length). Then many parameter pairs predict equally well:</p>
+      <p class="small step">$\hat y=1\cdot x_1+1\cdot x_2\ \approx\ 2\cdot x_1+0\cdot x_2\ \approx\ 0\cdot x_1+2\cdot x_2$. The data cannot tell them apart; they only pin down the <b>sum</b> $\theta_1+\theta_2$.</p>
+      <p class="small step">Right: repeat the experiment 80 times (same $\bX$, fresh noise) and fit each time. With independent features the estimates form a round cloud around the truth. As the correlation $r$ grows the cloud stretches into a streak along $\theta_1+\theta_2=2$: <b>each estimate is unreliable, their sum is not</b>. Predictions stay fine; interpretations do not.</p>
+      <p class="small step"><b>Ridge</b> adds $\lambda$ to the diagonal of $\bX^\top\bX$, which removes the weak direction: the streak shrinks, at the price of a small bias towards 0.</p>
+    </div>
+    <div class="widget" data-fig="collinear" data-auto="r=0;l=0 :: r = 0, VIF = 1: independent features, a round cloud around the truth (spread of θ₁ ≈ 0.14)|r=0.9;l=0 :: r = 0.9, VIF = 5.3: the cloud stretches (spread of θ₁ 0.35) but the spread of θ₁+θ₂ stays at 0.14|r=0.99;l=0 :: r = 0.99, VIF = 50: a long streak along θ₁+θ₂ = 2, spread of θ₁ 1.11 (eight times larger) while the sum is just as stable (0.14)|r=0.99;l=20 :: Ridge λ = 20 (green): the streak collapses to a tight cluster (spread of θ₁ 0.06), at the price of a small bias towards 0">
+      <svg class="fig" style="max-height:300px" aria-label="Two features and the cloud of estimated coefficients over 80 repeats"></svg>
+      <div class="ctl"><label for="co-r">Correlation r</label><input type="range" id="co-r" data-k="r" min="0" max="0.995" step="0.005" value="0.9"><span class="v" data-v="r">0.900</span></div>
+      <div class="ctl"><label for="co-l">Ridge λ</label><input type="range" id="co-l" data-k="l" min="0" max="30" step="1" value="0"><span class="v" data-v="l">0</span></div>
+      <div class="legend"><span><i style="background:var(--orange)"></i>least squares</span><span><i style="background:var(--green)"></i>Ridge (when λ &gt; 0)</span></div>
+      <div class="ro"><div class="m"><span>VIF = 1/(1−r²)</span><b data-r="vif">–</b></div><div class="m"><span>spread of θ₁</span><b data-r="s1">–</b></div><div class="m"><span>spread of θ₁+θ₂</span><b data-r="s12">–</b></div><div class="m"><span>Ridge: spread of θ₁</span><b data-r="sr">–</b></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Regularization – Collinearity: the formulas</h2>
   <div class="stack" style="gap:12px;max-width:1100px">
     <p>Under the model assumptions, with $\hat\bth=(\bX^\top\bX)^{-1}\bX^\top\by$ and $\by=\bX\bth+\boldsymbol\varepsilon$:</p>
     <div class="eq step">$$\hat\bth=\bth+(\bX^\top\bX)^{-1}\bX^\top\boldsymbol\varepsilon\quad\Rightarrow\quad\E[\hat\bth]=\bth\ \ \text{(unbiased)}$$</div>
@@ -270,6 +337,12 @@
     <div class="cols step" style="align-items:center">
       <div class="bluebox" style="justify-self:start">$$\mathrm{VIF}_j=\frac{1}{1-R_j^2}$$</div>
       <p class="small">$R_j^2$ = the $R^2$ of regressing $x_j$ on all the other features. VIF above 5–10 signals a problem. Remedies: drop or combine features, or use Ridge.</p>
+    </div>
+    <div class="cols step" style="align-items:start">
+      <div class="stack" style="gap:6px"><p class="small"><b>Two standardized features</b> with correlation $r$ (so $\tfrac1m\bX^\top\bX$ has 1 on the diagonal and $r$ off it):</p>
+        <div class="eq s">$$\Big(\tfrac1m\bX^\top\bX\Big)^{-1}=\frac{1}{1-r^2}\begin{pmatrix}1&amp;-r\\-r&amp;1\end{pmatrix}$$</div></div>
+      <div class="stack" style="gap:6px"><div class="eq s">$$\mathrm{Var}(\hat\theta_1)=\frac{\sigma^2}{m}\cdot\frac{1}{1-r^2}=\frac{\sigma^2}{m}\,\mathrm{VIF}_1$$</div>
+        <p class="small">Here $R_1^2=r^2$. For $r=0.99$ the variance is $\frac1{1-0.9801}\approx50$ times that of independent features; the covariance $-r\sigma^2/(m(1-r^2))$ is negative: the streak runs along $\theta_1+\theta_2=$ const.</p></div>
     </div>
   </div>
 </section>
