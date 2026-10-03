@@ -272,28 +272,12 @@
         $$\nabla_{\bth}(\bth^\top\ba)=\ba\quad\text{(same number)}$$</div><p class="why">here $\ba=\bX^\top\by$, because $\by^\top\bX\bth=(\bX^\top\by)^\top\bth$</p></div></div>
       <div class="hint"><div class="hd">HINT 2</div><div class="bd">
         <div class="eq xs">$$\nabla_{\bth}(\bth^\top\bX^\top\bX\bth)=2\bX^\top\bX\bth$$</div>
-        <p class="why">$\bX^\top\bX$ is symmetric. Step by step on the next slide: first with 2 parameters, then with any number.</p></div></div>
-    </div>
-  </div>
-</section>
-
-<section class="slide u">
-  <h2>Linear Regression – Normal Equation: Hint 2 step by step</h2>
-  <p class="small">We used $\nabla_{\bth}(\bth^\top\bA\bth)=2\bA\bth$ with $\bA=\bX^\top\bX$. Why? $\bA$ is <b>symmetric</b>, $\bA^\top=\bA$, because $(\bX^\top\bX)^\top=\bX^\top\bX$. That is the only property we need.</p>
-  <div class="cols">
-    <div class="stack" style="gap:5px">
-      <h3>First, with 2 parameters</h3>
-      <div class="step"><div class="eq s">$$\bA=\begin{pmatrix}p&amp;q\\q&amp;r\end{pmatrix},\qquad\bth=\begin{pmatrix}\theta_1\\\theta_2\end{pmatrix}$$</div><p class="why">a symmetric $2\times2$ matrix: the two off-diagonal entries are equal</p></div>
-      <div class="step"><div class="eq s">$$\bth^\top\bA\bth=\begin{pmatrix}\theta_1&amp;\theta_2\end{pmatrix}\begin{pmatrix}p\theta_1+q\theta_2\\q\theta_1+r\theta_2\end{pmatrix}=p\theta_1^2+2q\,\theta_1\theta_2+r\theta_2^2$$</div><p class="why">multiply $\bA\bth$ first, then the row $\bth^\top$; the two cross terms $q\theta_1\theta_2$ are equal, so they add up to $2q\theta_1\theta_2$</p></div>
-      <div class="step"><div class="eq s">$$\frac{\partial}{\partial\theta_1}=2p\theta_1+2q\theta_2,\qquad\frac{\partial}{\partial\theta_2}=2q\theta_1+2r\theta_2$$</div><p class="why">ordinary derivatives, treating the other $\theta$ as a constant</p></div>
-      <div class="step"><div class="eq s">$$\nabla_{\bth}(\bth^\top\bA\bth)=\begin{pmatrix}2p\theta_1+2q\theta_2\\2q\theta_1+2r\theta_2\end{pmatrix}=2\begin{pmatrix}p&amp;q\\q&amp;r\end{pmatrix}\begin{pmatrix}\theta_1\\\theta_2\end{pmatrix}=2\bA\bth\ \checkmark$$</div></div>
-    </div>
-    <div class="stack" style="gap:5px">
-      <h3>Now any number of parameters</h3>
-      <div class="step"><div class="eq s">$$\bth^\top\bA\bth=\sum_{i=0}^n\sum_{j=0}^nA_{ij}\,\theta_i\theta_j$$</div><p class="why">the same product written as a double sum: every pair $(i,j)$ contributes $A_{ij}\theta_i\theta_j$ (for $2$ parameters: the four terms above)</p></div>
-      <div class="step"><p class="small">Derivative with respect to $\theta_k$: only the terms that contain $\theta_k$ survive, those with $i=k$ and those with $j=k$:</p><div class="eq s">$$\frac{\partial}{\partial\theta_k}\bth^\top\bA\bth=\sum_{j}A_{kj}\,\theta_j+\sum_{i}A_{ik}\,\theta_i$$</div><p class="why">product rule on $\theta_i\theta_j$: if $i=k$ the first factor gives 1, if $j=k$ the second does</p></div>
-      <div class="step"><div class="eq s">$$=2\sum_jA_{kj}\,\theta_j=2\,[\bA\bth]_k$$</div><p class="why">$\bA$ is symmetric, $A_{ik}=A_{ki}$, so the two sums are the same sum</p></div>
-      <div class="step"><div class="bluebox" style="padding:4px 16px;font-size:20px">$$\nabla_{\bth}(\bth^\top\bA\bth)=2\bA\bth$$</div><p class="why">entry $k$ is $2[\bA\bth]_k$ for every $k$: that is the vector $2\bA\bth$</p></div>
+        <p class="why">To see why, write the product as a double sum:</p>
+        <div class="eq xs">$$\bth^\top\bX^\top\bX\bth=\sum_{i=0}^n\sum_{j=0}^n[\bX^\top\bX]_{ij}\theta_i\theta_j$$</div>
+        <p class="why">Every pair $(i,j)$ adds $[\bX^\top\bX]_{ij}\theta_i\theta_j$. With 2 parameters: $p\theta_1^2+2q\theta_1\theta_2+r\theta_2^2$ ($p,q,r$: entries of $\bX^\top\bX$).</p>
+        <p class="why">Differentiate with respect to one $\theta_k$: it appears in the terms with $i=k$ and with $j=k$:</p>
+        <div class="eq xs">$$\frac{\partial}{\partial\theta_k}=\sum_{j}[\bX^\top\bX]_{kj}\theta_j+\sum_{i}[\bX^\top\bX]_{ik}\theta_i=2\big[\bX^\top\bX\bth\big]_k$$</div>
+        <p class="why">using that $\bX^\top\bX$ is symmetric, the two sums are equal (hence the 2). True for every $k$: the gradient is $2\bX^\top\bX\bth$.</p></div></div>
     </div>
   </div>
 </section>

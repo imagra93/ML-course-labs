@@ -407,7 +407,7 @@ Two consequences:
   <div class="ctl"><span class="seg" role="group" aria-label="Feature scaling"><button type="button" data-mode="raw" aria-pressed="true">Without scaling</button><button type="button" data-mode="std" aria-pressed="false">After scaling</button></span></div>
   <div class="ro"><div class="m"><span>condition number</span><b data-r="k">–</b></div><div class="m"><span>steps to converge</span><b data-r="n">–</b></div></div>
   <p class="why">After scaling, gradient-descent steps are updated at the same rate for all the features.</p>
-  <p class="from">Same figure as <a href="../../slides/machine_learning/02_linear_regression.html#25">slide 25</a> of the Linear Regression deck.</p>
+  <p class="from">Same figure as <a href="../../slides/machine_learning/02_linear_regression.html#24">slide 24</a> of the Linear Regression deck.</p>
 </div>
 ```
 
@@ -654,7 +654,7 @@ The model is linear in $\boldsymbol{\theta}$, but **we** decide what goes into $
 **New features from old ones.** If $x_1$ is the length and $x_2$ the width of a property, the area $x_3 = x_1 x_2$ is probably a better predictor of the price than either: it is just a new column of the dataset. **Polynomial regression** adds $x^2, x^3, \dots, x^p$; **logarithmic regression** uses $\log x$ when each doubling of $x$ adds a constant amount to $y$ (diminishing returns). All of these are still linear regression, because the model is linear in the parameters whatever the features are. Section 15.1 shows how to detect that a transformation is needed.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="feat-log" style="max-height:260px" aria-label="Data following a logarithmic curve, fitted with a log feature"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/02_linear_regression.html#21">slide 21</a> of the Linear Regression deck: points scattered around a logarithmic curve and the linear model with the single feature log x (dashed), which follows the curve.</p></div>
+<div class="widget"><svg class="fig" data-fig="feat-log" style="max-height:260px" aria-label="Data following a logarithmic curve, fitted with a log feature"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/02_linear_regression.html#20">slide 20</a> of the Linear Regression deck: points scattered around a logarithmic curve and the linear model with the single feature log x (dashed), which follows the curve.</p></div>
 ```
 
 **Encoding categorical features.** A model needs numbers. Two kinds of categorical variables:
@@ -699,7 +699,7 @@ A polynomial of degree $m-1$ passes exactly through $m$ points, so $J(\boldsymbo
   <div class="ctl"><label for="overfit-d">Degree</label><input type="range" id="overfit-d" data-k="d" min="0" max="15" step="1" value="1"><span class="v" data-v="d">1</span></div>
   <div class="ctl"><label for="overfit-l">λ (log scale)</label><input type="range" id="overfit-l" data-k="l" min="-6" max="1" step="0.25" value="-6"><span class="v" data-v="l">0</span></div>
   <div class="ro"><div class="m"><span>train RMSE</span><b data-r="tr">–</b></div><div class="m"><span>test RMSE</span><b data-r="te">–</b></div><div class="m" style="flex:1"><span>verdict</span><b data-r="vd">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/machine_learning/02_linear_regression.html#26">slide 26</a> of the Linear Regression deck.</p>
+  <p class="from">Same figure as <a href="../../slides/machine_learning/02_linear_regression.html#25">slide 25</a> of the Linear Regression deck.</p>
 </div>
 ```
 
@@ -751,7 +751,7 @@ The **baseline** "always predict 200 (the mean)" has RMSE $=\sqrt{25\,000/5} = 7
   <div class="ctl"><span class="seg" role="group" aria-label="Predictions"><button type="button" data-o="0" aria-pressed="true">Five good predictions</button><button type="button" data-o="1" aria-pressed="false">One error of 100</button></span></div>
   <div class="ro"><div class="m"><span>MAE (k€)</span><b data-r="mae">–</b></div><div class="m"><span>RMSE (k€)</span><b data-r="rmse">–</b></div><div class="m"><span>R²</span><b data-r="r2">–</b></div><div class="m"><span>MAPE</span><b data-r="mape">–</b></div></div>
   <div class="legend"><span><i style="background:var(--blue)"></i>actual price</span><span><i style="background:var(--orange)"></i>predicted</span></div>
-  <p class="from">Same figure as <a href="../../slides/machine_learning/02_linear_regression.html#29">slide 29</a> of the Linear Regression deck.</p>
+  <p class="from">Same figure as <a href="../../slides/machine_learning/02_linear_regression.html#28">slide 28</a> of the Linear Regression deck.</p>
 </div>
 ```
 
@@ -783,7 +783,7 @@ $$
 Hence $R^2 = 1 - \text{SSE}/\text{TSS} = \text{ESS}/\text{TSS} \in [0,1]$ on the training data. Adding a feature can only lower SSE (the old solution is still available with the new coefficient at 0), so the training $R^2$ never decreases, even for a column of pure noise: it cannot choose the features. That is why adjusted $R^2$ exists (it only increases if the new feature helps enough) and why you should always look at validation metrics.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="r2" style="max-height:280px" aria-label="Total variation of a point split into explained and unexplained parts"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/02_linear_regression.html#30">slide 30</a> of the Linear Regression deck: for one point, the total variation \(y_i - \bar y\) is the explained part \(\hat y_i - \bar y\) plus the unexplained part \(y_i - \hat y_i\).</p></div>
+<div class="widget"><svg class="fig" data-fig="r2" style="max-height:280px" aria-label="Total variation of a point split into explained and unexplained parts"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/02_linear_regression.html#29">slide 29</a> of the Linear Regression deck: for one point, the total variation \(y_i - \bar y\) is the explained part \(\hat y_i - \bar y\) plus the unexplained part \(y_i - \hat y_i\).</p></div>
 ```
 
 **Which metric when?**
