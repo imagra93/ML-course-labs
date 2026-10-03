@@ -17,4 +17,3 @@ gdown>=5.1                 # downloads the face dataset from Google Drive
 transformers>=4.40         # lab 14 (text generation), lab 15 (RAG)
 
 ultralytics>=8.3           # lab 13, Object detection with YOLO (YOLO11)
-gradio>=4.0                # notebooks/neural_networks/yolo_app.py

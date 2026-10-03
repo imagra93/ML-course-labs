@@ -23,7 +23,7 @@ used in the labs.
 | 05 | [Attention and transformers](https://imagra93.github.io/ML-course-labs/notes/neural_networks/05_attention_transformers.html) | [.qmd](05_attention_transformers.qmd) | attention, √d scaling, multi-head, positional encodings, causal mask, cost and KV cache, GPT parameter count, a tiny GPT, decoding, perplexity | lab 14 |
 | 06 | [Embeddings, retrieval and RAG](https://imagra93.github.io/ML-course-labs/notes/neural_networks/06_embeddings_rag.html) | [.qmd](06_embeddings_rag.qmd) | similarity, TF-IDF, BM25, LSA, neural embeddings, approximate search, retrieval metrics, hybrid retrieval, chunking, RAG and its failure modes | lab 15 |
 
-The full YOLO pipeline (fine-tuning YOLO11n, ONNX export, a Gradio app) is a lab:
+The full YOLO pipeline (fine-tuning YOLO11n, ONNX export) is a lab:
 [`notebooks/neural_networks/lab 13 - Object detection with YOLO.ipynb`](../../notebooks/neural_networks/lab 13 - Object detection with YOLO.ipynb).
 The detection concepts it builds on (boxes, IoU, NMS, precision–recall and AP) are in note 03.
 

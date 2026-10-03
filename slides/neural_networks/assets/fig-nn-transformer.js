@@ -39,7 +39,7 @@ FIG['heads']=root=>{const svg=initSvg(svgOf(root),960,290);const n=8;const cs=26
   const pats=[['head 1: previous token',(i,j)=>j===i-1?1:(i===0&&j===0?1:0)],['head 2: same word / itself',(i,j)=>toks[i]===toks[j]?1:0.05],['head 3: "it" → noun',(i,j)=>i===7?(j===1?0.7:j===5?0.3:0):(j===i?0.6:0.05)],['head 4: broad average',(i,j)=>j<=i?1:0]];
   pats.forEach(([name,f],k)=>{const x0=20+k*240;T(svg,x0+n*cs/2,20,name,'lab');const M=[];for(let i=0;i<n;i++){const r=[];for(let j=0;j<n;j++)r.push(f(i,j));const s=r.reduce((a,b)=>a+b,0)||1;M.push(r.map(v=>v/s))}
     grid(svg,x0,32,M,cs,(i,j,v)=>heat(Math.min(1,v*1.3),true),null,{stroke:'#fff'});toks.forEach((w,i)=>{T(svg,x0+i*cs+cs/2,32+n*cs+14,w,'').style.fontSize='11px'})});
-  T(svg,480,282,'rows = queries, columns = keys (same 8 tokens). Patterns like these are really found in trained models.','','middle')};
+  T(svg,480,282,'rows = queries, columns = keys (same 8 tokens). Hand-drawn illustration: patterns of this kind are found in trained models.','','middle')};
 /* ---------- path length: RNN vs attention ---------- */
 FIG['paths']=root=>{const svg=initSvg(svgOf(root),960,240);const n=7;
   T(svg,230,20,'RNN: information from word 1 to word 7','lab');for(let k=0;k<n;k++){const x=40+k*65;E('circle',{cx:x,cy:110,r:20,fill:k===0||k===n-1?'#ed7d31':'#bdd7ee',stroke:'#404040'},svg);T(svg,x,115,String(k+1),'lab');if(k<n-1)arrowPx(svg,x+21,110,x+43,110,'ln sr','fr')}
@@ -112,13 +112,96 @@ FIG['decode']=root=>{const words=['here','back','home','over','in','now','soon',
     p.forEach((v,i)=>{const y=52+i*29;T(svg,110,y+15,words[i],'lab','end');E('rect',{x:120,y:y,width:Math.max(1,400*v),height:21,fill:v>0?'#4472c4':'#e7e6e6'},svg);T(svg,528+0*v,y+15,v>0?fmt(v,2):'cut','','start')});
     setR(root,'s',picked||'–')}
   root.querySelector('[data-k="go"]').addEventListener('click',()=>{const p=probs();let u=Math.random(),i=0;while(i<p.length-1&&u>p[i]){u-=p[i];i++}picked=words[i];draw()});it.addEventListener('input',draw);ik.addEventListener('input',draw);draw()};
-FIG['rag']=root=>{const svg=initSvg(svgOf(root),900,300);const box=(x,y,w,t,c)=>{E('rect',{x:x,y:y,width:w,height:48,rx:8,fill:c,stroke:'#404040'},svg);T(svg,x+w/2,y+29,t,'lab')};
-  box(20,30,150,'Knowledge base','#ffe699');box(250,30,150,'Chunk + embed','#b4c7e7');box(480,30,150,'Vector database','#e2f0d9');arrowPx(svg,170,54,248,54,'ln thin sk','fk');arrowPx(svg,400,54,478,54,'ln thin sk','fk');T(svg,209,44,'1','');T(svg,439,44,'2 index','');
-  box(20,170,150,'User question','#f8cbad');box(250,170,150,'Embed the question','#b4c7e7');arrowPx(svg,170,194,248,194,'ln thin sk','fk');arrowPx(svg,400,194,478,90,'ln thin sk','fk');T(svg,460,150,'3 similarity search','','end');
-  box(690,170,200,'LLM: question + chunks','#dae3f3');arrowPx(svg,630,70,760,168,'ln thin sk','fk');T(svg,720,120,'4 relevant chunks','','start');box(700,250,180,'Answer','#c5e0b4');arrowPx(svg,790,218,790,248,'ln thin sk','fk');arrowPx(svg,170,210,698,210,'ln thin sm dash','fm')};
+FIG['rag']=root=>{const svg=initSvg(svgOf(root),1000,330);
+  const node=(x,y,w,t1,t2,c,n)=>{box(svg,x,y,w,50,t1,c,{cls:'lab'});if(t2)T(svg,x+w/2,y+68,t2,'');if(n){E('circle',{cx:x,cy:y,r:12,fill:'#404040'},svg);T(svg,x,y+5,String(n),'lab w')}};
+  E('rect',{x:4,y:6,width:992,height:122,rx:10,fill:'#fffaf0',stroke:'#ffd966'},svg);T(svg,16,26,'A · Indexing: once, offline','lab','start');
+  node(30,48,150,'Documents','24 coffee-shop pages','#ffe699',1);node(250,48,150,'Chunk','pieces of ~40 words','#b4c7e7',2);node(470,48,150,'Embed','384 numbers per chunk','#b4c7e7',3);node(720,48,200,'Vector database\n(24 × 384 matrix)','','#e2f0d9',4);
+  [[180,250],[400,470],[620,720]].forEach(([a,b])=>arrowPx(svg,a,73,b-2,73,'ln thin sk','fk'));
+  E('rect',{x:4,y:152,width:992,height:172,rx:10,fill:'#f4f8fd',stroke:'#9dc3e6'},svg);T(svg,16,172,'B · Answering: every question','lab','start');
+  node(30,182,130,'Question','"Where can I try Vietnamese coffee?"','#f8cbad',5);node(205,182,130,'Embed','same encoder as A','#b4c7e7',6);node(380,182,150,'Search','top-k most similar chunks','#e2f0d9',7);node(575,182,170,'Prompt','instructions + chunks + question','#fff2cc',8);node(790,182,90,'LLM','','#dae3f3',9);node(905,182,80,'Answer','with sources','#c5e0b4',10);
+  [[160,205],[335,380],[530,575],[745,790],[880,905]].forEach(([a,b])=>arrowPx(svg,a,207,b-2,207,'ln thin sk','fk'));
+  E('path',{d:'M820,98 L820,140 L455,140',fill:'none',stroke:'#404040','stroke-width':1.5},svg);arrowPx(svg,455,140,455,180,'ln thin sk','fk');T(svg,640,134,'the question is compared with the stored vectors','','middle')};
 FIG['cosine']=root=>{const P=Plot(svgOf(root),{w:420,h:360,x:[-1.2,1.2],y:[-1.2,1.2],m:{l:10,r:10,t:10,b:10}});P.axes({grid:false,noaxes:true});P.line(-1.2,0,1.2,0,'ax');P.line(0,-1.2,0,1.2,'ax');
   const qv=[0.6,0.8];const ch=[[0.3,0.95,'returns policy'],[0.75,0.55,'refund times'],[-0.8,0.5,'store hours'],[-0.4,-0.9,'job offers'],[0.95,-0.2,'shipping costs']];
   const cos=(a,b)=>(a[0]*b[0]+a[1]*b[1])/(Math.hypot(...a.slice(0,2))*Math.hypot(...b.slice(0,2)));const ranked=ch.map(c=>[c,cos(qv,c)]).sort((a,b)=>b[1]-a[1]);
   ranked.forEach(([c,s],k)=>{P.line(0,0,c[0],c[1],k<2?'ln sg':'ln thin sm');P.dot(c[0],c[1],5,k<2?'fgr':'fm');P.text(c[0],c[1],c[2]+' ('+fmt(s,2)+')','', c[0]<0?'end':'start',c[0]<0?-8:8,4)});
   P.line(0,0,qv[0],qv[1],'ln sr');P.dot(qv[0],qv[1],7,'fr');P.text(qv[0],qv[1],'question','lab','start',10,14)};
+/* ===================== additions (2026-10) ===================== */
+const {segs}=window.MLNN;
+const hexRGB=c=>[1,3,5].map(i=>parseInt(c.slice(i,i+2),16));
+const GPT2=window.MLNN_GPT2;
+
+/* RNN steps one after another vs attention connecting every pair at once */
+FIG['seq-par']=root=>{const svg=initSvg(svgOf(root),470,300);
+  T(svg,235,18,'RNN / LSTM: one step after another','lab');
+  for(let i=0;i<5;i++){const x=45+i*95;E('circle',{cx:x,cy:58,r:18,fill:'#b4c7e7',stroke:'#404040'},svg);T(svg,x,64,String(i+1),'lab');T(svg,x,96,'t = '+(i+1),'');if(i<4)arrowPx(svg,x+20,58,x+75,58,'ln thin sk','fk')}
+  T(svg,235,120,'step 5 waits for steps 1–4: the time grows with the length','');
+  T(svg,235,160,'Attention: all positions at once','lab');
+  const y=262;for(let i=0;i<5;i++)for(let j=i+1;j<5;j++){const xi=45+i*95,xj=45+j*95;E('path',{d:'M'+xi+','+(y-18)+' Q'+((xi+xj)/2)+','+(y-18-(j-i)*17)+' '+xj+','+(y-18),fill:'none',stroke:j-i===4?'#c00000':'#9dafd6','stroke-width':j-i===4?2:1},svg)}
+  for(let i=0;i<5;i++){const x=45+i*95;E('circle',{cx:x,cy:y,r:18,fill:'#b4c7e7',stroke:'#404040'},svg);T(svg,x,y+6,String(i+1),'lab')}
+  T(svg,235,294,'1 step between any two words, all computed in parallel','')};
+
+/* a soft dictionary: weights over the keys, output = a mix of the values */
+FIG['soft-lookup']=root=>{const svg=svgOf(root);const keys=[['cat',[2,0.5],'#ed7d31'],['dog',[1,1.5],'#4472c4'],['car',[-1,-0.5],'#70ad47']];
+  const Q={cat:[1.8,-0.9],kitten:[1.3,-0.2],puppy:[-0.2,1.7],truck:[-0.9,-0.7]};const get=segs(root,'q',()=>draw());
+  function draw(){const q=get(),qv=Q[q];const sc=keys.map(k=>qv[0]*k[1][0]+qv[1]*k[1][1]);const a=softmax(sc);initSvg(svg,600,310);
+    T(svg,20,30,'query','lab','start');box(svg,80,10,100,32,'"'+q+'"','#fbe5d6',{cls:'lab'});
+    const ex=keys.some(k=>k[0]===q);T(svg,215,30,'Python dict:','lab','start');box(svg,320,10,270,32,ex?'d["'+q+'"]  →  v'+(keys.findIndex(k=>k[0]===q)+1):'d["'+q+'"]  →  KeyError',ex?'#e2f0d9':'#f8cbad',{cls:'lab'});
+    T(svg,65,76,'key','lab');T(svg,138,76,'value','lab');T(svg,330,76,'attention weight  α = softmax(q·k)','lab');
+    keys.forEach((k,j)=>{const y=92+j*50;box(svg,20,y,90,34,k[0],'#e2f0d9',{cls:'lab'});E('rect',{x:122,y:y,width:34,height:34,fill:k[2],stroke:'#404040'},svg);T(svg,139,y+23,'v'+(j+1),'lab w');
+      T(svg,176,y+22,'q·k = '+f2(sc[j]),'','start');E('rect',{x:270,y:y+4,width:300*a[j],height:26,fill:k[2]},svg);T(svg,274+300*a[j],y+22,f2(a[j]),'lab','start')});
+    setR(root,'w',a.map(v=>f2(v)).join(' / '));const rgb=[0,1,2].map(c=>Math.round(keys.reduce((t,k,j)=>t+a[j]*hexRGB(k[2])[c],0)));
+    T(svg,20,278,'output','lab','start');E('rect',{x:96,y:256,width:60,height:36,fill:'rgb('+rgb.join(',')+')',stroke:'#404040'},svg);
+    T(svg,176,279,'= '+f2(a[0])+'·v₁ + '+f2(a[1])+'·v₂ + '+f2(a[2])+'·v₃   (a blend of the values)','lab','start')}
+  draw()};
+
+/* sinusoidal positional encodings as clocks of different speed */
+FIG['posenc-waves']=root=>{const svg=initSvg(svgOf(root),600,200);const d=32,N=50,dims=[0,4,8,12],x0=60,w=450,top=22,lh=38;
+  const f=(pos,k)=>Math.sin(pos/Math.pow(10000,k/d)),X=pos=>x0+pos/(N-1)*w;
+  dims.forEach((k,r)=>{const y=top+r*lh+lh/2;E('line',{x1:x0,x2:x0+w,y1:y,y2:y,stroke:'#e0e0e0'},svg);T(svg,x0-8,y+5,'dim '+k,'','end');
+    let dd='';for(let p=0;p<=N-1;p+=0.5)dd+=(dd?'L':'M')+X(p).toFixed(1)+','+(y-14*f(p,k)).toFixed(1);E('path',{d:dd,fill:'none',stroke:'#4472c4','stroke-width':1.8},svg);
+    T(svg,x0+w+8,y+5,'period ≈ '+Math.round(2*Math.PI*Math.pow(10000,k/d)),'','start');
+    [[20,'#ed7d31'],[33,'#c00000']].forEach(([p,c])=>E('circle',{cx:X(p),cy:y-14*f(p,k),r:4.5,fill:c},svg))});
+  [[20,'#ed7d31'],[33,'#c00000']].forEach(([p,c])=>{E('line',{x1:X(p),x2:X(p),y1:top,y2:top+4*lh,stroke:c,'stroke-dasharray':'4 3'},svg);T(svg,X(p),top-6,'pos '+p,'').style.fill=c});
+  T(svg,300,top+4*lh+22,'position 20 → ('+dims.map(k=>f2(f(20,k))).join(', ')+')    position 33 → ('+dims.map(k=>f2(f(33,k))).join(', ')+')','');
+  T(svg,300,top+4*lh+42,'the four readings together are a fingerprint of the position','')};
+
+/* GPT-2 end to end: text -> ids -> vectors -> blocks -> logits -> probabilities, with the real shapes */
+FIG['gpt-shapes']=root=>{const svg=initSvg(svgOf(root),980,330);const S=GPT2.shape,n=S.ids.length,r=rng(5);
+  const mat=(x,y,cols,cs,fn)=>{const M=[];for(let i=0;i<n;i++){const row=[];for(let j=0;j<cols;j++)row.push(fn(i,j));M.push(row)}grid(svg,x,y,M,cs,(i,j,v)=>heat(v),null,{stroke:'#fff'})};
+  const title=(x,t,t2)=>{T(svg,x,28,t,'lab');if(t2)T(svg,x,46,t2,'')};
+  title(70,'text','');box(svg,10,100,120,70,'The cat sat\non the','#ffe699',{cls:'lab'});
+  title(215,'tokens','BPE ids');S.toks.forEach((t,i)=>{box(svg,170,70+i*38,90,30,t.trim()+' · '+S.ids[i],'#e2f0d9',{cls:''})});
+  title(380,'embedding lookup','one row per token');mat(325,66,8,14,()=>randn(r)*0.6);T(svg,380,66+n*14+22,'[5 × 768]','lab');
+  T(svg,470,106,'+ position','','middle');T(svg,470,122,'embedding','','middle');
+  title(590,'12 transformer blocks','attention + MLP');box(svg,520,60,140,180,'× 12\n\nattention\n+ MLP\n+ residuals','#dae3f3',{cls:'lab'});T(svg,590,262,'the shape never changes:','');T(svg,590,280,'[5 × 768] in, [5 × 768] out','lab');
+  title(770,'logits','row · Eᵀ');mat(710,66,12,12,()=>randn(r)*0.7);E('rect',{x:708,y:66+(n-1)*14.4-1,width:150,height:16,fill:'none',stroke:'#c00000','stroke-width':2.5},svg);
+  T(svg,770,66+n*14+22,'[5 × 50,257]','lab');T(svg,770,66+n*14+42,'only the last row is used','');
+  title(910,'next-token','probabilities');S.top.slice(0,5).forEach(([w,p],k)=>{const y=70+k*34;T(svg,910,y+13,w.trim(),'lab','end');E('rect',{x:914,y:y,width:Math.max(2,p*520),height:20,fill:k===0?'#c00000':'#4472c4'},svg);T(svg,918+p*520,y+14,f3(p).replace('0.','.'),'','start')});
+  T(svg,974,262,'softmax of the last row: 50,257 numbers','','end');T(svg,974,280,'that sum to 1; the top 5 are shown','','end');
+  [[132,168],[262,322],[500,518],[662,706],[858,866]].forEach(([a,b])=>arrowPx(svg,a,135,b,135,'ln thin sk','fk'));
+  T(svg,490,318,'GPT-2 small: 124,439,808 parameters; every number on this slide comes from running the real model on "The cat sat on the"','','middle')};
+
+/* the KV cache: what is recomputed at every generation step */
+FIG['kv-cache']=root=>{const svg=svgOf(root);const toks=['Can','you','please','come','here'];
+  stepper(root,s0=>{const t=Math.max(1,s0);initSvg(svg,980,330);
+    [['Without a cache','recompute K and V of every previous token',20,false],['With a KV cache','compute K and V of the new token only; read the rest from memory',510,true]].forEach(([ttl,sub,x0,cache])=>{
+      T(svg,x0+225,24,ttl,'lab big');T(svg,x0+225,46,sub,'');
+      toks.forEach((w,j)=>{const x=x0+j*92;const active=j<t,fresh=j===t-1;const col=!active?'#f2f2f2':(cache&&!fresh?'#dae3f3':'#f8cbad');
+        box(svg,x,66,76,28,w,active?'#e2f0d9':'#fafafa',{cls:'lab'});['K','V'].forEach((kv,m)=>{E('rect',{x:x+6+m*34,y:108,width:30,height:30,fill:col,stroke:active?'#404040':'#d0d0d0'},svg);T(svg,x+21+m*34,128,kv,active?'lab':'')});
+        if(active){E('line',{x1:x0+(t-1)*92+38,y1:190,x2:x+38,y2:142,stroke:'#c00000','stroke-width':1.2},svg)}});
+      box(svg,x0+(t-1)*92+4,190,68,28,'q'+t,'#fbe5d6',{cls:'lab'});T(svg,x0+225,250,'K, V computed at this step: '+(cache?1:t),'lab');
+      T(svg,x0+225,274,'in total so far: '+(cache?t:t*(t+1)/2)+' (after '+t+' token'+(t>1?'s':'')+')','');
+      T(svg,x0+225,298,cache?'cost grows linearly with the answer length':'cost grows with the square of the length','')});
+    T(svg,490,322,'orange = computed now, blue = read from the cache, grey = not generated yet; red lines: the new query reads every key and value','','middle')})};
+
+/* surprisal of each token for GPT-2, in bits (the real numbers of Lab 14) */
+FIG['surprisal']=root=>{const svg=initSvg(svgOf(root),980,330);const toks=GPT2.tokens,bits=GPT2.bits,n=toks.length,x0=60,w=900,bw=w/n,y0=250,sc=9.6;
+  [0,5,10,15].forEach(v=>{E('line',{x1:x0,x2:x0+w,y1:y0-v*sc,y2:y0-v*sc,stroke:v?'#ececec':'#595959'},svg);T(svg,x0-8,y0-v*sc+5,String(v),'','end')});T(svg,12,150,'bits','lab','start').setAttribute('transform','rotate(-90 12 150)');
+  bits.forEach((b,i)=>{const x=x0+i*bw;E('rect',{x:x+6,y:y0-b*sc,width:bw-12,height:b*sc,fill:b>10?'#c00000':'#4472c4'},svg);T(svg,x+bw/2,y0-b*sc-6,String(Math.round(b*10)/10),'');
+    const t=T(svg,x+bw/2,y0+16,toks[i].replace(' ','␣'),'');t.setAttribute('transform','rotate(40 '+(x+bw/2-10)+' '+(y0+14)+')');t.setAttribute('text-anchor','start')});
+  const mean=bits.reduce((a,b)=>a+b,0)/n;E('line',{x1:x0,x2:x0+w,y1:y0-mean*sc,y2:y0-mean*sc,stroke:'#ed7d31','stroke-width':2,'stroke-dasharray':'6 4'},svg);T(svg,x0+8,30,'- - -  average '+mean.toFixed(1)+' bits  →  perplexity 2^'+mean.toFixed(1)+' ≈ '+GPT2.sentPPL.toFixed(0),'lab','start').style.fill='#c55a11';
+  const e=n-2,tp=GPT2.top[e];T(svg,x0+e*bw-6,36,'GPT-2 expected "'+tp.slice(0,3).map(a=>a[0].trim()).join('", "')+'"… (≈5 % each)','','end');T(svg,x0+e*bw-6,54,'"elephant" got about 1 chance in '+Math.round(Math.pow(2,bits[e])/1000)+',000','','end');
+  T(svg,490,322,'surprisal = −log₂ p(token | previous tokens); "I went to the bakery this morning and bought a fresh loaf of bread and a large elephant."','','middle')};
+
 })();
