@@ -1,0 +1,12 @@
+{
+  "name": "class-pdfs",
+  "private": true,
+  "description": "Builds slides/machine_learning_class_ppt.pdf and slides/neural_networks_class_ppt.pdf from the HTML decks",
+  "scripts": {
+    "build": "node make-handouts.mjs"
+  },
+  "dependencies": {
+    "pdf-lib": "^1.17.1",
+    "puppeteer-core": "^22.15.0"
+  }
+}

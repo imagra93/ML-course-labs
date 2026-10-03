@@ -35,3 +35,6 @@ notebooks/neural_networks/logs_lightning/
 /_freeze/
 **/*.quarto_ipynb
 exam*
+
+# Class PDF builder (tools/make-handouts.mjs)
+/tools/node_modules/
