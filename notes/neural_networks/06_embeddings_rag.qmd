@@ -39,7 +39,7 @@ The **distributional hypothesis** ("you shall know a word by the company it keep
 An LLM only knows what was in its training data: up to a cut-off date, and never your internal documents (policy conditions, claims procedures, product sheets). Retraining it on them is expensive and has to be repeated whenever they change. **Retrieval-augmented generation (RAG)** leaves the LLM as it is: the most relevant pieces of **your** documents are found by embedding similarity and pasted into the prompt, so the model answers from them.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="rag" aria-label="Retrieval-augmented generation: embed documents, store them, retrieve the most similar chunks and give them to the LLM"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#26">slide 26</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="rag" aria-label="Retrieval-augmented generation: embed documents, store them, retrieve the most similar chunks and give them to the LLM"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#30">slide 30</a> of the Attention and Transformers deck.</p></div>
 ```
 
 1. **Index** (offline): split the knowledge base into chunks, embed each chunk, store the vectors (with the text and metadata) in a vector database.
@@ -95,7 +95,7 @@ $$
 A question vector $\mathbf{q} = (0.6, 0.8)$ and five chunk vectors in 2-D (real embeddings have 384, 768 or 1,024 dimensions, but the arithmetic is the same). The question has norm $\sqrt{0.36 + 0.64} = 1$. The two chunks with the highest cosine are selected: "refund times", $\frac{0.6\cdot0.75 + 0.8\cdot0.55}{1\cdot\sqrt{0.75^2+0.55^2}} = \frac{0.89}{0.930} = 0.96$, and "returns policy", $\frac{0.6\cdot0.3 + 0.8\cdot0.95}{\sqrt{0.3^2+0.95^2}} = \frac{0.94}{0.996} = 0.94$.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="cosine" aria-label="A question vector and chunk vectors; the two with the highest cosine similarity are selected"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#27">slide 27</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="cosine" aria-label="A question vector and chunk vectors; the two with the highest cosine similarity are selected"></svg><p class="from">The deck has a richer, interactive version of this picture on <a href="../../slides/neural_networks/06_transformers.html#33">slide 33</a> of the Attention and Transformers deck (dot product, cosine and distance with sliders).</p></div>
 ```
 
 ```{python}
