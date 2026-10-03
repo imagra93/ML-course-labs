@@ -280,10 +280,10 @@
         <tr><td>GELU</td><td>≈ [−0.17, ∞)</td><td>transformers (a smooth ReLU)</td></tr>
         <tr><td>Linear</td><td>ℝ</td><td>output of regression only</td></tr>
       </table>
-      <p class="why">ReLU is not differentiable at 0; we use a sub-derivative (0 or 1). It never matters in practice. Sigmoid and tanh <b>saturate</b>: their derivative is almost 0 for large $|z|$ (chapter 2 shows why that hurts). Press → to go through them; their derivatives come next, one by one.</p>
+      <p class="why">ReLU has no derivative at 0: we use 0 or 1, and it never matters in practice. Sigmoid and tanh <b>saturate</b>: their derivative is almost 0 for large $|z|$ (chapter 2 shows why that hurts). Press → to go through them; their derivatives come next.</p>
     </div>
     <div class="widget" data-fig="act" data-auto="a=sigmoid :: Sigmoid: squashes any z into (0, 1). The slope (red) is at most 0.25 and almost 0 for large |z||a=tanh :: Tanh: like the sigmoid, but centred at 0 and with range (−1, 1). The slope is at most 1|a=relu :: ReLU: 0 for z &lt; 0 and z for z &gt; 0. The slope is 0 or 1, so nothing shrinks it: the default for hidden layers|a=leaky :: LeakyReLU: a small slope (here 0.2) for z &lt; 0 instead of 0, so a unit cannot die|a=gelu :: GELU: z times a smooth gate (between 0 and 1), a smooth ReLU with a small dip below 0. Used in transformers|a=linear :: Linear: g(z) = z, slope 1. Only for the output of a regression">
-      <svg class="fig" aria-label="An activation function and its derivative"></svg>
+      <svg class="fig" style="max-height:320px" aria-label="An activation function and its derivative"></svg>
       <div class="ctl"><span class="seg" role="group" aria-label="Activation"><button type="button" data-a="sigmoid" aria-pressed="true">Sigmoid</button><button type="button" data-a="tanh" aria-pressed="false">Tanh</button><button type="button" data-a="relu" aria-pressed="false">ReLU</button><button type="button" data-a="leaky" aria-pressed="false">LeakyReLU</button><button type="button" data-a="gelu" aria-pressed="false">GELU</button><button type="button" data-a="linear" aria-pressed="false">Linear</button></span></div>
       <div class="legend"><span><i style="background:var(--blue)"></i>g(z)</span><span><i style="background:var(--red)"></i>derivative g′(z)</span></div>
       <div class="ro"><div class="m" style="flex:1"><span>derivative</span><b data-r="d" style="font-size:18px">–</b></div></div>
@@ -298,10 +298,10 @@
     <div class="stack" style="gap:9px">
       <p>Training a network is <b>gradient descent</b>. For every weight $w$ (and every bias) we repeat</p>
       <div class="eq">$$w\leftarrow w-\alpha\,\frac{\partial L}{\partial w}$$</div>
-      <p class="step">So we need $\dfrac{\partial L}{\partial w}$ for <b>every</b> weight. A weight sits at the start of a chain: it changes $z$, which changes the output $a=g(z)$, which changes the loss. The chain rule multiplies the slope of each link:</p>
+      <p class="step">So we need $\dfrac{\partial L}{\partial w}$ for <b>every</b> weight. A weight starts a chain: it changes $z$, which changes $a=g(z)$, which changes the loss. The chain rule multiplies the slopes of the links:</p>
       <div class="eq step">$$\frac{\partial L}{\partial w}=\frac{\partial L}{\partial a}\cdot\ho{\frac{\partial a}{\partial z}}\cdot\frac{\partial z}{\partial w}$$</div>
-      <p class="step"><b>The middle link is always an activation.</b> Its slope is $\dfrac{\partial a}{\partial z}=g'(z)$: how much the output $a$ moves when its <b>input</b> $z$ is nudged. This is the derivative of the activation function, taken with respect to $z$. The next slides compute it for each activation.</p>
-      <div class="note step"><p class="small">These derivatives will be important in chapter 2: backpropagation uses them in every layer, so we calculate them once, here.</p></div>
+      <p class="step"><b>The middle link is always an activation.</b> Its slope is $\dfrac{\partial a}{\partial z}=g'(z)$: how much the output $a$ moves when its <b>input</b> $z$ is nudged, the derivative of the activation function.</p>
+      <div class="note step"><p class="small">Backpropagation (chapter 2) uses these derivatives in every layer, so we compute them once, here: the next slides do it for each activation.</p></div>
     </div>
   </div>
 </section>
@@ -310,14 +310,14 @@
   <h2>Derivative of the sigmoid</h2>
   <div class="cols">
     <svg class="fig" data-fig="act-one" data-act="sigmoid" style="max-height:380px" aria-label="The sigmoid and its derivative, with the values at z = 0 and z = 5"></svg>
-    <div class="stack" style="gap:7px">
+    <div class="stack" style="gap:4px">
       <div class="step"><div class="eq s">$$\sigma(z)=\frac{1}{1+e^{-z}}=\big(1+e^{-z}\big)^{-1}$$</div><p class="why">write the fraction as a power</p></div>
       <div class="step"><div class="eq s">$$\sigma'(z)=-\big(1+e^{-z}\big)^{-2}\cdot\big(-e^{-z}\big)=\frac{e^{-z}}{\big(1+e^{-z}\big)^2}$$</div><p class="why">chain rule: $(u^{-1})'=-u^{-2}\,u'$, and for $u=1+e^{-z}$ we have $u'=-e^{-z}$</p></div>
       <div class="step"><div class="eq s">$$=\frac{1}{1+e^{-z}}\cdot\frac{e^{-z}}{1+e^{-z}}$$</div><p class="why">split the square into two factors</p></div>
       <div class="bluebox step">$$\sigma'(z)=\sigma(z)\,\big(1-\sigma(z)\big)$$</div>
       <p class="why step">the first factor is $\sigma(z)$; the second is $1-\sigma(z)$, because $1-\frac{1}{1+e^{-z}}=\frac{e^{-z}}{1+e^{-z}}$</p>
       <table class="t step" style="font-size:18px;text-align:center"><tr><th>$z$</th><th>−5</th><th>0</th><th>1</th><th>5</th></tr><tr><td>$\sigma(z)$</td><td>0.007</td><td>0.5</td><td>0.731</td><td>0.993</td></tr><tr><td>$\sigma'(z)$</td><td>0.0066</td><td><b>0.25</b></td><td>0.197</td><td>0.0066</td></tr></table>
-      <p class="small step">The slope is largest at $z=0$ (0.25) and almost 0 when $|z|$ is large: the sigmoid <b>saturates</b>.</p>
+      <p class="small step">Largest slope 0.25 at $z=0$; almost 0 for large $|z|$: it <b>saturates</b>.</p>
     </div>
   </div>
 </section>
@@ -400,7 +400,7 @@
   <h2>Derivative of GELU</h2>
   <div class="cols">
     <svg class="fig" data-fig="act-one" data-act="gelu" style="max-height:380px" aria-label="GELU and its derivative, with the values at z = -1 and z = 1"></svg>
-    <div class="stack" style="gap:7px">
+    <div class="stack" style="gap:5px">
       <div class="step"><div class="eq s">$$\mathrm{GELU}(z)=z\cdot\Phi(z)$$</div><p class="why">$z$ times the smooth gate $\Phi(z)$ of the previous slide</p></div>
       <div class="step"><div class="eq s">$$\mathrm{GELU}'(z)=1\cdot\Phi(z)+z\cdot\Phi'(z)$$</div><p class="why">product rule: $(uv)'=u'v+uv'$</p></div>
       <div class="step"><div class="eq s">$$\Phi'(z)=\varphi(z)=\frac{e^{-z^2/2}}{\sqrt{2\pi}}$$</div><p class="why">the slope of the area function $\Phi$ is the height of the bell curve $\varphi$</p></div>

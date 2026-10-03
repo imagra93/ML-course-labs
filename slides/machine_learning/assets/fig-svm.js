@@ -167,4 +167,19 @@ FIG['softc']=root=>{const r=rng(5);const X=[],y=[];for(let i=0;i<25;i++){X.push(
 
 FIG['hinge']=root=>{const P=Plot(svgOf(root),{w:520,h:330,x:[-2.5,3],y:[-0.1,4],m:{l:40,r:14,t:14,b:36}});P.axes({xt:[-2,-1,0,1,2,3],yt:[0,1,2,3,4],xl:'margin μ = y·f(x)',yl:'loss'});
   P.path([[-2.5,1],[0,1],[0,0],[3,0]],'ln sm');P.fn(u=>Math.max(0,1-u),'ln sb');P.fn(u=>Math.log2(1+Math.exp(-u)),'ln so');P.line(1,-0.1,1,4,'ln thin sm dot2');P.text(1,3.7,'μ = 1','','start',5,0)};
+
+/* Bonus slide (Lab 16, time series): the same 24 days split at random and in time order. R² values are Lab 16's real outputs. */
+FIG['ts-split']=root=>{const svg=initSvg(svgOf(root),560,262);const n=24,w=20,g=2,x0=16;const cx=i=>x0+i*(w+g);
+  const row=(y,title,isTest,note1,note2)=>{T(svg,x0,y-14,title,'lab big','start');
+    for(let i=0;i<n;i++)E('rect',{x:cx(i),y:y,width:w,height:30,rx:3,class:isTest(i)?'fo':'fb'},svg);
+    T(svg,x0,y+54,note1,'lab','start');if(note2)T(svg,x0,y+76,note2,'lab','start')};
+  const rnd=[3,8,12,17,21];
+  row(40,'Random split (shuffled)',i=>rnd.includes(i),'test R² = 0.89: too good to be true, each test day','sits between two training days (dashed box)');
+  row(170,'Time order',i=>i>=19,'test R² = 0.66: the honest score');
+  /* one random test day and its two neighbours, both in training */
+  E('rect',{x:cx(11)-4,y:35,width:3*w+2*g+8,height:40,rx:5,class:'ln thin sm dash'},svg);
+  /* legend and time axis */
+  E('rect',{x:392,y:12,width:14,height:14,rx:2,class:'fb'},svg);T(svg,412,24,'train','lab','start');
+  E('rect',{x:472,y:12,width:14,height:14,rx:2,class:'fo'},svg);T(svg,492,24,'test','lab','start');
+  arrowPx(svg,x0,244,cx(n-1)+w,244,'ln thin sm','fm');T(svg,cx(n-1)+w,234,'time','lab','end')};
 })();

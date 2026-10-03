@@ -286,7 +286,7 @@
         <li>Gradient descent (small enough $\alpha$) and Newton's method both reach it, from any starting point.</li>
         <li><b>Strictly</b> convex ($\bv^\top\mathbf H\bv\gt0$ for $\bv\ne\bzero$) if the columns of $\bX$ are independent: then the minimum is unique.</li>
       </ul>
-      <div class="warnbox step"><p class="small"><b>Why MSE fails here.</b> With $J_{\text{MSE}}=\frac1{2m}\sum(h^{(i)}-y^{(i)})^2$ the second derivative contains $(h^{(i)}-y^{(i)})\,g''(z^{(i)})$, which changes sign. Plateaus and local minima appear (the flat curve two slides back).</p></div>
+      <div class="warnbox step"><p class="small"><b>Why MSE fails here.</b> With $J_{\text{MSE}}=\frac1{2m}\sum(h^{(i)}-y^{(i)})^2$ the second derivative contains $(h^{(i)}-y^{(i)})\,g''(z^{(i)})$, which changes sign. Plateaus and local minima appear (the flat MSE curve on the cost-function slide).</p></div>
       <p class="step small why">One caveat: convex does not mean the minimum is reached. With separable data $J$ keeps decreasing forever (next slides).</p>
     </div>
   </div>
@@ -659,7 +659,7 @@
 </section>
 
 <section class="slide">
-  <h2>Linear regression models - Summary</h2>
+  <h2>Linear and logistic regression – Summary</h2>
   <div class="cols">
     <ul>
       <li>Pros:
@@ -672,16 +672,30 @@
   </div>
 </section>
 
-<section class="slide u">
-  <h2>Logistic Regression – labs</h2>
-  <div class="cols" style="padding-top:40px">
-    <div class="stack center" style="gap:16px">
-      <div class="note" style="text-align:left"><p class="small"><b>lab 2: LogReg from scratch.</b> Python implementation of logistic regression: sigmoid, cross-entropy, gradient descent, decision boundary and metrics, then the same with scikit-learn.</p></div>
-      <p style="font-size:26px"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%203%20-%20Logistic%20Regression.ipynb" target="_blank" rel="noopener">Lab logistic regression</a></p>
+<section class="slide lab">
+  <div class="labtag">LAB 3</div>
+  <h2>Logistic regression from scratch</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:10px">
+      <p>The model of this chapter coded by hand on two classes of points, then the same with scikit-learn.</p>
+      <ol class="todo">
+        <li>Standardise the features; the sigmoid.</li>
+        <li>The binary cross-entropy and its gradient, written by hand.</li>
+        <li>Batch gradient descent and the cost curve.</li>
+        <li>Predictions, the decision boundary and the probability surface.</li>
+        <li>Metrics: accuracy, the confusion matrix, ROC and AUC.</li>
+        <li>The same model with scikit-learn, step by step, and the two boundaries compared.</li>
+      </ol>
+      <p class="labline">Also ready now: <a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%202%20-%20Polynomial%20Regression%20and%20Regularisation.ipynb" target="_blank" rel="noopener">Lab 2 · polynomial regression and regularisation</a> (overfitting, Ridge and Lasso). It comes back at the end of chapter 05.</p>
     </div>
-    <div class="stack center" style="gap:16px">
-      <div class="note" style="text-align:left"><p class="small"><b>lab 3: Polynomial regression.</b> Underfitting, overfitting, train vs test error, Ridge and Lasso with cross-validation.</p></div>
-      <p style="font-size:26px"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%202%20-%20Polynomial%20Regression%20and%20Regularisation.ipynb" target="_blank" rel="noopener">Polynomial regression</a></p>
+    <div class="labcard">
+      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%203%20-%20Logistic%20Regression.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <dl class="gloss">
+        <dt>notebook</dt><dd><code>lab 3 - Logistic Regression.ipynb</code></dd>
+        <dt>you need</dt><dd>this chapter: sigmoid, cross-entropy, its gradient, the metrics and ROC; Lab 1</dd>
+        <dt>runs on</dt><dd>CPU; every cell runs in seconds</dd>
+      </dl>
+      <p class="small"><b>Next:</b> softmax regression (chapter 04).</p>
     </div>
   </div>
 </section>

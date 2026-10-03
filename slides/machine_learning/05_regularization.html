@@ -317,7 +317,7 @@
       <p class="small step">Right: repeat the experiment 80 times (same $\bX$, fresh noise) and fit each time. With independent features the estimates form a round cloud around the truth. As the correlation $r$ grows the cloud stretches into a streak along $\theta_1+\theta_2=2$: <b>each estimate is unreliable, their sum is not</b>. Predictions stay fine; interpretations do not.</p>
       <p class="small step"><b>Ridge</b> adds $\lambda$ to the diagonal of $\bX^\top\bX$, which removes the weak direction: the streak shrinks, at the price of a small bias towards 0.</p>
     </div>
-    <div class="widget" data-fig="collinear" data-auto="r=0;l=0 :: r = 0, VIF = 1: independent features, a round cloud around the truth (spread of θ₁ ≈ 0.14)|r=0.9;l=0 :: r = 0.9, VIF = 5.3: the cloud stretches (spread of θ₁ 0.35) but the spread of θ₁+θ₂ stays at 0.14|r=0.99;l=0 :: r = 0.99, VIF = 50: a long streak along θ₁+θ₂ = 2, spread of θ₁ 1.11 (eight times larger) while the sum is just as stable (0.14)|r=0.99;l=20 :: Ridge λ = 20 (green): the streak collapses to a tight cluster (spread of θ₁ 0.06), at the price of a small bias towards 0">
+    <div class="widget" data-fig="collinear" data-auto="r=0;l=0 :: r = 0, VIF = 1: independent features, a round cloud around the truth (spread of θ₁ ≈ 0.14)|r=0.9;l=0 :: r = 0.9, VIF = 5.3: the cloud stretches (spread of θ₁ 0.35), yet the sum θ₁+θ₂ is pinned down even better (spread 0.14, it was 0.21 at r = 0)|r=0.99;l=0 :: r = 0.99, VIF = 50: a long streak along θ₁+θ₂ = 2, spread of θ₁ 1.11 (eight times larger) while the sum is just as stable (0.14)|r=0.99;l=20 :: Ridge λ = 20 (green): the streak collapses to a tight cluster (spread of θ₁ 0.06), at the price of a small bias towards 0">
       <svg class="fig" style="max-height:300px" aria-label="Two features and the cloud of estimated coefficients over 80 repeats"></svg>
       <div class="ctl"><label for="co-r">Correlation r</label><input type="range" id="co-r" data-k="r" min="0" max="0.995" step="0.005" value="0.9"><span class="v" data-v="r">0.900</span></div>
       <div class="ctl"><label for="co-l">Ridge λ</label><input type="range" id="co-l" data-k="l" min="0" max="30" step="1" value="0"><span class="v" data-v="l">0</span></div>
@@ -383,18 +383,39 @@
 </section>
 
 <section class="slide">
-  <h2>Regularization – Summary and lab</h2>
-  <div class="cols c64">
-    <ul class="small">
+  <h2>Regularization – Summary</h2>
+  <ul style="font-size:25px;gap:18px;max-width:1080px">
       <li>Regularization = loss + $\lambda\times$ penalty; don't penalize $\theta_0$; standardize first; choose $\lambda$ by CV.</li>
       <li><b>L2 (Ridge):</b> closed form $(\bX^\top\bX+\lambda\mathbf L)^{-1}\bX^\top\by$, always unique; shrinks, never zeroes; Gaussian prior; weight decay in GD.</li>
       <li><b>L1 (Lasso):</b> soft-thresholding, exact zeros, feature selection; Laplace prior. <b>Elastic Net</b> for correlated features.</li>
       <li>Logistic regression: L2 guarantees a finite solution; scikit-learn uses $C=1/\lambda$.</li>
       <li>Inputs: scale, encode (ordinal or one-hot with $K-1$ dummies), transforms, watch collinearity (VIF) and leakage. Practical guide: "what to do when…".</li>
     </ul>
-    <div class="stack center" style="gap:16px">
-      <div class="note" style="text-align:left"><p class="small"><b>lab 3: Polynomial Regression and Regularisation.</b> Overfitting, train vs test error, Ridge, λ by cross-validation, Ridge vs Lasso coefficients.</p></div>
-      <p style="font-size:26px"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%202%20-%20Polynomial%20Regression%20and%20Regularisation.ipynb" target="_blank" rel="noopener">Polynomial regression lab</a></p>
+</section>
+
+<section class="slide lab">
+  <div class="labtag">LAB 2</div>
+  <h2>Polynomial regression, overfitting and regularisation</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:10px">
+      <p>One noisy curve, polynomials of growing degree: watch a model overfit, then tame it with a penalty.</p>
+      <ol class="todo">
+        <li>Underfit, good fit, overfit: polynomials of growing degree.</li>
+        <li>Train vs test error as the degree grows: the gap is what matters.</li>
+        <li>Ridge: train vs test error as λ grows.</li>
+        <li>Choose λ properly, with cross-validation inside a pipeline.</li>
+        <li>Ridge vs Lasso: where the coefficients go, and Lasso’s exact zeros.</li>
+        <li>Exercises, with answers.</li>
+      </ol>
+    </div>
+    <div class="labcard">
+      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%202%20-%20Polynomial%20Regression%20and%20Regularisation.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <dl class="gloss">
+        <dt>notebook</dt><dd><code>lab 2 - Polynomial Regression and Regularisation.ipynb</code></dd>
+        <dt>you need</dt><dd>polynomial features (chapter 02), cross-validation (chapter 01), Ridge, Lasso and choosing λ (this chapter)</dd>
+        <dt>runs on</dt><dd>CPU; every cell runs in seconds</dd>
+      </dl>
+      <p class="small"><b>Next:</b> decision trees (chapter 06), then Lab 4.</p>
     </div>
   </div>
 </section>

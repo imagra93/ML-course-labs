@@ -451,7 +451,7 @@ Z = self_attention(X, Wq, Wk, Wv, causal=True)   <span class="c"># [10, 64]</spa
     </div>
     <div class="stack" style="gap:10px">
       <p class="small"><b>Autoregressive</b>: the model gives a distribution over the next token; one token is chosen, appended to the input, and the model runs again.</p>
-      <p class="small">Training is parallel (the mask), <b>generation is sequential</b>: 500 tokens of answer = 500 forward passes. The KV cache (two slides ahead) makes each pass cheap.</p>
+      <p class="small">Training is parallel (the mask), <b>generation is sequential</b>: 500 tokens of answer = 500 forward passes. The KV cache (three slides ahead) makes each pass cheap.</p>
       <p class="small why">How the token is chosen from the probabilities: next slide.</p>
     </div>
   </div>

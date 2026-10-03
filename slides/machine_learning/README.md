@@ -12,7 +12,7 @@ One HTML file per topic. The shared engine (styles, navigation, logo, shared fig
 | `05_regularization.html` | Regularization, inputs, assumptions | slides 40–41 + notes 03 |
 | `06_decision_trees.html` | Decision trees and CART | slides 68–75, 80 |
 | `07_ensembles.html` | Bagging, random forest, boosting, XGBoost | slides 76–85 |
-| `08_svm.html` | Support vector machines | slides 86–113 |
+| `08_svm.html` | Support vector machines, plus a bonus slide on time series (Lab 16) | slides 86–113 |
 
 ## Presenting
 → / Space: next step · ← back · F: full screen · the URL `#12` jumps to slide 12 (`#last` = last slide).

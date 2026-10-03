@@ -286,7 +286,7 @@ W2 -= lr * dW2;  b2 -= lr * db2</pre>
       <div class="eq big">$$\frac{\partial J}{\partial w}\approx\frac{J(w+\varepsilon)-J(w-\varepsilon)}{2\varepsilon},\qquad\varepsilon\approx10^{-5}$$</div>
       <p class="step">The centred difference has error $O(\varepsilon^2)$, much better than the one-sided $O(\varepsilon)$.</p>
       <p class="step">Compare with the <b>relative error</b> $\dfrac{\norm{g_{\text{bp}}-g_{\text{num}}}}{\norm{g_{\text{bp}}}+\norm{g_{\text{num}}}}$: below $10^{-7}$ is correct; above $10^{-3}$ is a bug.</p>
-      <p class="step small">Try it on the tiny network: $J(W^{[2]}_1+\varepsilon)-J(W^{[2]}_1-\varepsilon)$ over $2\varepsilon$ gives $-0.280$, the number of the slide before.</p>
+      <p class="step small">Try it on the tiny network: $J(W^{[2]}_1+\varepsilon)-J(W^{[2]}_1-\varepsilon)$ over $2\varepsilon$ gives $-0.280$, the $\partial W^{[2]}_1$ of the tiny-network slide.</p>
     </div>
     <div class="stack" style="gap:12px">
       <p><b>Automatic differentiation in PyTorch</b> does all of this for you:</p>

@@ -24,7 +24,7 @@ used in the labs.
 | 06 | [Embeddings, retrieval and RAG](https://imagra93.github.io/ML-course-labs/notes/neural_networks/06_embeddings_rag.html) | [.qmd](06_embeddings_rag.qmd) | similarity, TF-IDF, BM25, LSA, neural embeddings (InfoNCE, pooling), IVF, HNSW and product quantisation, retrieval metrics, hybrid retrieval and re-ranking, chunking, RAG and its failure modes | lab 15 |
 
 The full YOLO pipeline (fine-tuning YOLO11n, ONNX export) is a lab:
-[`notebooks/neural_networks/lab 13 - Object detection with YOLO.ipynb`](../../notebooks/neural_networks/lab 13 - Object detection with YOLO.ipynb).
+[`notebooks/neural_networks/lab 13 - Object detection with YOLO.ipynb`](../../notebooks/neural_networks/lab%2013%20-%20Object%20detection%20with%20YOLO.ipynb).
 The detection concepts it builds on (boxes, IoU, NMS, precision–recall and AP) are in note 03.
 
 Original class notes (PDF): [ML_notes_NN.pptx.pdf](../../ML_notes_NN.pptx.pdf)
