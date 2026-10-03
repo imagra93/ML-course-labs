@@ -316,12 +316,29 @@
   </div>
 </section>
 
-<section class="slide u">
-  <h2>Linear Regression – lab 0: OLS from scratch</h2>
-  <div class="stack center grow" style="gap:24px">
-    <div class="note" style="max-width:820px;text-align:left"><p><b>Simple Linear Regression.</b> The goal of this notebook is to demonstrate a linear regression model from the ground up using NumPy: the cost function, gradient descent, the normal equation, vectorisation, and the effect of the initial θ and the learning rate.</p></div>
-    <p style="font-size:30px"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%201%20-%20Ordinary%20Least%20Squares%20Regression.ipynb" target="_blank" rel="noopener">Lab OLR</a></p>
-    <p class="muted">notebooks/machine_learning/lab 1 - Ordinary Least Squares Regression.ipynb</p>
+<section class="slide lab">
+  <div class="labtag">LAB 1</div>
+  <h2>Ordinary least squares from scratch</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:10px">
+      <p>Linear regression built by hand with NumPy: every formula of this chapter becomes a few lines of code.</p>
+      <ol class="todo">
+        <li>The MSE cost function and its gradient.</li>
+        <li>Batch gradient descent, and the cost against the number of iterations.</li>
+        <li>The normal equation (closed form), compared with gradient descent.</li>
+        <li>Vectorisation: the same computation without Python loops.</li>
+        <li>Different starting points reach the same minimum (convexity), and how to choose the learning rate.</li>
+      </ol>
+    </div>
+    <div class="labcard">
+      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%201%20-%20Ordinary%20Least%20Squares%20Regression.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <dl class="gloss">
+        <dt>notebook</dt><dd><code>lab 1 - Ordinary Least Squares Regression.ipynb</code></dd>
+        <dt>you need</dt><dd>this chapter: the cost, gradient descent and α, the normal equation; NumPy from Lab 0</dd>
+        <dt>runs on</dt><dd>CPU; every cell runs in seconds</dd>
+      </dl>
+      <p class="small"><b>Next:</b> logistic regression (chapter 03), then Labs 3 and 2.</p>
+    </div>
   </div>
 </section>
 

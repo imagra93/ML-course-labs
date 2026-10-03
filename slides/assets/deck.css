@@ -172,3 +172,22 @@ table.cmx .on{background:#8ea9db !important}
 table.cmx .blank{border:none;background:none;min-width:0}
 .kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:19px}
 body.flow .seg{flex-wrap:wrap;max-width:100%}
+/* Lab slides (section.slide.lab): green LAB tag, todo list, lab card with the Open in Colab button.
+   Same rules as slides/neural_networks/assets/nn.css lines 30-32 and 46-60, so the ML decks get them without nn.css. Keep in sync. */
+.gloss{display:grid;grid-template-columns:auto 1fr;gap:8px 18px;font-size:19px;align-items:baseline}
+.gloss dt{font-weight:700;color:var(--blue);margin:0}
+.gloss dd{margin:0}
+.slide.lab{background:linear-gradient(90deg,#f2f8ee 0,#fff 42%)}
+.slide.lab .labtag{align-self:flex-start;background:#548235;color:#fff;font-weight:700;font-size:17px;letter-spacing:.08em;padding:3px 12px;margin-bottom:-6px}
+.slide.lab h2{font-size:44px}
+.labcard{border:1px solid var(--line);border-top:4px solid #548235;background:#fff;padding:16px 20px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.labcard .gloss{font-size:17px;gap:6px 14px}
+.labcard .gloss dt{color:#548235}
+a.colab{display:inline-flex;align-items:center;gap:10px;align-self:flex-start;background:#f9ab00;color:#1f1f1f;font-weight:700;font-size:22px;text-decoration:none;padding:9px 18px;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+a.colab:hover,a.colab:focus-visible{background:#ffc53d}
+a.colab .co{font-family:var(--mono);font-size:19px;background:#1f1f1f;color:#f9ab00;border-radius:4px;padding:1px 6px}
+.lab ol.todo{counter-reset:t;list-style:none;padding-left:0;gap:7px}
+.lab ol.todo li{counter-increment:t;position:relative;padding-left:34px;font-size:19px;line-height:1.3}
+.lab ol.todo li::before{content:counter(t);position:absolute;left:0;top:1px;width:24px;height:24px;border-radius:50%;background:#e2f0d9;color:#385723;font-weight:700;font-size:15px;display:grid;place-items:center}
+.labline{font-size:17px;color:#385723;background:#f2f8ee;border-left:4px solid #548235;padding:5px 12px}
+.labline a{color:#385723;font-weight:700}

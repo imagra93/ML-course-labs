@@ -530,11 +530,56 @@ search.best_params_</pre>
   </div>
 </section>
 
-<section class="slide">
-  <h2>Support Vector Machine (SVM): Lab</h2>
-  <div class="stack center grow" style="gap:20px">
-    <div class="note" style="max-width:840px;text-align:left"><p class="small"><b>Support Vector Machines.</b> Maximizing the margin, fitting an SVM with scikit-learn, support vectors, the kernel trick, soft margins and tuning C and γ with cross-validation.</p></div>
-    <p style="font-size:30px"><a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%205%20-%20Support%20Vector%20Machines.ipynb" target="_blank" rel="noopener">Lab SVM</a></p>
+<section class="slide lab">
+  <div class="labtag">LAB 5</div>
+  <h2>Support vector machines</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:10px">
+      <p>The maximum-margin classifier with scikit-learn, from the picture to a tuned model.</p>
+      <ol class="todo">
+        <li>Why the maximum-margin boundary is a sensible choice.</li>
+        <li>Fit an SVM; find the support vectors and see that only they define the model.</li>
+        <li>The kernel trick for curved boundaries.</li>
+        <li>Soft margin: the role of $C$ on overlapping classes.</li>
+        <li>Tune the kernel, $C$ and $\gamma$ with cross-validation, in a pipeline.</li>
+      </ol>
+    </div>
+    <div class="labcard">
+      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%205%20-%20Support%20Vector%20Machines.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <dl class="gloss">
+        <dt>notebook</dt><dd><code>lab 5 - Support Vector Machines.ipynb</code></dd>
+        <dt>you need</dt><dd>this chapter: margin, support vectors, kernels, soft margin and $C$; pipelines and cross-validation</dd>
+        <dt>runs on</dt><dd>CPU; every cell runs in seconds</dd>
+      </dl>
+      <p class="small"><b>Next:</b> a bonus lab on time series (next slide), then the neural-network part.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide lab">
+  <div class="labtag">BONUS · LAB 16</div>
+  <h2>Linear regression for time series</h2>
+  <div class="cols">
+    <div class="stack" style="gap:12px">
+      <p>Same model $\hat y=\boldsymbol\theta^\top\mathbf x$, same least squares. New data: <b>days in order</b>. Today looks a lot like yesterday, so the examples are <b>not independent</b>.</p>
+      <p>The model does not change, the <b>method</b> does:</p>
+      <ol class="small">
+        <li><b>Never shuffle.</b> Train on the past, test on the future.</li>
+        <li><b>Features only from the past</b>: yesterday $y_{t-1}$, last week $y_{t-7}$. A 7-day mean that includes today gives $R^2 = 1.00$: arithmetic, not forecasting.</li>
+        <li><b>Beat a naive forecast</b> (“same as last week”), not the mean. On the test year the lab's model halves its error (MAE 4.3 vs 8.5).</li>
+        <li><b>Cross-validate forward</b> with <code>TimeSeriesSplit</code>.</li>
+      </ol>
+    </div>
+    <div class="stack" style="gap:16px">
+      <svg class="fig" data-fig="ts-split" aria-label="The same 24 days split at random, with test days between training days, and in time order, with the test days at the end"></svg>
+      <div class="labcard">
+        <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%2016%20-%20Linear%20Regression%20for%20Time%20Series.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+        <dl class="gloss">
+          <dt>notebook</dt><dd><code>lab 16 - Linear Regression for Time Series.ipynb</code></dd>
+          <dt>runs on</dt><dd>CPU; the whole lab runs in seconds</dd>
+        </dl>
+      </div>
+    </div>
   </div>
 </section>
 

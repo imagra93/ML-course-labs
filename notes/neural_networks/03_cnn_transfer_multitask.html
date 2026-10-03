@@ -1583,7 +1583,7 @@ J=\lambda_{\text{box}}\big(1-\mathrm{CIoU}\big)+\lambda_{\text{cls}}\,\mathrm{BC
 \mathrm{IoU}=\frac{a-d}{a+d}=\frac12\quad\Longleftrightarrow\quad2(a-d)=a+d\quad\Longleftrightarrow\quad d=\frac a3 :
 \]</span> shifting a square by a third of its side already brings the IoU down to the usual threshold.</p>
 <p><strong>Try it.</strong> A ground-truth box (green) and a prediction (blue, dashed). The widget shifts the prediction diagonally (by <span class="math inline">\(x\)</span> horizontally and <span class="math inline">\(0.3x\)</span> vertically) and scales it.</p>
-<div class="widget" data-fig="iou" data-auto="x=0; s=1 :: perfect: IoU = 1 | x=1.1 :: shifted by about a quarter of its size: IoU ≈ 0.5, the usual threshold | x=1; s=1.4 :: too large: also punished">
+<div class="widget" data-fig="iou" data-auto="x=0; s=1 :: perfect: IoU = 1 | x=1.1 :: shifted right by about a quarter of its side and slightly down: IoU ≈ 0.5, the usual threshold | x=1; s=1.4 :: too large: also punished">
   <svg class="fig" style="max-height:330px" aria-label="A ground-truth box and a predicted box with their intersection over union"></svg>
   <div class="ctl"><label for="iou-x">shift prediction</label><input type="range" id="iou-x" data-k="x" min="-3" max="5" step="0.1" value="1"><span class="v" data-v="x">1.0</span></div>
   <div class="ctl"><label for="iou-s">scale prediction</label><input type="range" id="iou-s" data-k="s" min="0.4" max="1.6" step="0.05" value="1"><span class="v" data-v="s">1.0</span></div>
