@@ -21,21 +21,41 @@
 </section>
 
 <section class="slide">
-  <h2>Problems with LSTMs:</h2>
+  <h2>Where we are</h2>
+  <div class="cards c4">
+    <div class="card"><h3>A · Attention</h3><ul><li>why RNNs need help</li><li>a soft dictionary lookup, with numbers</li><li>queries, keys and values</li><li>$\sqrt{d_k}$, multi-head, positions, the mask</li></ul></div>
+    <div class="card o"><h3>B · The transformer</h3><ul><li>one block: attention + MLP</li><li>encoder, decoder, cross-attention</li><li>BERT vs GPT</li></ul></div>
+    <div class="card g"><h3>C · GPT: generating text</h3><ul><li>tokens, the next-token objective</li><li>GPT-2 end to end: 124 M parameters</li><li>decoding, KV cache, perplexity</li><li><b>Lab 14</b></li></ul></div>
+    <div class="card y"><h3>D · RAG: your documents</h3><ul><li>embeddings and similarity</li><li>search, chunking, search at scale</li><li>measuring and improving retrieval</li><li><b>Lab 15</b></li></ul></div>
+  </div>
+  <p class="small">The thread of the chapter in one picture: what happens inside GPT when it continues "The cat sat on the".</p>
+  <div class="pipe">
+    <div class="pb y"><b>text</b>"The cat sat on the"</div><span class="ar">→</span>
+    <div class="pb g"><b>tokens</b>5 ids · Part C</div><span class="ar">→</span>
+    <div class="pb g"><b>vectors</b>one per token</div><span class="ar">→</span>
+    <div class="pb b"><b>12 transformer blocks</b>attention + MLP · Parts A, B</div><span class="ar">→</span>
+    <div class="pb o"><b>next token</b>"floor" 7.6 % · Part C</div>
+  </div>
+  <p class="small why">Part D uses the same machinery for search: a transformer turns a whole text into one vector, and the nearest vectors are the documents that answer a question.</p>
+</section>
+
+<section class="slide divider"><div class="card blue"><h1><b>Part A</b><br>Attention</h1><ul class="small"><li>why RNNs need help</li><li>attention as a soft lookup, with numbers</li><li>queries, keys and values</li><li>$\sqrt{d_k}$, multi-head, positions, the mask</li></ul></div></section>
+
+<section class="slide">
+  <h2>Problems with LSTMs</h2>
   <div class="cols">
     <div class="stack" style="gap:12px">
       <ul>
-        <li>Inputs are <b>sequential</b>: no parallelization. Step $t$ must wait for step $t-1$.</li>
-        <li>No explicit modelling of long- and short-range dependencies.</li>
-        <li>The distance between positions matters: information from far away must survive many steps.</li>
-        <li>The whole input is squeezed into one fixed-size state.</li>
+        <li>Inputs are <b>sequential</b>: step $t$ must wait for step $t-1$, so nothing runs in parallel.</li>
+        <li>Information from far away must survive <b>many steps</b>, and it fades.</li>
+        <li>The whole input is squeezed into <b>one fixed-size state</b>.</li>
       </ul>
       <p><b>What we want:</b></p>
       <ul><li>handle inputs of different lengths,</li><li>parallel processing of the entire input,</li><li>shared parameters (like CNNs),</li><li>any position reachable from any other in one step.</li></ul>
     </div>
     <div class="stack center" style="gap:14px">
       <div class="note" style="text-align:center;padding:24px 30px"><p style="font-size:30px"><b>Attention Is All You Need</b></p><p class="small">Vaswani, Shazeer, Parmar, Uszkoreit, Jones, Gomez, Kaiser, Polosukhin · 2017</p></div>
-      <svg class="fig" data-fig="seq-par" style="max-height:280px" aria-label="An RNN processes the words one after another; attention connects every pair of words at once"></svg>
+      <svg class="fig" data-fig="seq-par" style="max-height:245px" aria-label="An RNN processes the words one after another; attention connects every pair of words at once"></svg>
       <p class="why">The paper that introduced the transformer: no recurrence, no convolution, only attention. Behind GPT, BERT, translation, speech (Whisper) and vision (ViT). Two labs close this chapter: Lab 14 (text generation with GPT-2) and Lab 15 (RAG: search and grounded answers).</p>
     </div>
   </div>
@@ -64,7 +84,7 @@
 </section>
 
 <section class="slide">
-  <h2>Attention mechanism: a soft dictionary lookup</h2>
+  <h2>Attention: a soft dictionary lookup</h2>
   <div class="cols">
     <div class="stack" style="gap:12px">
       <p>A Python dictionary returns the value whose key <b>exactly</b> matches the query. Attention returns a <b>weighted mix</b> of all the values, weighted by how well each key matches:</p>
@@ -78,7 +98,7 @@
       <p class="step">Everything is differentiable, so the queries, keys and values can be <b>learned</b> by backprop.</p>
       <p class="why">Toy numbers: 2-dimensional queries and keys. (The factor $1/\sqrt{d_k}$ is explained a few slides ahead.)</p>
     </div>
-    <div class="widget" data-fig="soft-lookup" data-auto="q=cat :: an exact match: weights 0.93 / 0.06 / 0.01, the output is almost exactly v₁ (a dictionary would return v₁ too)|q=kitten :: "kitten" is not a key: the dictionary raises KeyError, attention still answers with 0.80 cat, 0.18 dog, 0.02 car|q=puppy :: "puppy": mostly dog (0.83), a little cat (0.12)|q=truck :: "truck": almost all the weight (0.93) goes to car">
+    <div class="widget" data-fig="soft-lookup" data-auto="q=cat :: an exact match: weights 0.93 / 0.06 / 0.01, the output is almost exactly v₁ (a dictionary would return v₁ too) | q=kitten :: &quot;kitten&quot; is not a key: the dictionary raises KeyError, attention still answers with 0.80 cat, 0.18 dog, 0.02 car | q=puppy :: &quot;puppy&quot;: mostly dog (0.83), a little cat (0.12) | q=truck :: &quot;truck&quot;: most of the weight (0.93) goes to car">
       <div class="ctl"><label>query</label><span class="seg" role="group" aria-label="Query word"><button type="button" data-q="cat" aria-pressed="false">cat</button><button type="button" data-q="kitten" aria-pressed="true">kitten</button><button type="button" data-q="puppy" aria-pressed="false">puppy</button><button type="button" data-q="truck" aria-pressed="false">truck</button></span></div>
       <svg class="fig" style="max-height:330px" aria-label="A dictionary lookup that fails for an unknown key, and attention weights over the keys with the blended value"></svg>
       <div class="ro"><div class="m"><span>weights α (cat / dog / car)</span><b data-r="w">–</b></div></div>
@@ -95,40 +115,47 @@
     </div>
     <div class="stack" style="gap:8px">
       <p class="small">Three tokens with 2-dimensional keys and values. We compute the new vector for "pizza", whose query is $\bq=(2,1)$:</p>
+      <p class="small"><b>1 · Compare</b> the query with every key (dot product, divided by $\sqrt{d_k}=\sqrt2$):</p>
       <div class="eq s">$$\text{scores}=\tfrac{1}{\sqrt2}\big(\bq\cdot\bk_{\text I},\ \bq\cdot\bk_{\text{love}},\ \bq\cdot\bk_{\text{pizza}}\big)=\tfrac1{\sqrt2}(2,1,3)$$</div>
+      <p class="small"><b>2 · Normalise</b> with a softmax: positive weights that sum to 1.</p>
       <div class="eq s">$$\boldsymbol\alpha=\mathrm{softmax}(1.41,\,0.71,\,2.12)=(0.28,\,0.14,\,0.58)$$</div>
+      <p class="small"><b>3 · Mix</b> the values with these weights:</p>
       <div class="eq s">$$\text{out}=0.28\binom10+0.14\binom01+0.58\binom{0.5}{0.5}=\binom{0.57}{0.43}$$</div>
-      <p class="small why">Every token does this at the same time, each with its own query.</p>
+      <p class="small why">Every token does this at the same time, each with its own query. Where do these keys, values and queries come from? Next slide.</p>
     </div>
   </div>
 </section>
 
 <section class="slide">
-  <h2>Self-attention:</h2>
+  <h2>Where do queries, keys and values come from?</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:10px">
+      <p class="small">On the previous slide the numbers were given. In a transformer every token computes its own query, key and value from its embedding $\bx_i$ (a row vector), with three <b>learned</b> matrices:</p>
+      <div class="eq">$$\bq_i=\bx_i\bW_Q,\qquad\bk_i=\bx_i\bW_K,\qquad\bv_i=\bx_i\bW_V$$</div>
+      <p class="small why">The same three matrices for every token. They are the parameters that training adjusts.</p>
+      <p class="small step"><b>Check one product.</b> "pizza" has $\bx=(1,1,1)$, so $\bx\bW_Q$ is the sum of the rows of $\bW_Q$: $(1,0)+(0,1)+(1,0)=(2,1)$, the query of the previous slide. The same matrices give "I" and "love" their keys and values too.</p>
+      <p class="small step"><b>"Self"-attention:</b> queries, keys and values all come from the <b>same</b> sentence.</p>
+      <p class="small step"><b>Why two matrices for Q and K?</b> "What I look for" and "what I offer" differ: a verb looks for its subject, a noun offers itself as one. With a single matrix, $\text{score}(i,j)=\text{score}(j,i)$ always.</p>
+      <p class="small step">Real sizes, GPT-2 small: $\bx_i$ has $d=768$ numbers and each head has its own $768\times64$ matrices.</p>
+    </div>
+    <svg class="fig" data-fig="qkv-token" aria-label="The embedding of pizza, (1, 1, 1), times three learned matrices gives its query (2, 1), key (1, 1) and value (0.5, 0.5)"></svg>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Self-attention: all tokens at once</h2>
+  <svg class="fig" data-fig="qkv" style="max-height:200px" aria-label="X projected into Q, K and V; QK transpose gives an n by n score matrix; softmax gives A; A times V gives Z"></svg>
   <div class="cols">
+    <div class="stack" style="gap:6px">
+      <div class="step"><p class="small"><b>1 · Score.</b> How much token $i$ should look at token $j$:</p><div class="eq s">$$\text{score}(i,j)=\frac{\bq_i\cdot\bk_j}{\sqrt{d_k}}$$</div></div>
+      <div class="step"><p class="small"><b>2 · Normalise.</b> A softmax over $j$ turns each row of scores into weights that sum to 1:</p><div class="eq s">$$\alpha_{ij}=\frac{e^{\,\text{score}(i,j)}}{\sum_{l=1}^ne^{\,\text{score}(i,l)}}$$</div></div>
+      <div class="step"><p class="small"><b>3 · Mix.</b> The new vector of token $i$ is a weighted average of the values: $\ \bz_i=\sum_{j=1}^n\alpha_{ij}\,\bv_j$.</p></div>
+    </div>
     <div class="stack" style="gap:8px">
-      <p class="small">A sequence of $n$ tokens $\{\bx_1,\dots,\bx_n\}$, each a vector of size $d_{\text{model}}$. For each token we create three vectors with learned matrices:</p>
-      <div class="eq">$$\bq_i=\bx_i\bW_Q,\qquad\bk_i=\bx_i\bW_K,\qquad\mathbf v_i=\bx_i\bW_V$$</div>
-      <p class="small">$\bW_Q,\bW_K\in\R^{d_{\text{model}}\times d_k}$, $\bW_V\in\R^{d_{\text{model}}\times d_v}$ (typically $d_k=d_v=d_{\text{model}}/h$). "Self": queries, keys and values all come from the <b>same</b> sequence.</p>
-      <p class="step small">How much token $i$ should focus on token $j$:</p>
-      <div class="eq step">$$\text{score}(i,j)=\frac{\bq_i\cdot\bk_j}{\sqrt{d_k}},\qquad\alpha_{ij}=\frac{\exp(\text{score}(i,j))}{\sum_{k=1}^n\exp(\text{score}(i,k))}$$</div>
-      <div class="eq step">$$\mathrm{Attention}(\bx_i)=\sum_{j=1}^n\alpha_{ij}\,\mathbf v_j$$</div>
-    </div>
-    <div class="stack" style="gap:12px">
-      <p class="step">All tokens at once, in matrix form ($\bQ=\bX\bW_Q$, $\bK=\bX\bW_K$, $\bV=\bX\bW_V$):</p>
+      <p class="small step">Stack the tokens as the rows of $\bX$ ($n\times d$): $\bQ=\bX\bW_Q$, $\bK=\bX\bW_K$, $\bV=\bX\bW_V$. Entry $(i,j)$ of $\bQ\bK^\top$ is $\bq_i\cdot\bk_j$, so the three steps become one line:</p>
       <div class="bluebox step">$$\mathrm{Attention}(\bQ,\bK,\bV)=\mathrm{softmax}\Big(\frac{\bQ\bK^\top}{\sqrt{d_k}}\Big)\bV$$</div>
-      <p class="step small">$\bQ\bK^\top$ is $n\times n$: every token against every token. The softmax is taken row by row. Each token ends up as a combination of all the tokens in the sequence, weighted by the attention scores.</p>
-      <p class="step small"><b>Why separate Q and K?</b> "What I look for" and "what I offer" are different: a verb looks for its subject, a noun offers itself as one. Two matrices let the relation be asymmetric.</p>
+      <p class="small step">Example: $n=10$ tokens, $d=512$, $d_k=64$. $\bQ,\bK,\bV$ are $10\times64$, the scores $10\times10$, the output again $10\times64$. Cost $O(n^2d)$: twice the context, four times the work.</p>
     </div>
-  </div>
-</section>
-
-<section class="slide">
-  <h2>Self-attention as matrices</h2>
-  <svg class="fig" data-fig="qkv" style="max-height:260px" aria-label="X projected into Q, K and V; QK transpose gives an n by n score matrix; softmax gives A; A times V gives Z"></svg>
-  <div class="cols">
-    <p class="small">Example: $n=10$ tokens, $d=512$, $d_k=64$. $\bQ,\bK,\bV$ are $10\times64$, the score matrix is $10\times10$, the output is again one vector per token.</p>
-    <p class="small">Cost: $O(n^2d)$. Doubling the context quadruples the attention cost: why context windows are limited and why long-context tricks exist (FlashAttention, sparse attention).</p>
   </div>
 </section>
 
@@ -142,7 +169,7 @@
     </div>
     <div class="stack" style="gap:12px;padding-top:30px">
       <p>"The animal didn't cross the street because it was <b>tired</b>": <i>it</i> = the animal.<br>"…because it was <b>wide</b>": <i>it</i> = the street.</p>
-      <div class="ro"><div class="m"><span>"it" attends most to</span><b data-r="top" style="font-size:18px">–</b></div></div>
+      <div class="ro"><div class="m"><span>the query attends most to</span><b data-r="top" style="font-size:18px">–</b></div></div>
       <p class="small">Change one word at the end and the representation of <i>it</i> changes: attention builds <b>context-dependent</b> word vectors. The weights shown are illustrative; in a trained model each head learns its own.</p>
     </div>
   </div>
@@ -164,11 +191,11 @@
   <h2>Why divide by $\sqrt{d_k}$?</h2>
   <div class="cols">
     <div class="stack" style="gap:10px">
-      <p>Suppose the components of $\bq$ and $\bk$ are independent with mean 0 and variance 1:</p>
-      <div class="eq step">$$\E[\bq^\top\bk]=\sum_{i=1}^{d_k}\E[q_i]\,\E[k_i]=0$$</div>
-      <div class="eq step">$$\mathrm{Var}(\bq^\top\bk)=\sum_{i=1}^{d_k}\mathrm{Var}(q_ik_i)=\sum_{i=1}^{d_k}\E[q_i^2]\,\E[k_i^2]=d_k$$</div>
-      <p class="step">Raw dot products have standard deviation $\sqrt{d_k}$ (8 for $d_k=64$). Large scores push the softmax into <b>saturation</b>: nearly one-hot, where its gradient is nearly 0.</p>
-      <p class="step">Dividing by $\sqrt{d_k}$ brings the variance back to 1, whatever the dimension. $\blacksquare$</p>
+      <p class="small"><b>The problem.</b> A dot product adds up $d_k$ terms, so it grows with the dimension. Large scores make the softmax almost one-hot (right, red), and then its gradient is almost 0: attention stops learning.</p>
+      <p class="small">How large? Suppose the components of $\bq$ and $\bk$ are independent, with mean 0 and variance 1:</p>
+      <div class="step"><div class="eq s">$$\E[\bq^\top\bk]=\sum_{i=1}^{d_k}\E[q_i]\,\E[k_i]=0$$</div><p class="why">expectation of a sum = sum of expectations; independent factors; every mean is 0</p></div>
+      <div class="step"><div class="eq s">$$\mathrm{Var}(\bq^\top\bk)=\sum_{i=1}^{d_k}\mathrm{Var}(q_ik_i)=\sum_{i=1}^{d_k}\E[q_i^2]\,\E[k_i^2]=d_k$$</div><p class="why">independent terms add their variances; each term has mean 0 and variance $1\cdot1$</p></div>
+      <p class="small step">So raw scores have standard deviation $\sqrt{d_k}$: 8 for $d_k=64$. Dividing by $\sqrt{d_k}$ brings the variance back to 1, whatever the dimension (blue). $\blacksquare$</p>
     </div>
     <div class="widget" data-fig="sqrtd" data-auto="d=2 :: dₖ = 4: both softmaxes are soft (largest weight 0.61 raw, 0.41 scaled) | d=6 :: dₖ = 64: the raw softmax is almost one-hot (0.94); the scaled one stays soft (0.33) | d=9 :: dₖ = 512: raw still puts most weight on one key (0.88); scaled stays soft (0.26)">
       <svg class="fig" aria-label="Softmax of raw and scaled attention scores"></svg>
@@ -179,15 +206,17 @@
 </section>
 
 <section class="slide">
-  <h2>Self-Attention and multihead:</h2>
+  <h2>Multi-head attention: several attentions in parallel</h2>
+  <svg class="fig" data-fig="mha-split" style="max-height:300px" aria-label="Q, K and V cut into 12 slices; each slice feeds its own attention head; the heads are concatenated and mixed by W_O"></svg>
   <div class="cols">
-    <div class="stack" style="gap:10px">
-      <p>Train several attentions <b>in parallel</b> and let each focus on different things (syntax, coreference, position…).</p>
-      <div class="eq">$$\mathrm{head}_i=\mathrm{Attention}\big(\bX\bW_Q^{(i)},\bX\bW_K^{(i)},\bX\bW_V^{(i)}\big)$$</div>
-      <div class="bluebox">$$\mathrm{MultiHead}(\bX)=\mathrm{Concat}(\mathrm{head}_1,\dots,\mathrm{head}_h)\,\bW_O$$</div>
-      <p class="small">With $h$ heads of size $d_k=d/h$, the cost is about the same as one big head. Example: $d=768$, $h=12$, $d_k=64$.</p>
+    <div class="stack" style="gap:6px">
+      <p class="small">One head gives one weighted average per token: it cannot look at the previous word <b>and</b> at the subject at the same time. So we run $h$ heads, each with its own projections:</p>
+      <div class="eq s">$$\mathrm{head}_i=\mathrm{Attention}\big(\bX\bW_Q^{(i)},\bX\bW_K^{(i)},\bX\bW_V^{(i)}\big)$$</div>
     </div>
-    <svg class="fig" data-fig="mha" aria-label="Multi-head attention: linear projections of Q, K, V, parallel attention heads, concatenation and a final linear layer"></svg>
+    <div class="stack" style="gap:6px">
+      <div class="bluebox">$$\mathrm{MultiHead}(\bX)=\mathrm{Concat}(\mathrm{head}_1,\dots,\mathrm{head}_h)\,\bW_O$$</div>
+      <p class="small">GPT-2 small: $d=768$, $h=12$ heads of $d_k=64$. Twelve heads of 64 have the same parameters and cost as one head of 768: the slices only split the work. $\bW_O$ mixes what the heads found.</p>
+    </div>
   </div>
 </section>
 
@@ -198,14 +227,31 @@
 </section>
 
 <section class="slide">
-  <h2>Positional encodings:</h2>
+  <h2>Attention ignores word order</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="perm" data-auto="p=off :: words only: &quot;dog&quot; gets exactly the same vector in both sentences (distance 0.00) | p=on :: add a position vector to each word: now the two &quot;dog&quot; vectors differ (distance 0.40)">
+      <svg class="fig" aria-label="Self-attention applied to dog bites man and man bites dog, with and without position vectors"></svg>
+      <div class="ctl"><label>input</label><span class="seg" role="group" aria-label="Positions"><button type="button" data-p="off" aria-pressed="true">words only</button><button type="button" data-p="on" aria-pressed="false">words + positions</button></span></div>
+      <div class="ro"><div class="m"><span>distance between the two "dog" vectors</span><b data-r="d">–</b></div></div>
+    </div>
+    <div class="stack" style="gap:12px;padding-top:10px">
+      <p>Attention compares every token with every token, but <b>nothing in the formula says which word came first</b>.</p>
+      <p class="small step">Shuffle the input words and the outputs are shuffled the same way, nothing else changes. "dog bites man" and "man bites dog" give each word the <b>same</b> vector. Attention is <b>permutation-equivariant</b> (a three-line proof in the notes).</p>
+      <p class="small step">An RNN got the order for free: it reads one word after another. A transformer reads all the words at once, so we must <b>tell</b> it where each word is.</p>
+      <p class="small step why">The fix, on the next slide: add to each word a vector that encodes its position.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Positional encodings: tell the model where each word is</h2>
   <div class="cols c46">
     <div class="stack" style="gap:8px">
-      <p class="small"><b>Does the order of words matter?</b> Permute the input rows: $\bQ\bK^\top$ and the output are permuted the same way. Self-attention is <b>permutation-equivariant</b>: "dog bites man" = "man bites dog".</p>
-      <p class="small">So we <b>add</b> an encoding of the position to each embedded input:</p>
+      <p class="small">Before the first block, <b>add</b> to each token a vector that depends only on its position:</p>
       <div class="eq">$$\text{input}_t=\text{embedding}(\text{token}_t)+PE(t)$$</div>
       <div class="eq s">$$PE_{(pos,\,2i)}=\sin\Big(\frac{pos}{10000^{2i/d}}\Big)$$$$PE_{(pos,\,2i+1)}=\cos\Big(\frac{pos}{10000^{2i/d}}\Big)$$</div>
-      <p class="small">Each pair of dimensions is a clock at a different speed. Relative positions become easy to read: $PE(pos+k)$ is a fixed rotation of $PE(pos)$. GPT-2 instead <b>learns</b> a position embedding; modern LLMs rotate $\bq,\bk$ directly (RoPE).</p>
+      <p class="small step"><b>Sinusoidal</b> (above, the original transformer): each pair of dimensions is a clock at its own speed. Fast clocks tell neighbours apart, slow clocks far positions; together they give every position a unique fingerprint (right). Moving $k$ positions turns every clock by a fixed angle, wherever you start: "3 words back" is easy to learn.</p>
+      <p class="small step"><b>Learned</b>: one trainable vector per position (GPT-2: 1,024 of them, hence its context limit). <b>RoPE</b> (Llama and most modern LLMs): rotate $\bq$ and $\bk$ by an angle that grows with the position, so their score depends only on the distance between the two tokens.</p>
     </div>
     <div class="stack" style="gap:6px">
       <svg class="fig" data-fig="posenc" style="max-height:215px" aria-label="Heat map of sinusoidal positional encodings"></svg>
@@ -215,7 +261,7 @@
 </section>
 
 <section class="slide">
-  <h2>Self-Attention mask:</h2>
+  <h2>The causal mask: no peeking at the future</h2>
   <p>The mask is optional, but it is used where it does not make sense for a word to look at <b>future</b> words, because they are not available in reality: not for classifying a known sentence, but for <b>next-word prediction</b>.</p>
   <svg class="fig" data-fig="mask" style="max-height:270px" aria-label="Scores, the causal mask with minus infinity above the diagonal, and the resulting attention weights"></svg>
   <div class="eq">$$\mathrm{softmax}\Big(\frac{\bQ\bK^\top}{\sqrt{d_k}}+\mathbf M\Big)\bV,\qquad M_{ij}=\begin{cases}0&amp;j\le i\\-\infty&amp;j\gt i\end{cases}$$</div>
@@ -260,19 +306,36 @@ Z = self_attention(X, Wq, Wk, Wv, causal=True)   <span class="c"># [10, 64]</spa
   </table>
 </section>
 
+<section class="slide divider"><div class="card coral"><h1><b>Part B</b><br>The transformer</h1><ul class="small" style="color:#fff"><li>one block: communicate, then think</li><li>the original encoder–decoder</li><li>cross-attention</li><li>BERT vs GPT</li></ul></div></section>
+
 <section class="slide">
-  <h2>Transformer encoder-decoder:</h2>
+  <h2>One transformer block: communicate, then think</h2>
+  <svg class="fig" data-fig="block-one" style="max-height:320px" aria-label="Pre-norm transformer block: LayerNorm, multi-head attention, residual add, LayerNorm, MLP, residual add"></svg>
+  <div class="cols">
+    <div class="stack" style="gap:8px">
+      <p class="small step"><b>Attention</b> moves information <b>between</b> tokens. The <b>MLP</b> ($d\to4d\to d$ with GELU, chapter 1) then processes <b>each token separately</b>. The MLP holds two thirds of a block's parameters.</p>
+      <div class="eq s step">$$\bX\leftarrow\bX+\mathrm{MHA}\big(\mathrm{LN}(\bX)\big),\qquad\bX\leftarrow\bX+\mathrm{MLP}\big(\mathrm{LN}(\bX)\big)$$</div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small step"><b>Residual connections</b> (chapter 4) add each result to its input, so the gradient has a direct path through all the blocks. <b>LayerNorm</b> (chapter 3) keeps each token's vector at a stable scale.</p>
+      <p class="small step">A block never changes the shape $n\times d$, so blocks are simply <b>stacked</b>: GPT-2 small has 12, GPT-3 has 96.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The original transformer: encoder and decoder</h2>
   <div class="cols c64">
     <svg class="fig" data-fig="block" aria-label="The transformer: an encoder stack and a decoder stack with masked attention and cross attention"></svg>
     <div class="stack" style="gap:10px">
-      <p class="small">Each block (pre-norm version):</p>
-      <div class="eq">$$\bX\leftarrow\bX+\mathrm{MHA}\big(\mathrm{LN}(\bX)\big)$$$$\bX\leftarrow\bX+\mathrm{MLP}\big(\mathrm{LN}(\bX)\big)$$</div>
+      <p class="small">Built for translation (2017). The <b>encoder</b> reads the whole source sentence; the <b>decoder</b> writes the translation one token at a time.</p>
       <ul class="small">
-        <li><b>Attention mixes information between positions</b>; the MLP ($d\to4d\to d$, GELU) processes each position separately: "communicate, then think".</li>
-        <li><b>Residual connections</b> and <b>LayerNorm</b> make deep stacks trainable (chapters 3–4).</li>
-        <li><b>Cross-attention</b>: queries from the decoder, keys and values from the encoder: the alignment of translation.</li>
+        <li><b>Encoder</b> blocks: full self-attention, every word sees every word.</li>
+        <li><b>Decoder</b> blocks: masked self-attention (only the past), then <b>cross-attention</b>.</li>
       </ul>
-      <p class="small why">The figure is the original transformer, with "Add &amp; Norm" after each sub-layer (post-norm). GPT-2 and most modern models apply the LayerNorm before each sub-layer (pre-norm, the formulas above): it trains more stably.</p>
+      <div class="step"><p class="small"><b>Cross-attention</b>: queries from the decoder, keys and values from the encoder's output. It is the soft alignment of translation from Part A, inside the transformer:</p>
+      <div class="eq s">$$\mathrm{softmax}\Big(\frac{\bQ_{\text{dec}}\,\bK_{\text{enc}}^\top}{\sqrt{d_k}}\Big)\bV_{\text{enc}}$$</div></div>
+      <p class="small why step">The figure follows the paper, with "Add &amp; Norm" after each sub-layer (post-norm). GPT-2 and most modern models put the LayerNorm before each sub-layer (pre-norm, previous slide): it trains more stably.</p>
     </div>
   </div>
 </section>
@@ -291,21 +354,68 @@ Z = self_attention(X, Wq, Wk, Wv, causal=True)   <span class="c"># [10, 64]</spa
   </div>
 </section>
 
+<section class="slide divider"><div class="card green"><h1><b>Part C</b><br>GPT: generating text</h1><ul class="small"><li>tokens and the next-token objective</li><li>GPT-2 end to end</li><li>decoding and the KV cache</li><li>surprisal and perplexity · Lab 14</li></ul></div></section>
+
 <section class="slide">
-  <h2>Language modelling: the objective behind GPT</h2>
+  <h2>Tokens: how text becomes numbers</h2>
   <div class="cols">
     <div class="stack" style="gap:10px">
-      <p>By the chain rule of probability, any sequence factorizes as</p>
-      <div class="eq">$$P(x_1,\dots,x_T)=\prod_{t=1}^TP(x_t\mid x_1,\dots,x_{t-1})$$</div>
-      <p class="small">So it is enough to learn one thing: the <b>next token</b> given the previous ones. A $|V|$-class classification with softmax and cross-entropy, exactly chapter 1.</p>
-      <p class="small">Text is first split into sub-word <b>tokens</b> by <b>byte-pair encoding</b>: start with characters, repeatedly merge the most frequent adjacent pair. Frequent words become one token, rare ones are split, nothing is ever unknown.</p>
+      <p>A transformer reads a sequence of <b>token ids</b>. What should a token be?</p>
+      <ul class="small">
+        <li><b>Words</b>: hundreds of thousands of them, and a new word is unknown.</li>
+        <li><b>Characters</b>: few symbols, but very long sequences, and attention costs $n^2$.</li>
+        <li><b>Sub-words</b> (GPT's choice): frequent words are one token, rare words are split into pieces.</li>
+      </ul>
+      <p class="small step"><b>Byte-pair encoding</b> (BPE) learns the sub-words: start from characters, count the adjacent pairs in a corpus, <b>merge the most frequent pair</b> into a new symbol, repeat. GPT-2 stops at 50,257 tokens. Nothing is ever unknown: in the worst case a word is spelled out.</p>
+      <p class="small step">GPT-2 in Lab 14: "Welcome to the deep learning class" is 6 words and 6 tokens. "Bienvenidos a la clase de aprendizaje profundo" is 7 words and <b>17 tokens</b>: GPT-2 learned its merges on English text.</p>
     </div>
     <div class="widget" data-fig="bpe" data-auto="s=1 | s=2 | s=3 | s=4">
       <svg class="fig" aria-label="Byte-pair encoding merging characters into sub-words over four merges"></svg>
       <div class="ctl"><label for="bp-s">merges</label><input type="range" id="bp-s" data-k="s" min="0" max="4" step="1" value="0"><span class="v" data-v="s"></span></div>
     </div>
   </div>
+</section>
+
+<section class="slide">
+  <h2>Language modelling: predict the next token</h2>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p>By the chain rule of probability, any sequence of tokens factorizes as</p>
+      <div class="eq">$$P(x_1,\dots,x_T)=\prod_{t=1}^TP(x_t\mid x_1,\dots,x_{t-1})$$</div>
+      <p class="small">So the model only has to learn one thing: the <b>next token</b> given the previous ones. That is a classification over $|V|=50{,}257$ classes, with softmax and cross-entropy, exactly as in chapter 1.</p>
+    </div>
+    <div class="stack" style="gap:10px">
+      <div class="step"><p class="small">Training minimizes the average of $-\log p$ over the tokens that really came:</p><div class="eq">$$J=-\frac1T\sum_{t=1}^T\log P(x_t\mid x_{\lt t})$$</div></div>
+      <p class="small step">Any text is training data: the targets are the inputs shifted by one (below). No labels are needed: the training is <b>self-supervised</b>.</p>
+      <p class="small step why">Thanks to the causal mask, one forward pass over 6 tokens trains all 5 predictions at once.</p>
+    </div>
+  </div>
   <svg class="fig" data-fig="lm-train" style="max-height:190px" aria-label="Input tokens and the same tokens shifted by one as targets"></svg>
+</section>
+
+<section class="slide">
+  <h2>Scoring a sentence: the chain rule with GPT-2's numbers</h2>
+  <div class="cols">
+    <div class="stack" style="gap:8px">
+      <p class="small">GPT-2 small reads "Paris is the capital of France." and gives a probability to each token that really comes next:</p>
+      <table class="t" style="font-size:17px">
+        <tr><th>given</th><th>next token</th><th>$p$</th><th>$-\ln p$</th></tr>
+        <tr><td>Paris</td><td>is</td><td>0.0116</td><td>4.46</td></tr>
+        <tr><td>Paris is</td><td>the</td><td>0.0658</td><td>2.72</td></tr>
+        <tr><td>Paris is the</td><td>capital</td><td>0.0158</td><td>4.15</td></tr>
+        <tr><td>… the capital</td><td>of</td><td>0.725</td><td>0.32</td></tr>
+        <tr><td>… capital of</td><td>France</td><td>0.0413</td><td>3.19</td></tr>
+        <tr><td>… of France</td><td>.</td><td>0.179</td><td>1.72</td></tr>
+      </table>
+      <p class="small why">Measured with GPT-2 small, as in Lab 14. "of" after "the capital" is easy (0.725); "is" after "Paris" is not.</p>
+    </div>
+    <div class="stack" style="gap:6px">
+      <div class="step"><div class="eq s">$$P=0.0116\times0.0658\times\dots\times0.179\approx6.4\times10^{-8}$$</div><p class="why">chain rule: multiply the six conditional probabilities. A whole sentence gets a tiny number.</p></div>
+      <div class="step"><div class="eq s">$$-\ln P=4.46+2.72+4.15+0.32+3.19+1.72=16.56$$</div><p class="why">the log turns the product into a sum, with no tiny numbers left</p></div>
+      <div class="step"><div class="eq s">$$J=16.56/6=2.76\ \text{nats per token}$$</div><p class="why">average over the 6 predicted tokens: the training loss on this sentence</p></div>
+      <p class="small step">After "capital of", GPT-2 expected "the" (0.26) more than "France" (0.04). And $J=2.76$ returns on the perplexity slide: $e^{2.76}=15.8$.</p>
+    </div>
+  </div>
 </section>
 
 <section class="slide">
@@ -313,7 +423,7 @@ Z = self_attention(X, Wq, Wk, Wv, causal=True)   <span class="c"># [10, 64]</spa
   <svg class="fig" data-fig="gpt-shapes" style="max-height:370px" aria-label="Text, token ids, embedding matrix, twelve blocks, logits and next-token probabilities with their shapes"></svg>
   <div class="cols">
     <p class="small">Follow the <b>shapes</b>. Five tokens become a $5\times768$ matrix, one row per token. The 12 blocks mix the rows with attention and process each row with the MLP, but never change that shape. One product with $\bE^\top$ gives a score for each of the 50,257 tokens at every position.</p>
-    <p class="small">Only the <b>last row</b> is turned into probabilities to choose the next token. The other rows are not wasted: during training each row predicts its own next token (the shifted targets of the previous slide). After "The cat sat on the", GPT-2 spreads its probability over many plausible words: floor 7.6 %, bed 6.5 %, couch 5.4 %…</p>
+    <p class="small">Only the <b>last row</b> is turned into probabilities to choose the next token. The other rows are not wasted: during training each row predicts its own next token (the shifted targets of the language-modelling slide). After "The cat sat on the", GPT-2 spreads its probability over many plausible words: floor 7.6 %, bed 6.5 %, couch 5.4 %…</p>
   </div>
 </section>
 
@@ -341,28 +451,16 @@ Z = self_attention(X, Wq, Wk, Wv, causal=True)   <span class="c"># [10, 64]</spa
     </div>
     <div class="stack" style="gap:10px">
       <p class="small"><b>Autoregressive</b>: the model gives a distribution over the next token; one token is chosen, appended to the input, and the model runs again.</p>
-      <p class="small">Training is parallel (the mask), <b>generation is sequential</b>: 500 tokens of answer = 500 forward passes. The keys and values of past tokens are cached (the <b>KV cache</b>) so each pass only processes the new token.</p>
+      <p class="small">Training is parallel (the mask), <b>generation is sequential</b>: 500 tokens of answer = 500 forward passes. The KV cache (two slides ahead) makes each pass cheap.</p>
       <p class="small why">How the token is chosen from the probabilities: next slide.</p>
     </div>
   </div>
 </section>
 
 <section class="slide">
-  <h2>The KV cache: do not recompute the past</h2>
-  <div class="widget" data-fig="kv-cache" data-auto="s=2 :: after 2 tokens: 1 + 2 = 3 computations of K and V without a cache, 2 with it|s=3 :: after 3 tokens: 6 without, 3 with|s=4 :: after 4 tokens: 10 without, 4 with|s=5 :: after 5 tokens: 15 without, 5 with: the gap keeps growing">
-    <svg class="fig" style="max-height:340px" aria-label="Keys and values recomputed at every step without a cache, and computed once with a cache"></svg>
-    <div class="ctl"><label for="kv-s">tokens so far</label><input type="range" id="kv-s" data-k="s" min="1" max="5" step="1" value="1"><span class="v" data-v="s"></span></div>
-  </div>
-  <div class="cols">
-    <p class="small">To choose token $t+1$, the new query $\mathbf q_t$ needs the <b>keys and values of all earlier tokens</b>. The causal mask guarantees that those never change once computed, so we keep them in memory (the <b>KV cache</b>) and only compute the new token's $\mathbf k_t,\mathbf v_t$.</p>
-    <p class="small">Without it the work for $n$ tokens grows like $1+2+\dots+n=n(n+1)/2$; with it, like $n$. The price is memory: two vectors per layer and per token, for every token of the conversation. It is one of the reasons long contexts are expensive.</p>
-  </div>
-</section>
-
-<section class="slide">
   <h2>Decoding: from probabilities to text</h2>
   <div class="cols">
-    <div class="widget" data-fig="decode" data-auto="t=0.3 :: low temperature: almost greedy, &quot;here&quot; every time | t=1.8 :: high temperature: a flat distribution, surprising words | t=1; k=3 :: top-k = 3: only the 3 best candidates can be sampled | go=click :: sample one word from this distribution (press the button for more)">
+    <div class="widget" data-fig="decode" data-auto="t=0.3 :: low temperature T = 0.3: almost greedy, &quot;here&quot; gets 0.92 | t=1.8 :: high temperature T = 1.8: a flatter distribution, &quot;here&quot; only 0.28 and unlikely words get real chances | t=1; k=3 :: top-k = 3 at T = 1: only here, back and home survive, renormalised to 0.58, 0.26, 0.16 | go=click :: sample one word from this distribution (press the button for more)">
       <svg class="fig" aria-label="Next-token probabilities after temperature and top-k"></svg>
       <div class="ctl"><label for="dc-t">temperature</label><input type="range" id="dc-t" data-k="t" min="0.1" max="2.5" step="0.05" value="1"><span class="v" data-v="t">1.00</span></div>
       <div class="ctl"><label for="dc-k">top-k</label><input type="range" id="dc-k" data-k="k" min="1" max="8" step="1" value="8"><span class="v" data-v="k">8</span>
@@ -372,11 +470,35 @@ Z = self_attention(X, Wq, Wk, Wv, causal=True)   <span class="c"># [10, 64]</spa
       <p>"Can you please come <b>here</b>?": the history, and the word being predicted.</p>
       <ul class="small">
         <li><b>Greedy</b>: always the most likely token. Safe, but repetitive (it loops).</li>
-        <li><b>Temperature</b> $T$: sample from $\mathrm{softmax}(\mathbf z/T)$. $T\to0$ is greedy; $T\gt1$ flattens the distribution (more creative, more errors).</li>
+        <li><b>Temperature</b> $T$: sample from $\mathrm{softmax}(\bz/T)$, i.e. $p_k\propto e^{z_k/T}$. $T\to0$ is greedy; $T\gt1$ flattens the distribution (more creative, more errors).</li>
         <li><b>Top-k / top-p</b>: keep only the $k$ most likely tokens (or the smallest set with probability $p$), renormalize, sample.</li>
         <li><b>Beam search</b>: keep the $b$ best partial sentences; used in translation.</li>
       </ul>
     </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Decoding in practice: what GPT-2 writes</h2>
+  <p class="small">Real outputs of GPT-2 small in Lab 14. Prompt: <b>"Studying the MINT master is the best decision I"</b>, then 35 new tokens.</p>
+  <div class="cards c2" style="gap:12px">
+    <div class="card r"><h3>greedy ($T=0.1$)</h3><p>… I've ever made. I'm not sure if I'm going to be able to do it, but I'm going to be able to do it. I'm going to be</p><p class="why">Fluent, then it loops: once a phrase is written, repeating it is the most likely continuation.</p></div>
+    <div class="card r"><h3>$T=1.8$, no filter</h3><p>… I ever makes. ...olla refund results:y cookrentice Orc tattoo worker Clay Destroyer Gotan togethericipsiecer garbage wars</p><p class="why">The 50,000 unlikely tokens of the tail now get real probability: nonsense.</p></div>
+    <div class="card g"><h3>$T=0.9$, top-p $=0.9$</h3><p>… I ever made. I think that is the point of building software. Software is the single most important thing you can learn.</p><p class="why">Varied and fluent: the tail is cut, the rest is sampled.</p></div>
+    <div class="card y"><h3>beam search, 5 beams</h3><p>(prompt "The key to training neural networks is") … to train them in a way that allows them to learn from each other. In this article, I'll show you how to train neural networks to learn from each other.</p><p class="why">The most probable sequence is bland and repeats itself. Good for translation, not for open text.</p></div>
+  </div>
+  <p class="small why">Top-p adapts to the model's confidence. After "Welcome to the deep learning class, it is a", top-p $=0.9$ keeps 977 tokens (the model hesitates); after "a fresh loaf of", "bread" alone has 81 %. A common default for open text: $T\approx0.7$–$1$ with top-p $\approx0.9$. For facts and code: a low temperature.</p>
+</section>
+
+<section class="slide">
+  <h2>The KV cache: do not recompute the past</h2>
+  <div class="widget" data-fig="kv-cache" data-auto="s=2 :: after 2 tokens: 1 + 2 = 3 computations of K and V without a cache, 2 with it|s=3 :: after 3 tokens: 6 without, 3 with|s=4 :: after 4 tokens: 10 without, 4 with|s=5 :: after 5 tokens: 15 without, 5 with: the gap keeps growing">
+    <svg class="fig" style="max-height:292px" aria-label="Keys and values recomputed at every step without a cache, and computed once with a cache"></svg>
+    <div class="ctl"><label for="kv-s">tokens so far</label><input type="range" id="kv-s" data-k="s" min="1" max="5" step="1" value="1"><span class="v" data-v="s"></span></div>
+  </div>
+  <div class="cols">
+    <p class="small">To choose token $t+1$, the new query $\mathbf q_t$ needs the <b>keys and values of all earlier tokens</b>. The causal mask guarantees that those never change once computed, so we keep them in memory (the <b>KV cache</b>) and only compute the new token's $\mathbf k_t,\mathbf v_t$.</p>
+    <p class="small">Without it the work for $n$ tokens grows like $1+2+\dots+n=n(n+1)/2$; with it, like $n$. The price is memory: two vectors per layer and per token, for every token of the conversation. It is one of the reasons long contexts are expensive. Lab 14, a 201-token prompt and 200 new tokens: 60,100 token positions processed without the cache, 401 with it, and the same text.</p>
   </div>
 </section>
 
@@ -397,6 +519,7 @@ Z = self_attention(X, Wq, Wk, Wv, causal=True)   <span class="c"># [10, 64]</spa
       <div class="eq">$$J=-\frac1T\sum_{t=1}^{T}\log p(x_t\mid x_{\lt t})$$</div>
       <div class="bluebox">$$\text{perplexity}=e^{J}$$</div>
       <p class="small step"><b>Meaning.</b> If the model gave every true next token probability $\frac14$: $J=\log4$ and the perplexity is 4. The model is as uncertain as if it had to pick among <b>4 equally likely tokens</b> at every step.</p>
+      <p class="small step">GPT-2 on "Paris is the capital of France.": $J=2.76$ (the slide on scoring a sentence), so the perplexity is $e^{2.76}=15.8$: the fourth row of the table.</p>
       <p class="small step">Uniform guessing over GPT-2's 50,257 tokens gives perplexity 50,257. Lower is better.</p>
     </div>
     <div class="stack" style="gap:10px">
@@ -441,6 +564,8 @@ Z = self_attention(X, Wq, Wk, Wv, causal=True)   <span class="c"># [10, 64]</spa
   </div>
 </section>
 
+<section class="slide divider"><div class="card purple"><h1><b>Part D</b><br>RAG: your documents</h1><ul class="small"><li>embeddings and similarity</li><li>search, chunking, search at scale</li><li>what goes wrong, how to measure it</li><li>hybrid search · Lab 15</li></ul></div></section>
+
 <section class="slide">
   <h2>How do companies build bots with custom data?</h2>
   <p>A chatbot is a language model. It knows what was in its training data, nothing about <b>your</b> documents (price lists, manuals, contracts, last week's news) and, when it does not know, it often <b>makes something up</b>. Three ways to give it your data:</p>
@@ -455,7 +580,7 @@ Z = self_attention(X, Wq, Wk, Wv, causal=True)   <span class="c"># [10, 64]</spa
     <p class="small"><b>A · Once.</b> Cut the documents into <b>chunks</b>, turn every chunk into a vector with an <b>embedding</b> model, and store the vectors. A "vector database" is an index over these vectors.</p>
     <p class="small"><b>B · For every question.</b> Embed the question with the <b>same</b> model, find the chunks with the most similar vectors, and paste them into the prompt next to the question. The LLM answers from them, and can cite them. It is never retrained.</p>
   </div>
-  <p class="small why">The next slides open the boxes one by one: embeddings, similarity, search, chunking, search at scale, the prompt, and how to measure it. Lab 15 builds the whole thing.</p>
+  <p class="small why">The next slides open the boxes one by one: embeddings, similarity, search, chunking, search at scale, the prompt, how to measure the retrieval and how to improve it. Lab 15 builds the whole thing.</p>
 </section>
 
 <section class="slide">
@@ -500,7 +625,7 @@ Z = self_attention(X, Wq, Wk, Wv, causal=True)   <span class="c"># [10, 64]</spa
 
 <section class="slide">
   <h2>Search: the chunks closest to the question</h2>
-  <div class="widget" data-fig="embed-search" data-auto="q=0;k=3 :: "Where can I try Vietnamese coffee?": the right page, Mundo en Taza, ranks first (cosine 0.70), followed by other specialty-coffee places|q=14;k=3 :: "My bike has a flat tire": the repair shop says "bicicletas" (plural), so word matching ranks it 22nd; the neural encoder ranks it first (cosine 0.35, the next page 0.12)|q=6;k=3 :: "A place open in the small hours": the right pages (Hospital Central, rank 4; Punto Joven, rank 11) are outside the top 3, so the LLM would not see them|q=6;k=5 :: with k = 5 the right page is in: hit rate depends on k">
+  <div class="widget" data-fig="embed-search" data-auto="q=0;k=3 :: &quot;Where can I try Vietnamese coffee?&quot;: the right page, Mundo en Taza, ranks first (cosine 0.70), followed by other specialty-coffee places | q=14;k=3 :: &quot;My bike has a flat tire&quot;: the repair shop says &quot;bicicletas&quot; (plural), so word matching ranks it 22nd; the neural encoder ranks it first (cosine 0.35, the next page 0.12) | q=6;k=3 :: &quot;A place open in the small hours&quot;: the right pages (Hospital Central, rank 4; Punto Joven, rank 11) are outside the top 3, so the LLM would not see them | q=6;k=5 :: with k = 5 the right page is in: hit rate depends on k">
     <div class="ctl"><label for="es-q">question</label><input type="range" id="es-q" data-k="q" min="0" max="15" step="1" value="0" style="max-width:260px"><span class="v" data-v="q" style="flex:1 1 220px;min-width:0;text-align:left"></span>
       <label for="es-k">k</label><input type="range" id="es-k" data-k="k" min="1" max="5" step="1" value="3" style="max-width:130px"><span class="v" data-v="k" style="min-width:16px">3</span>
       <span class="small" style="margin-left:auto">right chunk at rank <b data-r="rank">–</b> · in the top k? <b data-r="hit">–</b></span></div>
@@ -606,6 +731,19 @@ Z = self_attention(X, Wq, Wk, Wv, causal=True)   <span class="c"># [10, 64]</spa
   <p class="small">Each row is a question, each column a page; the darker the cell, the more similar. <b>Word TF-IDF</b> (left) is mostly white: most question–page pairs share no word at all, so their similarity is exactly 0. The <b>neural encoder</b> (right) gives a graded similarity to every pair, and the red boxes (the right pages) are usually the darkest cells of their row. Row 15, "my bike has a flat tire": the question says "bicicleta" and the repair shop "bicicletas", two different words for TF-IDF, which ranks that page 22nd; the neural encoder ranks it 1st.</p>
 </section>
 
+<section class="slide">
+  <h2>Better retrieval: hybrid search and re-ranking</h2>
+  <div class="widget" data-fig="hybrid" data-auto="q=13 :: &quot;Waffles with chocolate&quot;: meaning ranks the chocolate shop first, keywords the waffle shop. Fused, the waffle shop wins: 1/61 + 1/62 = 0.0325 beats 1/63 + 1/61 = 0.0323 | q=3 :: &quot;take my dog&quot;: the pages say &quot;perros&quot;, not &quot;perro&quot;, so the keyword ranking is noise, and fusion drops the right page from rank 1 to rank 4">
+    <div class="ctl"><label>question</label><span class="seg" role="group" aria-label="Question"><button type="button" data-q="13" aria-pressed="true">waffles with chocolate</button><button type="button" data-q="5" aria-pressed="false">coffee tastings</button><button type="button" data-q="3" aria-pressed="false">take my dog</button></span>
+      <span class="small" style="margin-left:auto">rank of the right page: keywords <b data-r="rw">–</b> · meaning <b data-r="rn">–</b> · fused <b data-r="rf">–</b></span></div>
+    <svg class="fig" style="max-height:286px" aria-label="Top five pages by word TF-IDF, by the neural encoder, and after reciprocal rank fusion, for one Lab 15 question"></svg>
+  </div>
+  <div class="cols">
+    <p class="small"><b>Hybrid search.</b> Keywords (word TF-IDF here, BM25 in search engines) catch exact names and codes; embeddings catch paraphrases. <b>Reciprocal rank fusion</b> adds $1/(60+\text{rank})$ from each list: it uses only the ranks, so the two scores never need to be comparable. On the 16 Lab 15 questions it fixes 2 and breaks 3 at rank 1 (hit@1 0.81 → 0.75): word TF-IDF is too weak here. Measure before you fuse.</p>
+    <p class="small"><b>Re-ranking.</b> The sentence encoder embeds the question and each page <b>separately</b> (a bi-encoder): pages are embedded once, so search is fast. A <b>cross-encoder</b> reads question and page <b>together</b> and outputs one relevance score: more accurate, but one forward pass per page. So: retrieve 50 fast, re-rank, keep the best 3–5.</p>
+  </div>
+</section>
+
 <section class="slide lab">
   <div class="labtag">LAB 15</div>
   <h2>RAG: embeddings, search and grounded answers</h2>
@@ -633,6 +771,31 @@ Z = self_attention(X, Wq, Wk, Wv, causal=True)   <span class="c"># [10, 64]</spa
 </section>
 
 <section class="slide">
+  <h2>The chapter in one slide</h2>
+  <div class="cards c2" style="gap:12px">
+    <div class="card"><h3>A · Attention</h3><ul>
+      <li>each token: $\bq=\bx\bW_Q$, $\bk=\bx\bW_K$, $\bv=\bx\bW_V$</li>
+      <li>$\mathrm{softmax}(\bQ\bK^\top/\sqrt{d_k})\,\bV$: each output is a weighted average of the values</li>
+      <li>$\sqrt{d_k}$ keeps the softmax soft; $h$ heads look for $h$ different things</li>
+      <li>order must be added (positions); the causal mask hides the future</li></ul></div>
+    <div class="card o"><h3>B · The transformer</h3><ul>
+      <li>block = attention (communicate) + MLP (think), with residuals and LayerNorm</li>
+      <li>encoder (BERT: both sides) · decoder (GPT: causal) · cross-attention links them</li>
+      <li>one step between any two tokens, parallel training; the price is $n^2$</li></ul></div>
+    <div class="card g"><h3>C · GPT</h3><ul>
+      <li>BPE tokens; learn $P(x_t\mid x_{\lt t})$ with cross-entropy</li>
+      <li>$12d^2$ parameters per block: GPT-2 small has 124 M</li>
+      <li>one token at a time: greedy loops, temperature + top-p varies; the KV cache saves work</li>
+      <li>perplexity $=e^{J}$: how many equally likely choices the model hesitates between</li></ul></div>
+    <div class="card y"><h3>D · RAG</h3><ul>
+      <li>chunk → embed → store; question → embed → nearest chunks → prompt → answer</li>
+      <li>unit vectors: cosine = dot product, and the same ranking as distance</li>
+      <li>measure the retrieval first: hit rate@k, MRR; then hybrid search, re-ranking</li>
+      <li>retrieved text is data, not instructions</li></ul></div>
+  </div>
+</section>
+
+<section class="slide">
   <h2>Vocabulary of chapter 6</h2>
   <div class="cols">
     <dl class="gloss" style="font-size:16px;gap:5px 14px">
@@ -642,20 +805,22 @@ Z = self_attention(X, Wq, Wk, Wv, causal=True)   <span class="c"># [10, 64]</spa
       <dt>multi-head</dt><dd>several attentions in parallel, concatenated and mixed by $\bW_O$.</dd>
       <dt>positional encoding</dt><dd>added to the embeddings, since attention ignores order.</dd>
       <dt>causal mask</dt><dd>$-\infty$ above the diagonal: no peeking at the future.</dd>
-    </dl>
-    <dl class="gloss" style="font-size:16px;gap:5px 14px">
       <dt>transformer block</dt><dd>attention + MLP, each with a residual and LayerNorm.</dd>
       <dt>BPE token</dt><dd>a sub-word unit from repeated merges of frequent pairs.</dd>
-      <dt>temperature, top-k</dt><dd>how the next token is sampled from the probabilities.</dd>
-      <dt>perplexity</dt><dd>$e^{\text{loss}}$: the number of equally likely choices the model hesitates between.</dd>
+      <dt>temperature, top-k, top-p</dt><dd>how the next token is sampled from the probabilities.</dd>
       <dt>KV cache</dt><dd>keys and values of past tokens kept in memory during generation.</dd>
       <dt>surprisal</dt><dd>$-\log_2p$ bits: how unexpected a token was.</dd>
+    </dl>
+    <dl class="gloss" style="font-size:16px;gap:5px 14px">
+      <dt>perplexity</dt><dd>$e^{\text{loss}}$: the number of equally likely choices the model hesitates between.</dd>
       <dt>embedding</dt><dd>a text as a vector of numbers; similar meaning, similar vector.</dd>
       <dt>cosine similarity</dt><dd>compares directions; for unit vectors it is the dot product.</dd>
       <dt>chunk, overlap</dt><dd>a piece of a document, and the words repeated between neighbours.</dd>
       <dt>RAG</dt><dd>retrieve relevant chunks by embedding similarity, give them to the LLM.</dd>
       <dt>IVF, nprobe</dt><dd>approximate search: scan only the nearest cells of a clustered index.</dd>
       <dt>hit rate@k, MRR</dt><dd>how often, and how high, the right chunk is retrieved.</dd>
+      <dt>hybrid search, RRF</dt><dd>keyword and meaning rankings fused by $1/(60+\text{rank})$.</dd>
+      <dt>re-ranker</dt><dd>a cross-encoder that reads question and chunk together.</dd>
       <dt>prompt injection</dt><dd>text in a document that gives orders to the LLM.</dd>
     </dl>
   </div>
@@ -671,8 +836,8 @@ Z = self_attention(X, Wq, Wk, Wv, causal=True)   <span class="c"># [10, 64]</spa
 <script src="assets/nn-core.js?v=20260930"></script>
 <script src="assets/fig-nn-rnn.js?v=20260930"></script>
 <script src="assets/rag-data.js?v=20261005"></script>
-<script src="assets/fig-nn-transformer.js?v=20261005"></script>
-<script src="assets/fig-nn-rag.js?v=20261005"></script>
+<script src="assets/fig-nn-transformer.js?v=20261006"></script>
+<script src="assets/fig-nn-rag.js?v=20261006"></script>
 <script src="../assets/deck.js?v=20260930"></script>
 </body>
 </html>

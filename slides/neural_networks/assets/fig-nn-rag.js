@@ -71,7 +71,7 @@ FIG['sim-measures']=root=>{const A=[1,2],la=Math.hypot(A[0],A[1]),pa=Math.atan2(
     P.line(a[0],a[1],bd[0],bd[1],'ln thin so dash');arr(a[0],a[1],'ln sk','fk');arr(bd[0],bd[1],'ln sr','fr');
     P.text(a[0],a[1],'a','lab','middle',12,-8);P.text(bd[0],bd[1],k<1?'b (×'+fmt(r,0)+' longer, cut here)':'b','lab','middle',14,-8);
     const ra=0.3*W/1.45*1.45,a0=Math.atan2(a[1],a[0]),pts=[];for(let i=0;i<=20;i++){const u=a0+t*i/20;pts.push([ra*Math.cos(u)*0.5,ra*Math.sin(u)*0.5])}P.path(pts,'ln thin sk');
-    setR(root,'dot',fmt(dot,2));setR(root,'cos',fmt(cs,2));setR(root,'eu',fmt(eu,2));setR(root,'eu2',mode==='unit'?fmt(eu*eu,2)+' = 2 − 2cos':'–')}
+    setR(root,'dot',fmt(dot,2));setR(root,'cos',fmt(cs,2));setR(root,'eu',fmt(eu,2));setR(root,'eu2',mode==='unit'?fmt(eu*eu,2)+' = 2 − 2cos':fmt(eu*eu,2))}
   ith.addEventListener('input',draw);ir.addEventListener('input',draw);draw()};
 
 /* ---------- the embedding space of Lab 15 and the search for the nearest chunks ---------- */
@@ -161,4 +161,20 @@ FIG['sim-heatmaps']=root=>{const svg=initSvg(svgOf(root),1000,360);const cs=16,n
     for(let i=0;i<nq;i++)T(svg,x0+24,36+i*cs+12,String(i+1),'','end').style.fontSize='11px';
     T(svg,x0+30+nd*cs/2,36+nq*cs+18,'24 documents →','');T(svg,x0+8,36+nq*cs/2,'16 questions','').setAttribute('transform','rotate(-90 '+(x0+8)+' '+(36+nq*cs/2)+')')});
   T(svg,500,350,'red boxes = the documents that answer each question (from the lab)','','middle')};
+/* ---------- hybrid search: keyword ranking + meaning ranking, fused with reciprocal rank fusion (real Lab 15 similarities) ---------- */
+FIG['hybrid']=root=>{const svg=svgOf(root);const get=segs(root,'q',()=>draw());const K=60;
+  const order=S=>S.map((v,j)=>j).sort((a,b)=>S[b]-S[a]||a-b);
+  function draw(){const qi=+get(),rel=R.rel[qi];initSvg(svg,1000,330);
+    const ow=order(R.Sw[qi]),on=order(R.S[qi]),sc=new Array(R.names.length).fill(0);ow.forEach((d,r)=>sc[d]+=1/(K+r+1));on.forEach((d,r)=>sc[d]+=1/(K+r+1));const of=order(sc);
+    const col=(x0,w,ttl,sub,ord,val)=>{T(svg,x0+w/2,20,ttl,'lab big');T(svg,x0+w/2,40,sub,'');
+      ord.slice(0,5).forEach((d,r)=>{const y=54+r*42,ok=rel.includes(d);box(svg,x0,y,w,34,'',ok?'#e2f0d9':'#fafafa',{stroke:ok?'#00a651':'#c8c8c8',sw:ok?2:1});
+        T(svg,x0+12,y+22,String(r+1),'lab','start');T(svg,x0+32,y+22,R.short[d]+(ok?'  ✓':''),'lab','start');T(svg,x0+w-10,y+22,val(d),'','end')})};
+    col(8,286,'keywords: word TF-IDF','shared words (Lab 15)',ow,d=>f2(R.Sw[qi][d]));
+    col(318,286,'meaning: neural encoder','cosine of embeddings (Lab 15)',on,d=>f2(R.S[qi][d]));
+    col(628,364,'fused: reciprocal rank fusion','score = 1/(60 + keyword rank) + 1/(60 + meaning rank)',of,d=>'1/'+(K+ow.indexOf(d)+1)+' + 1/'+(K+on.indexOf(d)+1)+' = '+sc[d].toFixed(4));
+    T(svg,306,146,'+','lab big');T(svg,616,146,'→','lab big');
+    const rk=o=>Math.min(...rel.map(d=>o.indexOf(d)))+1;setR(root,'rw',String(rk(ow)));setR(root,'rn',String(rk(on)));setR(root,'rf',String(rk(of)));
+    T(svg,500,284,'question: "'+R.qen[qi]+'"  (asked in Spanish: "'+R.qes[qi]+'")','lab');
+    T(svg,500,308,'✓ = a page that answers it. Ranks over all 24 pages; ties (pages that share no word with the question) keep the page order.','','middle')}
+  draw()};
 })();
