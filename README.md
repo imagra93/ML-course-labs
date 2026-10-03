@@ -34,8 +34,8 @@ Original class notes (PDF): [ML_classNotes.pptx.pdf](ML_classNotes.pptx.pdf)
 | 02 | [Training: optimisation and regularisation](https://imagra93.github.io/ML-course-labs/notes/neural_networks/02_training_optimization_regularization.html) | SGD, momentum, Adam, schedules, weight decay, dropout, BatchNorm; debugging guide |
 | 03 | [CNNs, transfer and multi-task learning](https://imagra93.github.io/ML-course-labs/notes/neural_networks/03_cnn_transfer_multitask.html) | convolution and its backward pass, ResNet, transfer and multi-task learning, segmentation, detection |
 | 04 | [Embeddings, RNNs and LSTMs](https://imagra93.github.io/ML-course-labs/notes/neural_networks/04_rnn_lstm.html) | embeddings, RNN, BPTT, clipping, LSTM/GRU, masking; sequence-model assumptions |
-| 05 | [Attention and transformers](https://imagra93.github.io/ML-course-labs/notes/neural_networks/05_attention_transformers.html) | attention, multi-head, positions, causal mask, KV cache, a tiny GPT, decoding, perplexity |
-| 06 | [Embeddings, retrieval and RAG](https://imagra93.github.io/ML-course-labs/notes/neural_networks/06_embeddings_rag.html) | TF-IDF, BM25, LSA, neural embeddings, retrieval metrics, hybrid search, chunking, RAG |
+| 05 | [Attention and transformers](https://imagra93.github.io/ML-course-labs/notes/neural_networks/05_attention_transformers.html) | attention, Q/K/V, backpropagation through attention, multi-head, positions, causal and cross-attention, KV cache, a tiny GPT, decoding, perplexity, modern LLMs |
+| 06 | [Embeddings, retrieval and RAG](https://imagra93.github.io/ML-course-labs/notes/neural_networks/06_embeddings_rag.html) | TF-IDF, BM25, LSA, neural embeddings, IVF / HNSW / PQ, retrieval metrics, hybrid search and re-ranking, chunking, RAG |
 
 Original class notes (PDF): [ML_notes_NN.pptx.pdf](ML_notes_NN.pptx.pdf)
 

@@ -201,7 +201,79 @@ FIG['surprisal']=root=>{const svg=initSvg(svgOf(root),980,330);const toks=GPT2.t
   bits.forEach((b,i)=>{const x=x0+i*bw;E('rect',{x:x+6,y:y0-b*sc,width:bw-12,height:b*sc,fill:b>10?'#c00000':'#4472c4'},svg);T(svg,x+bw/2,y0-b*sc-6,String(Math.round(b*10)/10),'');
     const t=T(svg,x+bw/2,y0+16,toks[i].replace(' ','␣'),'');t.setAttribute('transform','rotate(40 '+(x+bw/2-10)+' '+(y0+14)+')');t.setAttribute('text-anchor','start')});
   const mean=bits.reduce((a,b)=>a+b,0)/n;E('line',{x1:x0,x2:x0+w,y1:y0-mean*sc,y2:y0-mean*sc,stroke:'#ed7d31','stroke-width':2,'stroke-dasharray':'6 4'},svg);T(svg,x0+8,30,'- - -  average '+mean.toFixed(1)+' bits  →  perplexity 2^'+mean.toFixed(1)+' ≈ '+GPT2.sentPPL.toFixed(0),'lab','start').style.fill='#c55a11';
-  const e=n-2,tp=GPT2.top[e];T(svg,x0+e*bw-6,36,'GPT-2 expected "'+tp.slice(0,3).map(a=>a[0].trim()).join('", "')+'"… (≈5 % each)','','end');T(svg,x0+e*bw-6,54,'"elephant" got about 1 chance in '+Math.round(Math.pow(2,bits[e])/1000)+',000','','end');
+  const e=n-2,tp=GPT2.top[e];T(svg,x0+e*bw-6,36,'GPT-2 expected "'+tp.slice(0,3).map(a=>a[0].trim()).join('", "')+'"… (≈5 % each)','','end');T(svg,x0+e*bw-6,54,'"elephant" got about 1 chance in '+Math.round(Math.pow(2,bits[e])/1e4)*10+',000','','end');
   T(svg,490,322,'surprisal = −log₂ p(token | previous tokens); "I went to the bakery this morning and bought a fresh loaf of bread and a large elephant."','','middle')};
+
+/* ===================== additions (2026-10, step-by-step pass) ===================== */
+const {TT}=window.MLNN;
+const mnus=v=>String(v).replace('-','−');
+
+/* where q, k, v come from: one token times three learned matrices. The numbers are those of 'attn-num':
+   x(I) = (0, 1, 1), x(love) = (2, 0, 2), x(pizza) = (1, 1, 1) give exactly its keys and values, and q(pizza) = (2, 1). */
+FIG['qkv-token']=root=>{const svg=initSvg(svgOf(root),640,372);const cs=34,mc=26,mw=36,mx=278;const x=[1,1,1];
+  const M=[['Q','#fbe5d6',[[1,0],[0,1],[1,0]],'query q','what "pizza" looks for'],['K','#dae3f3',[[0,1],[1,0.5],[0,-0.5]],'key k','what "pizza" offers'],['V','#fff2cc',[[-0.5,0.5],[0.5,0],[0.5,0]],'value v','what "pizza" passes on']];
+  T(svg,48,156,'token','');box(svg,10,166,76,34,'pizza','#e2f0d9');
+  x.forEach((v,i)=>{E('rect',{x:100+i*cs,y:166,width:cs,height:cs,fill:'#c5e0b4',stroke:'#404040'},svg);T(svg,100+i*cs+cs/2,166+cs/2+6,mnus(v),'lab')});
+  T(svg,100+1.5*cs,222,'embedding x','lab');T(svg,100+1.5*cs,240,'(here d = 3 numbers)','');
+  M.forEach(([n,c,W,lab,role],r)=>{const y0=12+r*118;const res=[0,1].map(j=>x.reduce((s,xi,i)=>s+xi*W[i][j],0));
+    arrowPx(svg,206,183,mx-30,y0+39,'ln thin sk','fk');T(svg,mx-14,y0+45,'×','lab big');
+    W.forEach((row,i)=>row.forEach((v,j)=>{E('rect',{x:mx+j*mw,y:y0+i*mc,width:mw,height:mc,fill:c,stroke:'#404040'},svg);T(svg,mx+j*mw+mw/2,y0+i*mc+mc/2+5,mnus(v),'')}));
+    TT(svg,mx+mw,y0+3*mc+18,'W_'+n+'  (3 × 2, learned)','');
+    T(svg,mx+2*mw+18,y0+45,'=','lab big');
+    res.forEach((v,j)=>{E('rect',{x:mx+2*mw+34+j*46,y:y0+mc,width:46,height:mc,fill:c,stroke:'#404040','stroke-width':1.6},svg);T(svg,mx+2*mw+34+j*46+23,y0+mc+mc/2+5,mnus(v),'lab')});
+    T(svg,mx+2*mw+34+46,y0+mc-8,lab,'lab');T(svg,mx+2*mw+136,y0+mc+18,role,'','start')});
+  T(svg,320,362,'x · W is a weighted sum of the rows of W (here x = (1, 1, 1): the plain sum). The same three matrices serve every token.','','middle')};
+
+/* attention ignores word order: the same output vectors, shuffled; adding positions breaks the tie */
+FIG['perm']=root=>{const svg=svgOf(root);const get=segs(root,'p',()=>draw());const r=rng(21),d=4;
+  const words=['dog','bites','man'],col={dog:'#f8cbad',bites:'#e7e6e6',man:'#b4c7e7'};const emb={};words.forEach(w=>emb[w]=[...Array(d)].map(()=>randn(r)));
+  const W=()=>[...Array(d)].map(()=>[...Array(d)].map(()=>randn(r)*0.7));const WQ=W(),WK=W(),WV=W();
+  const mul=(v,M)=>M[0].map((_,j)=>v.reduce((s,vi,i)=>s+vi*M[i][j],0));const pe=p=>[Math.sin(p),Math.cos(p),Math.sin(p/3),Math.cos(p/3)];
+  const attend=(S,pos)=>{const X=S.map((w,p)=>emb[w].map((v,i)=>v+(pos?1.2*pe(p)[i]:0)));const Q=X.map(v=>mul(v,WQ)),K=X.map(v=>mul(v,WK)),V=X.map(v=>mul(v,WV));
+    return Q.map(qv=>{const a=softmax(K.map(k=>qv.reduce((t,qi,i)=>t+qi*k[i],0)/2));return V[0].map((_,j)=>a.reduce((t,aj,m)=>t+aj*V[m][j],0))})};
+  function draw(){const on=get()==='on';initSvg(svg,640,290);const A=['dog','bites','man'],B=['man','bites','dog'],ZA=attend(A,on),ZB=attend(B,on);
+    const mx=Math.max(...ZA.flat().concat(ZB.flat()).map(Math.abs));
+    [[A,ZA,6,'"dog bites man"'],[B,ZB,332,'"man bites dog"']].forEach(([S,Z,x0,ttl])=>{T(svg,x0+150,20,ttl,'lab big');
+      S.forEach((w,p)=>{const xx=x0+10+p*100;box(svg,xx,32,80,30,w,col[w]);if(on)T(svg,xx+40,82,'+ position '+(p+1),'').style.fill='#c55a11';arrowPx(svg,xx+40,on?88:64,xx+40,114,'ln thin sk','fk')});
+      box(svg,x0+10,116,280,32,'self-attention (same weights)','#dae3f3',{cls:''});
+      S.forEach((w,p)=>{const xx=x0+10+p*100;arrowPx(svg,xx+40,150,xx+40,172,'ln thin sk','fk');Z[p].forEach((v,i)=>E('rect',{x:xx+i*20,y:176,width:20,height:28,fill:heat(v/mx),stroke:w==='dog'?'#c00000':'#fff','stroke-width':w==='dog'?1.5:1},svg));T(svg,xx+40,222,'new "'+w+'"','')})});
+    const dz=Math.hypot(...ZA[0].map((v,i)=>v-ZB[2][i]));
+    T(svg,320,258,on?'with positions the two "dog" vectors differ: the order is visible':'without positions "dog" gets exactly the same vector in both sentences','lab');
+    T(svg,320,280,on?'(the same word at a different position is a different input)':'(and so does every other word: who bit whom is lost)','');setR(root,'d',f2(dz))}
+  draw()};
+
+/* multi-head attention as slices: 12 heads of 64 columns cost what one head of 768 costs */
+FIG['mha-split']=root=>{const svg=initSvg(svgOf(root),980,300);const H=12,HC=['#4472c4','#ed7d31','#70ad47','#ffc000','#5b9bd5','#a5a5a5','#c00000','#7030a0','#00b0f0','#92d050','#ff66cc','#996633'];
+  const cut=(x,y,w,h)=>{for(let k=0;k<H;k++)E('rect',{x:x+k*w/H,y:y,width:w/H,height:h,fill:HC[k],'fill-opacity':0.55,stroke:'#fff','stroke-width':0.8},svg);E('rect',{x:x,y:y,width:w,height:h,fill:'none',stroke:'#404040'},svg)};
+  E('rect',{x:10,y:70,width:72,height:140,fill:'#e2f0d9',stroke:'#404040'},svg);T(svg,46,146,'X','lab big');T(svg,46,230,'n × 768','');
+  arrowPx(svg,86,140,150,140,'ln thin sk','fk');TT(svg,118,124,'· W_Q, W_K, W_V','');T(svg,118,162,'768 × 768','');
+  [[174,54],[166,62]].forEach(([xx,yy])=>E('rect',{x:xx,y:yy,width:144,height:140,fill:'#f2f2f2',stroke:'#7f7f7f'},svg));T(svg,326,62,'V','lab','start');T(svg,318,76,'K','lab','start');
+  cut(158,70,144,140);T(svg,150,96,'Q','lab','end');T(svg,230,230,'Q, K, V: n × 768 each','lab');T(svg,230,248,'cut into 12 slices of 64 columns','');
+  const heads=[[0,'previous token',(i,j)=>j===Math.max(0,i-1)?1:0],[1,'itself',(i,j)=>i===j?1:0.08],[2,'first token',(i,j)=>j===0?1:(j<=i?0.15:0)],[11,'broad average',(i,j)=>j<=i?1:0]];
+  heads.forEach(([k,lab,f],m)=>{const y=24+m*64+(m===3?10:0),xx=410,c=10;E('line',{x1:158+(k+0.5)*12,y1:70,x2:xx-4,y2:y+25,stroke:HC[k],'stroke-width':1.6},svg);
+    for(let i=0;i<5;i++){const row=[];for(let j=0;j<5;j++)row.push(j<=i?f(i,j):0);const s=row.reduce((a,b)=>a+b,0)||1;row.forEach((v,j)=>E('rect',{x:xx+j*c,y:y+i*c,width:c,height:c,fill:heat(Math.min(1,v/s*1.3),true),stroke:'#fff','stroke-width':0.5},svg))}
+    E('rect',{x:xx,y:y,width:5*c,height:5*c,fill:'none',stroke:HC[k],'stroke-width':2.5},svg);T(svg,xx+60,y+20,'head '+(k+1),'lab','start').style.fill=HC[k];T(svg,xx+60,y+38,lab,'','start');
+    arrowPx(svg,xx+160,y+25,556,140,'ln thin sm','fm')});
+  T(svg,435,214,'⋮','lab big');
+  cut(560,70,144,140);T(svg,632,230,'concatenate: n × 768','lab');T(svg,632,248,'head k fills slice k','');
+  arrowPx(svg,708,140,770,140,'ln thin sk','fk');TT(svg,739,124,'· W_O','');T(svg,739,162,'768 × 768','');
+  E('rect',{x:774,y:70,width:72,height:140,fill:'#c5e0b4',stroke:'#404040'},svg);T(svg,810,146,'Z','lab big');T(svg,810,230,'n × 768','');T(svg,810,248,'W_O mixes the heads','');
+  T(svg,490,290,'each head uses only its own 64 columns of Q, K and V: 12 × 64 = 768, the same size and cost as one head of 768','','middle')};
+
+/* one transformer block (pre-norm): communicate, then think, each with a residual */
+FIG['block-one']=root=>{const svg=initSvg(svgOf(root),940,330);const y=128,h=56;
+  const bx=(x,w,t,c)=>box(svg,x,y-h/2,w,h,t,c,{cls:'lab'});const plus=x=>{E('circle',{cx:x,cy:y,r:15,fill:'#fff',stroke:'#404040','stroke-width':1.6},svg);T(svg,x,y+7,'+','lab big')};
+  T(svg,30,y+6,'X','lab big');T(svg,30,y+34,'n × d','');
+  arrowPx(svg,48,y,88,y,'ln thin sk','fk');bx(90,96,'LayerNorm','#f2f2f2');arrowPx(svg,188,y,218,y,'ln thin sk','fk');bx(220,170,'Multi-head\nattention','#ffe699');
+  arrowPx(svg,392,y,428,y,'ln thin sk','fk');plus(444);arrowPx(svg,460,y,488,y,'ln thin sk','fk');bx(490,96,'LayerNorm','#f2f2f2');arrowPx(svg,588,y,618,y,'ln thin sk','fk');
+  bx(620,150,'MLP\nd → 4d → d','#b4c7e7');arrowPx(svg,772,y,808,y,'ln thin sk','fk');plus(824);arrowPx(svg,840,y,868,y,'ln thin sk','fk');T(svg,900,y+6,'out','lab big');T(svg,900,y+34,'n × d','');
+  [[66,444,'residual: X + attention(LN(X))'],[474,824,'residual: X + MLP(LN(X))']].forEach(([a,b,t])=>{E('path',{d:'M'+a+','+y+' L'+a+',44 L'+b+',44 L'+b+','+(y-17),fill:'none',stroke:'#7f7f7f','stroke-width':1.6},svg);
+    arrowPx(svg,b,52,b,y-16,'ln thin sm','fm');T(svg,(a+b)/2,36,t,'')});
+  const dots=(x0,yy)=>[0,1,2,3].map(i=>[x0+i*40,yy]);
+  const A=dots(245,262);for(let i=0;i<4;i++)for(let j=i+1;j<4;j++){const [x1]=A[i],[x2]=A[j];E('path',{d:'M'+x1+',252 Q'+((x1+x2)/2)+','+(252-(x2-x1)*0.45)+' '+x2+',252',fill:'none',stroke:'#bf9000','stroke-width':1.3},svg)}
+  A.forEach(([x,yy])=>E('circle',{cx:x,cy:yy,r:9,fill:'#ffe699',stroke:'#404040'},svg));T(svg,305,292,'communicate: every token','lab');T(svg,305,310,'reads from the others','lab');
+  const B=dots(635,262);B.forEach(([x,yy])=>{E('rect',{x:x-11,y:210,width:22,height:18,rx:3,fill:'#b4c7e7',stroke:'#404040'},svg);arrowPx(svg,x,230,x,250,'ln thin sk','fk');E('circle',{cx:x,cy:yy,r:9,fill:'#b4c7e7',stroke:'#404040'},svg)});
+  T(svg,695,292,'think: each token alone,','lab');T(svg,695,310,'the same MLP for all','lab');
+  [[305,y+h/2+4,305,200],[695,y+h/2+4,695,204]].forEach(([a,b,c,dd])=>E('line',{x1:a,y1:b,x2:c,y2:dd,stroke:'#bfbfbf','stroke-width':1.2,'stroke-dasharray':'4 3'},svg))};
 
 })();

@@ -6,14 +6,15 @@ format:
     include-after-body:
       - text: |
           <script src="../../slides/neural_networks/assets/fig-nn-rnn.js"></script>
+          <script src="../../slides/neural_networks/assets/rag-data.js"></script>
           <script src="../../slides/neural_networks/assets/fig-nn-transformer.js"></script>
 ---
 
-**What this note covers.** Attention, the mechanism that lets every position of a sequence read directly from every other position, and the transformer built from it. We start from the bottleneck of recurrent encoders, build attention as a soft dictionary lookup (with numbers), write self-attention in matrix form, derive the $\sqrt{d_k}$ scaling, multi-head attention, positional encodings and the causal mask, count the 124M parameters of GPT-2 small, and derive the cost of attention ($O(n^2d)$) against the MLP ($O(nd^2)$) and the memory of the KV cache. Then we train a tiny GPT from scratch, generate text with greedy, beam, temperature, top-$k$ and top-$p$ decoding, measure it with perplexity and bits per character, and break it on purpose: without the causal mask, and with too little data. The note ends with the assumptions behind the transformer and what to do when they fail.
+**What this note covers.** Attention, the mechanism that lets every position of a sequence read directly from every other position, and the transformer built from it. We start from the bottleneck of recurrent encoders, build attention as a soft dictionary lookup (with numbers), compute queries, keys and values from embeddings, write self-attention in matrix form and backpropagate through it, derive the $\sqrt{d_k}$ scaling, multi-head attention, positional encodings, the causal mask and cross-attention, score a sentence with GPT-2's real probabilities, count the 124M parameters of GPT-2 small, and derive the cost of attention ($O(n^2d)$) against the MLP ($O(nd^2)$) and the memory of the KV cache. Then we train a tiny GPT from scratch, generate text with greedy, beam, temperature, top-$k$ and top-$p$ decoding, measure it with perplexity and bits per character, and break it on purpose: without the causal mask, and with too little data. The note ends with what modern LLMs changed since GPT-2, the assumptions behind the transformer and what to do when they fail.
 
 **What you need.** The MLP, softmax outputs and cross-entropy ([NN note 00](00_neural_networks_mlp.html), [ML note 04](../machine_learning/04_softmax_regression.html)); backpropagation ([NN note 01](01_backpropagation.html)); Adam, dropout, LayerNorm and gradient clipping ([NN note 02](02_training_optimization_regularization.html)); residual connections ([NN note 03](03_cnn_transfer_multitask.html)); embeddings, RNNs and the encoder–decoder bottleneck ([NN note 04](04_rnn_lstm.html)).
 
-**After this note you can** compute an attention output by hand; write self-attention, multi-head attention and a transformer block in PyTorch; explain why the scores are divided by $\sqrt{d_k}$, why positions must be added and why the causal mask is needed; count the parameters and the cost of a transformer; choose a decoding strategy; compare language models with perplexity or bits per character; and diagnose leakage and overfitting in a small language model.
+**After this note you can** compute an attention output by hand, from the embeddings to the output, and backpropagate through it; write self-attention, multi-head attention and a transformer block in PyTorch; explain why the scores are divided by $\sqrt{d_k}$, why positions must be added and why the causal mask is needed; count the parameters and the cost of a transformer; choose a decoding strategy; compare language models with perplexity or bits per character; and diagnose leakage and overfitting in a small language model.
 
 **Notation.** A sequence has $n$ tokens (also $T$ when we think of time); token $i$ is a row vector $\mathbf{x}_i\in\mathbb{R}^{1\times d}$ and the sequence is $\mathbf{X}\in\mathbb{R}^{n\times d}$ ($d = d_{\text{model}}$). Queries, keys and values have sizes $d_k$ and $d_v$; $h$ is the number of heads; $|V|$ the vocabulary size; $N$ the number of transformer blocks. The softmax of a vector $\mathbf{s}$ is $\mathrm{softmax}(\mathbf{s})_j = e^{s_j}/\sum_l e^{s_l}$, applied row by row to a matrix. $\log$ is the natural logarithm.
 
@@ -40,12 +41,16 @@ The LSTM of [NN note 04](04_rnn_lstm.html) fixed the vanishing gradient, but fou
 
 What we want: handle inputs of different lengths; process the entire input in parallel; share parameters across positions (like CNNs and RNNs); and reach any position from any other in one step. The transformer ("Attention Is All You Need", Vaswani et al., 2017) does all four with no recurrence and no convolution, only attention. It is behind GPT, BERT, modern translation, speech recognition (Whisper) and vision (ViT).
 
+```{=html}
+<div class="widget"><svg class="fig" data-fig="seq-par" style="max-height:280px" aria-label="An RNN processes the words one after another; attention connects every pair of words at once"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#4">slide 4</a> of the Attention and Transformers deck.</p></div>
+```
+
 ### 1.2 The bottleneck
 
 Before attention, sequence-to-sequence models **compressed the entire input sequence into a single fixed-size vector** $\mathbf{c} = \mathbf{h}_T$ before decoding it. Long sequences lost information by the time they reached the output ([NN note 04](04_rnn_lstm.html) measures how little a fixed-size state remembers).
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="seq2seq" style="max-height:260px" aria-label="An encoder RNN compressing a sentence into one context vector, read by a decoder RNN"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#3">slide 3</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="seq2seq" style="max-height:260px" aria-label="An encoder RNN compressing a sentence into one context vector, read by a decoder RNN"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#5">slide 5</a> of the Attention and Transformers deck.</p></div>
 ```
 
 ### 1.3 Attention in translation: a soft alignment
@@ -59,7 +64,7 @@ $$
 where the score $s_{tj}$ measures how relevant input $j$ is for output $t$ (Bahdanau used a small MLP of the decoder state and $\mathbf{h}_j$; the transformer uses a dot product, section 2). Each output word gets its own context vector $\mathbf{c}_t$, so nothing has to fit in one vector. Nobody tells the network that "negro" goes with "black": the weights are **learned** end to end, only from pairs of sentences, and they learn the word-order flip of Spanish adjectives.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="align" aria-label="Attention weights between Spanish output words and English input words"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#4">slide 4</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="align" aria-label="Attention weights between Spanish output words and English input words"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#6">slide 6</a> of the Attention and Transformers deck.</p></div>
 ```
 
 The transformer takes this idea to its limit: attention everywhere, and no recurrence at all.
@@ -79,6 +84,17 @@ s_j = \frac{\mathbf{q}^\top\mathbf{k}_j}{\sqrt{d_k}}, \qquad
 $$
 
 For a query that means "kitten", the weights might be cat 0.80, dog 0.18, car 0.02, and the output $0.80\,\mathbf{v}_1 + 0.18\,\mathbf{v}_2 + 0.02\,\mathbf{v}_3$. The weights are positive and sum to 1, so the output is a **weighted average of the values** (a convex combination). If one key matches much better than the rest, $\boldsymbol{\alpha}$ is almost one-hot and we recover a hard lookup. Everything is differentiable, so the queries, keys and values can be **learned** by backprop. (The division by $\sqrt{d_k}$ is explained in section 4.)
+
+**Try it.** Three keys (cat, dog, car), each with a 2-dimensional key and a value drawn as a colour. The query "cat" matches its own key best and gets 0.93 of the weight: almost a hard lookup. "kitten" is not a key, so a Python dictionary raises `KeyError`, while attention still answers with 0.80 cat, 0.18 dog, 0.02 car, a blend of the three values. "puppy" goes mostly to dog (0.83), "truck" to car (0.93). (The widget uses the plain dot product $\mathbf{q}\cdot\mathbf{k}$, without the $\sqrt{d_k}$.)
+
+```{=html}
+<div class="widget" data-fig="soft-lookup" data-auto="q=cat :: an exact match: weights 0.93 / 0.06 / 0.01, the output is almost exactly v₁ (a dictionary would return v₁ too) | q=kitten :: &quot;kitten&quot; is not a key: the dictionary raises KeyError, attention still answers with 0.80 cat, 0.18 dog, 0.02 car | q=puppy :: &quot;puppy&quot;: mostly dog (0.83), a little cat (0.12) | q=truck :: &quot;truck&quot;: most of the weight (0.93) goes to car">
+      <div class="ctl"><label>query</label><span class="seg" role="group" aria-label="Query word"><button type="button" data-q="cat" aria-pressed="false">cat</button><button type="button" data-q="kitten" aria-pressed="true">kitten</button><button type="button" data-q="puppy" aria-pressed="false">puppy</button><button type="button" data-q="truck" aria-pressed="false">truck</button></span></div>
+      <svg class="fig" style="max-height:330px" aria-label="A dictionary lookup that fails for an unknown key, and attention weights over the keys with the blended value"></svg>
+      <div class="ro"><div class="m"><span>weights α (cat / dog / car)</span><b data-r="w">–</b></div></div>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#7">slide 7</a> of the Attention and Transformers deck.</p>
+</div>
+```
 
 ### 2.1 Attention with numbers
 
@@ -113,7 +129,7 @@ The new vector for "pizza" is mostly its own value, with some of "I". Every toke
 <div class="widget" data-fig="attn-num" data-auto="s=1 | s=2 | s=3 | s=4">
   <svg class="fig" aria-label="Three tokens with keys and values; the query of pizza is compared with each key, softmaxed and used to average the values"></svg>
   <div class="ctl"><label for="an-s">step</label><input type="range" id="an-s" data-k="s" min="0" max="4" step="1" value="0"><span class="v" data-v="s"></span></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#6">slide 6</a> of the Attention and Transformers deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#8">slide 8</a> of the Attention and Transformers deck.</p>
 </div>
 ```
 
@@ -143,6 +159,26 @@ $$
 
 **Why separate $\mathbf{Q}$ and $\mathbf{K}$?** "What I look for" and "what I offer" are different: a verb looks for its subject, a noun offers itself as one. With one matrix ($\mathbf{W}_Q = \mathbf{W}_K$) the score would be symmetric, $\text{score}(i,j) = \text{score}(j,i)$; two matrices let the relation be asymmetric.
 
+**With numbers: where the keys and values of section 2.1 come from.** Take $d = 3$, $d_k = d_v = 2$, the embeddings $\mathbf{x}_{\text{I}} = (0,1,1)$, $\mathbf{x}_{\text{love}} = (2,0,2)$, $\mathbf{x}_{\text{pizza}} = (1,1,1)$, and
+
+$$
+\mathbf{W}_Q = \begin{pmatrix}1&0\\0&1\\1&0\end{pmatrix},\qquad
+\mathbf{W}_K = \begin{pmatrix}0&1\\1&0.5\\0&-0.5\end{pmatrix},\qquad
+\mathbf{W}_V = \begin{pmatrix}-0.5&0.5\\0.5&0\\0.5&0\end{pmatrix}.
+$$
+
+A product $\mathbf{x}\mathbf{W}$ is a weighted sum of the rows of $\mathbf{W}$, with the entries of $\mathbf{x}$ as weights. For "pizza", $\mathbf{x} = (1,1,1)$, it is the plain sum of the rows: $\mathbf{q} = (1,0) + (0,1) + (1,0) = (2,1)$, $\mathbf{k} = (0,1) + (1,0.5) + (0,-0.5) = (1,1)$ and $\mathbf{v} = (-0.5,0.5) + (0.5,0) + (0.5,0) = (0.5,0.5)$. For "love", $\mathbf{k} = 2\,(0,1) + 2\,(0,-0.5) = (0,1)$ and $\mathbf{v} = 2\,(-0.5,0.5) + 2\,(0.5,0) = (0,1)$; for "I", $\mathbf{k} = (1,0.5) + (0,-0.5) = (1,0)$ and $\mathbf{v} = (0.5,0) + (0.5,0) = (1,0)$. These are exactly the keys, values and query of section 2.1: the table there was the output of three learned matrices.
+
+```{=html}
+<div class="widget"><svg class="fig" data-fig="qkv-token" aria-label="The embedding of pizza, (1, 1, 1), times three learned matrices gives its query (2, 1), key (1, 1) and value (0.5, 0.5)"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#9">slide 9</a> of the Attention and Transformers deck.</p></div>
+```
+
+```{python}
+X3 = torch.tensor([[0., 1, 1], [2, 0, 2], [1, 1, 1]])                       # I, love, pizza
+WQ3 = torch.tensor([[1., 0], [0, 1], [1, 0]]); WK3 = torch.tensor([[0., 1], [1, .5], [0, -.5]]); WV3 = torch.tensor([[-.5, .5], [.5, 0], [.5, 0]])
+print("K =", (X3 @ WK3).tolist(), "  V =", (X3 @ WV3).tolist(), "  q(pizza) =", (X3[2] @ WQ3).tolist())
+```
+
 ### 3.2 As matrices
 
 Stack the tokens as the rows of $\mathbf{X}\in\mathbb{R}^{n\times d}$: $\mathbf{Q} = \mathbf{X}\mathbf{W}_Q$, $\mathbf{K} = \mathbf{X}\mathbf{W}_K$, $\mathbf{V} = \mathbf{X}\mathbf{W}_V$. Entry $(i,j)$ of $\mathbf{Q}\mathbf{K}^\top$ is $\mathbf{q}_i\cdot\mathbf{k}_j$ (row $i$ of $\mathbf{Q}$ times column $j$ of $\mathbf{K}^\top$), so all scores come from one product, and row $i$ of $\mathbf{A}\mathbf{V}$ is $\sum_j\alpha_{ij}\mathbf{v}_j$:
@@ -154,7 +190,7 @@ $$
 with the softmax applied row by row. $\mathbf{Q}\mathbf{K}^\top$ is $n\times n$: every token against every token. Row $i$ of the $n\times n$ matrix $\mathbf{A} = \mathrm{softmax}(\cdot)$ holds the weights token $i$ gives to every token, and each token ends up as a combination of all the tokens in the sequence. Example: $n = 10$ tokens, $d = 512$, $d_k = 64$: $\mathbf{Q},\mathbf{K},\mathbf{V}$ are $10\times64$, the score matrix is $10\times10$, and the output is again one vector per token ($10\times64$). Three matrix products, fully parallel on a GPU. The cost grows as $n^2$ (section 8).
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="qkv" style="max-height:260px" aria-label="X projected into Q, K and V; QK transpose gives an n by n score matrix; softmax gives A; A times V gives Z"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#8">slide 8</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="qkv" style="max-height:260px" aria-label="X projected into Q, K and V; QK transpose gives an n by n score matrix; softmax gives A; A times V gives Z"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#10">slide 10</a> of the Attention and Transformers deck.</p></div>
 ```
 
 ### 3.3 What does "it" refer to?
@@ -169,7 +205,7 @@ with the softmax applied row by row. $\mathbf{Q}\mathbf{K}^\top$ is $n\times n$:
   <div class="ctl"><label for="at-q">query token</label><input type="range" id="at-q" data-k="q" min="0" max="9" step="1" value="7"><span class="v" data-v="q" style="min-width:100px">"it"</span></div>
   <div class="ctl"><span class="seg" role="group" aria-label="Last word"><button type="button" data-w="tired" aria-pressed="true">… it was tired</button><button type="button" data-w="wide" aria-pressed="false">… it was wide</button></span></div>
   <div class="ro"><div class="m"><span>"it" attends most to</span><b data-r="top" style="font-size:18px">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#9">slide 9</a> of the Attention and Transformers deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#11">slide 11</a> of the Attention and Transformers deck.</p>
 </div>
 ```
 
@@ -178,7 +214,67 @@ with the softmax applied row by row. $\mathbf{Q}\mathbf{K}^\top$ is $n\times n$:
 Each **row** of $\mathbf{A}$ is one query: a probability distribution over the sentence (the red row is the one of the previous figure). Each **column** shows who reads from that word: "animal" is read by "cross", "it" and "tired", so the matrix captures who-relates-to-whom in the sentence. A trained model has one such matrix per head and per layer: GPT-2 small has $12\times12 = 144$ of them for every input.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="attn-matrix" aria-label="The 10 by 10 attention matrix of the sentence, row it highlighted"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#10">slide 10</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="attn-matrix" aria-label="The 10 by 10 attention matrix of the sentence, row it highlighted"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#12">slide 12</a> of the Attention and Transformers deck.</p></div>
+```
+
+### 3.5 Backpropagation through attention
+
+Attention is made of matrix products and a row-wise softmax, so its gradients follow from the rules of [NN note 01](01_backpropagation.html). For one head the forward pass is
+
+$$
+\mathbf{Q} = \mathbf{X}\mathbf{W}_Q,\quad \mathbf{K} = \mathbf{X}\mathbf{W}_K,\quad \mathbf{V} = \mathbf{X}\mathbf{W}_V,\qquad
+\mathbf{S} = \frac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d_k}},\qquad \mathbf{A} = \mathrm{softmax}_{\text{row}}(\mathbf{S}),\qquad \mathbf{Z} = \mathbf{A}\mathbf{V},
+$$
+
+and $\mathbf{G} = \partial L/\partial\mathbf{Z}$ ($n\times d_v$) is the gradient that arrives from the layers above. We go backwards one operation at a time. For a product $\mathbf{C} = \mathbf{M}\mathbf{N}$ with upstream gradient $\bar{\mathbf{C}} = \partial L/\partial\mathbf{C}$, note 01 gives $\partial L/\partial\mathbf{M} = \bar{\mathbf{C}}\mathbf{N}^\top$ and $\partial L/\partial\mathbf{N} = \mathbf{M}^\top\bar{\mathbf{C}}$.
+
+$$
+\begin{aligned}
+\frac{\partial L}{\partial\mathbf{V}} &= \mathbf{A}^\top\mathbf{G}, \qquad \frac{\partial L}{\partial\mathbf{A}} = \mathbf{G}\mathbf{V}^\top \\
+&\quad\small \mathbf{Z} = \mathbf{A}\mathbf{V}\text{: the product rule}\\
+\frac{\partial L}{\partial S_{ik}} &= \sum_j \frac{\partial L}{\partial A_{ij}}\,A_{ij}(\delta_{jk} - A_{ik}) = A_{ik}\Big(\frac{\partial L}{\partial A_{ik}} - \sum_j A_{ij}\frac{\partial L}{\partial A_{ij}}\Big) \\
+&\quad\small \text{row }i\text{ of }\mathbf{A}\text{ depends only on row }i\text{ of }\mathbf{S}\text{; softmax Jacobian }\partial A_{ij}/\partial S_{ik} = A_{ij}(\delta_{jk} - A_{ik})\\
+\frac{\partial L}{\partial\mathbf{Q}} &= \frac{1}{\sqrt{d_k}}\,\frac{\partial L}{\partial\mathbf{S}}\,\mathbf{K}, \qquad \frac{\partial L}{\partial\mathbf{K}} = \frac{1}{\sqrt{d_k}}\Big(\frac{\partial L}{\partial\mathbf{S}}\Big)^{\!\top}\mathbf{Q} \\
+&\quad\small \mathbf{S} = \tfrac{1}{\sqrt{d_k}}\mathbf{Q}\mathbf{K}^\top\text{: the product rule with }\mathbf{N} = \mathbf{K}^\top\text{, then transpose}\\
+\frac{\partial L}{\partial\mathbf{W}_Q} &= \mathbf{X}^\top\frac{\partial L}{\partial\mathbf{Q}},\quad \frac{\partial L}{\partial\mathbf{W}_K} = \mathbf{X}^\top\frac{\partial L}{\partial\mathbf{K}},\quad \frac{\partial L}{\partial\mathbf{W}_V} = \mathbf{X}^\top\frac{\partial L}{\partial\mathbf{V}} \\
+&\quad\small \text{the three projections}\\
+\frac{\partial L}{\partial\mathbf{X}} &= \frac{\partial L}{\partial\mathbf{Q}}\mathbf{W}_Q^\top + \frac{\partial L}{\partial\mathbf{K}}\mathbf{W}_K^\top + \frac{\partial L}{\partial\mathbf{V}}\mathbf{W}_V^\top \\
+&\quad\small \mathbf{X}\text{ is used three times: the gradients of the three paths add up}
+\end{aligned}
+$$
+
+**What the score gradient means.** With $\mathbf{g}_i$ the $i$-th row of $\mathbf{G}$, the entries of $\partial L/\partial\mathbf{A}$ are $\partial L/\partial A_{ij} = \mathbf{g}_i\cdot\mathbf{v}_j$, and $\sum_j A_{ij}\,\mathbf{g}_i\cdot\mathbf{v}_j = \mathbf{g}_i\cdot\mathbf{z}_i$. Substituting,
+
+$$
+\frac{\partial L}{\partial S_{ij}} = A_{ij}\;\mathbf{g}_i\cdot(\mathbf{v}_j - \mathbf{z}_i).
+$$
+
+Gradient descent changes $S_{ij}$ by minus $\eta$ times this. The score of the pair $(i,j)$ grows exactly when moving the output $\mathbf{z}_i$ towards the value $\mathbf{v}_j$ would lower the loss, that is when $-\mathbf{g}_i\cdot(\mathbf{v}_j - \mathbf{z}_i) > 0$, and the step is proportional to the current weight $A_{ij}$. Three consequences:
+
+- **Saturation stops learning.** If row $i$ is one-hot on $j^*$, then $\mathbf{z}_i = \mathbf{v}_{j^*}$: the factor $A_{ij} = 0$ kills every $j\neq j^*$, and $\mathbf{v}_{j^*} - \mathbf{z}_i = \mathbf{0}$ kills $j^*$. The whole row of $\partial L/\partial\mathbf{S}$ is zero. This is the reason for the $\sqrt{d_k}$ of section 4.
+- **The mask also masks the gradient.** A masked pair has $A_{ij} = 0$, hence $\partial L/\partial S_{ij} = 0$: no gradient flows into a future position.
+- **Memory.** The backward pass needs $\mathbf{A}$, an $n\times n$ matrix per head and per layer, which is why training attention costs $O(n^2)$ memory (section 8.1). FlashAttention avoids storing it by recomputing it block by block during the backward pass.
+
+The code compares these formulas with PyTorch's automatic differentiation on random matrices.
+
+```{python}
+g = torch.Generator().manual_seed(0)                    # a private generator: the global seed of later cells is untouched
+n, d, dk = 5, 8, 4
+X = torch.randn(n, d, generator=g).requires_grad_()
+WQ, WK, WV = (torch.randn(d, dk, generator=g).requires_grad_() for _ in range(3))
+Q, K, V = X @ WQ, X @ WK, X @ WV
+S = Q @ K.T / math.sqrt(dk); A = S.softmax(-1); Z = A @ V
+G = torch.randn(n, dk, generator=g)                      # an arbitrary upstream gradient dL/dZ
+(Z * G).sum().backward()                                 # L = sum(Z * G) has dL/dZ = G
+with torch.no_grad():
+    dV, dA = A.T @ G, G @ V.T
+    dS = A * (dA - (dA * A).sum(-1, keepdim=True))       # row-wise softmax backward
+    dQ, dK = dS @ K / math.sqrt(dk), dS.T @ Q / math.sqrt(dk)
+    dX = dQ @ WQ.T + dK @ WK.T + dV @ WV.T
+    dS_alt = A * (G @ V.T - (G * Z).sum(-1, keepdim=True))   # A_ij g_i·(v_j - z_i)
+for name, mine, auto in [("W_Q", X.T @ dQ, WQ.grad), ("W_K", X.T @ dK, WK.grad), ("W_V", X.T @ dV, WV.grad), ("X", dX, X.grad)]:
+    print(f"dL/d{name}: max |formula - autograd| = {(mine - auto).abs().max():.1e}")
+print("the two forms of dL/dS agree:", torch.allclose(dS, dS_alt, atol=1e-6))
 ```
 
 ## 4. Why divide by $\sqrt{d_k}$
@@ -221,7 +317,7 @@ So raw dot products have standard deviation $\sqrt{d_k}$ (8 for $d_k = 64$). Lar
   <svg class="fig" aria-label="Softmax of raw and scaled attention scores"></svg>
   <div class="ctl"><label for="sq-d">dₖ (log scale)</label><input type="range" id="sq-d" data-k="d" min="0" max="9" step="1" value="6"><span class="v" data-v="d">64</span></div>
   <div class="ro"><div class="m"><span>max weight, raw</span><b data-r="mx">–</b></div><div class="m"><span>max weight, scaled</span><b data-r="ms">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#11">slide 11</a> of the Attention and Transformers deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#13">slide 13</a> of the Attention and Transformers deck.</p>
 </div>
 ```
 
@@ -255,13 +351,19 @@ with $\mathbf{W}_Q^{(i)},\mathbf{W}_K^{(i)},\mathbf{W}_V^{(i)}\in\mathbb{R}^{d\t
 **The cost is about the same as one big head.** The projections of all heads together are $h$ matrices of size $d\times d/h$, i.e. the same $d\times d$ parameters as one full-width head; the score products cost $h\cdot n^2\cdot d_k = n^2d$, the same as one head of size $d$. In code, all heads are computed at once by reshaping $[n, d]$ to $[h, n, d_k]$.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="mha" aria-label="Multi-head attention: linear projections of Q, K, V, parallel attention heads, concatenation and a final linear layer"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#12">slide 12</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="mha" aria-label="Multi-head attention: linear projections of Q, K, V, parallel attention heads, concatenation and a final linear layer"></svg><p class="from">The classic diagram of Vaswani et al. (2017). The deck draws the same computation as slices (next figure).</p></div>
+```
+
+The same computation drawn as slices: one projection $\mathbf{X}\mathbf{W}_Q$ with $\mathbf{W}_Q\in\mathbb{R}^{768\times768}$ is cut into 12 slices of 64 columns (likewise for $\mathbf{K}$ and $\mathbf{V}$), slice $k$ feeds head $k$, and the concatenation puts each head's output back in its slice before $\mathbf{W}_O$ mixes them.
+
+```{=html}
+<div class="widget"><svg class="fig" data-fig="mha-split" style="max-height:300px" aria-label="Q, K and V cut into 12 slices; each slice feeds its own attention head; the heads are concatenated and mixed by W_O"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#14">slide 14</a> of the Attention and Transformers deck.</p></div>
 ```
 
 Researchers find heads like these in trained language models: previous-token heads, heads that attend to the same word, coreference heads ("it" → noun), broad averaging heads, and "induction" heads that copy patterns seen earlier in the context. Section 12 shows the heads of our tiny GPT.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="heads" style="max-height:310px" aria-label="Four attention matrices: previous token, same word, pronoun to noun, and a broad average"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#13">slide 13</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="heads" style="max-height:310px" aria-label="Four attention matrices: previous token, same word, pronoun to noun, and a broad average"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#15">slide 15</a> of the Attention and Transformers deck.</p></div>
 ```
 
 ## 6. Positional encodings
@@ -278,6 +380,17 @@ Researchers find heads like these in trained language models: previous-token hea
 4. Therefore $\mathrm{softmax}\big(\tfrac{\mathbf{P}\mathbf{Q}\mathbf{K}^\top\mathbf{P}^\top}{\sqrt{d_k}}\big)\mathbf{P}\mathbf{V} = \mathbf{P}\,\mathrm{softmax}\big(\tfrac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d_k}}\big)\mathbf{P}^\top\mathbf{P}\mathbf{V} = \mathbf{P}\,\mathrm{Attention}(\mathbf{Q},\mathbf{K},\mathbf{V})$, because $\mathbf{P}^\top\mathbf{P} = \mathbf{I}$ (a permutation matrix is orthogonal). $\blacksquare$
 
 Shuffling the input only shuffles the output: attention treats the input as a **set**. In "dog bites man" and "man bites dog", each word would get exactly the same representation. The MLP and LayerNorm act on each position separately, so the whole transformer block is permutation-equivariant too. Word order must be injected explicitly.
+
+**Try it.** Three random 4-dimensional word embeddings and one attention layer with random weights. With words only, "dog" gets exactly the same output vector in "dog bites man" and in "man bites dog" (distance 0.00), and so does every other word, only reordered. Add a position vector to each word and the two "dog" vectors differ (distance 0.40).
+
+```{=html}
+<div class="widget" data-fig="perm" data-auto="p=off :: words only: &quot;dog&quot; gets exactly the same vector in both sentences (distance 0.00) | p=on :: add a position vector to each word: now the two &quot;dog&quot; vectors differ (distance 0.40)">
+      <svg class="fig" aria-label="Self-attention applied to dog bites man and man bites dog, with and without position vectors"></svg>
+      <div class="ctl"><label>input</label><span class="seg" role="group" aria-label="Positions"><button type="button" data-p="off" aria-pressed="true">words only</button><button type="button" data-p="on" aria-pressed="false">words + positions</button></span></div>
+      <div class="ro"><div class="m"><span>distance between the two "dog" vectors</span><b data-r="d">–</b></div></div>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#16">slide 16</a> of the Attention and Transformers deck.</p>
+</div>
+```
 
 ```{python}
 T_, d, dk = 5, 8, 4
@@ -298,7 +411,13 @@ Each pair of dimensions is a clock at its own angular speed $\omega_i = 10000^{-
 - **Rotary (RoPE)**, used by most modern LLMs: rotate queries and keys by a position-dependent angle, so that $\mathbf{q}^\top\mathbf{k}$ depends on the *relative* distance.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="posenc" aria-label="Heat map of sinusoidal positional encodings"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#14">slide 14</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="posenc" aria-label="Heat map of sinusoidal positional encodings"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#17">slide 17</a> of the Attention and Transformers deck.</p></div>
+```
+
+Four of the clocks read at two positions: dimension 0 turns fast (a period of about 6 positions), dimension 12 slowly (about 199). Each reading alone repeats, but the four readings together differ between position 20 and position 33: they identify the position.
+
+```{=html}
+<div class="widget"><svg class="fig" data-fig="posenc-waves" style="max-height:215px" aria-label="Four sine waves of different period, read at two positions"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#17">slide 17</a> of the Attention and Transformers deck.</p></div>
 ```
 
 **Relative positions are a rotation (sinusoidal).** Take one pair, with $a = pos\,\omega_i$ and $b = k\,\omega_i$. By the angle-addition formulas,
@@ -348,7 +467,7 @@ $$
 $e^{-\infty} = 0$, so future tokens get exactly zero weight and each row is a distribution over the past only.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="mask" style="max-height:270px" aria-label="Scores, the causal mask with minus infinity above the diagonal, and the resulting attention weights"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#15">slide 15</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="mask" style="max-height:270px" aria-label="Scores, the causal mask with minus infinity above the diagonal, and the resulting attention weights"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#18">slide 18</a> of the Attention and Transformers deck.</p></div>
 ```
 
 This is what makes transformers fast to **train**: one forward pass over a sequence of length $n$ computes all $n$ next-token predictions **in parallel**, each seeing only its own past (*teacher forcing*, [NN note 04](04_rnn_lstm.html)). An RNN has to run step by step. At **generation** time the model still produces one token at a time (section 13).
@@ -390,7 +509,7 @@ With a batch, the same code works on tensors $[B,n,d]$ (write `K.transpose(-2, -
 ## 8. Why transformers won, and what they cost
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="paths" style="max-height:250px" aria-label="In an RNN information travels through six steps; with attention every pair of words is connected directly"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#17">slide 17</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="paths" style="max-height:250px" aria-label="In an RNN information travels through six steps; with attention every pair of words is connected directly"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#20">slide 20</a> of the Attention and Transformers deck.</p></div>
 ```
 
 | | RNN / LSTM | self-attention |
@@ -445,6 +564,16 @@ $$
 
 For GPT-2 small in 16-bit precision ($N = 12$, $d = 768$, $b = 2$): $2\cdot12\cdot768\cdot2 = 36{,}864$ bytes per token, about 37.7 MB for a full context of 1,024 tokens, per sequence in the batch. For large models this, not the weights, often limits how many users a GPU can serve; tricks such as grouped-query attention share keys and values between heads to shrink it. Section 13 checks that generation with and without the cache gives the same text.
 
+**Try it.** Without a cache, step $t$ recomputes the keys and values of all $t$ tokens: after 5 tokens that is $1 + 2 + 3 + 4 + 5 = 15$ computations; with the cache, 5. In [Lab 14](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 14 - Text generation with Transformers.ipynb), GPT-2 small generates 200 tokens after a 201-token prompt: $\sum_{k=0}^{199}(201 + k) = 60{,}100$ token positions processed without the cache, 401 with it, and the same text.
+
+```{=html}
+<div class="widget" data-fig="kv-cache" data-auto="s=2 :: after 2 tokens: 1 + 2 = 3 computations of K and V without a cache, 2 with it|s=3 :: after 3 tokens: 6 without, 3 with|s=4 :: after 4 tokens: 10 without, 4 with|s=5 :: after 5 tokens: 15 without, 5 with: the gap keeps growing">
+    <svg class="fig" style="max-height:292px" aria-label="Keys and values recomputed at every step without a cache, and computed once with a cache"></svg>
+    <div class="ctl"><label for="kv-s">tokens so far</label><input type="range" id="kv-s" data-k="s" min="1" max="5" step="1" value="1"><span class="v" data-v="s"></span></div>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#34">slide 34</a> of the Attention and Transformers deck.</p>
+</div>
+```
+
 ## 9. The transformer block
 
 ### 9.1 Encoder, decoder and the block
@@ -466,7 +595,19 @@ with $\mathbf{W}_1\in\mathbb{R}^{d\times4d}$ and $\mathbf{W}_2\in\mathbb{R}^{4d\
 - **Cross-attention** (encoder–decoder models): queries from the decoder, keys and values from the encoder output. This is the alignment of translation (section 1.3), inside the transformer.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="block" aria-label="The transformer: an encoder stack and a decoder stack with masked attention and cross attention"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#18">slide 18</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="block-one" style="max-height:320px" aria-label="Pre-norm transformer block: LayerNorm, multi-head attention, residual add, LayerNorm, MLP, residual add"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#22">slide 22</a> of the Attention and Transformers deck.</p></div>
+```
+
+**Cross-attention as a formula.** With the decoder's states $\mathbf{Y}\in\mathbb{R}^{m\times d}$ ($m$ target tokens so far) and the encoder's output $\mathbf{H}\in\mathbb{R}^{n\times d}$ ($n$ source tokens): $\mathbf{Q} = \mathbf{Y}\mathbf{W}_Q$, $\mathbf{K} = \mathbf{H}\mathbf{W}_K$, $\mathbf{V} = \mathbf{H}\mathbf{W}_V$ and
+
+$$
+\mathrm{CrossAttention}(\mathbf{Y},\mathbf{H}) = \mathrm{softmax}\Big(\frac{\mathbf{Q}\mathbf{K}^\top}{\sqrt{d_k}}\Big)\mathbf{V}\in\mathbb{R}^{m\times d_v}.
+$$
+
+The score matrix is $m\times n$: every target position against every source position. No causal mask is needed, because the whole source sentence is known before decoding starts. Each decoder block applies masked self-attention, then cross-attention, then the MLP, each with its residual and LayerNorm.
+
+```{=html}
+<div class="widget"><svg class="fig" data-fig="block" aria-label="The transformer: an encoder stack and a decoder stack with masked attention and cross attention"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#23">slide 23</a> of the Attention and Transformers deck.</p></div>
 ```
 
 ### 9.2 Pre-LN versus post-LN
@@ -481,7 +622,7 @@ In words: pre-LN keeps a highway from the loss to every layer; post-LN normalise
 ### 9.3 Encoders and decoders: BERT vs GPT
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="bert-gpt" aria-label="A full attention mask for BERT and a lower-triangular causal mask for GPT"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#19">slide 19</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="bert-gpt" aria-label="A full attention mask for BERT and a lower-triangular causal mask for GPT"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#24">slide 24</a> of the Attention and Transformers deck.</p></div>
 ```
 
 | | encoder only | decoder only | encoder–decoder |
@@ -509,8 +650,21 @@ $$
 
 This is **self-supervised**: the targets are the inputs shifted by one, so any amount of raw text is training data. One sequence of 6 tokens gives 5 classification problems, all trained in a single forward pass thanks to the causal mask.
 
+**With numbers: GPT-2 scores a sentence.** GPT-2 small ([Lab 14](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 14 - Text generation with Transformers.ipynb)) reads "Paris is the capital of France." (7 tokens) and gives these probabilities to the 6 tokens that follow the first one (the first token has no context and is not scored, as in the lab):
+
+| given | next token | $p$ | $-\ln p$ |
+|---|---|---|---|
+| Paris | is | 0.0116 | 4.46 |
+| Paris is | the | 0.0658 | 2.72 |
+| Paris is the | capital | 0.0158 | 4.15 |
+| … the capital | of | 0.725 | 0.32 |
+| … capital of | France | 0.0413 | 3.19 |
+| … of France | . | 0.179 | 1.72 |
+
+By the chain rule the probability of the continuation is the product, $0.0116\times0.0658\times0.0158\times0.725\times0.0413\times0.179\approx6.4\times10^{-8}$ (with the unrounded probabilities). The log turns the product into a sum, $-\ln P = 4.46 + 2.72 + 4.15 + 0.32 + 3.19 + 1.72 = 16.56$, and the average over the 6 predictions is the loss on this sentence, $J = 16.56/6 = 2.76$ nats per token. It returns in section 14: $e^{2.76} = 15.8$ is the perplexity of this sentence in Lab 14's table. After "capital of", GPT-2's most likely next token was " the" (0.26); "France" (0.041) came third.
+
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="lm-train" style="max-height:190px" aria-label="Input tokens and the same tokens shifted by one as targets"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#20">slide 20</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="lm-train" style="max-height:190px" aria-label="Input tokens and the same tokens shifted by one as targets"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#27">slide 27</a> of the Attention and Transformers deck.</p></div>
 ```
 
 ### 10.2 Tokenisation: byte-pair encoding
@@ -529,7 +683,7 @@ Frequent words end up as single tokens; rare words are split into pieces ("token
 <div class="widget" data-fig="bpe" data-auto="s=1 | s=2 | s=3 | s=4">
   <svg class="fig" aria-label="Byte-pair encoding merging characters into sub-words over four merges"></svg>
   <div class="ctl"><label for="bp-s">merges</label><input type="range" id="bp-s" data-k="s" min="0" max="4" step="1" value="0"><span class="v" data-v="s"></span></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#20">slide 20</a> of the Attention and Transformers deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#26">slide 26</a> of the Attention and Transformers deck.</p>
 </div>
 ```
 
@@ -584,6 +738,12 @@ $$
 $$
 
 Modern LLMs follow the same recipe with $N\approx80$ and $d\approx8{,}000$: $12\cdot80\cdot8000^2\approx61$ billion parameters in the blocks alone.
+
+**GPT-2 end to end, with its real shapes.** For the prompt "The cat sat on the" (5 tokens, ids 464, 3797, 3332, 319, 262), the embedding lookup plus the position embeddings give a $5\times768$ matrix; each of the 12 blocks maps $5\times768$ to $5\times768$; the final LayerNorm and the product with $\mathbf{E}^\top$ give $5\times50{,}257$ logits. Only the softmax of the last row is needed to continue the text: floor 7.6 %, bed 6.5 %, couch 5.4 %, ground 5.2 %, edge 4.8 %. During training every row is used, each predicting its own next token.
+
+```{=html}
+<div class="widget"><svg class="fig" data-fig="gpt-shapes" style="max-height:370px" aria-label="Text, token ids, embedding matrix, twelve blocks, logits and next-token probabilities with their shapes"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#29">slide 29</a> of the Attention and Transformers deck.</p></div>
+```
 
 ## 12. A tiny GPT, trained from scratch
 
@@ -740,7 +900,7 @@ Each row is one query position; the lower-triangular shape is the causal mask. A
 <div class="widget" data-fig="gen-loop" data-auto="s=1 :: &quot;here&quot; was chosen: append it and run again | s=2 :: &quot;?&quot; appended; the model now predicts &lt;end&gt;">
   <svg class="fig" aria-label="The prompt goes into GPT, which outputs next-token probabilities; the chosen token is appended and the loop repeats"></svg>
   <div class="ctl"><label for="gl-s">step</label><input type="range" id="gl-s" data-k="s" min="0" max="2" step="1" value="0"><span class="v" data-v="s"></span></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#23">slide 23</a> of the Attention and Transformers deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#31">slide 31</a> of the Attention and Transformers deck.</p>
 </div>
 ```
 
@@ -764,12 +924,12 @@ $$p_\tau(k) = \frac{e^{z_k/\tau}}{\sum_l e^{z_l/\tau}} = \frac{\big(e^{z_k}\big)
 **Try it.** "Can you please come ___?": at $\tau = 1$ "here" has probability 0.45. At $\tau = 0.3$ it gets 0.92 (almost greedy); at $\tau = 1.8$ only 0.28 and the distribution is flat. With top-$k = 3$ at $\tau = 1$, only "here", "back" and "home" survive, renormalised to 0.58, 0.26, 0.16.
 
 ```{=html}
-<div class="widget" data-fig="decode" data-auto="t=0.3 :: low temperature: almost greedy, &quot;here&quot; every time | t=1.8 :: high temperature: a flat distribution, surprising words | t=1; k=3 :: top-k = 3: only the 3 best candidates can be sampled">
+<div class="widget" data-fig="decode" data-auto="t=0.3 :: low temperature T = 0.3: almost greedy, &quot;here&quot; gets 0.92 | t=1.8 :: high temperature T = 1.8: a flatter distribution, &quot;here&quot; only 0.28 and unlikely words get real chances | t=1; k=3 :: top-k = 3 at T = 1: only here, back and home survive, renormalised to 0.58, 0.26, 0.16">
   <svg class="fig" aria-label="Next-token probabilities after temperature and top-k"></svg>
   <div class="ctl"><label for="dc-t">temperature</label><input type="range" id="dc-t" data-k="t" min="0.1" max="2.5" step="0.05" value="1"><span class="v" data-v="t">1.00</span></div>
   <div class="ctl"><label for="dc-k">top-k</label><input type="range" id="dc-k" data-k="k" min="1" max="8" step="1" value="8"><span class="v" data-v="k">8</span>
     <button type="button" data-k="go" hidden>Sample a word</button></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#25">slide 25</a> of the Attention and Transformers deck (without its "sample a word" button).</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#32">slide 32</a> of the Attention and Transformers deck (without its "sample a word" button).</p>
 </div>
 ```
 
@@ -780,6 +940,15 @@ p = z.softmax(0); print("top-3 at tau = 1:", (p[:3] / p[:3].sum()).numpy().round
 ```
 
 With top-$p = 0.9$ the nucleus would be the first six words (cumulative 0.89 after five, 0.94 after six).
+
+**What GPT-2 writes ([Lab 14](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 14 - Text generation with Transformers.ipynb)).** The same strategies on a real model, prompt "Studying the MINT master is the best decision I", 35 new tokens:
+
+- greedy ($\tau = 0.1$; both seeds give the same text): "… I've ever made. I'm not sure if I'm going to be able to do it, but I'm going to be able to do it. I'm going to be". A loop.
+- $\tau = 1.8$ without truncation: "… I ever makes. ...olla refund results:y cookrentice Orc tattoo worker Clay Destroyer …". The tail of 50,000 unlikely tokens takes over.
+- $\tau = 0.9$ with top-$p = 0.9$: "… I ever made. I think that is the point of building software. Software is the single most important thing you can learn." Varied and fluent.
+- beam search with 5 beams (prompt "The key to training neural networks is"): "… to train them in a way that allows them to learn from each other. In this article, I'll show you how to train neural networks to learn from each other." Likely, bland and repetitive.
+
+The nucleus adapts to the model's confidence: after "Welcome to the deep learning class, it is a", top-$p = 0.5$ keeps 35 tokens and top-$p = 0.9$ keeps 977. Section 13.3 finds the same pattern with the tiny GPT, where grammaticality can be counted.
 
 ### 13.3 Decoding the tiny GPT
 
@@ -889,6 +1058,12 @@ $$
 
 Word order matters a lot ($1536/21.7\approx71$ times), GPT-2 saw little Spanish, and it prefers the true fact only slightly: it learned statistics about words, not facts.
 
+**Surprisal: the loss token by token.** The terms of $J$, measured in bits, are the **surprisals** $-\log_2 p(x_t\mid x_{<t})$. For GPT-2 small on "I went to the bakery this morning and bought a fresh loaf of bread and a large elephant." ([Lab 14](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 14 - Text generation with Transformers.ipynb)), "bread" after "a fresh loaf of" costs 0.3 bits ($p = 0.81$), while "elephant" costs 17.3 bits, about 1 chance in 160,000: GPT-2 expected "bag", "amount" or "bowl" (about 5 % each). The average over the sentence is 4.7 bits per token, so its perplexity is $2^{4.7}\approx26$.
+
+```{=html}
+<div class="widget"><svg class="fig" data-fig="surprisal" style="max-height:350px" aria-label="Bars with the surprisal in bits that GPT-2 assigns to each token of a sentence that ends in an unexpected word"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#35">slide 35</a> of the Attention and Transformers deck.</p></div>
+```
+
 ### 14.2 Perplexities from different tokenisers are not comparable
 
 Perplexity is **per token**, and a tokeniser decides how many tokens a text has. A word-level model predicts one of thousands of words per step; a character-level model one of a few dozen characters, but it needs five or six steps per word. The same text therefore gets a large per-word perplexity and a small per-character perplexity, even from equally good models. To compare, convert to a unit that does not depend on the tokeniser, **bits per character** (or per byte):
@@ -996,6 +1171,20 @@ A model that starts confidently wrong wastes its first steps undoing the initial
 ## 17. Encoders, decoders and modern LLMs
 
 Modern LLMs are decoder-only transformers like the one above: much larger (billions of parameters, contexts of $10^5$ tokens and more), trained on trillions of tokens, then **instruction-tuned** (supervised fine-tuning on prompt/answer pairs) and aligned with human or AI feedback (RLHF, DPO). A base model is not an assistant: it continues text, which is why prompting and few-shot examples matter (Lab 14). **Exposure bias** ([NN note 04](04_rnn_lstm.html)): during training the model always sees the true previous tokens (teacher forcing), but during generation it sees its own, possibly wrong, outputs, so errors can compound over long generations; decoding with truncation (top-$k$, top-$p$) limits how far it drifts.
+
+**From GPT-2 to modern LLMs.** The recipe of this note is still the recipe; a few parts have been swapped for better or cheaper ones:
+
+| part | GPT-2 (2019) | a typical recent open LLM (Llama-style) | why |
+|---|---|---|---|
+| positions | learned, 1,024 of them | RoPE on $\mathbf{q}$ and $\mathbf{k}$ (section 6.2) | scores depend on relative offsets; contexts can be extended |
+| normalisation | LayerNorm, pre-LN | RMSNorm, pre-norm: $\mathbf{x}/\sqrt{\mathrm{mean}(x_i^2) + \epsilon}\odot\boldsymbol{\gamma}$ | no mean subtraction and no shift: cheaper, as stable |
+| MLP | $\mathrm{GELU}(\mathbf{x}\mathbf{W}_1)\mathbf{W}_2$, hidden $4d$ | SwiGLU: $\big(\mathrm{Swish}(\mathbf{x}\mathbf{W}_1)\odot\mathbf{x}\mathbf{W}_3\big)\mathbf{W}_2$, hidden $\approx\frac83d$ | a gated MLP; better at the same parameter count (three matrices of $\frac83d$ match two of $4d$) |
+| attention | every head has its own $\mathbf{K}$, $\mathbf{V}$ | grouped-query attention: groups of query heads share one $\mathbf{K}$, $\mathbf{V}$ head | the KV cache (section 8.2) shrinks by the group size |
+| context | 1,024 tokens | 8,000 to 128,000 tokens and more | RoPE scaling, fused kernels (FlashAttention) |
+| MLP per token | one dense MLP | sometimes a mixture of experts: a router sends each token to 2 of 8 expert MLPs (Mixtral) | many parameters, a fraction of them used per token |
+| after pre-training | nothing: a base model | instruction tuning, then preference tuning (RLHF, DPO) | an assistant that follows instructions and stops |
+
+The parameter count of section 11 changes accordingly: with SwiGLU the MLP has $3\cdot d\cdot\frac83d = 8d^2$ parameters, the same as GPT-2's $2\cdot d\cdot4d$; with grouped-query attention $\mathbf{W}_K$ and $\mathbf{W}_V$ shrink by the group size.
 
 ## 18. Assumptions: what they mean, how to check them, what to do
 
@@ -1137,12 +1326,14 @@ On text from its own source the tokeniser needs 0.48 tokens per character: the 4
 
 - Attention = a differentiable lookup: $\mathrm{softmax}(\mathbf{Q}\mathbf{K}^\top/\sqrt{d_k})\mathbf{V}$; each output is a weighted average of the values. The worked example: $\boldsymbol{\alpha} = (0.28, 0.14, 0.58)$, output $(0.57, 0.43)$.
 - $\sqrt{d_k}$ keeps the score variance at 1 under independence and unit variance of $\mathbf{q}$, $\mathbf{k}$; otherwise the softmax saturates.
+- Backpropagation through attention: $\partial L/\partial\mathbf{V} = \mathbf{A}^\top\mathbf{G}$, $\partial L/\partial S_{ij} = A_{ij}\,\mathbf{g}_i\cdot(\mathbf{v}_j - \mathbf{z}_i)$. It vanishes for saturated rows and masked pairs, and it needs $\mathbf{A}$ in memory.
 - Multi-head attention runs $h$ heads of size $d/h$ at the cost of one; heads specialise.
 - Self-attention is permutation-equivariant, so positions must be added (sinusoidal: relative offsets are rotations; learned; RoPE: scores depend on $n-m$). The causal mask allows parallel training of all next-token predictions.
 - Transformer block = residual(MHA) + residual(MLP) with LayerNorm (pre-LN is the stable variant); $12d^2 + 13d$ parameters per block, GPT-2 small = 124,439,808.
 - Cost per layer $24nd^2 + 4n^2d$: attention dominates beyond $n = 6d$; its weights take $h\,n^2$ memory. The KV cache stores $2Nnd$ numbers and makes each generation step cost $O(d^2 + nd)$.
 - Language modelling: $P(x_{1:T}) = \prod_tP(x_t\mid x_{<t})$, next-token cross-entropy; perplexity $= e^J = 2^{\text{bits}}$; compare different tokenisers in bits per character.
 - Decoding: greedy and beam (likely, repetitive), temperature (diversity vs errors), top-$k$ and top-$p$ (cut the tail).
+- Modern LLMs keep the recipe and swap parts: RoPE, RMSNorm, SwiGLU, grouped-query attention, sometimes a mixture of experts, then instruction and preference tuning.
 - Diagnose: a loss that is too low (mask leakage), train/validation divergence (overfitting), the initial loss vs $\log|V|$, overlapping splits, tokens per character.
 
 **Lab.** [Text generation with transformers (GPT-2)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 14 - Text generation with Transformers.ipynb): BPE, the $12d^2$ count, perplexity and surprisal, causal attention patterns, decoding from scratch with the KV cache and beam search, prompting a base model.
