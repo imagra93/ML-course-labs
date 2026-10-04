@@ -42,7 +42,9 @@ FIG['forest']=root=>{const tr=waveData(220,11,0.15),te=waveData(1000,12,0.15);co
   const acc=f=>te.filter(p=>(f(p)>=0.5?1:0)===p[2]).length/te.length;setR(root,'acc1',fmt(acc(p=>treeProb(single,p)),3));
   function draw(){const B=+inp.value;setV(root,'b',B);P.clear();for(let a=0;a<N;a++)for(let c=0;c<N;c++){const x=[(a+0.5)/N,(c+0.5)/N];const p=prob(x,B);const rc=P.rect(a/N,c/N,(a+1)/N,(c+1)/N,p>=0.5?'fb':'fo');rc.setAttribute('opacity',(0.08+0.4*Math.abs(p-0.5)*2).toFixed(2))}
     P.fn(x=>0.5+0.22*Math.sin(2*Math.PI*x),'ln thin sk dash',0,1);tr.forEach(p=>P.dot(p[0],p[1],3.2,'pt '+(p[2]?'fb':'fo')));setR(root,'acc',fmt(acc(p=>fprob(p,B)),3))}
-  btns.forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.m;btns.forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));draw()}));inp.addEventListener('input',draw);draw()};
+  /* B means nothing for the single tree: grey the slider out instead of leaving it live with a frozen plot */
+  const row=inp.closest('.ctl');
+  btns.forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.m;btns.forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));inp.disabled=mode==='tree';row.style.opacity=mode==='tree'?'0.4':'';draw()}));inp.addEventListener('input',draw);draw()};
 
 /* Bagging (parallel) versus boosting (sequential) */
 FIG['seqpar']=root=>{const svg=initSvg(svgOf(root),640,350);
