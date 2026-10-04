@@ -24,6 +24,8 @@ const require = createRequire(import.meta.url);
 const puppeteer = require('puppeteer-core');
 const {PDFDocument, PDFName, PDFHexString, StandardFonts, rgb} = require('pdf-lib');
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+/* the decks' relative links (notes, index pages) would print as file:// paths of the build machine: aim them here */
+const SITE = 'https://imagra93.github.io/ML-course-labs/';
 
 const PARTS = {
   machine_learning: {course: 'Machine learning', title: 'Machine learning – class slides'},
@@ -121,6 +123,9 @@ async function renderDeck(file, course) {
       document.body.classList.remove('flow');
       return titles;
     });
+    await page.evaluate((base, site) => {
+      for (const a of document.querySelectorAll('a[href]')) if (a.href.startsWith(base)) a.href = site + a.href.slice(base.length);
+    }, pathToFileURL(root + path.sep).href, SITE);
     await page.addStyleTag({content: CSS});
     await page.evaluate(() => document.fonts.ready);
     const label = await page.evaluate(() => document.body.dataset.deck || document.title);
