@@ -11,6 +11,17 @@ const dotC=(P,p,r)=>p[2]>0?P.dot(p[0],p[1],r||6,'pt fb'):P.rect(p[0]-0.09,p[1]-0
 /* text with a white halo, readable on top of lines; optional rotation (degrees) */
 function label(P,x,y,s,o){o=o||{};const e=P.text(x,y,s,o.cls||'',o.anchor||'middle',o.dx||0,o.dy||0,o.g);e.setAttribute('style','paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round');
   if(o.rot)e.setAttribute('transform','rotate('+o.rot+' '+P.X(x)+' '+P.Y(y)+')');return e}
+/* Axes through the origin instead of along the frame, so a line meets them where its equation says
+   (x₁ + x₂ = 3 cuts them at (3, 0) and (0, 3)). Grid at the ticks, tick labels beside the axes. */
+const minus=v=>String(v).replace('-','−');
+function axes0(P,xr,yr,xt,yt){const g=P.bg;
+  xt.forEach(v=>P.line(v,yr[0],v,yr[1],'gr',g));yt.forEach(v=>P.line(xr[0],v,xr[1],v,'gr',g));
+  P.line(xr[0],0,xr[1],0,'ax',g);P.line(0,yr[0],0,yr[1],'ax',g);
+  xt.forEach(v=>{if(v)T(g,P.X(v),P.Y(0)+17,minus(v))});yt.forEach(v=>{if(v)T(g,P.X(0)-6,P.Y(v)+5,minus(v),'','end')});T(g,P.X(0)-6,P.Y(0)+17,'0','','end');
+  T(g,P.X(xr[1])-4,P.Y(0)-7,'x₁','lab','end');T(g,P.X(0)+7,P.Y(yr[1])+16,'x₂','lab','start')}
+/* the two points where x₁ + x₂ = c meets the axes, as small open dots */
+function cuts(P,c,lab,g){[[c,0],[0,c]].forEach(([a,b],k)=>{P.dot(a,b,4.5,'fw pt',g).setAttribute('style','stroke:#000;stroke-width:1.4');
+  if(lab)label(P,a,b,'('+minus(a)+', '+minus(b)+')',{cls:'lab',anchor:'start',dx:k?9:8,dy:k?-7:-9,g:g})})}
 
 /* data-later: the right panel is a .step of the slide (deck.js reveals it with →). Lines A–D are named so the class can discuss them. */
 FIG['manylines']=root=>{const later=root.hasAttribute('data-later');const pts=svmData();const svg=initSvg(svgOf(root),900,380);const m={l:14,r:14,t:30,b:14};const xr=[-3.2,4.8];
@@ -36,13 +47,13 @@ FIG['hyper23']=root=>{const svg=initSvg(svgOf(root),900,330);const r=rng(6);
   above.forEach(p=>{const s=pr(...p);E('circle',{cx:s[0],cy:s[1],r:5,fill:'#4472c4',stroke:'#fff'},g)});
   T(g,300,325,'squares below the plane, circles above','','middle')};
 
-FIG['hyper']=root=>{const m={l:36,r:14,t:14,b:34};const xr=[-1,5];const P=Plot(svgOf(root),{w:520,h:440,x:xr,y:equalY(520,440,m,xr,2),m:m});P.axes({xt:[-1,0,1,2,3,4,5],yt:[0,1,2,3,4],xl:'x₁',yl:'x₂'});
-  P.poly([[-1,4],[4,-1],[9,-1],[9,9],[-1,9]],'fbs');P.poly([[-3,-3],[6,-3],[-3,6]],'fos');
-  [-2,-1,1,2].forEach(c=>{const k=3+c;P.line(k+1,-1,-1,k+1,'gr')});P.line(4,-1,-1,4,'ln sk');label(P,-0.9,4.02,'x₁ + x₂ − 3 = 0',{cls:'lab',anchor:'start'});
+FIG['hyper']=root=>{const m={l:14,r:14,t:14,b:14};const xr=[-1,5],yr=equalY(520,440,m,xr,2);const P=Plot(svgOf(root),{w:520,h:440,x:xr,y:yr,m:m});
+  P.poly([[-1,4],[4,-1],[9,-1],[9,9],[-1,9]],'fbs',P.bgc);P.poly([[-3,-3],[6,-3],[-3,6]],'fos',P.bgc);axes0(P,xr,yr,[-1,1,2,3,4,5],[1,2,3,4]);
+  [-2,-1,1,2].forEach(c=>{const k=3+c;P.line(k+1,-1,-1,k+1,'gr')});P.line(4,-1,-1,4,'ln sk');label(P,2.2,0.8,'x₁ + x₂ − 3 = 0',{cls:'lab',rot:45,dy:-7});cuts(P,3,true);
   arrow(P,1.5,1.5,2.4,2.4,'ln sb','fb');P.text(2.4,2.4,'w = (1, 1)','lab','start',8,6);P.dot(1.5,1.5,5,'fw pt').setAttribute('style','stroke:#000');
   P.dot(3,3,7,'fb pt');P.text(3,3,'x⁽¹⁾ = (3, 3): f = +3 → ŷ = +1','','end',-11,-10);
-  P.rect(-0.12,-0.12,0.12,0.12,'fr');P.text(0,0,'x⁽²⁾ = (0, 0): f = −3 → ŷ = −1','','start',12,18);
-  P.text(4.9,4.2,'f > 0: ŷ = +1','lab','end');P.text(-0.9,0.9,'f < 0: ŷ = −1','lab','start')};
+  P.rect(-0.12,-0.12,0.12,0.12,'fr');P.text(0,0,'x⁽²⁾ = (0, 0)','','start',12,-26);P.text(0,0,'f = −3 → ŷ = −1','','start',12,-10);
+  P.text(4.9,4.2,'f > 0: ŷ = +1','lab','end');P.text(0.15,1.3,'f < 0: ŷ = −1','lab','start')};
 
 FIG['dotprod']=root=>{const m={l:30,r:14,t:14,b:30};const xr=[-0.5,4];const P=Plot(svgOf(root),{w:480,h:380,x:xr,y:equalY(480,380,m,xr,1.4),m:m});P.axes({xt:[0,1,2,3,4],yt:[0,1,2,3],grid:true});
   const w=[2,1],x=[0.6,2.6];const nw=Math.hypot(...w);const u=[w[0]/nw,w[1]/nw];const s=x[0]*u[0]+x[1]*u[1];const f=[s*u[0],s*u[1]];
@@ -56,13 +67,18 @@ FIG['dotprod']=root=>{const m={l:30,r:14,t:14,b:30};const xr=[-0.5,4];const P=Pl
   P.text(x[0],x[1],'x = (0.6, 2.6)','lab','start',8,0);P.text(w[0],w[1],'w = (2, 1)','lab','start',8,5);
   P.text(f[0]*0.55,f[1]*0.55,'shadow = ‖x‖ cos α = '+fmt(s,2),'','start',14,24)};
 
-/* data-hide: only the points at first; the band, the lines and the circled support vectors are one .step (the answer) */
-FIG['margin']=root=>{const hide=root.hasAttribute('data-hide');const m={l:36,r:14,t:14,b:34};const xr=[-0.3,5];const P=Plot(svgOf(root),{w:500,h:420,x:xr,y:equalY(500,420,m,xr,2),m:m});P.axes({xt:[0,1,2,3,4,5],yt:[0,1,2,3,4],xl:'x₁',yl:'x₂',grid:false});
+/* data-hide: only the points at first; the band, the lines and the circled support vectors are one .step (the answer).
+   data-yf: write y·f(x) next to every point (= 1 on the margin, > 1 elsewhere) instead of the 2/‖w‖ arrow. */
+FIG['margin']=root=>{const hide=root.hasAttribute('data-hide'),yf=root.hasAttribute('data-yf');const m={l:14,r:14,t:14,b:14};const xr=[-0.6,5],yr=equalY(500,420,m,xr,2);const P=Plot(svgOf(root),{w:500,h:420,x:xr,y:yr,m:m});axes0(P,xr,yr,[1,2,3,4,5],[1,2,3,4]);
   const pos=[[3,1],[1.2,2.8],[3.5,2],[4.2,1.4],[2.6,3.1],[4.3,2.8],[3.8,3.4]],neg=[[1,1],[0.4,1.6],[0.3,0.4],[1.2,0.2],[0.2,1.0],[0.9,0.5]];
-  const band=g=>{P.poly([[-1,3],[3,-1],[5,-1],[-1,5]],'fgs',g);P.line(-1,3,3,-1,'ln thin sg dash',g);P.line(-1,5,5,-1,'ln thin sg dash',g);P.line(-1,4,4,-1,'ln sk',g)};
+  const band=g=>{P.poly([[-1,3],[3,-1],[5,-1],[-1,5]],'fgs',g);P.line(-1,3,3,-1,'ln thin sg dash',g);P.line(-1,5,5,-1,'ln thin sg dash',g);P.line(-1,4,4,-1,'ln sk',g);cuts(P,3,false,g)};
   const pts=g=>{pos.forEach(p=>P.dot(p[0],p[1],6,'pt fb',g));neg.forEach(p=>P.rect(p[0]-0.09,p[1]-0.09,p[0]+0.09,p[1]+0.09,'fr',g))};
+  /* f = x₁ + x₂ − 3, so y·f is 1 for the four circled points */
+  const yfs=g=>{pos.map(p=>[p,1]).concat(neg.map(p=>[p,-1])).forEach(([p,y])=>{const v=Math.round(10*y*(p[0]+p[1]-3))/10,sv=v===1;
+    label(P,p[0],p[1],sv?'1':v.toFixed(1),{cls:sv?'lab':'',anchor:'start',dx:sv?14:9,dy:5,g:g})})};
   const notes=g=>{[[3,1],[1.2,2.8],[1,1],[0.4,1.6]].forEach(p=>E('circle',{cx:P.X(p[0]),cy:P.Y(p[1]),r:11,class:'ln thin sk'},g||P.dyn));
-    arrow(P,0.7,1.3,1.7,2.3,'ln thin sk','fk',g);arrow(P,1.7,2.3,0.7,1.3,'ln thin sk','fk',g);label(P,1.66,1.34,'2/‖w‖',{cls:'lab',dy:5,g:g});
+    if(yf){yfs(g);P.text(4.9,3.75,'number: y·f(x)','','end',0,0,g)}
+    else{arrow(P,0.7,1.3,1.7,2.3,'ln thin sk','fk',g);arrow(P,1.7,2.3,0.7,1.3,'ln thin sk','fk',g);label(P,1.66,1.34,'2/‖w‖',{cls:'lab',dy:5,g:g})}
     [[1.65,'w·x + b = −1'],[2.65,'w·x + b = 0'],[3.75,'w·x + b = +1']].forEach(([x1,t],k)=>label(P,x1,[2,3,4][k]-x1,t,{rot:45,dy:-5,g:g}));
     P.text(4.9,4.0,'support vectors (circled)','','end',0,0,g)};
   if(hide){pts();const G=E('g',{class:'step'},P.dyn);band(G);pts(G);notes(G)}else{band();pts();notes()}};
@@ -94,15 +110,41 @@ FIG['dotangle']=root=>{const m={l:30,r:14,t:14,b:30};const xr=[-3.9,3.4];const P
     setR(root,'v',al===90?'perpendicular: zero':al<90?'same general direction: positive':'opposite general direction: negative')}
   inp.addEventListener('input',draw);draw()};
 
+/* What b does: w = (1, 1) stays fixed and only b moves. Top: the line x₁ + x₂ = −b slides parallel to itself.
+   Bottom: the three values f = w·x + b on a number line; they all shift by the same b, and a point changes
+   class when its f crosses 0 (the line passes over it). */
+FIG['bshift']=root=>{const svg=initSvg(svgOf(root),520,480);const m={l:14,r:14,t:14,b:14};const xr=[-1.2,5.6],yr=equalY(520,340,m,xr,1.9);
+  const P=Plot(svg,{at:[0,0],w:520,h:340,x:xr,y:yr,m:m});axes0(P,xr,yr,[-1,1,2,3,4,5],[1,2,3,4]);
+  const Q=Plot(svg,{at:[0,352],w:520,h:128,x:[-7,7],y:[0,1],m:{l:14,r:14,t:30,b:34}});
+  Q.rect(-7,0.3,0,1,'fos',Q.bg);Q.rect(0,0.3,7,1,'fbs',Q.bg);Q.line(-7,0.3,7,0.3,'ax',Q.bg);
+  [-6,-4,-2,2,4,6].forEach(v=>{Q.line(v,0.3,v,0.18,'ax',Q.bg);T(Q.bg,Q.X(v),Q.Y(0.3)+20,minus(v))});
+  Q.line(0,0.3,0,1,'ln sk',Q.bg);T(Q.bg,Q.X(0),Q.Y(0.3)+20,'0','lab');T(Q.bg,Q.X(0)+6,Q.Y(1)-8,'f = 0: on the line','lab','start');
+  T(Q.bg,Q.X(-6.85),Q.Y(1)+18,'f < 0: ŷ = −1','','start');T(Q.bg,Q.X(6.85),Q.Y(1)+18,'f > 0: ŷ = +1','','end');T(Q.bg,Q.X(-7),Q.Y(1)-8,'f = w·x + b of each point','lab','start');
+  const pts=[['A',[0.5,0.5]],['B',[0.5,2]],['C',[3,1.5]]];const inp=q(root,'b');const num=v=>minus(Math.round(10*v)/10);
+  /* predicted class as in the rest of the deck: blue circle +1, red square −1, open circle on the line */
+  const mark=(Pl,x,y,f,r)=>{const X=Pl.X(x),Y=Pl.Y(y);if(Math.abs(f)<1e-9)E('circle',{cx:X,cy:Y,r:r,class:'fw pt',style:'stroke:#000;stroke-width:1.4'},Pl.dyn);
+    else if(f>0)E('circle',{cx:X,cy:Y,r:r,class:'pt fb'},Pl.dyn);else E('rect',{x:X-r,y:Y-r,width:2*r,height:2*r,class:'fr'},Pl.dyn)};
+  function draw(){const b=+inp.value,c=-b;setV(root,'b',num(b));P.clear();Q.clear();
+    P.poly([[c-40,40],[c+40,-40],[-60,-60]],'fos');P.poly([[c-40,40],[c+40,-40],[60,60]],'fbs');P.line(c-20,20,c+20,-20,'ln sk');
+    [[c,0],[0,c]].forEach(([a,d],k)=>{if(a<xr[0]||a>xr[1]||d<yr[0]||d>yr[1])return;P.dot(a,d,4.5,'fw pt').setAttribute('style','stroke:#000;stroke-width:1.4');
+      const far=!k&&a>4.4;label(P,a,d,'('+num(a)+', '+num(d)+')',{cls:'',anchor:far?'end':'start',dx:far?-12:k?9:8,dy:far?17:k?-7:-9})});
+    arrow(P,0,0,1,1,'ln sb','fb');label(P,1,1,'w = (1, 1), fixed',{cls:'lab',anchor:'start',dx:6,dy:14});
+    label(P,5.5,yr[1]-0.3,'the line: x₁ + x₂ '+(b<0?'− '+num(-b):'+ '+num(b))+' = 0',{cls:'lab',anchor:'end'});
+    pts.forEach(([n,x],k)=>{const wx=x[0]+x[1],f=wx+b;mark(P,x[0],x[1],f,7);label(P,x[0],x[1],n+': f = '+num(f),{cls:'lab',anchor:'start',dx:11,dy:5});
+      mark(Q,f,0.3,f,7);T(Q.dyn,Q.X(f),Q.Y(0.3)-12,n,'lab');
+      setR(root,'f'+k,num(f));setR(root,'y'+k,f>0?'+1':f<0?'−1':'on the line')})}
+  inp.addEventListener('input',draw);draw()};
+
 /* Distance to a hyperplane as a difference of shadows: w = (1, 1), b = −3, the line x₁ + x₂ = 3 */
-FIG['dist']=root=>{const m={l:30,r:14,t:14,b:30};const xr=[-0.6,5.2];const P=Plot(svgOf(root),{w:520,h:420,x:xr,y:equalY(520,420,m,xr,1.7),m:m});P.axes({xt:[0,1,2,3,4,5],yt:[0,1,2,3,4],grid:true});
+FIG['dist']=root=>{const m={l:14,r:14,t:14,b:14};const xr=[-0.6,5.2],yr=equalY(520,420,m,xr,1.7);const P=Plot(svgOf(root),{w:520,h:420,x:xr,y:yr,m:m});axes0(P,xr,yr,[1,2,3,4,5],[1,2,3]);
   const S0=[1.5,1.5],S1=[3,3],X=[4,2],F=[2.5,0.5];
   P.line(-0.4,-0.4,4.6,4.6,'ln thin sm dot2');label(P,3.5,3.5,'axis of w',{cls:'',anchor:'start',dx:8,dy:-2});
   P.line(-0.6,3.6,3.6,-0.6,'ln sk');label(P,5.15,0.5,'black line: the hyperplane f(x) = 0',{cls:'',anchor:'end'});
   arrow(P,0,0,1,1,'ln sb','fb');label(P,0.95,0.95,'w = (1, 1)',{cls:'lab',anchor:'start',dx:8,dy:14});
   P.line(S0[0],S0[1],S1[0],S1[1],'ln so').setAttribute('style','stroke-width:8;stroke-opacity:.7');
   P.line(X[0],X[1],S1[0],S1[1],'ln thin sk dash');P.line(X[0],X[1],F[0],F[1],'ln thin sr dash');
-  [[0.5,2.5,'A'],[3,0,'B']].forEach(([x1,y1,t])=>{P.dot(x1,y1,5,'fk pt');label(P,x1,y1,t,{cls:'lab',dx:(t==='A'?-12:12),dy:(t==='A'?-6:-8)})});
+  /* A and B are where the line cuts the axes */
+  [[0,3,'A = (0, 3)'],[3,0,'B = (3, 0)']].forEach(([x1,y1,t])=>{P.dot(x1,y1,5,'fk pt');label(P,x1,y1,t,{cls:'lab',anchor:'start',dx:9,dy:-8})});
   P.dot(S0[0],S0[1],5,'fw pt').setAttribute('style','stroke:#000;stroke-width:1.4');P.dot(S1[0],S1[1],5,'fw pt').setAttribute('style','stroke:#000;stroke-width:1.4');
   P.dot(X[0],X[1],7,'fb pt');label(P,X[0],X[1],'x = (4, 2)',{cls:'lab',anchor:'start',dx:10,dy:6});
   label(P,S0[0],S0[1],'shadow of the line: 2.12',{cls:'',anchor:'end',dx:-9,dy:20});label(P,S1[0],S1[1],'shadow of x: 4.24',{cls:'',anchor:'end',dx:-10,dy:-8});

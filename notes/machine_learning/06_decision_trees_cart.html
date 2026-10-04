@@ -289,7 +289,7 @@ log-loss of (6 sold, 2 not) minimised at q = 0.750</code></pre>
 <section id="which-question-is-better" class="level2">
 <h2 class="anchored" data-anchor-id="which-question-is-better">4. Which question is better?</h2>
 <p>The running example of the deck: 16 used cars, 8 sold within a month and 8 not. Two candidate first questions, A (price) and B (mileage):</p>
-<div class="widget"><svg class="fig" data-fig="stumps" aria-label="Sixteen cars split by two candidate questions: A gives six-two and two-six, B gives eight-four and a pure zero-four"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#6">slide 6</a> of the Decision Trees deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="stumps" aria-label="Sixteen cars split by two candidate questions: A gives six-two and two-six, B gives eight-four and a pure zero-four"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#7">slide 7</a> of the Decision Trees deck.</p></div>
 <p>Both send most sold cars to “yes”. But B produces a <strong>pure</strong> child: 4 cars, none sold. Nothing more to ask there. To compare questions we need a number, the <strong>impurity</strong> <span class="math inline">\(I(t)\)</span> of a node: 0 if all its examples have the same class, largest when the classes are evenly mixed. A question is good if its children are, on average, much <strong>purer</strong> than the parent:</p>
 <p><span class="math display">\[
 \Delta I = I(\text{parent}) - \Big(\frac{N_L}{N}\,I(L) + \frac{N_R}{N}\,I(R)\Big),
@@ -387,7 +387,7 @@ B:&amp;\quad (8,4)\to 2\cdot\tfrac23\cdot\tfrac13 = 0.444,\qquad (0,4)\to 0 \\
 <p><strong>B wins again</strong> (the code in section 5 printed the same numbers). Gini is the CART and scikit-learn default: no logarithm, and in practice almost the same trees as entropy (section 7).</p>
 <div class="widget"><svg class="fig" data-fig="impurity" aria-label="Entropy, Gini and misclassification error as functions of the fraction of class 1"></svg>
 <div class="legend"><span><i style="background:var(--blue)"></i>entropy (max 1 bit)</span><span><i style="background:var(--red)"></i>Gini \(2p(1-p)\) (max 0.5)</span><span><i style="background:var(--muted)"></i>misclassification \(\min(p,1-p)\)</span></div>
-<p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#9">slide 9</a> of the Decision Trees deck.</p></div>
+<p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#10">slide 10</a> of the Decision Trees deck.</p></div>
 <p>All three are 0 for a pure node and largest for a 50/50 node. The table collects them; the plot below draws entropy halved so that the three curves share the maximum 0.5.</p>
 <table class="caption-top table">
 <colgroup>
@@ -526,7 +526,7 @@ B:&amp;\quad \tfrac{12}{16}\cdot\tfrac13 + \tfrac{4}{16}\cdot 0 = 0.25
   <div class="ctl"><span class="seg" role="group" aria-label="Impurity"><button type="button" data-c="mis" aria-pressed="true">Misclassification</button><button type="button" data-c="gini" aria-pressed="false">Gini</button><button type="button" data-c="ent" aria-pressed="false">Entropy</button></span>
     <span class="seg" role="group" aria-label="Question"><button type="button" data-s="A" aria-pressed="true">Question A</button><button type="button" data-s="B" aria-pressed="false">Question B</button></span></div>
   <div class="ro"><div class="m"><span>parent</span><b data-r="b">–</b></div><div class="m"><span>after (weighted)</span><b data-r="a">–</b></div><div class="m"><span>gain</span><b data-r="g">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#10">slide 10</a> of the Decision Trees deck.</p>
+  <p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#11">slide 11</a> of the Decision Trees deck.</p>
 </div>
 <p><strong>The concavity argument.</strong> Take two classes, a split with weights <span class="math inline">\(w_L = N_L/N\)</span>, <span class="math inline">\(w_R = N_R/N\)</span> (both positive) and children fractions <span class="math inline">\(p_L\)</span>, <span class="math inline">\(p_R\)</span> of class 1. Then:</p>
 <p><span class="math display">\[
@@ -570,7 +570,7 @@ I(p) &amp;= I(w_L p_L + w_R p_R) \;\ge\; w_L\,I(p_L) + w_R\,I(p_R) \\
   <div class="ctl"><label for="sp-s">Threshold</label><input type="range" id="sp-s" data-k="s" min="1" max="7" step="1" value="2"><span class="v" data-v="s">2.5</span>
     <span class="seg" role="group" aria-label="Impurity"><button type="button" data-c="gini" aria-pressed="true">Gini</button><button type="button" data-c="ent" aria-pressed="false">Entropy</button></span></div>
   <div class="ro"><div class="m"><span>root</span><b data-r="root">–</b></div><div class="m"><span>left</span><b data-r="gl">–</b></div><div class="m"><span>right</span><b data-r="gr">–</b></div><div class="m"><span>weighted</span><b data-r="w">–</b></div><div class="m"><span>gain ΔI</span><b data-r="d">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#11">slide 11</a> of the Decision Trees deck.</p>
+  <p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#12">slide 12</a> of the Decision Trees deck.</p>
 </div>
 <p>The code checks every threshold with both impurities:</p>
 <div id="3a6b73bd" class="cell" data-execution_count="7">
@@ -779,7 +779,7 @@ N\,\Delta I_V &amp;= \frac{N_L N_R^2 + N_R N_L^2}{N^2}(\bar y_L-\bar y_R)^2 = \f
   <svg class="fig" aria-label="Noisy points, the true curve and the step function of a regression tree"></svg>
   <div class="ctl"><label for="rt-d">max_depth</label><input type="range" id="rt-d" data-k="d" min="1" max="10" step="1" value="1"><span class="v" data-v="d">1</span></div>
   <div class="ro"><div class="m"><span>leaves</span><b data-r="l">–</b></div><div class="m"><span>train MSE</span><b data-r="tr">–</b></div><div class="m"><span>test MSE</span><b data-r="te">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#13">slide 13</a> of the Decision Trees deck.</p>
+  <p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#14">slide 14</a> of the Decision Trees deck.</p>
 </div>
 <p>The same with the from-scratch implementation:</p>
 <div id="ecb196f3" class="cell" data-execution_count="13">
@@ -808,7 +808,7 @@ N\,\Delta I_V &amp;= \frac{N_L N_R^2 + N_R N_L^2}{N^2}(\bar y_L-\bar y_R)^2 = \f
   <svg class="fig" aria-label="Decision regions of a CART tree and its train and test accuracy against depth"></svg>
   <div class="ctl"><label for="td-d">max_depth</label><input type="range" id="td-d" data-k="d" min="1" max="10" step="1" value="2"><span class="v" data-v="d">2</span></div>
   <div class="ro"><div class="m"><span>leaves</span><b data-r="l">–</b></div><div class="m"><span>train acc.</span><b data-r="tr">–</b></div><div class="m"><span>test acc.</span><b data-r="te">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#14">slide 14</a> of the Decision Trees deck.</p>
+  <p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#15">slide 15</a> of the Decision Trees deck.</p>
 </div>
 <ul>
 <li><strong>Zero training error is always reachable.</strong> Each split turns one leaf into two, so a tree with <span class="math inline">\(s\)</span> splits has <span class="math inline">\(s+1\)</span> leaves. If all training inputs are distinct, any leaf with two or more examples can be split (two distinct points differ in at least one feature, and a threshold between them separates them), so growing until no leaf can be split puts each of the <span class="math inline">\(m\)</span> points in its own leaf: <strong>at most <span class="math inline">\(m-1\)</span> splits</strong> isolate every training point. A fully grown tree therefore has low bias and <strong>very high variance</strong> (<a href="00_supervised_learning.html">note 00</a>: the error on new data is bias² + variance + noise, and here the variance term dominates).</li>
@@ -856,7 +856,7 @@ min_samples_leaf: best 12 (CV 0.848); at the extreme 1: train 1.000, CV 0.765</c
 <section id="cost-complexity-pruning" class="level2">
 <h2 class="anchored" data-anchor-id="cost-complexity-pruning">13. Cost-complexity pruning</h2>
 <p>Stopping rules are simple but short-sighted: a split that looks useless may enable very good splits below it (the depth-2 splits of the widget; XOR in section 15.4 is the extreme case). The alternative is to <strong>grow, then prune</strong> (post-pruning): grow a large tree <span class="math inline">\(T_0\)</span>, then collapse the branches that do not pay for themselves.</p>
-<div class="widget"><svg class="fig" data-fig="prune" aria-label="A branch of a tree collapsed into a single leaf"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#15">slide 15</a> of the Decision Trees deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="prune" aria-label="A branch of a tree collapsed into a single leaf"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#16">slide 16</a> of the Decision Trees deck.</p></div>
 <p><strong>Cost-complexity pruning</strong> (CART’s own method). For a penalty <span class="math inline">\(\alpha\ge0\)</span>, keep the subtree <span class="math inline">\(T\subseteq T_0\)</span> that minimises</p>
 <p><span class="math display">\[
 \boxed{R_\alpha(T) = R(T) + \alpha\,|T|}
@@ -946,7 +946,7 @@ one-SE rule α = 0.0265:   2 leaves, train acc 0.932, test acc 0.889</code></pre
   <svg class="fig" aria-label="Two fully grown trees, each trained on a random half of the same data, with different decision regions"></svg>
   <div class="ctl"><button type="button" class="bluebox" data-k="go" style="border:0;cursor:pointer;font:700 17px var(--font);padding:6px 16px">New random halves</button>
     <div class="ro"><div class="m"><span>root question, tree A</span><b data-r="ra">–</b></div><div class="m"><span>root question, tree B</span><b data-r="rb">–</b></div><div class="m"><span>A and B disagree on</span><b data-r="dis">–</b></div></div></div>
-  <p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#16">slide 16</a> of the Decision Trees deck.</p>
+  <p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#17">slide 17</a> of the Decision Trees deck.</p>
 </div>
 <p>Small changes in the data → big changes in the model: that is <strong>high variance</strong>. It comes from the hierarchy: when two candidate root splits have nearly equal gains, a few examples decide which one wins, and everything below the root is grown on a different partition. The same effect, measured: 100 bootstrap resamples (samples of size <span class="math inline">\(m\)</span> drawn with replacement, which imitate “another dataset from the same distribution”) of 300 wave points; for each, a fully grown tree and a tree with <code>min_samples_leaf=10</code>. We record the root threshold, the probability that two trees disagree at a point of the plane, and the accuracy on 5,000 noiseless test points of one tree and of the majority vote of the 100 trees.</p>
 <div id="90b40c10" class="cell" data-execution_count="17">

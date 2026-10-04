@@ -45,6 +45,60 @@ FIG['part-tree']=root=>{const svg=initSvg(svgOf(root),980,390);
   T(g,190,45,'root','','end');T(g,265,155,'← internal nodes →','','middle');T(g,265,318,'leaves (one per box)','','middle');
   T(g,265,362,'Blue dots = sold, orange = not sold.','','middle')};
 
+/* Reading a tree off its boxes: Titanic passengers with a known age (seaborn / Kaggle training set, 714 rows) by class and age.
+   The splits are those of scikit-learn's CART on (pclass, age) with max_leaf_nodes=9, min_samples_leaf=7, without its useless
+   last split (both sides predict "died"). Data: ages for class 1 died | 1 survived | 2 died | 2 survived | 3 died | 3 survived. */
+FIG['titanic-read']=root=>{const DATA='2 18 19 19 21 22 24 24 25 27 28 28 29 29 30 31 31 33 36 36 37 37 38 38 39 40 40 42 44 45 45 45 45.5 46 46 47 47 47 47 49 50 50 50 51 52 54 54 55 56 56 58 58 60 61 61 62 62 64 64 65 65 70 71 71|0.92 4 11 14 15 16 16 16 17 17 17 18 18 18 19 19 19 21 21 22 22 22 22 23 23 23 24 24 24 24 24 25 25 26 26 27 27 27 28 28 29 30 30 30 30 30 31 31 31 32 32 33 33 33 34 35 35 35 35 35 35 35 35 35 36 36 36 36 36 36 36 37 38 38 38 38 39 39 39 39 40 40 40 41 42 42 42 43 44 44 45 45 47 48 48 48 48 48 49 49 49 49 50 50 51 51 52 52 52 53 54 54 56 56 58 58 58 60 60 62 63 80|16 16 18 18 18 18 19 19 19 21 21 21 23 23 23 23 23 23 24 24 24 24 25 25 25 25 25 26 26 27 27 27 27 28 28 28 28 29 29 29 30 30 30 30 30 31 31 31 32 32 32.5 33 34 34 34 34 34 35 35 36 36 36 36 36.5 37 38 39 39 39 42 42 43 44 44 46 47 48 50 51 52 52 54 54 54 57 57 59 60 66 70|0.67 0.83 0.83 1 1 2 2 3 3 3 4 4 5 6 7 8 8 13 14 17 17 18 18 19 19 19 21 22 22 23 24 24 24 24 24 24 25 25 27 27 28 28 28 28 28 29 29 29 30 30 30 31 31 32 32 32.5 33 33 34 34 34 34 34 35 36 36 36 40 40 40 41 42 42 42 45 45 48 50 50 50 54 55 62|1 1 2 2 2 2 2 2 3 4 4 4 6 7 7 8 8 9 9 9 9 9 9 10 10 11 11 11 14 14 14 14.5 15 16 16 16 16 16 16 16 16 16 17 17 17 17 17 17 17 18 18 18 18 18 18 18 18 18 18 18 18 19 19 19 19 19 19 19 19 19 19 19 20 20 20 20 20 20 20 20 20 20 20 20 20.5 21 21 21 21 21 21 21 21 21 21 21 21 21 21 21 22 22 22 22 22 22 22 22 22 22 22 22 22 22 22 23 23 23 23 23.5 24 24 24 24 24 24 24 24 24 24.5 25 25 25 25 25 25 25 25 25 25 25 26 26 26 26 26 26 26 26 26 26 27 27 28 28 28 28 28 28 28 28 28 28 28 28 28.5 28.5 29 29 29 29 29 29 29 30 30 30 30 30 30 30 30 30 30.5 30.5 31 31 31 31 32 32 32 32 32 32 32 33 33 33 33 33 33 33 34 34 34 34 34.5 35 35 35 35 35 36 36 36 36 36 37 37 38 38 38 39 39 39 39 39 40 40 40 40 40 40.5 40.5 41 41 41 41 42 42 42 42 43 43 43 44 44 44 45 45 45 45 45.5 47 47 47 48 48 49 50 51 51 51 55.5 59 61 65 70.5 74|0.42 0.75 0.75 1 1 1 2 3 3 4 4 4 4 5 5 5 6 9 9 12 13 14 15 15 15 16 16 16 17 18 18 18 18 19 19 19 20 20 20 21 21 22 22 22 22 22 23 24 24 24 24 25 25 26 26 26 26 27 27 27 27 27 27 29 29 29 29 30 30 31 31 31 32 32 32 32 32 33 35 36 38 39 44 45 63';const D=[];DATA.split('|').forEach((g,i)=>g.split(' ').forEach(a=>D.push([1+(i>>1),+a,i&1])));
+  /* the questions in reading order (step), their parent, the side they hang from, and where they sit in the tree drawing */
+  const Q=[{id:'r',f:0,s:2.5,step:1,x:300,y:26},{id:'a',par:'r',side:'y',f:1,s:17.5,step:3,x:170,y:86},{id:'b',par:'r',side:'n',f:1,s:6.5,step:2,x:460,y:86},
+    {id:'c',par:'a',side:'n',f:0,s:1.5,step:4,x:240,y:146},{id:'d',par:'c',side:'y',f:1,s:44.5,step:5,x:180,y:206},{id:'e',par:'d',side:'n',f:1,s:60.5,step:6,x:240,y:266},
+    {id:'g',par:'e',side:'y',f:1,s:47.5,step:7,x:180,y:326}];
+  const LF=[['a','y',62,146],['b','y',400,146],['b','n',522,146],['c','n',320,206],['d','y',70,266],['e','n',320,326],['g','y',110,386],['g','n',250,386]].map(([par,side,x,y])=>({par,side,x,y,leaf:true}));
+  const byId={};Q.forEach(n=>byId[n.id]=n);const kid=(p,side)=>Q.find(n=>n.par===p.id&&n.side===side)||LF.find(l=>l.par===p.id&&l.side===side);
+  const name=n=>(n.f?'Age':'Pclass')+' ≤ '+n.s+' ?';
+  /* boxes [x0,x1,y0,y1] in (class, age); no age sits exactly on a threshold */
+  const boxOf=n=>{if(!n.par)return [0.5,3.5,0,82];const p=byId[n.par],b=boxOf(p).slice(),i=p.f?2:0;if(n.side==='y')b[i+1]=p.s;else b[i]=p.s;return b};
+  const stat=n=>{const b=boxOf(n),P=D.filter(d=>d[0]>b[0]&&d[0]<b[1]&&d[1]>b[2]&&d[1]<b[3]);return {n:P.length,k:P.filter(d=>d[2]).length}};
+  [...Q,...LF].forEach(n=>{n.box=boxOf(n);Object.assign(n,stat(n))});const pr=n=>fmt(n.k/n.n,2);
+  const svg=initSvg(svgOf(root),1120,440);const P=Plot(svg,{at:[0,0],w:530,h:440,x:[0.5,3.5],y:[0,82],m:{l:50,r:10,t:12,b:44}});
+  P.axes({xt:[1,2,3],yt:[0,20,40,60,80],fx:v=>['1st','2nd','3rd'][v-1],xl:'Pclass (ticket class), points spread sideways',yl:'Age'});
+  LF.forEach(l=>{const b=l.box;P.rect(b[0],b[2],b[1],b[3],l.k/l.n>=0.5?'fbs':'fos',P.bg)});
+  /* highlight under the points, lines above them */
+  const hl=E('g',{},P.bgc),pg=E('g',{},P.bgc);const r=rng(7);D.forEach(d=>P.dot(d[0]+(r()-0.5)*0.72,d[1],2.8,'pt '+(d[2]?'fb':'fo'),pg).setAttribute('fill-opacity',0.8));
+  const tg=E('g',{transform:'translate(548,0)'},svg);
+  const rule=E('g',{transform:'translate(940,206)'},svg);
+  T(rule,0,0,'How to read the picture','lab','start');['• a line across the whole plot','is the root question','• a line stops at older lines:','it splits only the box between','• a box with no line inside','is a leaf'].forEach((t,i)=>T(rule,i%2?11:0,22+i*18,t,'','start'));
+  T(rule,0,196,'leaf = survivors / passengers','','start');T(rule,11,214,'= P(survived)','','start');
+  const star=[1,50];const path=[];{let n=byId.r;while(!n.leaf){const go=(n.f?star[1]:star[0])<=n.s?'y':'n';path.push([n,go]);n=kid(n,go)}path.push([n])}
+  const inp=q(root,'k'),say=root.querySelector('[data-say]');
+  const txt=k=>{const L=(p,s)=>kid(byId[p],s);const f=n=>n.k+' of '+n.n+' ('+pr(n)+')';
+    return ['<b>The picture:</b> '+D.length+' Titanic passengers with a known age, by class and age. Blue = survived, orange = died. Each shaded box is a leaf. Press → to rebuild the tree, from the longest line to the shortest.',
+      'Only one line crosses the whole plot: <b>Pclass = 2.5</b>. It is the root: <b>Pclass ≤ 2.5?</b> Yes: 1st and 2nd class ('+byId.a.n+' passengers). No: 3rd class ('+byId.b.n+').',
+      '3rd class (right box): one line, <b>Age = 6.5</b>, from the root line to the edge: <b>Age ≤ 6.5?</b> No line inside either part, so both are leaves. Small children: '+f(L('b','y'))+' survived; the others: '+f(L('b','n'))+'.',
+      '1st and 2nd class (left box): <b>Age = 17.5</b> runs from the left edge to the root line, so it splits only this box: <b>Age ≤ 17.5?</b> No line below it: a leaf, '+f(L('a','y'))+' survived.',
+      '<b>Pclass = 1.5</b> stops at the Age = 17.5 line, so it came after it and splits only the box above: <b>Pclass ≤ 1.5?</b> No line among the 2nd-class adults: a leaf, '+f(L('c','n'))+'.',
+      '1st-class adults: three parallel lines, all from the left edge to the Pclass = 1.5 line. The picture cannot tell their order, and any order gives the same boxes. CART asked <b>Age ≤ 44.5?</b> first (how it chooses: next slides): '+f(L('d','y'))+' survived.',
+      'Then <b>Age ≤ 60.5?</b> Older than 60.5: '+f(L('e','n'))+' survived.',
+      'Last, <b>Age ≤ 47.5?</b> Ages 45 to 47: '+f(L('g','y'))+'; ages 48 to 60: '+f(L('g','n'))+'. Done: 7 questions, 8 leaves, one leaf per box.',
+      '<b>Use it:</b> a 50-year-old in 1st class (★): '+path.slice(0,-1).map(([n,go])=>name(n)+' '+(go==='y'?'yes':'no')).join(' → ')+' → leaf '+path[path.length-1][0].k+'/'+path[path.length-1][0].n+': P(survived) = '+pr(path[path.length-1][0])+'.'][k]};
+  function draw(){const k=+inp.value;setV(root,'k',k);P.clear();tg.innerHTML='';
+    hl.innerHTML='';const cur=Q.find(n=>n.step===k);if(cur){const b=cur.box;P.rect(b[0],b[2],b[1],b[3],'fy',hl).setAttribute('fill-opacity',0.3)}
+    Q.forEach(n=>{const b=n.box,l=n.f?P.line(b[0],n.s,b[1],n.s,'ln'):P.line(n.s,b[2],n.s,b[3],'ln');
+      l.setAttribute('class',n.step<k||k===8?'ln sk':n.step===k?'ln':'ln thin sm dash');if(n.step===k)l.setAttribute('style','stroke:#bf9000;stroke-width:6')});
+    /* the tree: questions read so far, their leaves, and a "?" for a box that still has lines inside */
+    const shown=n=>n.leaf?byId[n.par].step<=k:n.step<=k;const W=n=>n.leaf?112:shown(n)?120:56;
+    if(k===8){path.slice(0,-1).forEach(([n,go])=>{const c=kid(n,go);E('line',{x1:n.x,y1:n.y,x2:c.x,y2:c.y,style:'stroke:#ffc000;stroke-width:10;stroke-linecap:round;stroke-opacity:.85'},tg)});
+      const halo='paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round';T(P.top,P.X(star[0]),P.Y(star[1])+7,'★','lab big').setAttribute('style','font-size:26px;fill:#000;'+halo);P.text(star[0],star[1],'50 years, 1st class','lab','middle',0,-14).setAttribute('style',halo)}
+    Q.filter(n=>n.step<=k).forEach(n=>['y','n'].forEach(side=>{const c=kid(n,side);E('line',{x1:n.x,y1:n.y+15,x2:c.x,y2:c.y-15,class:'ln thin sk'},tg);
+      /* the label sits beside the middle of the edge, on its outer side */
+      const dx=c.x-n.x,dy=c.y-n.y,L=Math.hypot(dx,dy),o=dx<0?[-dy/L,dx/L]:[dy/L,-dx/L];T(tg,n.x+dx/2+9*o[0],n.y+dy/2+9*o[1]+4,side==='y'?'yes':'no','',dx<0?'end':'start')}));
+    const drawn=[...Q.filter(n=>n.step<=k),...Q.filter(n=>n.step>k&&(n.par?byId[n.par].step<=k:true)),...LF.filter(shown)];
+    drawn.forEach(n=>{if(n.leaf){node(tg,n.x,n.y,W(n),30,n.k+'/'+n.n+' = '+pr(n),{fill:n.k/n.n>=0.5?'#dae3f3':'#fbe5d6'});return}
+      if(!shown(n)){node(tg,n.x,n.y,56,30,'?',{stroke:'#7f7f7f'}).firstChild.setAttribute('stroke-dasharray','5 4');return}
+      node(tg,n.x,n.y,120,30,name(n),n.step===k?{stroke:'#bf9000',sw:3.5}:{})});
+    if(say)say.innerHTML=txt(k)}
+  inp.addEventListener('input',draw);draw()};
+
 /* Entropy, Gini and misclassification error for two classes */
 FIG['impurity']=root=>{const P=Plot(svgOf(root),{w:470,h:320,x:[0,1],y:[0,1.08],m:{l:56,r:14,t:12,b:40}});
   P.axes({xt:[0,0.25,0.5,0.75,1],yt:[0,0.25,0.5,0.75,1],xl:'p = fraction of class 1 in the node',yl:'impurity'});

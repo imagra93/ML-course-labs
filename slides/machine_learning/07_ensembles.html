@@ -11,7 +11,9 @@
 <link rel="stylesheet" href="../assets/deck.css">
 <script src="../assets/mathjax-config.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
-<style>table.t tr td.oob{background:var(--orange-soft);color:#c55a11;font-weight:700}</style>
+<style>table.t tr td.oob{background:var(--orange-soft);color:#c55a11;font-weight:700}
+.cols.c73{grid-template-columns:1.8fr 1fr;gap:24px}
+.say{gap:8px;font-size:17px;line-height:1.35}.say table.t{font-size:16px}.say table.t td,.say table.t th{padding:4px 8px}</style>
 </head>
 <body data-deck="7 · Bagging, random forest and boosting" data-prev="06_decision_trees.html" data-next="08_svm.html">
 <div id="viewport"><div id="stage">
@@ -236,45 +238,40 @@ predict:
       <div class="eq step">$$F_M(\bx)=\sum_{t=1}^M\alpha_t\,h_t(\bx)$$</div>
       <p class="small step">Two ways to "focus on the mistakes": <b>AdaBoost</b> re-weights the training examples; <b>gradient boosting</b> fits each new tree to the remaining errors (the residuals).</p>
     </div>
-    <svg class="fig" data-fig="seqpar" aria-label="Bagging trains deep trees in parallel and averages them; boosting trains stumps in sequence and adds them with weights"></svg>
+    <div class="stack" style="gap:12px">
+      <svg class="fig" data-fig="seqpar" style="max-height:280px" aria-label="Bagging trains deep trees in parallel and averages them; boosting trains stumps in sequence and adds them with weights"></svg>
+      <div class="note stack" style="gap:6px">
+        <p class="small"><b>Shallow tree</b> = a tree with only a few levels of questions. The shallowest is a <b>stump</b>: depth 1, a <b>single split</b> (one question, two leaves).</p>
+        <svg class="fig" data-fig="shallow" style="max-height:118px" aria-label="A stump: one question and two leaves. A tree of depth 2: three questions and four leaves"></svg>
+        <p class="tiny">AdaBoost usually uses stumps; gradient boosting, depth 2 to 6 (default 3 in scikit-learn, 6 in XGBoost).</p>
+      </div>
+    </div>
   </div>
 </section>
 
 <section class="slide">
   <h2>AdaBoost: the algorithm, in words</h2>
-  <div class="cols">
-    <div class="stack" style="gap:8px">
-      <p>AdaBoost combines <b>stumps</b>: trees with a single question. Every training point carries a <b>weight</b>, how much it matters. At the start all weights are equal.</p>
-      <p class="step"><b>Round after round:</b></p>
-      <ol>
-        <li class="step"><b>Train a stump</b> on the weighted data. Heavy points are the ones it must get right.</li>
-        <li class="step"><b>Count its mistakes</b>: add up the weights of the points it got wrong. This is its <b>weighted error</b>.</li>
-        <li class="step"><b>Give it a vote.</b> The fewer its mistakes, the bigger its say. A stump no better than a coin flip gets no say at all.</li>
-        <li class="step"><b>Re-weight the points.</b> The ones it got wrong become heavier, the ones it got right lighter. The next stump is forced to look at the hard cases.</li>
-      </ol>
-      <p class="step"><b>Final answer:</b> all the stumps vote, and a stump's vote counts as much as its say: the best stumps decide.</p>
-    </div>
-    <div class="stack" style="gap:7px">
-      <p class="small step"><b>Round 1 of the next demo.</b> 30 points, each with weight $\frac1{30}$. The best stump gets <b>5</b> of them wrong.</p>
-      <p class="small step"><b>Its error</b> is 5 out of 30, about 17 %: much better than a coin flip (50 %), so it earns a good say. In the demo this number is the <i>weighted error</i> $\varepsilon$ and its say is the <i>vote</i> $\alpha=0.80$ (a coin flip would get 0).</p>
-      <p class="small step"><b>New weights:</b> mistakes up, hits down.</p>
-      <table class="t step" style="font-size:18px;text-align:center">
-        <tr><th></th><th>before</th><th>after</th></tr>
-        <tr><td>each of the 5 mistakes</td><td>1/30</td><td>1/10</td></tr>
-        <tr><td>each of the 25 hits</td><td>1/30</td><td>1/50</td></tr>
-        <tr><td>the 5 mistakes together</td><td>17 %</td><td><b>50 %</b></td></tr>
-        <tr><td>the 25 hits together</td><td>83 %</td><td>50 %</td></tr>
-      </table>
-      <p class="small step">A mistake now counts 5 times more than a hit, and the 5 mistakes hold <b>half</b> of all the weight (this always happens). The next stump cannot ignore them.</p>
-      <p class="why step">The exact formulas for the vote and the new weights are in the notes.</p>
-    </div>
+  <div class="stack" style="gap:8px">
+    <p>AdaBoost combines <b>stumps</b>: trees with a single question. Every training point carries a <b>weight</b>, how much it matters. At the start all weights are equal.</p>
+    <p class="step"><b>Round after round:</b></p>
+    <ol>
+      <li class="step"><b>Train a stump</b> on the weighted data. Heavy points are the ones it must get right.</li>
+      <li class="step"><b>Count its mistakes</b>: add up the weights of the points it got wrong. This is its <b>weighted error</b> $\varepsilon$.</li>
+      <li class="step"><b>Give it a vote</b> $\alpha$. The fewer its mistakes, the bigger its say. A stump no better than a coin flip gets no say at all.</li>
+      <li class="step"><b>Re-weight the points.</b> The ones it got wrong become heavier, the ones it got right lighter. The next stump is forced to look at the hard cases.</li>
+    </ol>
+    <p class="step"><b>Final answer:</b> all the stumps vote, and a stump's vote counts as much as its say: the best stumps decide.</p>
+    <p class="why step">Next slide: the rounds one by one, with their numbers. The exact formulas for the vote and the new weights are in the notes.</p>
   </div>
 </section>
 
 <section class="slide">
   <h2>AdaBoost in action</h2>
-  <div class="widget" data-fig="ada" data-auto="t=1 :: Round 1: equal weights. The best stump (dashed) gets 5 points wrong (ringed): ε = 1/6, α = 0.80|t=2 :: Round 2: the 5 mistakes are now big, so the new stump splits on the other feature. With two stumps the vote is just the stronger one|t=3 :: Round 3: three votes combine into a staircase: 3 training errors left|t=6 :: Round 6: a single training error left|t=20 :: Round 20: no training errors. Axis-aligned steps approximate the diagonal boundary (dashed)">
-    <svg class="fig" style="max-height:388px" aria-label="Left: the current stump and the weighted points. Right: the decision regions of the weighted vote of all stumps so far"></svg>
+  <div class="widget" data-fig="ada" data-auto="t=2|t=3|t=6|t=20">
+    <div class="cols c73">
+      <svg class="fig" aria-label="Left: the current stump and the weighted points. Right: the decision regions of the weighted vote of all stumps so far"></svg>
+      <div class="stack say" data-say aria-live="polite"></div>
+    </div>
     <div class="ctl"><label for="ad-t">round t</label><input type="range" id="ad-t" data-k="t" min="1" max="20" step="1" value="1" style="max-width:320px"><span class="v" data-v="t">1</span>
       <div class="ro"><div class="m"><span>weighted error ε<sub>t</sub></span><b data-r="e">–</b></div><div class="m"><span>vote α<sub>t</sub></span><b data-r="a">–</b></div><div class="m"><span>stump t wrong on</span><b data-r="nw">–</b></div><div class="m"><span>errors of the vote</span><b data-r="err">–</b></div></div></div>
   </div>
@@ -289,23 +286,28 @@ predict:
         <li>Start with a boring prediction: the <b>average</b> of all the targets, the same for everybody.</li>
         <li>For each example, compute the <b>residual</b>: real value minus current prediction. Positive: we predict too low. Negative: too high.</li>
         <li>Train a <b>small tree</b> to predict those residuals from the features.</li>
-        <li>Add a <b>fraction</b> of the tree's answer to the current prediction (the fraction is the <b>learning rate</b> $\nu$, here $\frac12$). Go back to 2.</li>
+        <li>Add a <b>fraction</b> of the tree's answer to the current prediction (the fraction is the <b>learning rate</b> $\nu$, for example $\frac12$). Go back to 2.</li>
       </ol>
       <p class="small step">Why only a fraction? Many small corrections generalize better than a few big ones.</p>
     </div>
-    <div class="stack" style="gap:10px">
-      <p class="small step"><b>By hand:</b> 4 points, stumps, learning rate $\frac12$. The start is the average $\frac{2+4+8+10}{4}=6$.</p>
-      <table class="t step" style="font-size:18px;text-align:center">
-        <tr><th>$x$</th><th>real $y$</th><th>start</th><th>error</th><th>tree 1 says</th><th>new prediction</th><th>new error</th></tr>
-        <tr><td>1</td><td>2</td><td>6</td><td>−4</td><td>−3</td><td>4.5</td><td>−2.5</td></tr>
-        <tr><td>2</td><td>4</td><td>6</td><td>−2</td><td>−3</td><td>4.5</td><td>−0.5</td></tr>
-        <tr><td>3</td><td>8</td><td>6</td><td>+2</td><td>+3</td><td>7.5</td><td>+0.5</td></tr>
-        <tr><td>4</td><td>10</td><td>6</td><td>+4</td><td>+3</td><td>7.5</td><td>+2.5</td></tr>
-      </table>
-      <p class="small step"><b>Tree 1:</b> the best stump splits at $x\le2.5$ and answers, on each side, the average error there: $\frac{-4-2}{2}=-3$ on the left, $\frac{2+4}{2}=+3$ on the right.</p>
-      <p class="small step"><b>New prediction</b> = start + $\frac12$ × tree: for $x=1$, $6+\frac12\cdot(-3)=4.5$.</p>
-      <p class="small step">Total squared error: $16+4+4+16=40$ before, $6.25+0.25+0.25+6.25=13$ after one tree. The next tree is trained on the new errors, and so on.</p>
+    <div class="stack" style="gap:14px">
+      <p class="step">In symbols, with $h_t$ the tree of round $t$:</p>
+      <div class="bluebox step">$$F_0(\bx)=\bar y,\qquad F_t(\bx)=F_{t-1}(\bx)+\nu\,h_t(\bx)$$</div>
+      <p class="small step">After $M$ rounds: $F_M(\bx)=\bar y+\nu\sum_{t=1}^M h_t(\bx)$, the additive model of the boosting idea, with every weight equal to $\nu$.</p>
+      <p class="why step">Next slide: 4 points, round by round.</p>
     </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Gradient boosting, round by round</h2>
+  <div class="widget" data-fig="gb-rounds" data-auto="t=2|t=3|t=5|t=10">
+    <div class="cols c73">
+      <svg class="fig" aria-label="Left: the errors of the 4 points before the round and the stump fitted to them. Right: the 4 points and the prediction before and after the round"></svg>
+      <div class="stack say"><div class="stack" style="gap:8px" data-say aria-live="polite"></div><p class="why">4 points, stumps, learning rate $\nu=\frac12$. Each round removes part of the error that is left, never all of it: the errors shrink and the prediction creeps towards the points.</p></div>
+    </div>
+    <div class="ctl"><label for="gr-t">round t</label><input type="range" id="gr-t" data-k="t" min="1" max="10" step="1" value="1" style="max-width:320px"><span class="v" data-v="t">1</span>
+      <div class="ro"><div class="m"><span>stump t splits at</span><b data-r="s">–</b></div><div class="m"><span>stump t says (left | right)</span><b data-r="h">–</b></div><div class="m"><span>squared error: before → after</span><b data-r="e">–</b></div></div></div>
   </div>
 </section>
 

@@ -94,6 +94,24 @@ pre.snip .c{color:#6b6b6b}
 </section>
 
 <section class="slide">
+  <h2>SVM: what b does</h2>
+  <div class="cols c46">
+    <div class="widget" data-fig="bshift" data-auto="b=0 :: b = 0: the line passes through the origin. f = 1, 2.5, 4.5: all three are +1|b=-2 :: b = −2: every f drops by 2. A crosses the line (f = −1); B and C stay +1|b=-3 :: b = −3: the example line x₁ + x₂ − 3 = 0, through (3, 0) and (0, 3). B crosses too (f = −0.5)|b=-5 :: b = −5: all three are on the negative side; C has f = −0.5">
+      <svg class="fig" aria-label="With w = (1, 1) fixed, the line x1 + x2 + b = 0 slides as b changes; below, the three values of f on a number line"></svg>
+      <div class="ctl"><label for="bs-b">bias b</label><input type="range" id="bs-b" data-k="b" min="-7" max="1" step="0.5" value="-3"><span class="v" data-v="b">−3</span></div>
+    </div>
+    <div class="stack" style="gap:10px">
+      <p>Keep $\mathbf w=(1,1)$ fixed and move only $b$. Three points, $f(\bx)=\mathbf w\cdot\bx+b$:</p>
+      <table class="t" style="font-size:18px"><tr><th>point</th><th>w · x</th><th>f = w · x + b</th><th>ŷ</th></tr><tr><td>A = (0.5, 0.5)</td><td>1</td><td data-r="f0">–</td><td data-r="y0">–</td></tr><tr><td>B = (0.5, 2)</td><td>2.5</td><td data-r="f1">–</td><td data-r="y1">–</td></tr><tr><td>C = (3, 1.5)</td><td>4.5</td><td data-r="f2">–</td><td data-r="y2">–</td></tr></table>
+      <p class="small">$\mathbf w\cdot\bx$ does not depend on $b$: it is how far each point lies along $\mathbf w$ (previous slide). $b$ adds <b>the same number</b> to all three, so on the number line under the plot they slide together.</p>
+      <p class="small step">A point changes class when its $f$ crosses 0, that is, when the line passes over it: A at $b=-1$, B at $b=-2.5$, C at $b=-4.5$.</p>
+      <p class="small step">The line $x_1+x_2+b=0$ cuts the axes at $(-b,0)$ and $(0,-b)$: changing $b$ moves it <b>parallel to itself</b>, it never turns.</p>
+      <p class="why step">$\mathbf w$ sets the direction of the boundary (perpendicular to $\mathbf w$); $b$ sets where it sits.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
   <h2>SVM: the dot product is a shadow</h2>
   <div class="cols">
     <svg class="fig" data-fig="dotprod" style="max-height:380px" aria-label="The shadow of x on the direction of w"></svg>
@@ -170,7 +188,24 @@ pre.snip .c{color:#6b6b6b}
       <p class="small step">Maximizing $2/a$ (for $a\gt0$) is minimizing $a$, which is minimizing $\frac12a^2$: no square root, and the $\frac12$ cancels the 2 of the derivative.</p>
       <div class="bluebox step" style="font-size:20px">$$\min_{\mathbf w,b}\ \frac12\norm{\mathbf w}^2\quad\text{s.t. }\ y^{(i)}\big(\mathbf w\cdot\bx^{(i)}+b\big)\ge1\ \ \forall i$$</div>
       <p class="small step">A <b>convex quadratic program</b>: one global optimum, and standard QP solvers find it. Only the constraints of the closest points end up mattering.</p>
-      <p class="small step">Next: <b>Lagrange multipliers</b>, the tool to solve a problem with constraints. First a quick review, then the SVM.</p>
+      <p class="small step">Next: if we knew in advance which points are the closest, the problem would be easy.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>SVM: suppose we knew the support vectors</h2>
+  <div class="cols c46" style="grid-template-columns:1fr 1.5fr">
+    <svg class="fig" data-fig="margin" data-yf style="max-height:420px" aria-label="The 13 points with y·f(x) written next to each: exactly 1 for the four circled support vectors, more than 1 for all the others"></svg>
+    <div class="stack" style="gap:7px">
+      <p class="small">At the optimum (the figure) only the circled points have $y\,f(\bx)=1$. All the others have $y\,f(\bx)\gt1$: their constraint does not bind.</p>
+      <table class="t" style="font-size:17px"><tr><th></th><th>constraints</th><th>for which points</th></tr><tr><td>the real problem</td><td>$y_i(\mathbf w\cdot\bx_i+b)\ge1$</td><td>all 13</td></tr><tr><td>if we knew the SVs</td><td>$y_s(\mathbf w\cdot\bx_s+b)=1$</td><td>only the support vectors</td></tr></table>
+      <p class="small step">Suppose someone tells us three of them: $(3,1)$ with $y=+1$; $(1,1)$ and $(0.4,1.6)$ with $y=-1$. Each gives an <b>equation</b> $\mathbf w\cdot\bx+b=y$:</p>
+      <div class="eq xs step">$$\text{(i) }3w_1+w_2+b=1\qquad\text{(ii) }w_1+w_2+b=-1\qquad\text{(iii) }0.4w_1+1.6w_2+b=-1$$</div>
+      <p class="small step">(i) − (ii): $2w_1=2$, so $w_1=1$. &nbsp;(ii) − (iii): $0.6w_1=0.6w_2$, so $w_2=1$. &nbsp;(ii): $b=-1-w_1-w_2=-3$.</p>
+      <div class="bluebox step" style="font-size:20px">$\mathbf w=(1,1),\ b=-3$: the line $x_1+x_2=3$ of the figure</div>
+      <p class="small step">No optimization needed. Fourth circled point: $1.2+2.8-3=1$ ✓</p>
+      <div class="note step"><p class="small"><b>But we almost never know them</b>: which points touch the margin is part of the answer. A wrong guess, $(3.5,2)$ instead of $(3,1)$, breaks a constraint: $(3,1)$ ends up with $f=0.14\lt1$. We need a method that finds the support vectors by itself: <b>Lagrange multipliers</b>, reviewed next.</p></div>
     </div>
   </div>
 </section>
@@ -220,11 +255,11 @@ pre.snip .c{color:#6b6b6b}
 </section>
 
 <section class="slide">
-  <h2>SVM: when we know the support vectors</h2>
+  <h2>SVM: two known support vectors, with the Lagrangian</h2>
   <div class="cols c46">
     <svg class="fig" data-fig="svm2pts" style="max-height:430px" aria-label="Two points, (1,1) of class plus one and (−1,−1) of class minus one, with the max-margin line x1 + x2 = 0"></svg>
     <div class="stack" style="gap:6px">
-      <p class="small">Two points: $\bx_1=(1,1)$ with $y_1=+1$, and $\bx_2=(-1,-1)$ with $y_2=-1$. Both obviously sit on the margin, so both constraints are <b>equalities</b>, exactly as in the review: $\ y_1(\mathbf w\cdot\bx_1+b)=1\ $ and $\ y_2(\mathbf w\cdot\bx_2+b)=1$.</p>
+      <p class="small">Two points, $\bx_1=(1,1)$ with $y_1=+1$ and $\bx_2=(-1,-1)$ with $y_2=-1$, both obviously on the margin: two <b>equalities</b> $y_i(\mathbf w\cdot\bx_i+b)=1$. Two equations cannot fix three unknowns ($w_1,w_2,b$), so we still minimize $\frac12\norm{\mathbf w}^2$: the Lagrangian of the review.</p>
       <div class="step"><p class="small"><b>1 ·</b> Lagrangian, one multiplier per point:</p><div class="eq xs">$$\mathcal L=\tfrac12\norm{\mathbf w}^2-\alpha_1\big[y_1(\mathbf w\cdot\bx_1+b)-1\big]-\alpha_2\big[y_2(\mathbf w\cdot\bx_2+b)-1\big]$$</div></div>
       <div class="step"><p class="small"><b>2 ·</b> $\dfrac{\partial\mathcal L}{\partial\mathbf w}=\mathbf w-\alpha_1y_1\bx_1-\alpha_2y_2\bx_2=\bzero$. Since $y_1\bx_1=y_2\bx_2=(1,1)$, we get</p><div class="eq s">$$\mathbf w=\alpha_1y_1\bx_1+\alpha_2y_2\bx_2=(\alpha_1+\alpha_2)\,(1,1)$$</div></div>
       <div class="step"><p class="small"><b>3 ·</b> $\dfrac{\partial\mathcal L}{\partial b}=-\alpha_1y_1-\alpha_2y_2=-\alpha_1+\alpha_2=0$, so $\alpha_1=\alpha_2=\alpha$ and $\mathbf w=(2\alpha,2\alpha)$.</p></div>

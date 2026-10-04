@@ -632,7 +632,7 @@ Regression with the squared loss (slide 15). Instead of re-weighting points, **e
 
 Why $\nu < 1$? Many small corrections generalise better than a few big ones: each tree is fitted to noisy residuals, and shrinking it keeps any one tree's mistakes from being fully absorbed (section 15.1).
 
-**By hand** (slide 15): 4 points, stumps, $\nu = 0.5$. Start: $F_0 = \bar y = \frac{2+4+8+10}{4} = 6$.
+**By hand** (slide 16, round 1): 4 points, stumps, $\nu = 0.5$. Start: $F_0 = \bar y = \frac{2+4+8+10}{4} = 6$.
 
 | $x$ | $y$ | $F_0$ | $r_1 = y - F_0$ | $h_1(x)$ | $F_1 = F_0 + 0.5\,h_1$ | $r_2 = y - F_1$ |
 |---|---|---|---|---|---|---|
@@ -674,7 +674,7 @@ plt.tight_layout(); plt.show()
 
 ## 13. Why "gradient": the general algorithm
 
-**Functional gradient descent** (slide 16). Treat the predictions at the training points, $F(\mathbf{x}^{(i)})$, as the parameters, and take a gradient descent step on the loss $\sum_i\ell\big(y^{(i)}, F(\mathbf{x}^{(i)})\big)$:
+**Functional gradient descent** (slide 17). Treat the predictions at the training points, $F(\mathbf{x}^{(i)})$, as the parameters, and take a gradient descent step on the loss $\sum_i\ell\big(y^{(i)}, F(\mathbf{x}^{(i)})\big)$:
 
 $$
 F(\mathbf{x}^{(i)}) \leftarrow F(\mathbf{x}^{(i)}) - \nu\,\frac{\partial\ell}{\partial F(\mathbf{x}^{(i)})} .
@@ -727,7 +727,7 @@ gb_sk = GradientBoostingClassifier(n_estimators=M_c, learning_rate=nu_c, max_dep
 print(f"max |F_ours − F_sklearn| over the training points: {np.abs(F_c - gb_sk.decision_function(Xgb)).max():.1e}")
 ```
 
-**Try it** (slide 17). 80 noisy points ($\sigma = 0.3$) around the dashed curve; trees of depth 2 with at least 5 points per leaf. Move $M$ and $\nu$. The training error always falls; the validation error falls, then **rises**: unlike a forest, boosting **does overfit**, so $M$ is chosen by **early stopping**. With $\nu = 0.3$ the best validation MSE is at $M = 10$; with $\nu = 1$ at only 5 trees, after which it overfits fast; with $\nu = 0.1$ at 29 trees, with the lowest validation MSE of the three. No model beats the noise: the MSE on new data stays above $\sigma^2 = 0.09$ (dotted).
+**Try it** (slide 18). 80 noisy points ($\sigma = 0.3$) around the dashed curve; trees of depth 2 with at least 5 points per leaf. Move $M$ and $\nu$. The training error always falls; the validation error falls, then **rises**: unlike a forest, boosting **does overfit**, so $M$ is chosen by **early stopping**. With $\nu = 0.3$ the best validation MSE is at $M = 10$; with $\nu = 1$ at only 5 trees, after which it overfits fast; with $\nu = 0.1$ at 29 trees, with the lowest validation MSE of the three. No model beats the noise: the MSE on new data stays above $\sigma^2 = 0.09$ (dotted).
 
 ```{=html}
 <div class="widget" data-fig="boost" data-auto="m=1;nu=0.3 :: M = 1: the mean plus one small tree, a rough staircase|m=10;nu=0.3 :: M = 10: the best validation MSE for ν = 0.3|m=200;nu=0.3 :: M = 200: the training MSE keeps falling, the validation MSE rises: overfitting|m=200;nu=1 :: ν = 1: best after only 5 trees, then it overfits fast|m=200;nu=0.1 :: ν = 0.1: best after 29 trees, with the lowest validation MSE">
@@ -735,13 +735,13 @@ print(f"max |F_ours − F_sklearn| over the training points: {np.abs(F_c - gb_sk
   <div class="ctl"><label for="bo-m">trees M</label><input type="range" id="bo-m" data-k="m" min="0" max="200" step="1" value="5"><span class="v" data-v="m">5</span>
     <span class="seg" role="group" aria-label="Learning rate"><button type="button" data-nu="0.1" aria-pressed="false">ν 0.1</button><button type="button" data-nu="0.3" aria-pressed="true">ν 0.3</button><button type="button" data-nu="1" aria-pressed="false">ν 1.0</button></span></div>
   <div class="ro"><div class="m"><span>train MSE</span><b data-r="tr">–</b></div><div class="m"><span>validation MSE</span><b data-r="va">–</b></div><div class="m"><span>best M (its MSE)</span><b data-r="bm">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/machine_learning/07_ensembles.html#17">slide 17</a> of the Bagging, Random Forest and Boosting deck.</p>
+  <p class="from">Same figure as <a href="../../slides/machine_learning/07_ensembles.html#18">slide 18</a> of the Bagging, Random Forest and Boosting deck.</p>
 </div>
 ```
 
 ## 14. XGBoost: the second-order derivation
 
-**eXtreme Gradient Boosting** (Chen & Guestrin, 2016; slide 18) is gradient boosting with **regularised trees**, a **second-order (Newton)** step, and a very fast implementation (learning rate `eta`, row and column subsampling, early stopping, missing values, parallel split search). With LightGBM and CatBoost it is a top choice for **tabular** data; for images, audio and text, deep learning wins. The slides give only the leaf value for the squared loss. Here is the general derivation. (In this section the new tree is called $f_t$, as in the XGBoost paper, because $h_i$ is needed for second derivatives.)
+**eXtreme Gradient Boosting** (Chen & Guestrin, 2016; slide 19) is gradient boosting with **regularised trees**, a **second-order (Newton)** step, and a very fast implementation (learning rate `eta`, row and column subsampling, early stopping, missing values, parallel split search). With LightGBM and CatBoost it is a top choice for **tabular** data; for images, audio and text, deep learning wins. The slides give only the leaf value for the squared loss. Here is the general derivation. (In this section the new tree is called $f_t$, as in the XGBoost paper, because $h_i$ is needed for second derivatives.)
 
 **The objective of round $t$.** A tree $f_t$ with $T$ leaves maps each $\mathbf{x}$ to a leaf $q(\mathbf{x})\in\{1,\dots,T\}$ and predicts that leaf's **weight** $w_{q(\mathbf{x})}$. With a complexity penalty $\Omega(f_t) = \gamma T + \frac12\lambda\sum_{j=1}^Tw_j^2$:
 
@@ -800,7 +800,7 @@ $$
 w_j^* = \frac{\sum_{i\in\text{leaf}}r^{(i)}}{N_{\text{leaf}} + \lambda},
 $$
 
-exactly slide 18's leaf value. $\lambda = 0$ gives the mean residual, as in plain gradient boosting; $\lambda > 0$ shrinks it towards 0, more for small leaves (residuals $\{2, 4\}$ with $\lambda = 1$ give $w = \frac{6}{3} = 2$ instead of 3). For the log-loss, $g_i = p_i - y_i$ and $h_i = p_i(1 - p_i)$, and $w_j^*$ is the Newton step of section 13 with $\lambda$ added to the denominator.
+exactly slide 19's leaf value. $\lambda = 0$ gives the mean residual, as in plain gradient boosting; $\lambda > 0$ shrinks it towards 0, more for small leaves (residuals $\{2, 4\}$ with $\lambda = 1$ give $w = \frac{6}{3} = 2$ instead of 3). For the log-loss, $g_i = p_i - y_i$ and $h_i = p_i(1 - p_i)$, and $w_j^*$ is the Newton step of section 13 with $\lambda$ added to the denominator.
 
 **`min_child_weight` is a minimum Hessian sum.** XGBoost refuses a split if a child would have $H_j <$ `min_child_weight`. For the squared loss $H_j = N_j$, so it is a minimum number of examples per leaf. For the log-loss $H_j = \sum p_i(1-p_i) \le N_j/4$, and it is small in leaves where the model is already confident ($p$ near 0 or 1): those leaves need more examples before they may split, which stops the model from chasing a few confidently classified points.
 
@@ -1212,7 +1212,7 @@ Inside $[0, 10]$ both follow the trend; beyond it the forest stays at its last v
 | Tuning effort | low (good defaults) | higher ($\nu$, $M$, depth, subsampling, regularisation) |
 | Typical accuracy on tabular data | very good with defaults | often the best, after tuning |
 
-From one tree to boosting (slide 19): a **decision tree** is a set of if/else rules; **bagging** averages deep trees on bootstrap samples; a **random forest** adds random features at each split; **AdaBoost** adds stumps in sequence, re-weighting the mistakes; **gradient boosting** fits each tree to the negative gradient of the loss; **XGBoost** is regularised, second-order, fast gradient boosting.
+From one tree to boosting (slide 20): a **decision tree** is a set of if/else rules; **bagging** averages deep trees on bootstrap samples; a **random forest** adds random features at each split; **AdaBoost** adds stumps in sequence, re-weighting the mistakes; **gradient boosting** fits each tree to the negative gradient of the loss; **XGBoost** is regularised, second-order, fast gradient boosting.
 
 ## Summary
 

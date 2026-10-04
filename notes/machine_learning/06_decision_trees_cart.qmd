@@ -123,7 +123,7 @@ print(f"log-loss of (6 sold, 2 not) minimised at q = {qs[np.argmin(-6 * np.log(q
 The running example of the deck: 16 used cars, 8 sold within a month and 8 not. Two candidate first questions, A (price) and B (mileage):
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="stumps" aria-label="Sixteen cars split by two candidate questions: A gives six-two and two-six, B gives eight-four and a pure zero-four"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#6">slide 6</a> of the Decision Trees deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="stumps" aria-label="Sixteen cars split by two candidate questions: A gives six-two and two-six, B gives eight-four and a pure zero-four"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#7">slide 7</a> of the Decision Trees deck.</p></div>
 ```
 
 Both send most sold cars to "yes". But B produces a **pure** child: 4 cars, none sold. Nothing more to ask there. To compare questions we need a number, the **impurity** $I(t)$ of a node: 0 if all its examples have the same class, largest when the classes are evenly mixed. A question is good if its children are, on average, much **purer** than the parent:
@@ -232,7 +232,7 @@ $$
 ```{=html}
 <div class="widget"><svg class="fig" data-fig="impurity" aria-label="Entropy, Gini and misclassification error as functions of the fraction of class 1"></svg>
 <div class="legend"><span><i style="background:var(--blue)"></i>entropy (max 1 bit)</span><span><i style="background:var(--red)"></i>Gini \(2p(1-p)\) (max 0.5)</span><span><i style="background:var(--muted)"></i>misclassification \(\min(p,1-p)\)</span></div>
-<p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#9">slide 9</a> of the Decision Trees deck.</p></div>
+<p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#10">slide 10</a> of the Decision Trees deck.</p></div>
 ```
 
 All three are 0 for a pure node and largest for a 50/50 node. The table collects them; the plot below draws entropy halved so that the three curves share the maximum 0.5.
@@ -341,7 +341,7 @@ $$
   <div class="ctl"><span class="seg" role="group" aria-label="Impurity"><button type="button" data-c="mis" aria-pressed="true">Misclassification</button><button type="button" data-c="gini" aria-pressed="false">Gini</button><button type="button" data-c="ent" aria-pressed="false">Entropy</button></span>
     <span class="seg" role="group" aria-label="Question"><button type="button" data-s="A" aria-pressed="true">Question A</button><button type="button" data-s="B" aria-pressed="false">Question B</button></span></div>
   <div class="ro"><div class="m"><span>parent</span><b data-r="b">–</b></div><div class="m"><span>after (weighted)</span><b data-r="a">–</b></div><div class="m"><span>gain</span><b data-r="g">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#10">slide 10</a> of the Decision Trees deck.</p>
+  <p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#11">slide 11</a> of the Decision Trees deck.</p>
 </div>
 ```
 
@@ -390,7 +390,7 @@ For a numeric feature the question is $x_j\le s$. Which thresholds $s$ do we try
   <div class="ctl"><label for="sp-s">Threshold</label><input type="range" id="sp-s" data-k="s" min="1" max="7" step="1" value="2"><span class="v" data-v="s">2.5</span>
     <span class="seg" role="group" aria-label="Impurity"><button type="button" data-c="gini" aria-pressed="true">Gini</button><button type="button" data-c="ent" aria-pressed="false">Entropy</button></span></div>
   <div class="ro"><div class="m"><span>root</span><b data-r="root">–</b></div><div class="m"><span>left</span><b data-r="gl">–</b></div><div class="m"><span>right</span><b data-r="gr">–</b></div><div class="m"><span>weighted</span><b data-r="w">–</b></div><div class="m"><span>gain ΔI</span><b data-r="d">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#11">slide 11</a> of the Decision Trees deck.</p>
+  <p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#12">slide 12</a> of the Decision Trees deck.</p>
 </div>
 ```
 
@@ -588,7 +588,7 @@ The prediction is a **step function**. Each extra level can double the number of
   <svg class="fig" aria-label="Noisy points, the true curve and the step function of a regression tree"></svg>
   <div class="ctl"><label for="rt-d">max_depth</label><input type="range" id="rt-d" data-k="d" min="1" max="10" step="1" value="1"><span class="v" data-v="d">1</span></div>
   <div class="ro"><div class="m"><span>leaves</span><b data-r="l">–</b></div><div class="m"><span>train MSE</span><b data-r="tr">–</b></div><div class="m"><span>test MSE</span><b data-r="te">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#13">slide 13</a> of the Decision Trees deck.</p>
+  <p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#14">slide 14</a> of the Decision Trees deck.</p>
 </div>
 ```
 
@@ -616,7 +616,7 @@ With squared error, a single extreme $y$ pulls the mean of its leaf; `criterion=
   <svg class="fig" aria-label="Decision regions of a CART tree and its train and test accuracy against depth"></svg>
   <div class="ctl"><label for="td-d">max_depth</label><input type="range" id="td-d" data-k="d" min="1" max="10" step="1" value="2"><span class="v" data-v="d">2</span></div>
   <div class="ro"><div class="m"><span>leaves</span><b data-r="l">–</b></div><div class="m"><span>train acc.</span><b data-r="tr">–</b></div><div class="m"><span>test acc.</span><b data-r="te">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#14">slide 14</a> of the Decision Trees deck.</p>
+  <p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#15">slide 15</a> of the Decision Trees deck.</p>
 </div>
 ```
 
@@ -658,7 +658,7 @@ The two curves are mirror images: complexity grows to the right with `max_depth`
 Stopping rules are simple but short-sighted: a split that looks useless may enable very good splits below it (the depth-2 splits of the widget; XOR in section 15.4 is the extreme case). The alternative is to **grow, then prune** (post-pruning): grow a large tree $T_0$, then collapse the branches that do not pay for themselves.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="prune" aria-label="A branch of a tree collapsed into a single leaf"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#15">slide 15</a> of the Decision Trees deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="prune" aria-label="A branch of a tree collapsed into a single leaf"></svg><p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#16">slide 16</a> of the Decision Trees deck.</p></div>
 ```
 
 **Cost-complexity pruning** (CART's own method). For a penalty $\alpha\ge0$, keep the subtree $T\subseteq T_0$ that minimises
@@ -746,7 +746,7 @@ The full tree fits the training set perfectly; pruning to the best CV $\alpha$ k
   <svg class="fig" aria-label="Two fully grown trees, each trained on a random half of the same data, with different decision regions"></svg>
   <div class="ctl"><button type="button" class="bluebox" data-k="go" style="border:0;cursor:pointer;font:700 17px var(--font);padding:6px 16px">New random halves</button>
     <div class="ro"><div class="m"><span>root question, tree A</span><b data-r="ra">–</b></div><div class="m"><span>root question, tree B</span><b data-r="rb">–</b></div><div class="m"><span>A and B disagree on</span><b data-r="dis">–</b></div></div></div>
-  <p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#16">slide 16</a> of the Decision Trees deck.</p>
+  <p class="from">Same figure as <a href="../../slides/machine_learning/06_decision_trees.html#17">slide 17</a> of the Decision Trees deck.</p>
 </div>
 ```
 

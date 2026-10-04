@@ -57,6 +57,16 @@ FIG['seqpar']=root=>{const svg=initSvg(svgOf(root),640,350);
   arrowPx(svg,432,268,456,268,'ln thin sk','fk');bx(458,248,120,40,'weighted sum','#c55a11',true);T(svg,518,308,'lowers the bias','','middle');
   T(svg,265,330,'each stump focuses on what the previous ones got wrong','','middle')};
 
+/* What a shallow tree is: a stump (depth 1) next to a tree of depth 2 */
+FIG['shallow']=root=>{const svg=initSvg(svgOf(root),560,172);
+  const edges=(p,cs)=>cs.forEach(c=>E('line',{x1:p[0],y1:p[1],x2:c[0],y2:c[1],class:'ln thin sk'},svg));
+  const node=(p,t)=>{E('rect',{x:p[0]-52,y:p[1]-14,width:104,height:28,rx:6,fill:'#fff',style:'stroke:#404040;stroke-width:1.2'},svg);T(svg,p[0],p[1]+5,t,'lab')};
+  const leaf=(p,k)=>E('circle',{cx:p[0],cy:p[1],r:11,class:'pt '+(k%2?'fb':'fo')},svg);
+  const s0=[120,26],sl=[[60,134],[180,134]];edges(s0,sl);node(s0,'x₁ ≤ 0.4 ?');sl.forEach(leaf);T(svg,80,84,'yes','','end');T(svg,160,84,'no','','start');
+  const d0=[400,26],d1=[[330,80],[470,80]],dl=[[295,134],[365,134],[435,134],[505,134]];edges(d0,d1);edges(d1[0],dl.slice(0,2));edges(d1[1],dl.slice(2));
+  node(d0,'x₁ ≤ 0.4 ?');node(d1[0],'x₂ ≤ 0.7 ?');node(d1[1],'x₂ ≤ 0.2 ?');dl.forEach(leaf);
+  T(svg,120,166,'stump: depth 1, 1 split, 2 leaves','lab');T(svg,400,166,'depth 2: 3 splits, 4 leaves','lab')};
+
 /* AdaBoost with decision stumps on 30 points with a diagonal boundary */
 FIG['ada']=root=>{const r=rng(23);const X=[];while(X.length<30){const x=[0.05+0.9*r(),0.05+0.9*r()];const s=x[0]+x[1]-1;if(Math.abs(s)<0.05)continue;X.push([x[0],x[1],s>0?1:-1])}
   const m=X.length,TMAX=20;const h=(st,p)=>p[st.j]>st.t?st.s:-st.s;
@@ -70,6 +80,15 @@ FIG['ada']=root=>{const r=rng(23);const X=[];while(X.length<30){const x=[0.05+0.
   const tA=T(A.root,210,22,'','lab big'),tB=T(B.root,210,22,'','lab big');A.rect(0,0,1,1,'nof',A.bg).setAttribute('style','stroke:#bfbfbf');B.rect(0,0,1,1,'nof',B.bg).setAttribute('style','stroke:#bfbfbf');
   const pt=(P,p,rad,ring)=>{P.dot(p[0],p[1],rad,'pt '+(p[2]>0?'fb':'fo'));if(ring)E('circle',{cx:P.X(p[0]),cy:P.Y(p[1]),r:rad+4,class:'ln thin sk'},P.dyn)};
   const inp=q(root,'t');
+  /* deck only (opt-in): a [data-say] block that explains the round in words, with the new weights */
+  const say=root.querySelector('[data-say]');const nf=v=>String(+v.toFixed(2)).replace('-','−'),pc=v=>Math.round(100*v)+' %';
+  function words(t,st,nw,err){const e=st.e,a=st.a,s=nw===1?'':'s';
+    let h=t===1?'<p><b>Round 1.</b> All '+m+' points weigh the same, 1/'+m+'. The best stump (dashed) gets <b>'+nw+'</b> of them wrong (ringed): its weighted error is ε = '+nw+'/'+m+' = '+fmt(e,3)+', far better than a coin flip (0.5), so it gets a big vote, α = '+fmt(a,2)+'. A coin flip would get 0.</p>'
+      :'<p><b>Round '+t+'.</b> The points stump '+(t-1)+' got wrong are now heavier (bigger dots). Stump '+t+' cuts '+(st.j===0?'vertically':'horizontally')+' and gets <b>'+nw+'</b> point'+s+' wrong, holding ε = '+fmt(e,3)+' of the weight: vote α = '+fmt(a,2)+'.</p>';
+    h+='<p><b>Right:</b> '+(t===1?'with one stump, the vote is that stump.':t===2?'with two stumps, the vote is just the one with the bigger α.':err?'the '+t+' votes add up to a staircase that still gets '+err+' training point'+(err===1?'':'s')+' wrong.':'no training errors left. Axis-aligned steps approximate the diagonal boundary (dashed).')+'</p>';
+    const fr=k=>t===1?' (1/'+m+' → 1/'+Math.round(m*k)+')':'';
+    h+='<table class="t"><tr><th>new weights</th><th>'+nw+' mistake'+s+'</th><th>'+(m-nw)+' hits</th></tr><tr><td>each point</td><td>×'+nf(1/(2*e))+fr(2*e)+'</td><td>×'+nf(1/(2*(1-e)))+fr(2*(1-e))+'</td></tr><tr><td>all together</td><td>'+pc(e)+' → <b>50 %</b></td><td>'+pc(1-e)+' → 50 %</td></tr></table>';
+    return h+'<p class="why">Mistakes up, hits down: '+(t===1?'a mistake now weighs '+nf((1-e)/e)+' times as much as a hit, and ':'')+'the mistakes always end up with half of the weight, so the next stump cannot ignore them.</p>'}
   function draw(){const t=+inp.value;setV(root,'t',t);const st=R[t-1];A.clear();B.clear();
     tA.textContent='Round '+t+': stump '+t+' on the weighted data';tB.textContent='The vote of stumps 1…'+t;
     if(st.j===0){A.rect(0,0,st.t,1,st.s>0?'fos':'fbs');A.rect(st.t,0,1,1,st.s>0?'fbs':'fos');A.line(st.t,0,st.t,1,'ln sk dash')}else{A.rect(0,0,1,st.t,st.s>0?'fos':'fbs');A.rect(0,st.t,1,1,st.s>0?'fbs':'fos');A.line(0,st.t,1,st.t,'ln sk dash')}
@@ -78,7 +97,42 @@ FIG['ada']=root=>{const r=rng(23);const X=[];while(X.length<30){const x=[0.05+0.
     const cuts=[[0,1],[0,1]];for(let k=0;k<t;k++)cuts[R[k].j].push(R[k].t);const [gx,gy]=cuts.map(c=>[...new Set(c)].sort((a,b)=>a-b));
     for(let a=0;a<gx.length-1;a++)for(let c=0;c<gy.length-1;c++){const v=F([(gx[a]+gx[a+1])/2,(gy[c]+gy[c+1])/2],t);B.rect(gx[a],gy[c],gx[a+1],gy[c+1],v>0?'fbs':'fos')}
     B.line(0,1,1,0,'ln thin sm dash');let err=0;X.forEach(p=>{const wrong=Math.sign(F(p,t))!==p[2];if(wrong)err++;pt(B,p,5.5,wrong)});
-    setR(root,'e',fmt(st.e,3));setR(root,'a',fmt(st.a,2));setR(root,'nw',nw+' of '+m);setR(root,'err',err)}
+    setR(root,'e',fmt(st.e,3));setR(root,'a',fmt(st.a,2));setR(root,'nw',nw+' of '+m);setR(root,'err',err);if(say)say.innerHTML=words(t,st,nw,err)}
+  inp.addEventListener('input',draw);draw()};
+
+/* Gradient boosting by hand, round by round: 4 points, stumps, learning rate 1/2. Needs a [data-say] block for the words. */
+FIG['gb-rounds']=root=>{const X=[1,2,3,4],Y=[2,4,8,10],NU=0.5,TMAX=10,m=X.length;const F0=Y.reduce((s,v)=>s+v,0)/m;
+  const mean=a=>a.reduce((s,v)=>s+v,0)/a.length,sse=(a,c)=>a.reduce((s,v)=>s+(v-c)**2,0);const R=[];let F=X.map(()=>F0);
+  for(let t=0;t<TMAX;t++){const r=Y.map((y,i)=>y-F[i]);const c=[];
+    for(let k=1;k<m;k++){const L=r.slice(0,k),Rt=r.slice(k),lv=mean(L),rv=mean(Rt);c.push({k:k,s:(X[k-1]+X[k])/2,L:L,Rt:Rt,lv:lv,rv:rv,e:sse(L,lv)+sse(Rt,rv)})}
+    /* ties keep the first split; the words say so */
+    const b=c.reduce((p,x)=>x.e<p.e-1e-9?x:p);const tie=c.filter(x=>x!==b&&Math.abs(x.e-b.e)<1e-9);const Fn=F.map((f,i)=>f+NU*(i<b.k?b.lv:b.rv));
+    R.push({F:F,Fn:Fn,r:r,b:b,tie:tie,e0:sse(r,0),e1:Y.reduce((s,y,i)=>s+(y-Fn[i])**2,0)});F=Fn}
+  const svg=initSvg(svgOf(root),900,420);const o={w:420,h:420,x:[0.5,4.5],m:{l:44,r:10,t:34,b:40}};
+  const A=Plot(svg,Object.assign({at:[0,0],y:[-4.8,4.8]},o)),B=Plot(svg,Object.assign({at:[470,0],y:[0,11.5]},o));
+  A.axes({xt:[1,2,3,4],yt:[-4,-2,0,2,4],xl:'x',yl:'error = y − prediction'});A.line(0.5,0,4.5,0,'ax',A.bg);B.axes({xt:[1,2,3,4],yt:[0,2,4,6,8,10],xl:'x',yl:'y'});
+  B.line(0.62,10.9,0.92,10.9,'ln thin sm dash',B.bg);B.text(0.97,10.9,'before','','start',0,5,B.bg);B.line(1.62,10.9,1.92,10.9,'ln sr',B.bg);B.text(1.97,10.9,'after the round','','start',0,5,B.bg);
+  const tA=T(A.root,227,22,'','lab big'),tB=T(B.root,227,22,'','lab big');
+  const nf=v=>String(+v.toFixed(2)).replace('-','−'),sg=v=>(+v.toFixed(2)>0?'+':'')+nf(v);
+  const steps=V=>V.flatMap((v,i)=>[[X[i]-0.5,v],[X[i]+0.5,v]]);const red=e=>{e.style.fill='var(--red)';return e};
+  const avg=(a,v)=>a.length===1?sg(v)+' (one point)':'('+a.map((x,i)=>i?(+x.toFixed(2)<0?' − '+nf(-x):' + '+nf(x)):nf(x)).join('')+')/'+a.length+' = '+sg(v);
+  const inp=q(root,'t'),say=root.querySelector('[data-say]');
+  function draw(){const t=+inp.value;setV(root,'t',t);const s=R[t-1],b=s.b;A.clear();B.clear();
+    tA.textContent='Round '+t+': the errors and stump '+t;tB.textContent='Prediction after round '+t;
+    A.line(b.s,-4.8,b.s,4.8,'ln thin sk dash');A.path([[0.5,b.lv],[b.s,b.lv],[b.s,b.rv],[4.5,b.rv]],'ln sr');
+    E('rect',{x:A.X(0.56),y:A.Y(4.65),width:A.X(3.3)-A.X(0.56),height:A.Y(3.3)-A.Y(4.65),fill:'#fff','fill-opacity':0.9},A.top);
+    A.dot(0.77,4.25,5,'pt fo',A.top);A.text(0.97,4.25,'error of each point','','start',0,5);A.line(0.62,3.68,0.92,3.68,'ln sr',A.top);A.text(0.97,3.68,'stump '+t+': average error on each side','','start',0,5);
+    /* each error's label goes on the side away from the stump's line */
+    s.r.forEach((v,i)=>{A.line(X[i],0,X[i],v,'ln thin so');A.dot(X[i],v,6,'pt fo');A.text(X[i],v,sg(v),'lab','middle',0,v>=(i<b.k?b.lv:b.rv)?-11:22)});
+    B.path(steps(s.F),'ln thin sm dash');B.path(steps(s.Fn),'ln sr');
+    X.forEach((x,i)=>{if(Math.abs(B.Y(s.Fn[i])-B.Y(s.F[i]))>14)arrow(B,x+0.22,s.F[i],x+0.22,s.Fn[i],'ln thin sk','fk');B.dot(x,Y[i],6,'pt fb');red(B.text(x-0.08,s.Fn[i],nf(s.Fn[i]),'lab','end',0,Y[i]>s.Fn[i]?20:-8))});
+    setR(root,'s','x ≤ '+b.s);setR(root,'h',sg(b.lv)+' | '+sg(b.rv));setR(root,'e',nf(s.e0)+' → '+nf(s.e1));
+    if(!say)return;
+    say.innerHTML=(t===1?'<p><b>Start:</b> the average of the targets, (2 + 4 + 8 + 10)/4 = '+nf(F0)+', for every point.</p>':'')+
+      '<p><b>Round '+t+'.</b> The errors before the round are '+s.r.map(sg).join(', ')+'. The best stump splits at <b>x ≤ '+b.s+'</b>'+(s.tie.length?' (x ≤ '+s.tie[0].s+' is just as good: a tie, the first one is kept)':'')+
+      ' and answers, on each side, the average error there: '+avg(b.L,b.lv)+' on the left, '+avg(b.Rt,b.rv)+' on the right.</p>'+
+      '<p>Every prediction moves by ½ × the stump\'s answer: '+sg(NU*b.lv)+' on the left, '+sg(NU*b.rv)+' on the right'+(t===1?' ('+nf(F0)+' − '+nf(-NU*b.lv)+' = '+nf(F0+NU*b.lv)+' and '+nf(F0)+' + '+nf(NU*b.rv)+' = '+nf(F0+NU*b.rv)+')':'')+
+      '. Squared error: <b>'+nf(s.e0)+' → '+nf(s.e1)+'</b>.</p>'}
   inp.addEventListener('input',draw);draw()};
 
 /* Gradient boosting for squared loss: trees of depth 2, at least 5 points per leaf */
