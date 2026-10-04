@@ -6,7 +6,7 @@ name: Class PDFs
 
 on:
   push:
-    branches: [feature/new-slides, main]
+    branches: [main]
     paths:
       - 'slides/**'
       - '!slides/*_class_ppt.pdf'
