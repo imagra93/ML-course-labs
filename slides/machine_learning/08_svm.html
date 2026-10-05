@@ -211,16 +211,63 @@ pre.snip .c{color:#6b6b6b}
 </section>
 
 <section class="slide">
-  <h2>Review: Lagrange multipliers</h2>
+  <h2>Review: Lagrange multipliers with an equality</h2>
+  <div class="cols c46">
+    <div class="widget" data-fig="lagcurve" data-auto="t=0.8 :: A point on the curve, not the best one: the ring of f through it crosses the curve, so the curve goes lower (dashed). The arrows are 42° apart|t=2 :: w* = (2, 1): the ring just touches the curve and the arrows are parallel, ∇f = (2, 4) = 4·∇g. f = 4, the lowest on the curve|t=3.6 :: Past w*: f = 7.89 again, and the way down along the curve now points back">
+      <svg class="fig" style="max-height:370px" aria-label="Rings of f around the free minimum and a curved constraint g = 0. A point slides along the curve with the arrows grad f and grad g; they line up where a ring just touches the curve"></svg>
+      <div class="ctl"><label for="lc-t">point on the curve, w₁</label><input type="range" id="lc-t" data-k="t" min="0.4" max="3.6" step="0.05" value="0.8"><span class="v" data-v="t">0.80</span></div>
+      <div class="ro"><div class="m"><span>f(w)</span><b data-r="f">–</b></div><div class="m"><span>angle between ∇f and ∇g</span><b data-r="a">–</b></div></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p><b>What for.</b> Minimize $f(\mathbf w)$ <b>subject to</b> $g(\mathbf w)=0$: the lowest point <b>on a curve</b>, not the lowest point overall.</p>
+      <div class="step"><p class="small"><b>The idea.</b> At the best point, sliding along the curve cannot lower $f$. So $\nabla f$ has no part along the curve: it is perpendicular to it, like $\nabla g$. Two arrows perpendicular to the same curve are parallel:</p>
+        <div class="eq s">$$\nabla f(\mathbf w^*)=\lambda\,\nabla g(\mathbf w^*)$$</div>
+        <p class="why">$\lambda$, the <b>multiplier</b>, is just a number: how many times $\nabla g$ fits in $\nabla f$ (4 in the figure). It can have any sign.</p></div>
+      <div class="step"><p class="small"><b>The Lagrangian</b> puts this condition and the constraint into one function:</p>
+        <div class="eq s">$$\mathcal L(\mathbf w,\lambda)=f(\mathbf w)-\lambda\,g(\mathbf w)$$</div>
+        <p class="why">$\frac{\partial\mathcal L}{\partial\mathbf w}=\nabla f-\lambda\nabla g=\bzero$ is the condition above, and $\frac{\partial\mathcal L}{\partial\lambda}=-g=0$ is the constraint.</p></div>
+      <div class="step"><p class="small"><b>The general solution:</b></p>
+        <ol class="small"><li>write $\mathcal L$;</li><li>set $\frac{\partial\mathcal L}{\partial\mathbf w}=\bzero$: $\mathbf w$ as a function of $\lambda$;</li><li>put that $\mathbf w$ into $g(\mathbf w)=0$: it gives $\lambda$, then $\mathbf w^*$.</li></ol></div>
+      <p class="small step">Several constraints $g_k(\mathbf w)=0$: one multiplier each, $\mathcal L=f-\sum_k\lambda_kg_k$. Next: the recipe on an example.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Lagrange multipliers: an equality, an example</h2>
   <div class="cols c46">
     <svg class="fig" data-fig="lageq" style="max-height:420px" aria-label="Rings of equal f and a straight constraint line that touch at one point where the gradients of f and g point the same way"></svg>
     <div class="stack" style="gap:8px">
-      <p>Minimize $f(\mathbf w)$ <b>subject to</b> a constraint $g(\mathbf w)=0$. Example: $f=\frac12(w_1^2+w_2^2)$ and $g=w_1+w_2-1$.</p>
+      <p>The recipe on an example: minimize $f=\frac12(w_1^2+w_2^2)$ subject to $g=w_1+w_2-1=0$.</p>
       <p class="small step"><b>The picture.</b> The blue rings join the points with the same $f$. The green line is where the constraint holds. The best allowed point is where a ring <b>just touches</b> the line, and there $\nabla f$ and $\nabla g$ point the same way: $\ \nabla f=\lambda\,\nabla g$.</p>
-      <div class="step"><p class="small"><b>The recipe.</b> Build the <b>Lagrangian</b> with a multiplier $\lambda$, and set its derivatives to zero:</p><div class="eq s">$$\mathcal L(\mathbf w,\lambda)=f(\mathbf w)-\lambda\,g(\mathbf w)$$</div></div>
-      <p class="small step"><b>The example.</b> $\ \frac{\partial\mathcal L}{\partial w_1}=w_1-\lambda=0\ $ and $\ \frac{\partial\mathcal L}{\partial w_2}=w_2-\lambda=0$, so $w_1=w_2=\lambda$. The constraint $w_1+w_2=1$ then gives $2\lambda=1$:</p>
+      <div class="step"><p class="small"><b>1 · The Lagrangian:</b></p><div class="eq s">$$\mathcal L(\mathbf w,\lambda)=\tfrac12(w_1^2+w_2^2)-\lambda\,(w_1+w_2-1)$$</div></div>
+      <p class="small step"><b>2 ·</b> $\ \frac{\partial\mathcal L}{\partial w_1}=w_1-\lambda=0\ $ and $\ \frac{\partial\mathcal L}{\partial w_2}=w_2-\lambda=0$, so $w_1=w_2=\lambda$. <b>3 ·</b> The constraint $w_1+w_2=1$ then gives $2\lambda=1$:</p>
       <div class="bluebox step" style="font-size:21px">$$\lambda=\tfrac12,\qquad\mathbf w^*=\big(\tfrac12,\tfrac12\big)$$</div>
       <p class="small step">In the picture, $\nabla f=\mathbf w^*=(\frac12,\frac12)$ and $\nabla g=(1,1)$: $\ \nabla f=\frac12\nabla g$ ✓.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Review: Lagrange multipliers with an inequality</h2>
+  <div class="cols c46">
+    <div class="widget" data-fig="lagside" data-auto="side=out :: The free minimum is not allowed: the answer is on the edge, g(w*) = 0 (active). ∇f = 4·∇g points into the allowed side: α = 4 &gt; 0|side=in :: The free minimum is allowed: it is the answer and the constraint does nothing. g(w*) = 3 &gt; 0, α = 0 (inactive)">
+      <svg class="fig" style="max-height:370px" aria-label="The same rings and curve, with the side g below 0 shaded as not allowed: either the free minimum is cut off and the answer sits on the edge, or the free minimum is allowed and is the answer"></svg>
+      <div class="ctl"><span class="seg" role="group" aria-label="Allowed side"><button type="button" data-side="out" aria-pressed="true">Free minimum not allowed</button><button type="button" data-side="in" aria-pressed="false">Free minimum allowed</button></span></div>
+      <div class="ro"><div class="m"><span>α</span><b data-r="a">–</b></div><div class="m"><span>g(w*)</span><b data-r="g">–</b></div><div class="m"><span>α · g(w*)</span><b data-r="ag">–</b></div></div>
+    </div>
+    <div class="stack" style="gap:5px">
+      <p><b>What for.</b> Minimize $f(\mathbf w)$ subject to $g(\mathbf w)\ge0$: the lowest point <b>in a region</b>, like the SVM's.</p>
+      <div class="step"><p class="small"><b>Two cases.</b></p>
+        <ul class="small"><li>The free minimum is allowed: it is the answer, the constraint does nothing. <b>Inactive</b>, $\alpha=0$.</li>
+          <li>It is not allowed: the answer is on the edge, $g(\mathbf w^*)=0$, and we are back to the equality, $\nabla f=\alpha\,\nabla g$. <b>Active</b>, $\alpha\gt0$.</li></ul>
+        <p class="why">Why $\alpha\gt0$: $\nabla g$ points into the allowed region. If $\nabla f$ pointed the other way, a step inside would lower $f$.</p></div>
+      <div class="step"><p class="small"><b>One set of conditions for both</b>, with $\mathcal L(\mathbf w,\alpha)=f(\mathbf w)-\alpha\,g(\mathbf w)$:</p>
+        <div class="eq s">$$\frac{\partial\mathcal L}{\partial\mathbf w}=\bzero,\qquad g(\mathbf w^*)\ge0,\qquad\alpha\ge0,\qquad\alpha\,g(\mathbf w^*)=0$$</div>
+        <p class="why">The last one, <b>complementary slackness</b>, says "one of the two cases": $\alpha=0$ or $g=0$.</p></div>
+      <div class="step"><p class="small"><b>The general solution</b>, the route the SVM takes:</p>
+        <ol class="small"><li>write $\mathcal L$, with $\alpha\ge0$;</li><li>minimize over $\mathbf w$: $\frac{\partial\mathcal L}{\partial\mathbf w}=\bzero$ gives $\mathbf w$ as a function of $\alpha$;</li><li>substitute: the <b>dual</b>, a function of $\alpha$ only;</li><li>maximize it over $\alpha\ge0$.</li></ol></div>
+      <p class="small step">Several constraints: one $\alpha_i\ge0$ each, each active or inactive on its own.</p>
     </div>
   </div>
 </section>
@@ -230,7 +277,7 @@ pre.snip .c{color:#6b6b6b}
   <div class="cols c46">
     <svg class="fig" data-fig="lag1d" style="max-height:430px" aria-label="Minimizing one half w squared with the constraint w at least 1 (active) and w at least minus 1 (inactive)"></svg>
     <div class="stack" style="gap:10px">
-      <p>The SVM has <b>inequality</b> constraints ($\ge1$), not equalities. One dimension first: minimize $\frac12w^2$, a bowl with its bottom at $w=0$.</p>
+      <p>The two cases of the previous slide, in one dimension: minimize $\frac12w^2$, a bowl with its bottom at $w=0$.</p>
       <p class="step"><b>Top: $w\ge1$.</b> The orange zone is forbidden, and it holds the bottom of the bowl. The best allowed point is the nearest edge, $w^*=1$: the constraint is <b>active</b>, the solution is pressed against it.</p>
       <p class="step"><b>Bottom: $w\ge-1$.</b> The bottom of the bowl is allowed. $w^*=0$, as if the constraint did not exist: <b>inactive</b>.</p>
       <div class="note step"><p class="small">Each constraint $g(w)\ge0$ gets a multiplier $\alpha\ge0$. <b>Active</b>: the constraint pushes, $\alpha\gt0$. <b>Inactive</b>: it does nothing, $\alpha=0$. In both cases $\ \alpha\cdot g(w^*)=0$. This is the rule that will pick the support vectors.</p></div>

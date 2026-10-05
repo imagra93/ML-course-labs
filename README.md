@@ -136,7 +136,7 @@ Scikit-learn / NumPy. Small datasets: a laptop CPU is enough.
 
 ## Bonus · Linear regression for time series
 
-- **Slides:** [bonus slide at the end of the SVM deck](https://imagra93.github.io/ML-course-labs/slides/machine_learning/08_svm.html#36)
+- **Slides:** [bonus slide at the end of the SVM deck](https://imagra93.github.io/ML-course-labs/slides/machine_learning/08_svm.html#38)
 - **Content:** linear regression again, but on a time series, where the i.i.d. assumption fails and
   the usual random splits silently produce worthless models. Assumes Labs 1 and 2.
 - **Notebook:** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%2016%20-%20Linear%20Regression%20for%20Time%20Series.ipynb)

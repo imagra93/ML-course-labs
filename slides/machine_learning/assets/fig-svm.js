@@ -159,6 +159,41 @@ FIG['lageq']=root=>{const m={l:36,r:14,t:14,b:34};const xr=[-0.5,1.8];const P=Pl
   label(P,1.0,1.0,'∇f = (½, ½)',{cls:'lab',anchor:'end',dx:-10,dy:-8});label(P,1.56,1.44,'∇g = (1, 1)',{cls:'lab',anchor:'end',dx:-10,dy:-8});
   P.dot(0.5,0.5,7,'fr pt');label(P,0.5,0.5,'w* = (½, ½)',{cls:'lab',anchor:'end',dx:-12,dy:4})};
 
+/* Generic Lagrange review: f = ½(w₁² + 4w₂²), rings round the free minimum 0, and the curve w₂ = ¼(w₁ − 3)² + ¾.
+   They touch only at w* = (2, 1), where ∇f = (2, 4) = 4·∇g with g = w₂ − ¼(w₁ − 3)² − ¾, ∇g = (½, 1). */
+const lagP=t=>0.25*(t-3)*(t-3)+0.75,lagF=(a,b)=>0.5*(a*a+4*b*b);
+function lagRing(P,c,cls,g){const a=Math.sqrt(2*c),b=Math.sqrt(c/2),pts=[];for(let i=0;i<=160;i++){const s=2*Math.PI*i/160;pts.push([a*Math.cos(s),b*Math.sin(s)])}return P.path(pts,cls,g)}
+function lagBase(root){const m={l:36,r:14,t:14,b:34};const xr=[-1.2,4.6];const P=Plot(svgOf(root),{w:500,h:420,x:xr,y:equalY(500,420,m,xr,1.6),m:m});
+  P.axes({xt:[-1,0,1,2,3,4],yt:[0,1,2,3],xl:'w₁',yl:'w₂'});[0.5,1.5,4,7,10].forEach(c=>lagRing(P,c,'ln thin sb',P.bgc).setAttribute('opacity','0.45'));
+  P.fn(lagP,'ln sg',xr[0],xr[1],200,P.bgc);label(P,-0.15,3.55,'g(w) = 0',{cls:'lab',anchor:'start',g:P.bg});label(P,-1.1,2.5,'rings of f',{anchor:'start',g:P.bg});
+  P.dot(0,0,4.5,'fw pt',P.bg).setAttribute('style','stroke:#000;stroke-width:1.4');return P}
+/* both arrows drawn with fixed lengths: only their directions matter */
+function lagArrows(P,w,gf,gg){const tip=(v,L)=>{const n=Math.hypot(v[0],v[1]);return [w[0]+L*v[0]/n,w[1]+L*v[1]/n]};const F=tip(gf,1.0),G=tip(gg,0.6);
+  arrow(P,w[0],w[1],F[0],F[1],'ln sb','fb');arrow(P,w[0],w[1],G[0],G[1],'ln so','fo');
+  label(P,F[0],F[1],'∇f',{cls:'lab',anchor:'start',dx:6,dy:-4});label(P,G[0],G[1],'∇g',{cls:'lab',anchor:'end',dx:-6,dy:-4})}
+
+/* Equality: a point slides along g = 0; the ring through it crosses the curve until ∇f ∥ ∇g */
+FIG['lagcurve']=root=>{const P=lagBase(root);const inp=q(root,'t');
+  function draw(){const t=+inp.value,w=[t,lagP(t)],gf=[t,4*w[1]],gg=[-0.5*(t-3),1];P.clear();setV(root,'t',fmt(t));
+    const c=lagF(w[0],w[1]);lagRing(P,c,'ln sb');lagArrows(P,w,gf,gg);
+    const ang=Math.acos(Math.min(1,(gf[0]*gg[0]+gf[1]*gg[1])/(Math.hypot(gf[0],gf[1])*Math.hypot(gg[0],gg[1]))))*180/Math.PI,best=ang<0.5;
+    if(!best){const n=Math.hypot(1,gg[0]),tau=[1/n,-gg[0]/n],s=gf[0]*tau[0]+gf[1]*tau[1]>0?-1:1,D=[w[0]+0.9*s*tau[0],w[1]+0.9*s*tau[1]];
+      arrow(P,w[0],w[1],D[0],D[1],'ln sk dash','fk');label(P,D[0],D[1],'f goes down',{anchor:s>0?'start':'end',dx:s>0?4:-4,dy:18})}
+    P.dot(w[0],w[1],7,best?'fr pt':'fk pt');label(P,w[0],w[1],best?'w* = (2, 1)':'w',{cls:'lab',anchor:'end',dx:-12,dy:16});
+    setR(root,'f',fmt(c));setR(root,'a',Math.round(ang)+'°')}
+  inp.addEventListener('input',draw);draw()};
+
+/* Inequality: the same f and curve, g(w) ≥ 0 allowed on one side. out = free minimum forbidden (active), in = allowed (inactive) */
+FIG['lagside']=root=>{const P=lagBase(root);const btns=[...root.querySelectorAll('button[data-side]')];let side=(btns.find(b=>b.getAttribute('aria-pressed')==='true')||btns[0]).dataset.side;
+  const curve=[];for(let i=0;i<=120;i++){const t=-1.2+5.8*i/120;curve.push([t,lagP(t)])}
+  function draw(){const out=side==='out';P.clear();P.poly(curve.concat(out?[[4.6,-9],[-1.2,-9]]:[[4.6,9],[-1.2,9]]),'fos');
+    label(P,2.4,3.6,out?'allowed: g ≥ 0':'not allowed: g < 0',{cls:'lab',anchor:'middle'});label(P,3.2,-0.45,out?'not allowed: g < 0':'allowed: g ≥ 0',{cls:'lab',anchor:'middle'});
+    if(out){lagRing(P,4,'ln sb');lagArrows(P,[2,1],[2,4],[0.5,1]);P.dot(2,1,7,'fr pt');label(P,2,1,'w* = (2, 1), on the edge',{cls:'lab',anchor:'end',dx:-12,dy:16});
+      label(P,0,0,'free minimum',{anchor:'start',dx:8,dy:-8})}
+    else{P.dot(0,0,7,'fr pt');label(P,0,0,'w* = (0, 0), the free minimum',{cls:'lab',anchor:'start',dx:10,dy:-10})}
+    setR(root,'a',out?'4':'0');setR(root,'g',out?'0':'3');setR(root,'ag','0')}
+  btns.forEach(b=>b.addEventListener('click',()=>{side=b.dataset.side;btns.forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));draw()}));draw()};
+
 /* Lagrange multipliers in 1-D: an active and an inactive constraint */
 FIG['lag1d']=root=>{const svg=initSvg(svgOf(root),520,430);
   [[1,'minimize ½w²  subject to  w ≥ 1'],[-1,'minimize ½w²  subject to  w ≥ −1']].forEach(([c,title],k)=>{
