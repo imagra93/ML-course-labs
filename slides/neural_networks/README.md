@@ -2,14 +2,14 @@
 
 One HTML file per topic, built on the same engine as [`../machine_learning`](../machine_learning) (styles, navigation, logo and shared figures live in [`../assets`](../assets)). Open `index.html` to present.
 
-| File | Topic | Labs in the deck | From ML_notes_NN.pptx |
-|---|---|---|---|
-| `01_neural_networks.html` | From one neuron to deep networks: linear and logistic regression as neurons, a layer of neurons, XOR, hand-made vs learned features, MLP, depth, the network family of the course, forward pass with numbers, activations and their derivatives (one slide each), losses, sigmoid + cross-entropy, multiclass and one-hot, softmax (with numbers and an interactive demo), where the losses come from, losses in PyTorch | – | slides 2–27, 44–48 + notes 00 |
-| `02_backpropagation.html` | Derivatives refresher, chain rule on graphs, backprop with real numbers, the derivation and the algorithm, the algorithm in NumPy, gradient checking, initialization, vanishing gradients | 7 | slides 28–43, 53 + notes 01 |
-| `03_training.html` | Mini-batches, learning rate, moving averages, momentum, RMSProp, Adam, schedules, over/underfitting, weight decay (derivation and demo), augmentation, early stopping, dropout, BatchNorm, other layers, debugging | 8, 9 | slides 41–42, 49–59 + notes 02 |
-| `04_cnn.html` | Dense layer vs convolution, convolutions, pooling, receptive field, architectures, transfer learning, multi-task learning, PyTorch Lightning, segmentation, detection (YOLO11 loss), NMS, mAP | 10, 12, 13 (+ a multi-task demo) | slides 60–81 + notes 03 |
-| `05_rnn_lstm.html` | Tokens and embedding lookup, RNNs, BPTT, vanishing gradients (derivation), gates, the LSTM gate by gate, GRU, packing | 11 | slides 83–93 + notes 04 |
-| `06_transformers.html` | In four parts. Attention: soft lookup with numbers, where Q/K/V come from, √d_k, multi-head, word order and positions, masks, self-attention in code. The transformer block, encoder–decoder, BERT vs GPT. GPT: tokens, next-token objective with GPT-2's numbers, parameters, decoding with real GPT-2 outputs, KV cache, surprisal and perplexity. RAG: embeddings, similarity, search, chunking, IVF, the prompt, retrieval metrics, hybrid search and re-ranking | 14, 15 | slides 94–109 + notes 05, 06 |
+| File | Topic | Labs in the deck |
+|---|---|---|
+| `01_neural_networks.html` | From one neuron to deep networks: linear and logistic regression as neurons, a layer of neurons, XOR, hand-made vs learned features, MLP, depth, the network family of the course, forward pass with numbers, activations and their derivatives (one slide each), losses, sigmoid + cross-entropy, multiclass and one-hot, softmax (with numbers and an interactive demo), where the losses come from, losses in PyTorch | – |
+| `02_backpropagation.html` | Derivatives refresher, chain rule on graphs, backprop with real numbers, the derivation and the algorithm, the algorithm in NumPy, gradient checking, initialization, vanishing gradients | 7 |
+| `03_training.html` | Mini-batches, learning rate, moving averages, momentum, RMSProp, Adam, schedules, over/underfitting, weight decay (derivation and demo), augmentation, early stopping, dropout, BatchNorm, other layers, debugging | 8, 9 |
+| `04_cnn.html` | Dense layer vs convolution, convolutions, pooling, receptive field, architectures, transfer learning, multi-task learning, PyTorch Lightning, segmentation, detection (YOLO11 loss), NMS, mAP | 10, 12, 13 (+ a multi-task demo) |
+| `05_rnn_lstm.html` | Tokens and embedding lookup, RNNs, BPTT, vanishing gradients (derivation), gates, the LSTM gate by gate, GRU, packing | 11 |
+| `06_transformers.html` | In four parts. Attention: soft lookup with numbers, where Q/K/V come from, √d_k, multi-head, word order and positions, masks, self-attention in code. The transformer block, encoder–decoder, BERT vs GPT. GPT: tokens, next-token objective with GPT-2's numbers, parameters, decoding with real GPT-2 outputs, KV cache, surprisal and perplexity. RAG: embeddings, similarity, search, chunking, IVF, the prompt, retrieval metrics, hybrid search and re-ranking | 14, 15 |
 
 Figures: `assets/nn-core.js` (network drawings, matrices, tensor blocks, heat maps, the step-panel driver, the tiny 2-2-1 example network, a small MLP trainer with optional L2, and `TT()` for figure labels with sub/superscripts such as `W^{[1]}` or `h_{t−1}`) and one `assets/fig-nn-<topic>.js` per topic. Extra styles for these decks live in `assets/nn.css`.
 

@@ -27,8 +27,6 @@ The full YOLO pipeline (fine-tuning YOLO11n, ONNX export) is a lab:
 [`notebooks/neural_networks/lab 13 - Object detection with YOLO.ipynb`](../../notebooks/neural_networks/lab%2013%20-%20Object%20detection%20with%20YOLO.ipynb).
 The detection concepts it builds on (boxes, IoU, NMS, precision–recall and AP) are in note 03.
 
-Original class notes (PDF): [ML_notes_NN.pptx.pdf](../../ML_notes_NN.pptx.pdf)
-
 ## Notation
 
 | Symbol | Meaning |

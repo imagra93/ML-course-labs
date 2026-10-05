@@ -2,17 +2,17 @@
 
 One HTML file per topic. The shared engine (styles, navigation, logo, shared figures, MathJax config) lives in [`../assets`](../assets). Open `index.html` in a browser (or via GitHub Pages) to present.
 
-| File | Topic | From ML_classNotes.pptx |
-|---|---|---|
-| `00_introduction.html` | Teacher, course overview, Python / NumPy / pandas / Matplotlib basics (Lab 0) | slides 2–19 + Lab 0 notebook |
-| `01_supervised_learning.html` | Supervised learning, train / validation / test, k-fold CV | slides 20–22 |
-| `02_linear_regression.html` | Linear regression | slides 23–44 |
-| `03_logistic_regression.html` | Logistic regression and classification metrics | slides 45–67 |
-| `04_softmax_regression.html` | Softmax regression | slide 64 + notes 04 |
-| `05_regularization.html` | Regularization, inputs, assumptions | slides 40–41 + notes 03 |
-| `06_decision_trees.html` | Decision trees and CART | slides 68–75, 80 |
-| `07_ensembles.html` | Bagging, random forest, boosting, XGBoost | slides 76–85 |
-| `08_svm.html` | Support vector machines, plus a bonus slide on time series (Lab 16) | slides 86–113 |
+| File | Topic |
+|---|---|
+| `00_introduction.html` | Teacher, course overview, Python / NumPy / pandas / Matplotlib basics (Lab 0) |
+| `01_supervised_learning.html` | Supervised learning, train / validation / test, k-fold CV |
+| `02_linear_regression.html` | Linear regression |
+| `03_logistic_regression.html` | Logistic regression and classification metrics |
+| `04_softmax_regression.html` | Softmax regression |
+| `05_regularization.html` | Regularization, inputs, assumptions |
+| `06_decision_trees.html` | Decision trees and CART |
+| `07_ensembles.html` | Bagging, random forest, boosting, XGBoost |
+| `08_svm.html` | Support vector machines, plus a bonus slide on time series (Lab 16) |
 
 ## Presenting
 → / Space: next step · ← back · F: full screen · the URL `#12` jumps to slide 12 (`#last` = last slide).

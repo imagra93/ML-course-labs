@@ -265,10 +265,3 @@ order: follow the topics below.
   - [Embeddings, retrieval and RAG](https://imagra93.github.io/ML-course-labs/notes/neural_networks/06_embeddings_rag.html):
     TF-IDF, BM25, LSA, neural embeddings, IVF / HNSW / PQ, retrieval metrics, hybrid search and
     re-ranking, chunking, RAG
-
----
-
-## Original class notes
-
-The PowerPoint notes the slides grew from (PDF):
-[machine learning](ML_classNotes.pptx.pdf) · [neural networks](ML_notes_NN.pptx.pdf)

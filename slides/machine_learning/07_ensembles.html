@@ -50,10 +50,12 @@
   <h2>Ensemble methods: why averaging works (proof)</h2>
   <div class="cols">
     <div class="stack" style="gap:8px">
-      <p class="small">$B$ models at a fixed point $\bx$. Each has variance $\mathrm{Var}(h_b)=\sigma^2$, and any two have correlation $\rho$, i.e. covariance $\mathrm{Cov}(h_b,h_{b'})=\rho\,\sigma\cdot\sigma=\rho\sigma^2$.</p>
-      <div class="step"><p class="small"><b>1 · Variance of a sum</b> = all the variances + the covariances of all pairs:</p>
-        <div class="eq s">$$\mathrm{Var}\Big(\sum_{b=1}^Bh_b\Big)=\sum_b\mathrm{Var}(h_b)+\sum_{b\ne b'}\mathrm{Cov}(h_b,h_{b'})$$</div></div>
-      <div class="step"><p class="small"><b>2 · Count the terms</b>, in plain words. Squaring a sum multiplies <b>every term by every term</b>: $(a+b+c)(a+b+c)$ gives $3\times3=9$ products. Three are a term with itself ($a^2,b^2,c^2$), six are two different terms ($ab,ba,ac,ca,bc,cb$). The variance of a sum works the same way, with covariances. Here $B=3$ models, one cell for each "model $\times$ model":</p>
+      <p class="small">$B$ models at a fixed point $\bx$, any two with correlation $\rho$:</p>
+      <div class="eq s">$$\mathrm{Var}(h_b)=\sigma^2,\qquad\mathrm{Cov}(h_b,h_{b'})=\rho\,\sigma\cdot\sigma=\rho\sigma^2\quad(b\ne b')$$</div>
+      <div class="step"><p class="small"><b>1 · The variance of a sum</b> is a double sum of covariances:</p>
+        <div class="eq s">$$\mathrm{Var}\Big(\sum_{b=1}^Bh_b\Big)=\sum_{b=1}^B\sum_{b'=1}^B\mathrm{Cov}(h_b,h_{b'})$$</div>
+        <p class="why">One term per cell of the $B\times B$ table below. On the diagonal, $\mathrm{Cov}(h_b,h_b)=\mathrm{Var}(h_b)$.</p></div>
+      <div class="step"><p class="small"><b>2 · Split the diagonal</b> ($b=b'$) from the off-diagonal ($b\ne b'$). Here $B=3$:</p>
         <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
           <div style="display:grid;grid-template-columns:44px repeat(3,76px);gap:3px;text-align:center;font-size:18px;flex:none">
             <div></div><div class="muted">$h_1$</div><div class="muted">$h_2$</div><div class="muted">$h_3$</div>
@@ -61,20 +63,19 @@
             <div class="muted">$h_2$</div><div style="background:var(--orange-soft);padding:4px 0">$\rho\sigma^2$</div><div style="background:var(--blue-soft);padding:4px 0">$\sigma^2$</div><div style="background:var(--orange-soft);padding:4px 0">$\rho\sigma^2$</div>
             <div class="muted">$h_3$</div><div style="background:var(--orange-soft);padding:4px 0">$\rho\sigma^2$</div><div style="background:var(--orange-soft);padding:4px 0">$\rho\sigma^2$</div><div style="background:var(--blue-soft);padding:4px 0">$\sigma^2$</div>
           </div>
-          <p class="small" style="flex:1 1 230px;min-width:0"><b style="color:var(--blue)">Blue diagonal</b>: a model with itself, its variance $\sigma^2$. $B$ cells.<br><b style="color:var(--orange)">Orange</b>: two different models, their covariance $\rho\sigma^2$. The table has $B\cdot B$ cells, so $B\cdot B-B=B(B-1)$ of them: $3\cdot2=6$.</p>
-        </div></div>
-      <div class="step"><p class="small"><b>The variance of the sum is the sum of the whole table</b>: $B$ blue cells and $B(B-1)$ orange cells. For $B=10$: 10 blue and $10\cdot9=90$ orange.</p>
+          <p class="small" style="flex:1 1 230px;min-width:0"><b style="color:var(--blue)">Diagonal</b>: $B$ cells of $\sigma^2$.<br><b style="color:var(--orange)">Off-diagonal</b>: $B^2-B$ cells of $\rho\sigma^2$.<br>For $B=3$: 3 and 6.</p>
+        </div>
         <div class="eq s">$$=B\sigma^2+B(B-1)\,\rho\sigma^2$$</div></div>
     </div>
     <div class="stack" style="gap:8px">
-      <div class="step"><p class="small"><b>3 · The average</b> is the sum times $\frac1B$, and $\mathrm{Var}(cX)=c^2\,\mathrm{Var}(X)$:</p>
-        <div class="eq s">$$\mathrm{Var}(\bar h)=\frac{B\sigma^2+B(B-1)\rho\sigma^2}{B^2}=\frac{\sigma^2}{B}+\frac{B-1}{B}\,\rho\sigma^2$$</div></div>
-      <div class="step"><p class="small"><b>4 · Rearrange</b>, using $\frac{B-1}{B}=1-\frac1B$:</p>
-        <div class="eq s">$$=\frac{\sigma^2}{B}+\rho\sigma^2-\frac{\rho\sigma^2}{B}=\rho\sigma^2+\frac{1-\rho}{B}\,\sigma^2\quad\blacksquare$$</div></div>
+      <div class="step"><p class="small"><b>3 · Divide by $B^2$</b> to get the average $\bar h=\frac1B\sum_bh_b$:</p>
+        <div class="eq s">$$\mathrm{Var}(\bar h)=\frac{\sigma^2}{B}+\frac{B-1}{B}\,\rho\sigma^2=\boxed{\rho\sigma^2+\frac{1-\rho}{B}\,\sigma^2}$$</div>
+        <p class="why">$\mathrm{Var}(cX)=c^2\,\mathrm{Var}(X)$ with $c=\frac1B$. Then $\frac{B-1}{B}=1-\frac1B$, and the two $\frac1B$ terms combine.</p></div>
+      <p class="small step"><b>Conclusion.</b> As $B\to\infty$, $\mathrm{Var}(\bar h)\to\rho\sigma^2$. Averaging removes the <b>uncorrelated</b> part of the variance; the <b>correlated</b> part stays.</p>
       <div class="note step"><p class="small"><b>Numbers:</b> $\sigma^2=1$, $\rho=0.3$. One model: 1. &nbsp;$B=10$: $0.3+0.07=0.37$. &nbsp;$B=100$: $0.307$. &nbsp;$B\to\infty$: $0.3$.</p></div>
       <ul class="small step">
         <li>Averaging does not change the <b>bias</b> (the average of the models has the same expected value as one model), so average <b>low-bias</b> models: deep trees.</li>
-        <li>As $B\to\infty$ the second term vanishes: more trees never overfit, the error just levels off.</li>
+        <li>More trees never overfit: the error just levels off at the floor.</li>
         <li>The floor $\rho\sigma^2$ only goes down if the models are <b>less alike</b>.</li>
       </ul>
     </div>
