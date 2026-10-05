@@ -1,7 +1,7 @@
 /* Figures for 03_training.html */
 (function(){
 'use strict';
-const {FIG,lib}=window.MLFIG;const {E,T,initSvg,Plot,arrowPx,rng,randn,fmt,equalY,q,setV,setR,svgOf}=lib;const {drawNet,box,grid,stepper,f2,f3,heat,trainMLP,TT}=window.MLNN;
+const {FIG,lib}=window.MLFIG;const {E,T,initSvg,Plot,arrowPx,rng,randn,fmt,equalY,q,setV,setR,svgOf}=lib;const {drawNet,box,grid,stepper,segs,f2,f3,heat,trainMLP,TT}=window.MLNN;
 /* dataset → shuffled mini-batches → one epoch */
 FIG['epoch']=root=>{const svg=svgOf(root);const m=64,bs=16;const C=['#dae3f3','#fbe5d6','#e2f0d9','#fff2cc'];
   stepper(root,s=>{initSvg(svg,600,300);const r=rng(11);const perm=[...Array(m).keys()];if(s>=1)perm.sort(()=>r()-0.5);
@@ -97,4 +97,82 @@ FIG['overfit-l2']=root=>{const tr=moons(40,5,0.28),te=moons(600,99,0.28);const L
     const a1=acc(m,tr),a2=acc(m,te);setR(root,'tr',fmt(a1,3));setR(root,'te',fmt(a2,3));let w2=0;m.W.forEach(W=>W.forEach(rw=>rw.forEach(v=>w2+=v*v)));setR(root,'w',fmt(Math.sqrt(w2),1));
     setR(root,'vd',k===0?'overfitting':k===2?'about right':k>=4?'underfitting':k===1?'still overfitting':'slightly too simple')}
   inp.addEventListener('input',draw);draw()};
+/* EMA, step by step: 30 days of temperatures, the weight each past day gets in today's average (v₀ = 0 takes the rest), raw or bias-corrected.
+   Controls: slider t (day), seg data-b (β), seg data-c (0 = raw, 1 = with the bias correction) */
+const TEMPS=[10,12,11,14,13,15,14,16,15,17,19,18,17,19,20,18,21,20,22,21,19,22,23,21,24,22,23,25,24,26];
+FIG['ema-steps']=root=>{const n=TEMPS.length;const svg=initSvg(svgOf(root),600,320);
+  const P=Plot(svg,{at:[0,0],w:600,h:176,x:[-0.8,n+0.6],y:[0,28],m:{l:44,r:12,t:10,b:34}});P.axes({xt:[0,5,10,15,20,25,30],yt:[0,7,14,21,28],xl:'day t',yl:'temperature (°C)'});
+  TEMPS.forEach((v,i)=>P.dot(i+1,v,3.4,'fm',P.bg));let Q=null;const it=q(root,'t');
+  const gb=segs(root,'b',draw),gc=segs(root,'c',draw);
+  function draw(){const t=+it.value,b=+(gb()||0.9),c=gc()==='1';setV(root,'t',t);
+    let v=0;const raw=[[0,0]],cor=[];TEMPS.slice(0,t).forEach((x,i)=>{v=b*v+(1-b)*x;raw.push([i+1,v]);cor.push([i+1,v/(1-Math.pow(b,i+1))])});
+    P.clear();P.line(t,0,t,28,'ln thin sm dash');P.path(raw,'ln').setAttribute('stroke','#c00000');P.dot(t,raw[t][1],5,'fr pt');
+    if(c){P.path(cor,'ln dash').setAttribute('stroke','#4472c4');P.dot(t,cor[t-1][1],5,'fb pt')}P.dot(t,TEMPS[t-1],5,'fk');
+    const s=1-Math.pow(b,t);const w=[Math.pow(b,t)];for(let k=1;k<=t;k++)w.push((1-b)*Math.pow(b,t-k));
+    const top=Math.max(w[0],...w.slice(1).map(x=>c?x/s:x))*1.2;if(Q)Q.root.remove();
+    Q=Plot(svg,{at:[0,176],w:600,h:144,x:[-0.8,n+0.6],y:[0,top],m:{l:44,r:12,t:16,b:32}});
+    Q.axes({xt:[0,5,10,15,20,25,30],fx:k=>k?k:'v₀',yt:[0,top/2.4,top/1.2],fy:y=>fmt(y,2),xl:'weight of each day in vₜ (gray: the weight left on v₀ = 0)'});
+    w.forEach((x,k)=>{if(c&&!k)return;Q.rect(k-0.36,0,k+0.36,c?x/s:x,c?'fb':k?'fr':'fm').setAttribute('opacity',k?'0.8':'0.6')});
+    Q.text(0.7,top*0.86,c?'v₀ = 0: weight 0 after the correction':'v₀ = 0 keeps '+Math.round(100*w[0])+' % of the weight','', 'start');
+    setR(root,'x',TEMPS[t-1]+' °C');setR(root,'v',fmt(raw[t][1],2));setR(root,'s',fmt(s,3));setR(root,'vh',fmt(cor[t-1][1],2))}
+  it.addEventListener('input',draw);draw()};
+/* Data augmentation on 28×28 pictures (Fashion-MNIST style, in colour). Every click on a transformation draws new random parameters;
+   the strip keeps the last 8 versions. seg data-s: picture; seg data-op: transformation. Flipping the digit changes its label. */
+function augPics(){const N=28;const img=()=>[...Array(N)].map(()=>[...Array(N)].map(()=>[0,0,0]));
+  const inPoly=(x,y,P)=>{let c=false;for(let i=0,j=P.length-1;i<P.length;j=i++){const [xi,yi]=P[i],[xj,yj]=P[j];if((yi>y)!==(yj>y)&&x<(xj-xi)*(y-yi)/(yj-yi)+xi)c=!c}return c};
+  const shirt=img(),boot=img(),seven=img();
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){const px=x+0.5,py=y+0.5;
+    const body=px>=9&&px<=19&&py>=7&&py<=25,sl=inPoly(px,py,[[9.5,7],[3.5,11],[6,15],[9.5,12.5]])||inPoly(px,py,[[18.5,7],[24.5,11],[22,15],[18.5,12.5]]);
+    if((body||sl)&&((px-14)/2.6)**2+((py-6.6)/2)**2>=1){let c=[0.27,0.45,0.85];if(py>=15&&py<17)c=[0.95,0.95,0.95];if(px>=10.5&&px<=13&&py>=9&&py<=11.5)c=[0.93,0.49,0.19];shirt[y][x]=c}
+    const shaft=px>=6&&px<=13&&py>=4&&py<=21,foot=px>=6&&px<=21&&py>=15&&py<=21,toe=((px-21)/4.5)**2+((py-18.5)/3)**2<1&&py<=21;
+    if(shaft||foot||toe){let c=[0.6,0.36,0.16];if(py<5.5)c=[0.42,0.24,0.1];if(px>=10.5&&px<=12.5&&[8,11,14].some(l=>Math.abs(py-l)<0.6))c=[0.92,0.86,0.7];boot[y][x]=c}
+    if(px>=5&&px<=25.5&&py>21&&py<=23.5)boot[y][x]=[0.3,0.3,0.3];
+    const dx=12-20.5,dy=23.5-6,u=Math.max(0,Math.min(1,((px-20.5)*dx+(py-6)*dy)/(dx*dx+dy*dy))),dist=Math.hypot(px-20.5-u*dx,py-6-u*dy);
+    const ink=Math.max(px>=7&&px<=21&&py>=5&&py<=7.5?1:0,Math.min(1,Math.max(0,(2.3-dist)/0.7)));seven[y][x]=[ink,ink,ink]}
+  return {shirt,boot,seven}}
+FIG['aug-play']=root=>{const N=28,svg=initSvg(svgOf(root),600,330);const PICS=augPics(),NAME={shirt:'T-shirt',boot:'ankle boot',seven:'7'},ART={shirt:'a',boot:'an',seven:'a'};const r=rng(7);
+  const sample=(I,u,v)=>{const x0=Math.floor(u-0.5),y0=Math.floor(v-0.5),fx=u-0.5-x0,fy=v-0.5-y0,o=[0,0,0];
+    [[0,0,(1-fx)*(1-fy)],[1,0,fx*(1-fy)],[0,1,(1-fx)*fy],[1,1,fx*fy]].forEach(([a,b,w])=>{const xx=x0+a,yy=y0+b;if(xx<0||yy<0||xx>=N||yy>=N)return;for(let c=0;c<3;c++)o[c]+=w*I[yy][xx][c]});return o};
+  const warp=(I,f)=>[...Array(N)].map((_,y)=>[...Array(N)].map((_,x)=>{const [u,v]=f(x+0.5,y+0.5);return sample(I,u,v)}));
+  const each=(I,f)=>I.map(row=>row.map(p=>f(p.slice())));const cl=v=>Math.max(0,Math.min(1,v));
+  const OPS={
+    flip:I=>[I.map(row=>row.slice().reverse()),'horizontal flip'],
+    rotate:I=>{const a=(r()<0.5?-1:1)*(6+14*r()),t=a*Math.PI/180,c=Math.cos(t),s=Math.sin(t);return [warp(I,(x,y)=>[14+c*(x-14)+s*(y-14),14-s*(x-14)+c*(y-14)]),'rotate '+(a>0?'+':'−')+Math.abs(a).toFixed(0)+'°']},
+    crop:I=>{const k=0.62+0.22*r(),ox=N*(1-k)*r(),oy=N*(1-k)*r();return [warp(I,(x,y)=>[ox+x*k,oy+y*k]),'crop '+Math.round(100*k)+' % of the side, resized to 28 × 28']},
+    colour:(I,gray)=>{const b=1+(r()<0.5?-1:1)*(0.15+0.3*r()),h=(r()<0.5?-1:1)*(30+70*r()),t=h*Math.PI/180,c=Math.cos(t),s=Math.sin(t),k=1/3,q3=Math.sqrt(k);
+      const M=[[c+(1-c)*k,k*(1-c)-q3*s,k*(1-c)+q3*s],[k*(1-c)+q3*s,c+k*(1-c),k*(1-c)-q3*s],[k*(1-c)-q3*s,k*(1-c)+q3*s,c+k*(1-c)]];
+      return [each(I,p=>M.map(row=>cl(b*(row[0]*p[0]+row[1]*p[1]+row[2]*p[2])))),'brightness ×'+b.toFixed(2)+(gray?'':', hue '+(h>0?'+':'−')+Math.abs(h).toFixed(0)+'°')]},
+    noise:I=>[each(I,p=>{const e=0.22*randn(r);return p.map(v=>cl(v+e))}),'Gaussian noise, σ = 0.22'],
+    cutout:I=>{const k=8+Math.floor(4*r()),x0=Math.floor((N-k)*r()),y0=Math.floor((N-k)*r());return [I.map((row,y)=>row.map((p,x)=>x>=x0&&x<x0+k&&y>=y0&&y<y0+k?[0.5,0.5,0.5]:p)),'cut-out: a '+k+' × '+k+' gray square']}};
+  const draw=(g,I,x0,y0,cs)=>{I.forEach((row,y)=>row.forEach((p,x)=>E('rect',{x:x0+x*cs,y:y0+y*cs,width:cs+0.3,height:cs+0.3,fill:'rgb('+p.map(v=>Math.round(255*v)).join(',')+')'},g)))};
+  const gpic=E('g',{'shape-rendering':'crispEdges'},svg),ghist=E('g',{'shape-rendering':'crispEdges'},svg),gtxt=E('g',{},svg);let hist=[];
+  T(svg,128,16,'what the network gets: 28 × 28 pixels','lab');T(svg,356,16,'original','lab');T(svg,300,262,'the last 8 versions it saw (one per epoch)','lab');
+  const gs=segs(root,'s',()=>{hist=[];apply()}),go=segs(root,'op',apply);
+  function apply(){const s=gs()||'shirt',op=go()||'none',I0=PICS[s],gray=s==='seven';let I=I0,done=[],flipped=false;
+    if(op==='random'){const pick=[['flip',0.5],['crop',0.7],['rotate',0.7],['colour',0.7],['noise',0.3],['cutout',0.3]].filter(([,p])=>r()<p).map(([o])=>o);if(!pick.length)pick.push('rotate');
+      pick.forEach(o=>{const [J,d]=OPS[o](I,gray);I=J;done.push(d);if(o==='flip')flipped=true})}
+    else if(op!=='none'){const [J,d]=OPS[op](I,gray);I=J;done.push(d);flipped=op==='flip'}
+    const bad=flipped&&s==='seven';if(op!=='none'){hist.push({I,bad});if(hist.length>8)hist.shift()}
+    gpic.innerHTML='';draw(gpic,I,16,26,8);E('rect',{x:16,y:26,width:224,height:224,fill:'none',stroke:bad?'#c00000':'#7f7f7f','stroke-width':bad?4:1},gpic);
+    draw(gpic,I0,300,26,4);E('rect',{x:300,y:26,width:112,height:112,fill:'none',stroke:'#7f7f7f'},gpic);
+    gtxt.innerHTML='';T(gtxt,300,176,'label: '+NAME[s],'lab big','start');
+    const ok=T(gtxt,300,204,bad?'✗ not a 7 any more: a wrong label':'✓ still '+ART[s]+' '+NAME[s]+': same label','lab','start');ok.style.fill=bad?'#c00000':'#548235';
+    ghist.innerHTML='';hist.forEach((h,k)=>{const x0=18+k*72;draw(ghist,h.I,x0,268,2.2);E('rect',{x:x0,y:268,width:61.6,height:61.6,fill:'none',stroke:h.bad?'#c00000':'#bfbfbf','stroke-width':h.bad?3:1},ghist)});
+    setR(root,'ops',op==='none'?'nothing (the original)':done.join(' · '));setR(root,'lab',bad?'wrong!':'kept')}
+  apply()};
+/* Learning curves you can steer: model size × one remedy. Schematic shapes (not a real run).
+   seg data-m: small | right | big; seg data-fx: none | data (more data or augmentation) | reg (weight decay, dropout) | stop (early stopping) */
+FIG['curves-play']=root=>{const E0=60,ep=[...Array(E0+1).keys()];
+  const base={small:{tf:0.55,ta:0.30,tt:6,vf:0.60,va:0.30,vt:6,rise:0},right:{tf:0.12,ta:0.70,tt:8,vf:0.20,va:0.65,vt:8,rise:0},big:{tf:0.02,ta:0.80,tt:5,vf:0.30,va:0.55,vt:5,rise:0.007}};
+  const fix={data:{small:{tf:0.02},right:{tf:0.02,vf:-0.04},big:{tf:0.07,vf:-0.10,rise:-0.0062}},reg:{small:{tf:0.06,vf:0.05},right:{tf:0.04,vf:-0.01},big:{tf:0.12,vf:-0.08,rise:-0.0065}}};
+  const P=Plot(svgOf(root),{w:560,h:250,x:[0,E0],y:[0,1],m:{l:44,r:14,t:14,b:38}});P.axes({xt:[0,10,20,30,40,50,60],yt:[0,0.5,1],xl:'epoch',yl:'loss'});P.text(60,0.95,'train','lab','end',-90,0,P.bg).style.fill='#4472c4';P.text(60,0.95,'validation','lab','end',-4,0,P.bg).style.fill='#ed7d31';
+  const gm=segs(root,'m',draw),gr=segs(root,'fx',draw);
+  function draw(){const m=gm()||'big',rm=gr()||'none',p=Object.assign({},base[m]),d=(fix[rm]||{})[m]||{};Object.keys(d).forEach(k=>{p[k]+=d[k]});
+    const tr=e=>p.tf+p.ta*Math.exp(-e/p.tt),va=e=>p.vf+p.va*Math.exp(-e/p.vt)+p.rise*Math.max(0,e-10);let best=0;ep.forEach(e=>{if(va(e)<va(best))best=e});
+    const stop=rm==='stop'&&best<E0,end=stop?best:E0;P.clear();P.path(ep.map(e=>[e,tr(e)]),'ln sb');P.path(ep.map(e=>[e,va(e)]),'ln so');
+    if(rm==='stop'){P.line(best,0,best,1,'ln thin sg dash');P.text(best,0.94,stop?'stop here, keep epoch '+best:'no rise: nothing to stop','', stop?'start':'end',stop?5:-5,0);if(stop)P.dot(best,va(best),5,'fgr pt')}
+    const te=tr(end),ve=va(end),rising=va(E0)-va(best)>0.03;
+    setR(root,'tr',fmt(te,2)+(stop?' (epoch '+best+')':''));setR(root,'va',fmt(ve,2)+(stop?' (epoch '+best+')':''));
+    setR(root,'vd',te>0.4?'underfitting: both high':stop?'overfitting, but the best epoch is kept':rising||ve-te>0.2?'overfitting: the gap grows':'good fit')}
+  draw()};
 })();

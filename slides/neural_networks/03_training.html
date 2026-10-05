@@ -115,10 +115,33 @@
 </section>
 
 <section class="slide">
-  <h2>A tool for optimizers: the exponential moving average</h2>
+  <h2>The exponential moving average (EMA), step by step</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:6px">
+      <p class="small">A running average that <b>forgets slowly</b>. Every day keep a fraction $\beta$ of the old average and add $1-\beta$ of today's value:</p>
+      <div class="bluebox" style="font-size:20px">$$v_t=\beta\,v_{t-1}+(1-\beta)\,x_t,\qquad v_0=0$$</div>
+      <p class="small step">By hand, $\beta=0.9$, temperatures $10,12,11$ °C:</p>
+      <div class="eq xs step">$$v_1=0.9\cdot0+0.1\cdot10=1.0$$$$v_2=0.9\cdot1.0+0.1\cdot12=2.1$$$$v_3=0.9\cdot2.1+0.1\cdot11=2.99$$</div>
+      <p class="small step">Far below 11 °C. Unrolled, $v_3=0.1\cdot11+0.09\cdot12+0.081\cdot10$: each day further back weighs $\beta$ times less, and the real days share only $1-\beta^3=0.271$ of the weight. The rest stays on $v_0=0$.</p>
+      <p class="small step"><b>Bias correction</b>: divide by that share, $\ \hat v_t=\dfrac{v_t}{1-\beta^t}$, so $\hat v_3=\dfrac{2.99}{0.271}=11.03$.</p>
+      <p class="small why step">The weights fade after about $\frac{1}{1-\beta}$ days ($\beta=0.9$: 10 days, $\beta=0.5$: 2). Next slide: the same tool on noisy gradients.</p>
+    </div>
+    <div class="widget" data-fig="ema-steps" data-auto="t=1 :: Day 1: v₁ = 0.1 · 10 = 1.0. The real day gets 10 % of the weight, the other 90 % stays on v₀ = 0 | t=3 :: Day 3: v₃ = 2.99 while it is 11 °C outside: days 1–3 carry only 0.271 of the weight | t=3;c=1 :: With the correction: divide by 0.271, v̂₃ = 11.03 | t=30;c=1 :: Day 30: v₀ keeps 4 % of the weight, raw (20.86) and corrected (21.78) nearly agree. Both lag behind the warming trend: they average about the last 10 days | t=30;b=0.5;c=0 :: β = 0.5: an average of about 2 days. It follows the data closely, and the start-up bias is gone after a few days">
+      <svg class="fig" aria-label="Thirty daily temperatures with their exponential moving average up to the chosen day, raw or bias-corrected, and below the weight that each past day gets in today's average"></svg>
+      <div class="ctl"><label for="es-t">day t</label><input type="range" id="es-t" data-k="t" min="1" max="30" step="1" value="3" style="max-width:200px"><span class="v" data-v="t">3</span>
+        <span class="seg" role="group" aria-label="Forgetting factor beta"><button type="button" data-b="0.5" aria-pressed="false">β 0.5</button><button type="button" data-b="0.9" aria-pressed="true">β 0.9</button></span>
+        <span class="seg" role="group" aria-label="Bias correction"><button type="button" data-c="0" aria-pressed="true">raw v</button><button type="button" data-c="1" aria-pressed="false">corrected v̂</button></span></div>
+      <div class="ro"><div class="m"><span>today xₜ</span><b data-r="x">–</b></div><div class="m"><span>raw vₜ</span><b data-r="v">–</b></div><div class="m"><span>weight on real days 1 − βᵗ</span><b data-r="s">–</b></div><div class="m"><span>corrected v̂ₜ</span><b data-r="vh">–</b></div></div>
+      <div class="legend"><span><i style="background:var(--muted)"></i>temperatures $x_t$</span><span><i style="background:var(--red)"></i>raw EMA $v_t$</span><span><i style="background:var(--blue)"></i>corrected $\hat v_t$</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>A tool for optimizers: the EMA of noisy gradients</h2>
   <div class="cols c46">
     <div class="stack" style="gap:8px">
-      <p class="small">Mini-batch gradients are <b>noisy</b>. Smooth them with a running average that forgets slowly:</p>
+      <p class="small">Mini-batch gradients are <b>noisy</b>. Smooth them with the EMA of the previous slide:</p>
       <div class="bluebox">$$v_t=\beta\,v_{t-1}+(1-\beta)\,g_t,\qquad v_0=0$$</div>
       <p class="small step">Unrolled: $\ v_t=(1-\beta)\big(g_t+\beta g_{t-1}+\beta^2g_{t-2}+\dots\big)$. Recent values weigh more; the weights $\beta^k$ fade after about $\frac{1}{1-\beta}$ steps ($\beta=0.9$ → 10 steps, $0.99$ → 100).</p>
       <p class="small step"><b>Bias at the start.</b> Because $v_0=0$, the first values are too small: $v_1=(1-\beta)g_1$ is only 10 % of $g_1$ for $\beta=0.9$. Dividing by $1-\beta^t$ fixes it:</p>
@@ -302,11 +325,21 @@ loss_fn = nn.CrossEntropyLoss()  <span class="c"># softmax inside</span></pre>
 
 <section class="slide">
   <h2>Overfitting vs underfitting in NN:</h2>
-  <p>In neural networks we should always verify that the model is generalizing well. It is quite easy to overfit your data: <b>plot the learning curves</b> (train and validation loss per epoch).</p>
-  <svg class="fig" data-fig="curves" style="max-height:255px" aria-label="Training and validation loss for underfitting, a good fit and overfitting"></svg>
-  <div class="cols">
-    <div class="stack"><p class="small"><b>If your model under-fits your data:</b></p><ul class="small"><li>Make your model deeper (or wider).</li><li>Try new architectures.</li><li>Train longer, tune the learning rate.</li></ul></div>
-    <div class="stack"><p class="small"><b>If your model overfits your data:</b></p><ul class="small"><li>Use more data (also data augmentation).</li><li>Simplify your architecture (depth or number of units).</li><li>Apply L1 and/or L2 regularization to the weights; apply dropout; early stopping. Combine many of the above.</li></ul></div>
+  <p class="small">In neural networks we should always verify that the model is generalizing well. It is quite easy to overfit your data: <b>plot the learning curves</b> (train and validation loss per epoch). Choose a model size, then a remedy (schematic shapes, not a real run):</p>
+  <div class="cols c64">
+    <div class="widget" data-fig="curves-play" data-auto="m=small :: Too small: both losses stay high (0.55 and 0.60): underfitting | m=small;fx=data :: More data does not help a model that is too small | m=big;fx=none :: Too big: the train loss falls to 0.02, the validation loss rises after epoch 14: overfitting | m=big;fx=data :: More data or augmentation: the validation loss ends at 0.24 instead of 0.65, the gap shrinks | m=big;fx=reg :: Weight decay or dropout: a similar effect, 0.25 at the end | m=big;fx=stop :: Early stopping keeps epoch 14, the lowest validation loss of the run (0.36) | m=right;fx=none :: The right size: both low (0.12 and 0.20), a small gap">
+      <svg class="fig" aria-label="Train and validation loss per epoch for the chosen model size and remedy"></svg>
+      <div class="ctl"><span class="seg" role="group" aria-label="Model size"><button type="button" data-m="small" aria-pressed="false">too small</button><button type="button" data-m="right" aria-pressed="false">right size</button><button type="button" data-m="big" aria-pressed="true">too big</button></span></div>
+      <div class="ctl"><span class="seg" role="group" aria-label="Remedy"><button type="button" data-fx="none" aria-pressed="true">no remedy</button><button type="button" data-fx="data">more data · augmentation</button><button type="button" data-fx="reg">weight decay · dropout</button><button type="button" data-fx="stop">early stopping</button></span></div>
+      <div class="ro"><div class="m"><span>train loss</span><b data-r="tr">–</b></div><div class="m"><span>validation loss</span><b data-r="va">–</b></div><div class="m" style="flex:1"><span>diagnosis</span><b data-r="vd">–</b></div></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small"><b>If your model under-fits your data</b> (both losses high):</p>
+      <ul class="small"><li>Make your model deeper (or wider).</li><li>Try new architectures.</li><li>Train longer, tune the learning rate.</li></ul>
+      <p class="small"><b>If your model overfits your data</b> (the gap grows):</p>
+      <ul class="small"><li>Use more data (also data augmentation).</li><li>Simplify your architecture (depth or number of units).</li><li>Apply L1 and/or L2 regularization to the weights; apply dropout; early stopping. Combine many of the above.</li></ul>
+      <p class="why">Try the remedies on "too small": more data does not cure underfitting, and regularization makes it worse.</p>
+    </div>
   </div>
 </section>
 
@@ -352,15 +385,34 @@ loss_fn = nn.CrossEntropyLoss()  <span class="c"># softmax inside</span></pre>
 </section>
 
 <section class="slide">
-  <h2>More regularization: data augmentation and early stopping</h2>
+  <h2>More regularization: data augmentation</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="aug-play" data-auto="op=flip :: A flip: still a T-shirt, the logo just moves to the other side | op=rotate :: A small rotation: a new random angle at every click | op=crop :: A random crop, resized back to 28 × 28 | op=colour :: New brightness and colours | op=random :: A random mix, as in training: every epoch sees a new version of every picture | s=seven;op=flip :: Flip the digit: it is not a 7 any more, so the label would be wrong | s=seven;op=rotate :: A small rotation keeps it a 7">
+      <svg class="fig" aria-label="A 28 by 28 picture after a random transformation, next to the original, with the label check and the last 8 versions"></svg>
+      <div class="ctl"><span class="seg" role="group" aria-label="Picture"><button type="button" data-s="shirt" aria-pressed="true">T-shirt</button><button type="button" data-s="boot" aria-pressed="false">boot</button><button type="button" data-s="seven" aria-pressed="false">digit 7</button></span></div>
+      <div class="ctl"><span class="seg" role="group" aria-label="Transformation"><button type="button" data-op="none" aria-pressed="true">original</button><button type="button" data-op="flip" aria-pressed="false">flip</button><button type="button" data-op="rotate" aria-pressed="false">rotate</button><button type="button" data-op="crop" aria-pressed="false">crop</button><button type="button" data-op="colour" aria-pressed="false">colour</button><button type="button" data-op="noise" aria-pressed="false">noise</button><button type="button" data-op="cutout" aria-pressed="false">cut-out</button><button type="button" data-op="random" aria-pressed="false">random mix</button></span></div>
+      <div class="ro"><div class="m" style="flex:1"><span>applied (click again for a new random version)</span><b data-r="ops" style="font-size:16px">–</b></div><div class="m"><span>label</span><b data-r="lab">–</b></div></div>
+    </div>
+    <div class="stack" style="gap:10px">
+      <p class="small">Random, <b>label-preserving</b> transformations of the training inputs, a <b>new random version every epoch</b>. The model rarely sees the same input twice: like having more data, and it learns that these changes do not matter.</p>
+      <ul class="small"><li><b>Images</b>: flips, crops, rotations, colour, noise, cut-out.</li><li><b>Sound</b>: background noise, speed, pitch.</li><li><b>Text</b>: synonyms, back-translation.</li><li><b>Tables, sensors</b>: a little noise on the numbers.</li></ul>
+      <p class="small warnbox">Only transformations that keep the label: a horizontal flip is fine for clothes, not for digits (a mirrored 7 is not a 7). Try it on the left.</p>
+      <p class="small">In PyTorch, on the <b>training</b> set only (validation and test stay as they are):<br><code>v2.Compose([v2.RandomHorizontalFlip(), v2.RandomRotation(15), v2.RandomResizedCrop(28, scale=(0.6, 1)), v2.ColorJitter(0.4, 0.4, 0.4)])</code></p>
+      <p class="small why">Boxes and masks in chapter 4.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>More regularization: early stopping</h2>
+  <svg class="fig" data-fig="curves" style="max-height:255px" aria-label="Training and validation loss for underfitting, a good fit and overfitting"></svg>
   <div class="cols">
     <div class="stack" style="gap:12px">
-      <p><b>Data augmentation.</b> Random, <b>label-preserving</b> transformations of the training inputs each epoch (flips, crops, rotations, colour jitter; noise for audio). The model rarely sees the same input twice: like having more data, and it builds in the invariances. Pictures in chapter 4.</p>
-      <p class="small warnbox">Only use transformations that don't change the label: a horizontal flip is fine for clothes, not for digits (a mirrored 7 is not a 7).</p>
+      <p><b>Early stopping.</b> Monitor the validation loss, keep the best checkpoint, stop after <code>patience</code> epochs without improvement. The green dashed line (right) marks where it would stop.</p>
+      <p class="small">Training time acts as a regularizer: the weights start small and grow as training goes on.</p>
     </div>
     <div class="stack" style="gap:12px">
-      <p><b>Early stopping.</b> Monitor the validation loss, keep the best checkpoint, stop after <code>patience</code> epochs without improvement. Training time acts as a regularizer: the weights start small and grow as training goes on.</p>
-      <p class="small">On the "Overfitting vs underfitting" slide, the green dashed line marks where early stopping would stop.</p>
+      <p class="small">In code: after each epoch, if the validation loss improved, save the model; if it has not improved for <code>patience</code> epochs (say 5), stop and load the saved model.</p>
       <p class="why">In practice: combine a few of them. Weight decay + augmentation + early stopping is a strong default; add dropout for large dense layers.</p>
     </div>
   </div>
@@ -535,7 +587,7 @@ loss_fn = nn.CrossEntropyLoss()  <span class="c"># softmax inside</span></pre>
 <script src="../assets/figures.js?v=20260930"></script>
 <script src="assets/nn-core.js?v=20260930"></script>
 <script src="assets/fig-nn-intro.js?v=20261005"></script>
-<script src="assets/fig-nn-training.js?v=20261004"></script>
+<script src="assets/fig-nn-training.js?v=20261005"></script>
 <script src="../assets/deck.js?v=20260930"></script>
 </body>
 </html>

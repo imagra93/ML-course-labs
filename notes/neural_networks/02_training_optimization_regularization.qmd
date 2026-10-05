@@ -409,7 +409,7 @@ print(f"limit (1-β)/(1+β)·σ² = {(1 - beta) / (1 + beta) * 0.81:.4f}")
   <div class="ctl"><label for="ema-b">β</label><input type="range" id="ema-b" data-k="b" min="0.5" max="0.98" step="0.01" value="0.9"><span class="v" data-v="b">0.90</span></div>
   <div class="ro"><div class="m"><span>averaging window</span><b data-r="win">–</b></div><div class="m"><span>raw v₁</span><b data-r="m1">–</b></div><div class="m"><span>corrected v̂₁</span><b data-r="c1">–</b></div></div>
   <div class="legend"><span><i style="background:var(--muted)"></i>gradients \(g_t\)</span><span><i style="background:var(--red)"></i>EMA \(v_t\)</span><span><i style="background:var(--blue)"></i>bias-corrected \(\hat v_t\)</span></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#7">slide 7</a> of the Training deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#8">slide 8</a> of the Training deck.</p>
 </div>
 ```
 
@@ -463,7 +463,7 @@ print(f"steps to shrink the error 1000x: GD ≈ {np.log(1e-3)/np.log((kap-1)/(ka
   <svg class="fig" aria-label="Gradient descent versus momentum on a narrow valley"></svg>
   <div class="ctl"><label for="mo-b">momentum β</label><input type="range" id="mo-b" data-k="b" min="0" max="0.95" step="0.05" value="0.9"><span class="v" data-v="b">0.90</span></div>
   <div class="ro"><div class="m"><span style="color:#7f7f7f">● no momentum · loss after 60 steps</span><b data-r="l0">–</b></div><div class="m"><span style="color:#c00000">● momentum · loss after 60 steps</span><b data-r="l1">–</b></div><div class="m"><span>max speed-up 1/(1−β)</span><b data-r="win">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#8">slide 8</a> of the Training deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#9">slide 9</a> of the Training deck.</p>
 </div>
 ```
 
@@ -482,7 +482,7 @@ $$
 ```{=html}
 <div class="widget"><svg class="fig" data-fig="rms-scale" aria-label="Gradient magnitudes of two parameters before and after dividing by their running RMS"></svg>
 <p class="why">Left: raw gradient sizes of two parameters, on a log scale, 50× apart. Right: after dividing by the running RMS both hover around 1, so one learning rate works for both.</p>
-<p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#9">slide 9</a> of the Training deck.</p></div>
+<p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#10">slide 10</a> of the Training deck.</p></div>
 ```
 
 ### 4.4 Adam = momentum + RMSProp + bias correction
@@ -549,7 +549,7 @@ print("first Adam step in PyTorch:", (w_.detach() - torch.tensor([1.0, -2.0, 3.0
     <div class="m"><span style="color:#70ad47">● RMSProp</span><b data-r="rms">–</b></div>
     <div class="m"><span style="color:#c00000">● Adam</span><b data-r="adam">–</b></div>
   </div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#11">slide 11</a> of the Training deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#12">slide 12</a> of the Training deck.</p>
 </div>
 ```
 
@@ -645,7 +645,7 @@ plt.tight_layout(); plt.show()
 
 ```{=html}
 <div class="widget"><svg class="fig" data-fig="sched" aria-label="Constant, step decay, warm-up plus cosine and reduce-on-plateau learning-rate schedules"></svg>
-<p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#13">slide 13</a> of the Training deck: constant, step decay, warm-up + cosine and reduce-on-plateau.</p></div>
+<p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#14">slide 14</a> of the Training deck: constant, step decay, warm-up + cosine and reduce-on-plateau.</p></div>
 ```
 
 **Where `sched.step()` goes.** After `opt.step()`: once per epoch for epoch-based schedules (`StepLR`, `CosineAnnealingLR` with `T_max=epochs`), once per mini-batch for step-based ones (`OneCycleLR`, warm-up counted in steps), and `ReduceLROnPlateau.step(val_loss)` after each validation.
@@ -669,7 +669,7 @@ loss_fn = nn.CrossEntropyLoss()  # softmax inside
 
 ```{=html}
 <div class="widget"><svg class="fig" data-fig="shapes-walk" style="max-height:210px" aria-label="Tensor shapes and parameter counts through Flatten, Linear, ReLU, Dropout, Linear and the loss"></svg>
-<p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#14">slide 14</a> of the Training deck.</p></div>
+<p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#15">slide 15</a> of the Training deck.</p></div>
 ```
 
 `model(xb).shape` and `sum(p.numel() for p in model.parameters())` are the two commands you will type most. A `Linear(n_in, n_out)` has $n_{\text{in}}n_{\text{out}}$ weights plus $n_{\text{out}}$ biases. Layers with parameters: `Linear`, `Conv2d`, `Embedding`, `BatchNorm`, `LSTM`; layers without: `ReLU`, `Dropout`, `Flatten`, `MaxPool2d`.
@@ -764,7 +764,7 @@ A network with 85,002 parameters trained on 500 images can memorise them. Always
 
 ```{=html}
 <div class="widget"><svg class="fig" data-fig="curves" style="max-height:255px" aria-label="Training and validation loss for underfitting, a good fit and overfitting"></svg>
-<p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#16">slide 16</a> of the Training deck. The green dashed line marks where early stopping would stop.</p></div>
+<p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#21">slide 21</a> of the Training deck. The green dashed line marks where early stopping would stop.</p></div>
 ```
 
 | Pattern | Diagnosis | What to do |
@@ -819,7 +819,7 @@ Every step first **shrinks** the weights by a constant factor $1-\alpha\lambda$ 
   <svg class="fig" style="max-height:360px" aria-label="Decision regions of a large network trained on 40 noisy points, for several strengths of weight decay"></svg>
   <div class="ctl"><label for="ol-l">weight decay λ</label><input type="range" id="ol-l" data-k="l" min="0" max="5" step="1" value="0"><span class="v" data-v="l">0</span></div>
   <div class="ro"><div class="m"><span>train accuracy</span><b data-r="tr">–</b></div><div class="m"><span>accuracy on new data</span><b data-r="te">–</b></div><div class="m"><span>size of the weights ‖w‖</span><b data-r="w">–</b></div><div class="m" style="flex:1"><span>diagnosis</span><b data-r="vd" style="font-size:18px">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#18">slide 18</a> of the Training deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#19">slide 19</a> of the Training deck.</p>
 </div>
 ```
 
@@ -976,7 +976,7 @@ $$
   <div class="ctl"><label for="do-p">dropout rate p</label><input type="range" id="do-p" data-k="p" min="0" max="0.8" step="0.05" value="0.3"><span class="v" data-v="p">0.30</span>
     <button type="button" data-k="new" style="border:1px solid var(--blue);background:#fff;color:var(--blue);font:700 15px var(--font);padding:5px 12px;cursor:pointer">new mini-batch</button></div>
   <div class="ctl"><span class="seg" role="group" aria-label="Mode"><button type="button" data-m="train" aria-pressed="true">training</button><button type="button" data-m="eval" aria-pressed="false">prediction</button></span><span class="small">units off: <b data-r="n">–</b></span></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#20">slide 20</a> of the Training deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#22">slide 22</a> of the Training deck.</p>
 </div>
 ```
 
@@ -1082,7 +1082,7 @@ Every unit $j$ has its own $\mu,\sigma^2$ and its own $\gamma_j,\beta_j$ (so 2 p
   <div class="ctl"><label for="bn-g">γ</label><input type="range" id="bn-g" data-k="g" min="0.2" max="3" step="0.1" value="1"><span class="v" data-v="g">1.0</span></div>
   <div class="ctl"><label for="bn-b">β</label><input type="range" id="bn-b" data-k="b" min="-4" max="8" step="0.1" value="0"><span class="v" data-v="b">0.0</span></div>
   <div class="ro"><div class="m"><span>before: mean, std</span><b><span data-r="m0">–</span>, <span data-r="s0">–</span></b></div><div class="m"><span>after: mean, std</span><b><span data-r="m1">–</span>, <span data-r="s1">–</span></b></div></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#21">slide 21</a> of the Training deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#23">slide 23</a> of the Training deck.</p>
 </div>
 ```
 
@@ -1277,7 +1277,7 @@ It is independent of the batch size and of the other examples, and identical in 
 ```{=html}
 <div class="widget"><svg class="fig" data-fig="norm-axes" aria-label="Two matrices of examples by features, highlighting a column for BatchNorm and a row for LayerNorm"></svg>
 <p class="why">BatchNorm: for each feature, mean and variance over the mini-batch (a column). LayerNorm: for each example, over its own features (a row). For images, BatchNorm2d normalises each channel over batch × height × width.</p>
-<p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#22">slide 22</a> of the Training deck.</p></div>
+<p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#24">slide 24</a> of the Training deck.</p></div>
 ```
 
 ```{python}
