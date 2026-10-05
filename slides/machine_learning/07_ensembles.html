@@ -395,16 +395,17 @@ predict:
 
 <section class="slide lab">
   <div class="labtag">LAB 6</div>
-  <h2>Gradient boosting and XGBoost</h2>
+  <h2>AdaBoost, gradient boosting and XGBoost</h2>
   <div class="cols c64">
     <div class="stack" style="gap:10px">
-      <p>Boosting by hand on a toy curve, then XGBoost on three real datasets.</p>
+      <p>Boosting by hand on two toy problems, then XGBoost on three real datasets.</p>
       <ol class="todo">
         <li>Gradient boosting from scratch: each tree fits the residuals of the previous ones.</li>
-        <li>XGBoost for regression (diabetes), binary (breast cancer) and multiclass (wine) problems.</li>
+        <li>AdaBoost from scratch, next to gradient boosting: re-weight the points or fit the residuals?</li>
+        <li>XGBoost for regression (diabetes), binary (breast cancer, against AdaBoost and gradient boosting) and multiclass (wine) problems.</li>
         <li>Cross-validation and a randomized hyperparameter search.</li>
         <li>Learning rate, number of trees and early stopping.</li>
-        <li>Feature importance.</li>
+        <li>Feature importance, then feature selection: drop the weakest feature while the CV score holds.</li>
       </ol>
       <p class="labline">Reference: <a href="https://xgboost.readthedocs.io/en/latest/index.html" target="_blank" rel="noopener">XGBoost documentation</a> · <a href="https://xgboost.readthedocs.io/en/latest/parameter.html" target="_blank" rel="noopener">Parameters</a> · <a href="https://xgboost.readthedocs.io/en/latest/python/python_intro.html" target="_blank" rel="noopener">Python package</a></p>
     </div>
@@ -412,7 +413,7 @@ predict:
       <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%206%20-%20XGBoost%20and%20Gradient%20Boosting.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
       <dl class="gloss">
         <dt>notebook</dt><dd><code>lab 6 - XGBoost and Gradient Boosting.ipynb</code></dd>
-        <dt>you need</dt><dd>gradient boosting and XGBoost (this chapter), cross-validation (chapter 01)</dd>
+        <dt>you need</dt><dd>AdaBoost, gradient boosting and XGBoost (this chapter), cross-validation (chapter 01)</dd>
         <dt>runs on</dt><dd>CPU; every cell runs in seconds</dd>
       </dl>
       <p class="small"><b>Next:</b> support vector machines (chapter 08), then Lab 5.</p>

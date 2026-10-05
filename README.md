@@ -118,7 +118,8 @@ Scikit-learn / NumPy. Small datasets: a laptop CPU is enough.
     impurity criteria, pruning, bagging, feature importance
   - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/machine_learning/lab%206%20-%20XGBoost%20and%20Gradient%20Boosting.ipynb)
     [Lab 6 · XGBoost and Gradient Boosting](notebooks/machine_learning/lab%206%20-%20XGBoost%20and%20Gradient%20Boosting.ipynb):
-    boosting theory, regularised objective, early stopping, tuning
+    gradient boosting and AdaBoost from scratch side by side, XGBoost, early stopping, tuning,
+    feature selection by importance with a cross-validation stopping rule
 - **Extra notes:** [Bagging, random forests and boosting](https://imagra93.github.io/ML-course-labs/notes/machine_learning/07_bagging_random_forest_boosting.html):
   bootstrap and OOB, random forests, AdaBoost, gradient boosting, XGBoost derivation, boosting in practice
 
@@ -156,7 +157,8 @@ order: follow the topics below.
 ## 01 · From logistic regression to neural networks
 
 - **Slides:** [From logistic regression to neural networks](https://imagra93.github.io/ML-course-labs/slides/neural_networks/01_neural_networks.html)
-- **Content:** one neuron is logistic regression, the XOR limit and the hidden layer, the multi-layer
+- **Content:** a review of linear and logistic regression (model, cost, gradient descent, the limits of
+  a straight line), one neuron is logistic regression, the XOR limit and the hidden layer, the multi-layer
   perceptron and its forward pass in matrix form, activations and their derivatives (sigmoid, tanh,
   ReLU, LeakyReLU, GELU), matching the output layer and the loss, softmax, losses from maximum
   likelihood, universal approximation, why the loss is no longer convex

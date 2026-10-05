@@ -41,7 +41,7 @@
 <section class="slide">
   <h2>The plan for the six chapters</h2>
   <div class="cards c3">
-    <div class="card"><h3>1 · Neurons and layers</h3><p>A neuron is a logistic regression. Stack them: a multi-layer perceptron. Why the non-linearity matters.</p></div>
+    <div class="card"><h3>1 · Neurons and layers</h3><p>A quick review of linear and logistic regression. A neuron is a logistic regression. Stack them: a multi-layer perceptron. Why the non-linearity matters.</p></div>
     <div class="card o"><h3>2 · Forward and backward</h3><p>How the prediction is computed, and how every weight gets its gradient (backpropagation), with real numbers.</p><p class="tiny" style="color:#385723"><b>Lab 7</b> · an MLP from scratch in NumPy</p></div>
     <div class="card g"><h3>3 · Training</h3><p>Mini-batches, optimizers (momentum, Adam), learning-rate schedules, dropout, BatchNorm, the layer zoo.</p><p class="tiny" style="color:#385723"><b>Labs 8, 9</b> · PyTorch MLP · multiclass images</p></div>
     <div class="card"><h3>4 · Images: CNNs</h3><p>Convolutions, pooling, famous architectures, transfer learning, then segmentation and object detection.</p><p class="tiny" style="color:#385723"><b>Labs 10, 12, 13</b> · CNN · fine-tuning a ResNet · YOLO (+ a multi-task demo)</p></div>
@@ -49,6 +49,116 @@
     <div class="card g"><h3>6 · Attention and transformers</h3><p>Every token looks at every other token. GPT, decoding text, and RAG.</p><p class="tiny" style="color:#385723"><b>Labs 14, 15</b> · text generation with GPT-2 · RAG</p></div>
   </div>
   <p class="why">Every chapter follows the same pattern: a picture, the formula behind it, a small example with numbers, and a lab (a green slide with an <b>Open in Colab</b> button) as soon as the theory it needs has been explained.</p>
+</section>
+
+<section class="slide">
+  <h2>Review · Linear regression: the model and the cost</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:10px">
+      <p>Neural networks are built from the two models of the ML part. A quick review, in the ML notation. Training set $\{(\bx^{(i)},y^{(i)})\}_{i=1}^m$, $y$ a real number.</p>
+      <p><b>Hypothesis</b>: a weighted sum of the features (with $x_0=1$),</p>
+      <div class="eq">$$h_{\bth}(\bx)=\theta_0+\theta_1x_1+\dots+\theta_nx_n=\bth^\top\bx$$</div>
+      <p class="step"><b>Cost</b>: half the mean squared error,</p>
+      <div class="eq step">$$J(\bth)=\frac{1}{2m}\sum_{i=1}^m\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)^2$$</div>
+      <p class="small step">With numbers: the points $(1,1)$, $(2,3)$, $(3,7)$ and the one-parameter model $h=\theta x$. For $\theta=2$ the predictions are $2$, $4$, $6$ and the errors $1$, $1$, $-1$, so $J=\frac{1+1+1}{2\cdot3}=0.5$.</p>
+    </div>
+    <div class="widget" data-fig="simple" data-auto="t=0.5 :: θ = 0.5: too flat. Big squares, J = 5.75. The slope J′ = −7 is negative: increase θ|t=3 :: θ = 3: too steep. J = 2.83, and J′ = +4.67 is positive: decrease θ|t=2 :: θ = 2: the bottom of the bowl. J = 0.5 and the slope J′ = 0">
+      <svg class="fig" aria-label="Three points with the line theta times x and its squared errors, and the cost J as a function of theta"></svg>
+      <div class="ctl"><label for="rv-t">Slope θ</label><input type="range" id="rv-t" data-k="t" min="0" max="3.5" step="0.05" value="1"><span class="v" data-v="t">1.00</span></div>
+      <div class="ro"><div class="m"><span>J(θ)</span><b data-r="j">–</b></div><div class="m"><span>slope J′(θ)</span><b data-r="g">–</b></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Review · Linear regression: minimizing the cost</h2>
+  <div class="cols">
+    <div class="stack" style="gap:8px">
+      <p><b>Gradient descent</b>: start anywhere and walk downhill. Repeat, for all $j$ at once:</p>
+      <div class="eq">$$\theta_j:=\theta_j-\alpha\,\frac{\partial J(\bth)}{\partial\theta_j}$$</div>
+      <p class="small">$\alpha$ is the <b>learning rate</b>: too small is slow, too big overshoots (right).</p>
+      <p class="step">The gradient, by the chain rule:</p>
+      <div class="eq s step">$$\frac{\partial J(\bth)}{\partial\theta_j}=\frac1m\sum_{i=1}^m\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)\,x_j^{(i)}$$</div>
+      <p class="why step">each example pushes $\theta_j$ by (its error) × (its input)</p>
+      <p class="small step">With numbers (the three points, $\alpha=0.1$): at $\theta=0.5$, $J'=\frac13\big[(0.5-1)\cdot1+(1-3)\cdot2+(1.5-7)\cdot3\big]=-7$, so $\theta:=0.5-0.1\cdot(-7)=1.2$.</p>
+      <p class="small step">$J$ is <b>convex</b> (a bowl): one minimum, and every start reaches it. Or solve $\nabla J=0$ in one go, the <b>normal equation</b> $\bth=(\bX^\top\bX)^{-1}\bX^\top\by$; here $\theta^*=\frac{\sum xy}{\sum x^2}=\frac{28}{14}=2$.</p>
+    </div>
+    <div class="widget" data-fig="gd1" data-auto="a=0.3 :: α = 0.3: small steps, converges smoothly|a=1 :: α = 1: lands on the minimum in one step (here J″ = 1)|a=1.7 :: α = 1.7: overshoots, oscillates, still converges|a=2.1 :: α = 2.1: each step is worse than the last, it diverges">
+      <svg class="fig" aria-label="Gradient descent steps on a parabola"></svg>
+      <div class="ctl"><label for="rv-a">Learning rate α</label><input type="range" id="rv-a" data-k="a" min="0.05" max="2.3" step="0.05" value="0.3"><span class="v" data-v="a">0.30</span></div>
+      <div class="ro"><div class="m"><span>error factor 1 − α</span><b data-r="f">–</b></div><div class="m" style="flex:1"><span>behaviour</span><b data-r="b">–</b></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Review · Linear regression: a straight line cannot bend</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="rv-curve" data-auto="f=1 :: A straight line: too low at both ends, too high in the middle, and a negative distance at 20 km/h. J = 33.8|f=2 :: Add the column x² and fit again: the errors lose their pattern and J falls to 5.9, about the size of the noise">
+      <svg class="fig" aria-label="Stopping distance of 12 cars against their speed, fitted with a straight line or with a parabola, with the errors as dotted segments"></svg>
+      <div class="ctl"><span class="seg" role="group" aria-label="Features of the model"><button type="button" data-f="1" aria-pressed="true">features: x</button><button type="button" data-f="2" aria-pressed="false">features: x, x²</button></span></div>
+      <div class="ro"><div class="m" style="flex:1"><span>fitted model</span><b data-r="h">–</b></div><div class="m"><span>J(θ)</span><b data-r="j">–</b></div></div>
+    </div>
+    <div class="stack" style="gap:10px">
+      <p class="small">Stopping distance of a car against its speed (simulated: 1 s of reaction, plus a braking distance that grows with speed²).</p>
+      <p>$h_{\bth}$ is <b>linear in $\bx$</b>: a straight line (a plane, with more features). The errors follow a <b>pattern</b>: the model is too simple, it underfits.</p>
+      <p class="step">The ML fix: <b>engineer a feature</b>. Add the column $x^2$, so $h=\theta_0+\theta_1x+\theta_2x^2$. Still linear in $\bth$: same cost, same gradient descent (Lab 2).</p>
+      <div class="warnbox step"><p class="small">Here physics told us which column to add. Usually nobody does: with hundreds of inputs, which products, powers or logs? <b>Guessing the features</b> is the real limit.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Review · Logistic regression: the model</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:10px">
+      <p>Classification, $y\in\{0,1\}$. A line $\bth^\top\bx$ can give $-0.3$ or $1.4$: not a probability. <b>Squash it</b> with the sigmoid $g(z)=\frac{1}{1+e^{-z}}$:</p>
+      <div class="eq">$$h_{\bth}(\bx)=g(\bth^\top\bx)=\frac{1}{1+e^{-\bth^\top\bx}}=P(y=1\mid\bx;\bth)$$</div>
+      <p class="step"><b>Decision</b>: predict 1 when $h_{\bth}(\bx)\ge0.5$. Since $g(0)=0.5$ and $g$ is increasing,</p>
+      <div class="eq step">$$h_{\bth}(\bx)\ge0.5\iff\bth^\top\bx\ge0$$</div>
+      <p class="step">The <b>decision boundary</b> $\bth^\top\bx=0$ is a straight line (a hyperplane): logistic regression is a <b>linear classifier</b>.</p>
+      <p class="small step">With numbers: $\bth=(-3,1,1)$, so the boundary is the line $x_1+x_2=3$. For $\bx=(2,\,1.5)$: $z=-3+2+1.5=0.5$ and $h=g(0.5)=0.62$, class 1.</p>
+    </div>
+    <div class="widget" data-fig="boundary" data-auto="t=0.5 :: Threshold 0.5: the boundary is the line θᵀx = 0|t=0.9 :: Threshold 0.9: a parallel line, fewer points predicted positive|t=0.1 :: Threshold 0.1: the line moves the other way, more points are positive (191 of 300)">
+      <svg class="fig" aria-label="Two classes in the plane with the logistic regression decision boundary"></svg>
+      <div class="ctl"><label for="rv-bt">Threshold</label><input type="range" id="rv-bt" data-k="t" min="0.02" max="0.98" step="0.01" value="0.5"><span class="v" data-v="t">0.50</span></div>
+      <div class="ro"><div class="m"><span>fitted</span><b data-r="th" style="font-size:17px">–</b></div><div class="m"><span>predicted positive</span><b data-r="n">–</b></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Review · Logistic regression: the cost and its minimum</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:8px">
+      <p><b>Cost</b>: the binary cross-entropy (log loss), averaged over the examples:</p>
+      <div class="eq s">$$J(\bth)=\frac1m\sum_{i=1}^m\Big(-y^{(i)}\log h_{\bth}(\bx^{(i)})-(1-y^{(i)})\log\big(1-h_{\bth}(\bx^{(i)})\big)\Big)$$</div>
+      <p class="small step">With numbers, an example with $y=1$: $h=0.9$ costs $-\log0.9=0.105$, $h=0.1$ costs $-\log0.1=2.303$, 22 times more. Confident mistakes are expensive.</p>
+      <p class="small step">Why not the squared error? With the sigmoid inside it is <b>not convex</b>: flat plateaus with tiny gradients (red, bottom right). The cross-entropy is one smooth bowl.</p>
+      <p class="step"><b>Gradient</b>: the same shape as for linear regression, only $h$ changed:</p>
+      <div class="eq s step">$$\frac{\partial J(\bth)}{\partial\theta_j}=\frac1m\sum_{i=1}^m\big(h_{\bth}(\bx^{(i)})-y^{(i)}\big)\,x_j^{(i)}$$</div>
+      <p class="small step"><b>No closed form</b> ($\bth$ sits inside the sigmoid): iterate, with gradient descent (or Newton, L-BFGS in scikit-learn).</p>
+    </div>
+    <div class="stack">
+      <svg class="fig" data-fig="logloss" style="max-height:250px" aria-label="Binary cross-entropy loss for y equals 1 and y equals 0"></svg>
+      <div><svg class="fig" data-fig="ce-mse" style="max-height:172px" aria-label="Cross-entropy is convex while MSE with a sigmoid has a flat plateau"></svg>
+      <div class="legend"><span><i style="background:var(--blue)"></i>cross-entropy: one smooth bowl</span><span><i style="background:var(--red)"></i>MSE with a sigmoid: a flat plateau (tiny gradients)</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Review · Logistic regression: a straight boundary</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:10px">
+      <p>Class 1 (blue) lives inside a circle (dashed). Logistic regression on $(x_1,x_2)$, trained to the minimum of the cross-entropy:</p>
+      <div class="ro"><div class="m"><span>h(x) on the 150 points</span><b data-r="hr">–</b></div><div class="m"><span>right answers</span><b data-r="acc">–</b></div><div class="m"><span>orange points</span><b data-r="base">–</b></div></div>
+      <p class="step">$h$ never reaches 0.5, so the model answers "orange" for everybody: right on the 93 orange points, wrong on every blue one. Its boundary $\bth^\top\bx=0$ (black) does not even cross the data.</p>
+      <p class="step small">No straight line does much better: the best of all lines, found by brute force, gets 94 of 150 right. Every half-plane that holds the blue disc also holds more orange points than blue ones.</p>
+      <div class="idea step">Both models compute the same <b>weighted sum</b> $z=\bth^\top\bx$, followed by nothing (linear) or by a sigmoid (logistic). This chapter keeps that unit and <b>stacks</b> it, so that the network learns its own features instead of us guessing $x_1^2,x_2^2$ (slides 16 and 17).</div>
+    </div>
+    <svg class="fig" data-fig="rv-circle" aria-label="Circle data: blue points inside a dashed circle, orange outside, shaded by the probability of the best logistic regression, whose straight boundary lies outside the data"></svg>
+  </div>
 </section>
 
 <section class="slide">
@@ -856,7 +966,9 @@ probs = logits.softmax(dim=1)     <span class="c"># to read answers</span></pre>
 </div></div>
 <script src="../assets/figures.js?v=20260930"></script>
 <script src="assets/nn-core.js?v=20260930"></script>
-<script src="assets/fig-nn-intro.js?v=20261004"></script>
+<script src="../machine_learning/assets/fig-linear.js?v=20261005"></script>
+<script src="../machine_learning/assets/fig-logistic.js?v=20261005"></script>
+<script src="assets/fig-nn-intro.js?v=20261005"></script>
 <script src="../assets/deck.js?v=20260930"></script>
 </body>
 </html>

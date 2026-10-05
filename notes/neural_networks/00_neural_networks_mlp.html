@@ -325,7 +325,7 @@ window.Quarto = {
 <h2 class="anchored" data-anchor-id="why-neural-the-biological-analogy">2. Why “neural”? The biological analogy</h2>
 <p>The brain is made of a huge number of small and (individually) simple <strong>neurons</strong>. Each one collects electrical signals from other neurons through its dendrites and “fires” along its axon when the total is strong enough. An artificial neural network is made of many small and simple <strong>units</strong>: each one computes a <strong>weighted sum</strong> of its inputs and applies a <strong>non-linear function</strong> to it.</p>
 <p>The power does not come from any single unit but from <strong>connecting many of them in layers</strong>. The analogy with biology stops there: what we actually train is a big differentiable function, with the same tools as in the ML part of the course, a loss and gradient descent.</p>
-<div class="widget"><svg class="fig" data-fig="bio-neuron" aria-label="A biological neuron with dendrites, cell body and axon, next to an artificial neuron with inputs, weights, a sum and an activation"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#4">slide 4</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="bio-neuron" aria-label="A biological neuron with dendrites, cell body and axon, next to an artificial neuron with inputs, weights, a sum and an activation"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#10">slide 10</a> of the Neural Networks deck.</p></div>
 </section>
 <section id="problem-statement" class="level2">
 <h2 class="anchored" data-anchor-id="problem-statement">3. Problem statement</h2>
@@ -350,7 +350,7 @@ h(\mathbf{x}) = g^{[L]}\Big(\cdots g^{[2]}\big(g^{[1]}(\mathbf{x}\mathbf{W}^{[1]
 \hat y = w_1x_1+\dots+w_nx_n+b = \mathbf{w}^\top\mathbf{x}+b .
 \]</span></p>
 <p>New names for old things: the <strong>weights</strong> <span class="math inline">\(\mathbf{w}\)</span> are the <span class="math inline">\(\theta_1,\dots,\theta_n\)</span> of the ML notes and the <strong>bias</strong> <span class="math inline">\(b\)</span> is <span class="math inline">\(\theta_0\)</span>. Trained by minimising the mean squared error with gradient descent, it is exactly the linear regression of <a href="../machine_learning/01_linear_regression.html">ML note 01</a>. Every neural network is built from this unit plus <strong>one extra ingredient</strong>: a non-linear <strong>activation</strong> applied to <span class="math inline">\(z = \mathbf{w}^\top\mathbf{x}+b\)</span>.</p>
-<div class="widget"><svg class="fig" data-fig="lin-neuron" aria-label="A single neuron: inputs times weights, a sum plus bias, and no activation"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#6">slide 6</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="lin-neuron" aria-label="A single neuron: inputs times weights, a sum plus bias, and no activation"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#12">slide 12</a> of the Neural Networks deck.</p></div>
 </section>
 <section id="with-a-sigmoid-logistic-regression-is-a-neural-network" class="level3">
 <h3 class="anchored" data-anchor-id="with-a-sigmoid-logistic-regression-is-a-neural-network">4.2 With a sigmoid: logistic regression is a neural network</h3>
@@ -379,7 +379,7 @@ a = g(z), \qquad z = \mathbf{x}^\top\mathbf{w} + b = \sum_{j=1}^n w_jx_j + b .
 <li><strong>Log-odds.</strong> Solving <span class="math inline">\(\hat y = \sigma(z)\)</span> for <span class="math inline">\(z\)</span>: <span class="math inline">\(\hat y(1+e^{-z}) = 1 \Rightarrow e^{-z} = (1-\hat y)/\hat y \Rightarrow z = \log\frac{\hat y}{1-\hat y}\)</span>. The pre-activation <span class="math inline">\(z\)</span> of a sigmoid unit is the <strong>log-odds</strong> (the <em>logit</em>) of the positive class.</li>
 </ul>
 <p><strong>Geometry.</strong> <span class="math inline">\(\hat y &gt; \frac12 \iff z &gt; 0\)</span>, so the decision boundary <span class="math inline">\(\mathbf{x}^\top\mathbf{w} + b = 0\)</span> is a hyperplane (a line in 2-D) with normal vector <span class="math inline">\(\mathbf{w}\)</span>, and <span class="math inline">\(z/\lVert\mathbf{w}\rVert\)</span> is the signed distance of <span class="math inline">\(\mathbf{x}\)</span> to it. Positive weights “vote yes”, negative ones “vote no”, and the bias sets the threshold.</p>
-<div class="widget"><svg class="fig" data-fig="neuron" aria-label="A single neuron: inputs, weights, sum, activation and output"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#7">slide 7</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="neuron" aria-label="A single neuron: inputs, weights, sum, activation and output"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#13">slide 13</a> of the Neural Networks deck.</p></div>
 </section>
 <section id="one-neuron-with-numbers" class="level3">
 <h3 class="anchored" data-anchor-id="one-neuron-with-numbers">4.3 One neuron, with numbers</h3>
@@ -401,7 +401,7 @@ e^{-1.7} &amp;= 0.1827 \\
 <div class="widget" data-fig="neuron-num" data-auto="s=1 :: multiply: 2·0.4 = 0.8, (−1)·(−0.3) = 0.3, 0.5·1.0 = 0.5 | s=2 :: add: 0.8 + 0.3 + 0.5 + 0.1 (bias) = 1.7 | s=3 :: activate: σ(1.7) = 1 / (1 + e^−1.7) = 0.846">
       <svg class="fig" aria-label="A neuron with three inputs computing its output step by step"></svg>
       <div class="ctl"><label for="nn-s">step</label><input type="range" id="nn-s" data-k="s" min="0" max="3" step="1" value="0"><span class="v" data-v="s"></span></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#8">slide 8</a> of the Neural Networks deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#14">slide 14</a> of the Neural Networks deck.</p>
 </div>
 <div id="79a2520b" class="cell" data-execution_count="2">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>sigmoid <span class="op">=</span> <span class="kw">lambda</span> z: <span class="dv">1</span> <span class="op">/</span> (<span class="dv">1</span> <span class="op">+</span> np.exp(<span class="op">-</span>z))</span>
@@ -437,7 +437,7 @@ z_k = \mathbf{w}_k^\top\mathbf{x} + b_k, \qquad k = 1,\dots,K,
 \end{aligned}
 \]</span></p>
 <p>So the border between two classes is the hyperplane <span class="math inline">\((\mathbf{w}_k-\mathbf{w}_j)^\top\mathbf{x} + (b_k-b_j) = 0\)</span>, and the region where class <span class="math inline">\(k\)</span> wins is an intersection of <span class="math inline">\(K-1\)</span> half-spaces: a convex polygon with straight sides. <strong>One layer, however wide, cannot draw curved borders.</strong></p>
-<div class="widget"><svg class="fig" data-fig="softmax-layer" aria-label="Three inputs fully connected to three neurons whose scores go through a softmax into three probabilities"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#37">slide 37</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="softmax-layer" aria-label="Three inputs fully connected to three neurons whose scores go through a softmax into three probabilities"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#43">slide 43</a> of the Neural Networks deck.</p></div>
 </section>
 <section id="the-limit-of-linear-models-xor" class="level2">
 <h2 class="anchored" data-anchor-id="the-limit-of-linear-models-xor">6. The limit of linear models: XOR</h2>
@@ -491,7 +491,7 @@ z_k = \mathbf{w}_k^\top\mathbf{x} + b_k, \qquad k = 1,\dots,K,
 <p><strong>Claim.</strong> No linear classifier <span class="math inline">\(\hat{y} = \mathbb{1}[w_1x_1 + w_2x_2 + b &gt; 0]\)</span> gets all four right.</p>
 <p><strong>Proof.</strong> The two positive points need <span class="math inline">\(b + w_1 + w_2 &gt; 0\)</span> and <span class="math inline">\(b - w_1 - w_2 &gt; 0\)</span>. Adding them gives <span class="math inline">\(2b &gt; 0\)</span>. The two negative points need <span class="math inline">\(b + w_1 - w_2 \le 0\)</span> and <span class="math inline">\(b - w_1 + w_2 \le 0\)</span>. Adding them gives <span class="math inline">\(2b \le 0\)</span>. Contradiction. <span class="math inline">\(\blacksquare\)</span></p>
 <p>XOR is the simplest problem where a single neuron fails. Logistic regression on XOR-like data (a cloud of points labelled by the sign of <span class="math inline">\(x_1x_2\)</span>) therefore stays near 50 % accuracy, however long it trains. There are two ways out: <strong>invent new features</strong> by hand (section 7), or <strong>let the network learn them</strong> (section 8).</p>
-<div class="widget"><svg class="fig" data-fig="xor" aria-label="XOR points that no line separates, and two lines that do"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#9">slide 9</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="xor" aria-label="XOR points that no line separates, and two lines that do"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#15">slide 15</a> of the Neural Networks deck.</p></div>
 <div id="abe3d2a4" class="cell" data-execution_count="3">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.linear_model <span class="im">import</span> LogisticRegression</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>m <span class="op">=</span> <span class="dv">1000</span></span>
@@ -559,7 +559,7 @@ z_k = \mathbf{w}_k^\top\mathbf{x} + b_k, \qquad k = 1,\dots,K,
 </tr>
 </tbody>
 </table>
-<div class="widget"><svg class="fig" data-fig="feat-map" aria-label="Circle data that no line separates in x1, x2 becomes separable by a line in the squared features"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#10">slide 10</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="feat-map" aria-label="Circle data that no line separates in x1, x2 becomes separable by a line in the squared features"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#16">slide 16</a> of the Neural Networks deck.</p></div>
 <div id="217f00ee" class="cell" data-execution_count="4">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>Xc <span class="op">=</span> rng.uniform(<span class="op">-</span><span class="dv">1</span>, <span class="dv">1</span>, size<span class="op">=</span>(<span class="dv">600</span>, <span class="dv">2</span>))<span class="op">;</span> yc <span class="op">=</span> (Xc[:, <span class="dv">0</span>]<span class="op">**</span><span class="dv">2</span> <span class="op">+</span> Xc[:, <span class="dv">1</span>]<span class="op">**</span><span class="dv">2</span> <span class="op">&lt;</span> <span class="fl">0.42</span>).astype(<span class="bu">int</span>)   <span class="co"># r^2 = 0.42, as on the slide</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>acc_raw <span class="op">=</span> LogisticRegression().fit(Xc, yc).score(Xc, yc)</span>
@@ -645,7 +645,7 @@ XOR cloud, features (x1, x2, x1x2): accuracy 0.991</code></pre>
 <div class="widget" data-fig="xor-net" data-auto="s=1 :: input (0, 0): nobody fires, ŷ = 0 | s=2 :: input (0, 1): OR fires, AND does not, ŷ = 1 | s=3 :: input (1, 0): the same, ŷ = 1 | s=4 :: input (1, 1): both fire and AND cancels OR, ŷ = 0">
       <svg class="fig" aria-label="A 2-2-1 network of step units with hand-chosen weights, next to the XOR truth table filled in row by row"></svg>
       <div class="ctl"><label for="xn-s">input row</label><input type="range" id="xn-s" data-k="s" min="0" max="4" step="1" value="0"><span class="v" data-v="s"></span></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#11">slide 11</a> of the Neural Networks deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#17">slide 17</a> of the Neural Networks deck.</p>
 </div>
 <p><strong>The same idea with ReLU units, for the centred XOR</strong> of section 6. With <span class="math inline">\(\mathrm{ReLU}(z) = \max(0,z)\)</span> take</p>
 <p><span class="math display">\[
@@ -684,7 +684,7 @@ a_j = \sigma\big(\mathbf{W}^{[1]\top}_{:,j}\mathbf{x} + b^{[1]}_j\big) = \sigma\
 <li>Parameters: <span class="math inline">\(3\cdot4 + 4 = 16\)</span> in layer 1 (12 weights, 4 biases) and <span class="math inline">\(4\cdot1 + 1 = 5\)</span> in layer 2, <strong>21</strong> in total.</li>
 <li>“Fully connected” or “dense”: every unit sees every unit of the previous layer.</li>
 </ul>
-<div class="widget"><svg class="fig" data-fig="mlp" aria-label="A 3-4-1 multi-layer perceptron"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#12">slide 12</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="mlp" aria-label="A 3-4-1 multi-layer perceptron"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#18">slide 18</a> of the Neural Networks deck.</p></div>
 </section>
 <section id="going-deeper-features-of-features" class="level2">
 <h2 class="anchored" data-anchor-id="going-deeper-features-of-features">10. Going deeper: features of features</h2>
@@ -695,7 +695,7 @@ a_j = \sigma\big(\mathbf{W}^{[1]\top}_{:,j}\mathbf{x} + b^{[1]}_j\big) = \sigma\
 \hat y = \sigma(\mathbf{a}^{[2]}\mathbf{W}^{[3]}+b^{[3]}).
 \]</span></p>
 <p>The figure shows such a network trained on the circle data; each heat map is one unit’s value over the whole plane. Layer 1 draws <strong>lines</strong> (soft walls), layer 2 combines lines into <strong>curved regions</strong>, and the output combines regions into a closed decision region. More layers give more complex shapes with fewer units. On images the same happens with pixels → edges → textures → parts → objects (<a href="03_cnn_transfer_multitask.html">NN note 03</a>). That is the <strong>deep</strong> in deep learning.</p>
-<div class="widget"><svg class="fig" data-fig="deep-feats" style="max-height:300px" aria-label="The four units of layer 1 draw soft lines, the four units of layer 2 combine them into curved regions, and the output is a closed region"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#13">slide 13</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="deep-feats" style="max-height:300px" aria-label="The four units of layer 1 draw soft lines, the four units of layer 2 combine them into curved regions, and the output is a closed region"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#19">slide 19</a> of the Neural Networks deck.</p></div>
 </section>
 <section id="the-neural-network-family-of-this-course" class="level2">
 <h2 class="anchored" data-anchor-id="the-neural-network-family-of-this-course">11. The neural-network family of this course</h2>
@@ -736,7 +736,7 @@ a_j = \sigma\big(\mathbf{W}^{[1]\top}_{:,j}\mathbf{x} + b^{[1]}_j\big) = \sigma\
 </tr>
 </tbody>
 </table>
-<div class="widget"><svg class="fig" data-fig="nn-zoo" style="max-height:290px" aria-label="Four architectures side by side: a fully connected MLP, a CNN sliding a filter over an image, an RNN passing a state along a sequence, and a transformer connecting every pair of tokens"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#14">slide 14</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="nn-zoo" style="max-height:290px" aria-label="Four architectures side by side: a fully connected MLP, a CNN sliding a filter over an image, an RNN passing a state along a sequence, and a transformer connecting every pair of tokens"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#20">slide 20</a> of the Neural Networks deck.</p></div>
 </section>
 <section id="the-forward-pass-with-numbers" class="level2">
 <h2 class="anchored" data-anchor-id="the-forward-pass-with-numbers">12. The forward pass, with numbers</h2>
@@ -776,7 +776,7 @@ J &amp;= -\log\hat y = -\log 0.633 = 0.458 \\
         <div data-i="4"><p class="small">\(\hat y=\sigma(0.543)=\mathbf{0.633}\): the network says "63 % chance of class 1".</p></div>
         <div data-i="5"><p class="small">\(L=-\log0.633=\mathbf{0.458}\). Not terrible, not great. Chapter 2 computes how to change each of the 9 parameters to lower it.</p></div>
       </div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#15">slide 15</a> of the Neural Networks deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#21">slide 21</a> of the Neural Networks deck.</p>
 </div>
 <div id="72028d9a" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>x_t, y_t <span class="op">=</span> np.array([[<span class="fl">1.0</span>, <span class="fl">2.0</span>]]), <span class="fl">1.0</span></span>
@@ -810,7 +810,7 @@ P = \sum_{l=1}^L (n_{l-1}n_l + n_l) = \sum_{l=1}^L (n_{l-1}+1)\,n_l .
 \]</span></p>
 <p>Example: a 784 → 128 → 10 network (the Fashion-MNIST lab) has <span class="math inline">\(785\cdot128 + 129\cdot10 = 100{,}480 + 1{,}290 = 101{,}770\)</span> parameters.</p>
 <p>The network is just a composed function <span class="math inline">\(h_{\mathbf{w}}(\mathbf{x}) = g^{[L]}\big(\cdots g^{[1]}(\mathbf{x}\mathbf{W}^{[1]} + \mathbf{b}^{[1]})\cdots\big)\)</span>.</p>
-<div class="widget"><svg class="fig" data-fig="shapes" aria-label="Block diagram of X times W plus b equals Z with the matrix shapes"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#16">slide 16</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="shapes" aria-label="Block diagram of X times W plus b equals Z with the matrix shapes"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#22">slide 22</a> of the Neural Networks deck.</p></div>
 <div id="b8b95eba" class="cell" data-execution_count="7">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> init_params(sizes, rng):</span>
 <span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""sizes = [n0, n1, ..., nL]; random weights with variance 2/n_in (NN note 01), zero biases."""</span></span>
@@ -921,7 +921,7 @@ lin(x) equals x @ weight.T + bias: True</code></pre>
       <div class="ctl"><span class="seg" role="group" aria-label="Activation"><button type="button" data-a="sigmoid" aria-pressed="true">Sigmoid</button><button type="button" data-a="tanh" aria-pressed="false">Tanh</button><button type="button" data-a="relu" aria-pressed="false">ReLU</button><button type="button" data-a="leaky" aria-pressed="false">LeakyReLU</button><button type="button" data-a="gelu" aria-pressed="false">GELU</button><button type="button" data-a="linear" aria-pressed="false">Linear</button></span></div>
       <div class="legend"><span><i style="background:var(--blue)"></i>g(z)</span><span><i style="background:var(--red)"></i>derivative g′(z)</span></div>
       <div class="ro"><div class="m" style="flex:1"><span>derivative</span><b data-r="d" style="font-size:18px">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#17">slide 17</a> of the Neural Networks deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#23">slide 23</a> of the Neural Networks deck.</p>
 </div>
 <p><strong>Derivative of the sigmoid</strong>, <span class="math inline">\(\sigma(z) = (1+e^{-z})^{-1}\)</span>:</p>
 <p><span class="math display">\[
@@ -950,7 +950,7 @@ lin(x) equals x @ weight.T + bias: True</code></pre>
 <p>with maximum <span class="math inline">\(1\)</span> at <span class="math inline">\(z = 0\)</span>. <em>Proof that <span class="math inline">\(\tanh(z) = 2\sigma(2z) - 1\)</span>:</em> <span class="math inline">\(2\sigma(2z) - 1 = \frac{2}{1+e^{-2z}} - 1 = \frac{1-e^{-2z}}{1+e^{-2z}}\)</span>; multiply numerator and denominator by <span class="math inline">\(e^z\)</span> to get <span class="math inline">\(\frac{e^z - e^{-z}}{e^z + e^{-z}}\)</span>. So tanh is a sigmoid stretched to <span class="math inline">\((-1,1)\)</span> and centred at 0.</p>
 <p><strong>ReLU</strong>, <span class="math inline">\(\max(0,z)\)</span>: a line of slope 0, then a line of slope 1, so <span class="math inline">\(\mathrm{ReLU}'(z) = 1\)</span> for <span class="math inline">\(z&gt;0\)</span> and <span class="math inline">\(0\)</span> for <span class="math inline">\(z&lt;0\)</span>. It is not differentiable at <span class="math inline">\(z = 0\)</span>; libraries use a sub-derivative there (PyTorch uses 0). It never matters in practice, because an exact 0 almost never happens. <strong>Leaky ReLU</strong> has slope <span class="math inline">\(\beta\)</span> (0.01–0.2) instead of 0 for <span class="math inline">\(z&lt;0\)</span>. <strong>GELU</strong> by the product rule: <span class="math inline">\(\frac{d}{dz}\big[z\Phi(z)\big] = \Phi(z) + z\varphi(z)\)</span>, with <span class="math inline">\(\varphi = \Phi'\)</span> the standard normal density.</p>
 <p><strong>Two things to remember.</strong> (1) The derivatives can be written with the <strong>output</strong> <span class="math inline">\(a = g(z)\)</span>: <span class="math inline">\(a(1-a)\)</span> for the sigmoid, <span class="math inline">\(1-a^2\)</span> for tanh, <span class="math inline">\(\mathbb{1}[a&gt;0]\)</span> for ReLU. Backpropagation reuses the <span class="math inline">\(a\)</span> it stored in the forward pass. (2) <span class="math inline">\(\sigma'\le\frac14\)</span> always <strong>shrinks</strong> the gradient, while ReLU lets it through unchanged for <span class="math inline">\(z &gt; 0\)</span>.</p>
-<div class="widget"><svg class="fig" data-fig="act-deriv" style="max-height:215px" aria-label="Sigmoid, tanh and ReLU with their derivatives"></svg><div class="legend" style="justify-content:center"><span><i style="background:var(--blue)"></i>function g(z)</span><span><i style="background:var(--red)"></i>derivative g′(z)</span></div><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#25">slide 25</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="act-deriv" style="max-height:215px" aria-label="Sigmoid, tanh and ReLU with their derivatives"></svg><div class="legend" style="justify-content:center"><span><i style="background:var(--blue)"></i>function g(z)</span><span><i style="background:var(--red)"></i>derivative g′(z)</span></div><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#31">slide 31</a> of the Neural Networks deck.</p></div>
 <p><strong>Saturation.</strong> Where the curve is flat (<span class="math inline">\(|z|\)</span> large for sigmoid/tanh), <span class="math inline">\(g'(z)\approx0\)</span>. In backpropagation every layer multiplies the gradient by <span class="math inline">\(g'\)</span> (<a href="01_backpropagation.html">NN note 01</a>), so flat regions stop learning. ReLU’s derivative is exactly 1 for <span class="math inline">\(z&gt;0\)</span>.</p>
 <div id="52ae9008" class="cell" data-execution_count="9">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.stats <span class="im">import</span> norm</span>
@@ -1029,11 +1029,11 @@ two linear layers == one layer: True</code></pre>
       <div class="ctl"><label for="pg-l">hidden layers</label><input type="range" id="pg-l" data-k="l" min="1" max="3" step="1" value="1"><span class="v" data-v="l">1</span></div>
       <div class="ctl"><span class="seg" role="group" aria-label="Activation"><button type="button" data-a="tanh" aria-pressed="true">Tanh</button><button type="button" data-a="relu" aria-pressed="false">ReLU</button><button type="button" data-a="linear" aria-pressed="false">Linear</button></span></div>
       <div class="ro"><div class="m"><span>model</span><b data-r="what" style="font-size:18px">–</b></div><div class="m"><span>parameters</span><b data-r="np">–</b></div><div class="m"><span>train accuracy</span><b data-r="acc">–</b></div><div class="m"><span>loss</span><b data-r="loss">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#28">slide 28</a> of the Neural Networks deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#34">slide 34</a> of the Neural Networks deck.</p>
 </div>
 <p>We can learn non-linear functions <strong>without feature engineering</strong>.</p>
 <p><strong>What did the hidden units learn?</strong> The figure below shows the same kind of network (4 tanh units, one layer) trained on the circle data. Each hidden unit on its own is a logistic regression: a soft line through the plane, and none of them can see a circle. The output unit is <strong>another logistic regression on the four hidden activations</strong>: added with the right signs, four half-planes fence in a region. With ReLU the walls are sharp; with more units the fence is rounder.</p>
-<div class="widget"><svg class="fig" data-fig="hidden-feats" style="max-height:330px" aria-label="The response of each of four hidden units over the plane, and the output that combines them"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#29">slide 29</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="hidden-feats" style="max-height:330px" aria-label="The response of each of four hidden units over the plane, and the output that combines them"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#35">slide 35</a> of the Neural Networks deck.</p></div>
 <p><strong>A trained MLP on the XOR data.</strong> Trained with backpropagation (<a href="01_backpropagation.html">NN note 01</a>, here via scikit-learn’s <code>MLPClassifier</code>). Each hidden unit learns a line, and the output combines them into a non-linear boundary.</p>
 <div id="0c32f90f" class="cell" data-execution_count="11">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.neural_network <span class="im">import</span> MLPClassifier</span>
@@ -1066,7 +1066,7 @@ two linear layers == one layer: True</code></pre>
 <li><strong>Neural networks</strong>: one hidden layer learns a few features from the raw inputs.</li>
 <li><strong>Deep learning</strong>: many layers learn features of features (edges → shapes → objects, <a href="03_cnn_transfer_multitask.html">NN note 03</a>), and feature extraction and classification are learned <strong>together, end to end</strong>.</li>
 </ul>
-<div class="widget"><svg class="fig" data-fig="pipeline" aria-label="Traditional machine learning with hand-made features versus deep learning that learns them"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#30">slide 30</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="pipeline" aria-label="Traditional machine learning with hand-made features versus deep learning that learns them"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#36">slide 36</a> of the Neural Networks deck.</p></div>
 <p><strong>Deep learning is not magic.</strong> The applications of section 1 are simply a combination of linear combinations, simple non-linear functions, and a stack of the previous two. The most complex computer-vision networks are combinations of many small and easy blocks that you can understand and even program. And the tools to find the best weights are the ones you already have from machine learning: a loss, its gradient, and gradient descent. <em>Keep calm and do linear algebra; keep calm and optimise.</em> We will understand small blocks, then build complex networks by abstracting each block, like LEGO.</p>
 </section>
 <section id="output-layer-loss-maximum-likelihood" class="level2">
@@ -1163,7 +1163,7 @@ H_\delta(e) = \begin{cases}\tfrac12 e^2 &amp; |e|\le\delta\\ \delta\big(|e| - \t
 H_\delta'(e) = \begin{cases} e &amp; |e|\le\delta\\ \delta\,\mathrm{sign}(e) &amp; |e|&gt;\delta\end{cases},
 \]</span></p>
 <p>so an outlier’s pull on the gradient is capped at <span class="math inline">\(\delta\)</span> (the two pieces meet with equal value <span class="math inline">\(\frac12\delta^2\)</span> and slope <span class="math inline">\(\delta\)</span> at <span class="math inline">\(|e| = \delta\)</span>). It is used for box regression in object detection. <strong>Rule: pick the loss from the type of <span class="math inline">\(y\)</span>, not from taste.</strong></p>
-<div class="widget"><svg class="fig" data-fig="loss-shapes" aria-label="Binary cross-entropy against the predicted probability, and squared versus absolute error"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#33">slide 33</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="loss-shapes" aria-label="Binary cross-entropy against the predicted probability, and squared versus absolute error"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#39">slide 39</a> of the Neural Networks deck.</p></div>
 <div id="74dbf842" class="cell" data-execution_count="12">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> p <span class="kw">in</span> [<span class="fl">0.9</span>, <span class="fl">0.1</span>, <span class="fl">0.01</span>]:</span>
 <span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"positive example predicted </span><span class="sc">{</span>p<span class="sc">}</span><span class="ss">: cross-entropy -log(</span><span class="sc">{</span>p<span class="sc">}</span><span class="ss">) = </span><span class="sc">{</span><span class="op">-</span>np<span class="sc">.</span>log(p)<span class="sc">:.3f}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -1190,7 +1190,7 @@ positive example predicted 0.01: cross-entropy -log(0.01) = 4.605</code></pre>
 \end{aligned}
 \]</span></p>
 <p>“<strong>Prediction minus target</strong>”: large when the network is confidently wrong, about 0 when it is right. For a positive example (<span class="math inline">\(y = 1\)</span>) the slope is <span class="math inline">\(\sigma(z) - 1\)</span>: at <span class="math inline">\(z = -3\)</span> (wrong and confident) it is <span class="math inline">\(\sigma(-3) - 1 = -0.953\)</span>, close to <span class="math inline">\(-1\)</span>; at <span class="math inline">\(z = 3\)</span> it is <span class="math inline">\(-0.047\)</span>, close to 0. With <span class="math inline">\(m\)</span> examples and the averaged loss <span class="math inline">\(J = \frac1m\sum_i L^{(i)}\)</span>, each example contributes <span class="math inline">\(\frac1m(\hat y^{(i)} - y^{(i)})\)</span>. The same happens for softmax + cross-entropy (section 20) and for a linear output + <span class="math inline">\(\frac12\)</span>MSE; <a href="01_backpropagation.html">NN note 01</a> starts from here.</p>
-<div class="widget"><svg class="fig" data-fig="bce-grad" aria-label="The cross-entropy loss as a function of the logit for a positive example, and its slope sigma of z minus one"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#34">slide 34</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="bce-grad" aria-label="The cross-entropy loss as a function of the logit for a positive example, and its slope sigma of z minus one"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#40">slide 40</a> of the Neural Networks deck.</p></div>
 <div id="a85125d1" class="cell" data-execution_count="13">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>bce_z <span class="op">=</span> <span class="kw">lambda</span> z, y: <span class="op">-</span>(y <span class="op">*</span> np.log(sigmoid(z)) <span class="op">+</span> (<span class="dv">1</span> <span class="op">-</span> y) <span class="op">*</span> np.log(<span class="dv">1</span> <span class="op">-</span> sigmoid(z)))</span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>eps_fd <span class="op">=</span> <span class="fl">1e-6</span>                                    <span class="co"># finite-difference step</span></span>
@@ -1216,7 +1216,7 @@ z = +0.5, y = 0:  finite difference +0.6225   y_hat - y = +0.6225</code></pre>
 \hat y_k = \frac{e^{z_k}}{\sum_{j=1}^K e^{z_j}}, \qquad L = -\sum_{k=1}^K y_k\log\hat y_k = -\log\hat y_{\text{true class}},
 \]</span></p>
 <p>with <span class="math inline">\(\mathbf{y}\)</span> one-hot. Every <span class="math inline">\(\hat y_k\)</span> is positive and they add up to 1 (same denominator), so the output reads as a probability distribution that “looks like” a soft one-hot vector. The exponential makes the biggest score dominate but never sends the others to exactly 0. In the figure the five scores <span class="math inline">\((1.3, 5.1, 2.2, 0.7, 1.1)\)</span> of the classes (cat, dog, car, tree, boat) become the probabilities <span class="math inline">\((0.020, 0.903, 0.050, 0.011, 0.017)\)</span>: <span class="math inline">\(e^{5.1} = 164.0\)</span> out of a total <span class="math inline">\(\sum_j e^{z_j} = 181.7\)</span> goes to “dog”.</p>
-<div class="widget"><svg class="fig" data-fig="softmax-demo" aria-label="Five scores turned into five probabilities by the softmax"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#38">slide 38</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="softmax-demo" aria-label="Five scores turned into five probabilities by the softmax"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#44">slide 44</a> of the Neural Networks deck.</p></div>
 <p><strong>Shift invariance</strong> (why libraries subtract <span class="math inline">\(\max_k z_k\)</span>): for any constant <span class="math inline">\(c\)</span>,</p>
 <p><span class="math display">\[
 \frac{e^{z_k - c}}{\sum_j e^{z_j - c}} = \frac{e^{-c}\,e^{z_k}}{e^{-c}\sum_j e^{z_j}} = \frac{e^{z_k}}{\sum_j e^{z_j}},
@@ -1273,7 +1273,7 @@ h(x) = \sum_{i=0}^{N-1} f\Big(\tfrac{i+\frac12}{N}\Big)\,\text{bump}_{[i/N,\,(i+
       <svg class="fig" aria-label="A curve approximated by a sum of sigmoid bumps"></svg>
       <div class="ctl"><label for="ua-n">bumps</label><input type="range" id="ua-n" data-k="n" min="1" max="30" step="1" value="4"><span class="v" data-v="n">4</span></div>
       <div class="ro"><div class="m"><span>hidden units used</span><b data-r="h">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#45">slide 45</a> of the Neural Networks deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#51">slide 51</a> of the Neural Networks deck.</p>
 </div>
 <div id="8b681f50" class="cell" data-execution_count="15">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> scipy.special <span class="im">import</span> expit                          <span class="co"># a sigmoid that does not overflow for large |z|</span></span>
@@ -1329,7 +1329,7 @@ J\Big(\tfrac12\mathbf{w}^* + \tfrac12\mathbf{w}'\Big) \le \tfrac12 J(\mathbf{w}^
 <li>The result depends on the <strong>initialisation</strong> and on the optimiser (<a href="01_backpropagation.html">NN notes 01</a>–<a href="02_training_optimization_regularization.html">02</a>); we will need better optimisers than plain gradient descent.</li>
 <li>In practice, for large networks most local minima found by stochastic gradient descent are about as good as each other; the harder problems are saddle points, plateaus and bad conditioning.</li>
 </ul>
-<div class="widget"><svg class="fig" data-fig="nonconvex" data-w="" aria-label="A loss curve with a local and a global minimum"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#46">slide 46</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="nonconvex" data-w="" aria-label="A loss curve with a local and a global minimum"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#52">slide 52</a> of the Neural Networks deck.</p></div>
 <div id="80df820d" class="cell" data-execution_count="17">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Loss along the straight line between a trained network and its hidden-unit-swapped copy</span></span>
 <span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>Xt, yt <span class="op">=</span> X[:<span class="dv">400</span>], y[:<span class="dv">400</span>]</span>
@@ -1369,7 +1369,7 @@ J\Big(\tfrac12\mathbf{w}^* + \tfrac12\mathbf{w}'\Big) \le \tfrac12 J(\mathbf{w}^
 <li>Apply an iterative algorithm (gradient descent): <strong>forward, loss, backward, update, repeat</strong>.</li>
 </ol>
 <p>The engine of neural networks is <strong>gradient-based optimisation</strong>, and we no longer mention the word “convex”. The first step of gradient-based optimisation is to find the <strong>gradients</strong>: <a href="01_backpropagation.html">NN note 01</a>.</p>
-<div class="widget"><svg class="fig" data-fig="workflow" aria-label="Input, layers with weights, predictions, loss function, optimizer and weight update"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#47">slide 47</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="workflow" aria-label="Input, layers with weights, predictions, loss function, optimizer and weight update"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#53">slide 53</a> of the Neural Networks deck.</p></div>
 </section>
 <section id="assumptions-what-they-mean-how-to-check-them-what-to-do" class="level2">
 <h2 class="anchored" data-anchor-id="assumptions-what-they-mean-how-to-check-them-what-to-do">24. Assumptions: what they mean, how to check them, what to do</h2>

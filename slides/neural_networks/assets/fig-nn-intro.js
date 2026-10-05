@@ -1,7 +1,7 @@
 /* Figures for 01_neural_networks.html */
 (function(){
 'use strict';
-const {FIG,lib}=window.MLFIG;const {E,T,initSvg,Plot,arrowPx,rng,randn,fmt,q,setV,setR,svgOf}=lib;const {drawNet,trainMLP,box,grid,heat,stepper,segs,sig,f2,f3,NET,tinyForward,drawTiny,TT}=window.MLNN;
+const {FIG,lib}=window.MLFIG;const {E,T,initSvg,Plot,arrowPx,rng,randn,solve,fitLogit,fmt,q,setV,setR,svgOf}=lib;const {drawNet,trainMLP,box,grid,heat,stepper,segs,sig,f2,f3,NET,tinyForward,drawTiny,TT}=window.MLNN;
 /* one neuron: linear regression (no activation) or logistic regression (sigmoid) */
 function neuronFig(root,act){const svg=initSvg(svgOf(root),560,300);const ys=[50,110,170,250];const lin=act==='linear';
   ys.forEach((y,i)=>{E('circle',{cx:50,cy:y,r:18,fill:i===3?'#fff':'#70ad47',stroke:'#404040'},svg);T(svg,50,y+5,i===3?'xₙ':'x'+['₁','₂','₃'][i],'lab').style.fill=i===3?'#000':'#fff';
@@ -238,4 +238,25 @@ FIG['bce-grad']=root=>{const P=Plot(svgOf(root),{w:540,h:320,x:[-5,5],y:[-1.3,5.
   P.text(-0.6,4.9,'loss L = −log σ(z)   (label y = 1)','', 'start').style.fill='#4472c4';P.text(-0.6,4.35,'slope ∂L/∂z = σ(z) − 1 = ŷ − y','', 'start').style.fill='#c00000';
   const L=z=>Math.log(1+Math.exp(-z));P.dot(-3,L(-3),5,'fb');P.text(-3,L(-3),'wrong and confident: slope ≈ −1','', 'start',9,4);P.dot(3,L(3),5,'fb');P.text(3,L(3),'right: slope ≈ 0','', 'middle',0,-12);
   P.dot(-3,sig(-3)-1,4,'fr');P.dot(3,sig(3)-1,4,'fr')};
+/* Review of linear regression: a straight line cannot bend. Stopping distance against speed (1 s of reaction + braking ∝ speed²,
+   noise σ = 4 m); seg data-f: 1 = h = θ₀ + θ₁x, 2 = add the column x². Least squares by the normal equation, x scaled by 1/100 inside. */
+FIG['rv-curve']=root=>{const r=rng(3);const D=[];for(let v=20;v<=130;v+=10)D.push([v,v/3.6+v*v/178+4*randn(r)]);const m=D.length;
+  const fit=k=>{const f=x=>{const s=x/100;return k===1?[1,s]:[1,s,s*s]};const n=k+1;const A=[...Array(n)].map(()=>new Array(n).fill(0)),b=new Array(n).fill(0);
+    D.forEach(([x,y])=>{const u=f(x);for(let i=0;i<n;i++){b[i]+=u[i]*y;for(let j=0;j<n;j++)A[i][j]+=u[i]*u[j]}});const c=solve(A,b);const h=x=>f(x).reduce((s,v,i)=>s+v*c[i],0);
+    return {h:h,c:c,J:D.reduce((s,[x,y])=>s+(h(x)-y)**2,0)/(2*m)}};
+  const P=Plot(svgOf(root),{w:560,h:310,x:[0,140],y:[-20,150],m:{l:46,r:14,t:14,b:40}});P.axes({xt:[0,20,40,60,80,100,120,140],yt:[0,50,100,150],xl:'speed x (km/h)',yl:'stopping distance y (m)'});
+  P.line(0,0,140,0,'ax',P.bg);const sg=v=>(v<0?'− ':'+ ')+Math.abs(v);
+  function draw(k){k=+k;const F=fit(k);P.clear();D.forEach(([x,y])=>P.line(x,y,x,F.h(x),'ln thin so dot2'));P.fn(F.h,'ln sr',10,140);D.forEach(([x,y])=>P.dot(x,y,5,'pt fb'));
+    const c=F.c;setR(root,'h','h(x) = '+fmt(c[0],1).replace('-','−')+' '+sg(fmt(c[1]/100,2))+'x'+(k===2?' '+sg(fmt(c[2]/1e4,4))+'x²':''));setR(root,'j',fmt(F.J,1))}
+  const cur=segs(root,'f',draw);draw(cur()||1)};
+/* Review of logistic regression: the best straight boundary on the circle data of feat-map (same seed and points) */
+FIG['rv-circle']=root=>{const r=rng(21);const pts=[];for(let i=0;i<150;i++){const a=2*r()-1,b=2*r()-1;pts.push([a,b,a*a+b*b<0.42?1:0])}
+  const w=fitLogit(pts.map(p=>[1,p[0],p[1]]),pts.map(p=>p[2]));const h=(a,b)=>sig(w[0]+w[1]*a+w[2]*b);const L=1.3;
+  const P=Plot(svgOf(root),{w:400,h:400,x:[-L,L],y:[-L,L],m:{l:34,r:10,t:10,b:36}});P.axes({xt:[-1,0,1],yt:[-1,0,1],grid:false,xl:'x₁',yl:'x₂'});const N=39;
+  for(let a=0;a<N;a++)for(let b=0;b<N;b++){const x1=-L+2*L*(a+0.5)/N,x2=-L+2*L*(b+0.5)/N,p=h(x1,x2);P.rect(-L+2*L*a/N,-L+2*L*b/N,-L+2*L*(a+1)/N,-L+2*L*(b+1)/N,p>=0.5?'fb':'fo',P.bg).setAttribute('opacity',(0.06+0.5*Math.abs(p-0.5)*2).toFixed(2))}
+  P.path([...Array(121).keys()].map(k=>{const t=2*Math.PI*k/120;return [Math.sqrt(0.42)*Math.cos(t),Math.sqrt(0.42)*Math.sin(t)]}),'ln thin sm dash');
+  P.path([[-L,-(w[0]+w[1]*-L)/w[2]],[L,-(w[0]+w[1]*L)/w[2]]],'ln sk');P.text(0.62,1.2,'θᵀx = 0','lab','end');
+  pts.forEach(p=>P.dot(p[0],p[1],4,'pt '+(p[2]?'fb':'fo')));
+  const hs=pts.map(p=>h(p[0],p[1])),ok=pts.filter((p,i)=>(hs[i]>=0.5?1:0)===p[2]).length,n0=pts.filter(p=>!p[2]).length;
+  setR(root,'acc',ok+' of '+pts.length+' ('+Math.round(100*ok/pts.length)+' %)');setR(root,'base',n0+' of '+pts.length);setR(root,'hr',fmt(Math.min(...hs),2)+' to '+fmt(Math.max(...hs),2))};
 })();
