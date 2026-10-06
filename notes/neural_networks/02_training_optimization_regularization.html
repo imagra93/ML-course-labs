@@ -522,7 +522,7 @@ B = 128, α = 0.05  (not scaled)  loss after 10 epochs 0.545, after 30 0.0690</c
 <p><strong>Recap from <a href="../machine_learning/01_linear_regression.html">ML note 01</a>.</strong> On a one-parameter quadratic <span class="math inline">\(J(w)=\frac12h(w-w^*)^2\)</span>, a gradient step multiplies the error by a constant: <span class="math inline">\(w_{t+1}-w^*=w_t-\alpha h(w_t-w^*)-w^*=(1-\alpha h)(w_t-w^*)\)</span>. It converges iff <span class="math inline">\(|1-\alpha h|&lt;1\)</span>, i.e.&nbsp;<span class="math inline">\(0&lt;\alpha&lt;2/h\)</span>; the fastest choice is <span class="math inline">\(\alpha=1/h\)</span> (one step); for <span class="math inline">\(1/h&lt;\alpha&lt;2/h\)</span> it overshoots and oscillates; above <span class="math inline">\(2/h\)</span> it diverges. With many parameters, <span class="math inline">\(h\)</span> is replaced by the largest eigenvalue of the Hessian. For a network that curvature is unknown and changes during training, so <span class="math inline">\(\alpha\)</span> is found by trial.</p>
 <div class="widget"><svg class="fig" data-fig="alpha3" style="max-height:250px" aria-label="Gradient descent steps on a bowl with a too low, a good and a too high learning rate"></svg>
 <svg class="fig" data-fig="loss-curves" style="max-height:230px" aria-label="Training loss curves for several learning rates, and loss against learning rate"></svg>
-<p class="from">Same figures as <a href="../../slides/neural_networks/03_training.html#6">slide 6</a> of the Training deck.</p></div>
+<p class="from">Same figures as <a href="../../slides/neural_networks/03_training.html#7">slide 7</a> of the Training deck.</p></div>
 <p><strong>Too low</strong>: the loss creeps down and you run out of patience. <strong>Too high</strong>: it oscillates, or explodes to NaN (section 11.3 shows both on real data). <strong>How to pick it</strong>: try powers of 10 (<span class="math inline">\(10^{-4},10^{-3},10^{-2}\)</span>), or run a <strong>learning-rate range test</strong> (Smith, 2017):</p>
 <ol type="1">
 <li>Start from the initial weights with a tiny rate, <span class="math inline">\(\alpha_0=10^{-5}\)</span>.</li>
@@ -629,7 +629,7 @@ limit (1-β)/(1+β)·σ² = 0.0426</code></pre>
   <div class="ctl"><label for="ema-b">β</label><input type="range" id="ema-b" data-k="b" min="0.5" max="0.98" step="0.01" value="0.9"><span class="v" data-v="b">0.90</span></div>
   <div class="ro"><div class="m"><span>averaging window</span><b data-r="win">–</b></div><div class="m"><span>raw v₁</span><b data-r="m1">–</b></div><div class="m"><span>corrected v̂₁</span><b data-r="c1">–</b></div></div>
   <div class="legend"><span><i style="background:var(--muted)"></i>gradients \(g_t\)</span><span><i style="background:var(--red)"></i>EMA \(v_t\)</span><span><i style="background:var(--blue)"></i>bias-corrected \(\hat v_t\)</span></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#8">slide 8</a> of the Training deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#9">slide 9</a> of the Training deck.</p>
 </div>
 <p>Momentum averages <span class="math inline">\(\mathbf{g}\)</span>; RMSProp averages <span class="math inline">\(\mathbf{g}^2\)</span>; Adam does both, with this correction.</p>
 </section>
@@ -671,7 +671,7 @@ steps to shrink the error 1000x: GD ≈ 691, momentum ≈ 49</code></pre>
   <svg class="fig" aria-label="Gradient descent versus momentum on a narrow valley"></svg>
   <div class="ctl"><label for="mo-b">momentum β</label><input type="range" id="mo-b" data-k="b" min="0" max="0.95" step="0.05" value="0.9"><span class="v" data-v="b">0.90</span></div>
   <div class="ro"><div class="m"><span style="color:#7f7f7f">● no momentum · loss after 60 steps</span><b data-r="l0">–</b></div><div class="m"><span style="color:#c00000">● momentum · loss after 60 steps</span><b data-r="l1">–</b></div><div class="m"><span>max speed-up 1/(1−β)</span><b data-r="win">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#9">slide 9</a> of the Training deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#10">slide 10</a> of the Training deck.</p>
 </div>
 </section>
 <section id="rmsprop-a-step-size-per-parameter" class="level3">
@@ -687,7 +687,7 @@ steps to shrink the error 1000x: GD ≈ 691, momentum ≈ 49</code></pre>
 </ul>
 <div class="widget"><svg class="fig" data-fig="rms-scale" aria-label="Gradient magnitudes of two parameters before and after dividing by their running RMS"></svg>
 <p class="why">Left: raw gradient sizes of two parameters, on a log scale, 50× apart. Right: after dividing by the running RMS both hover around 1, so one learning rate works for both.</p>
-<p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#10">slide 10</a> of the Training deck.</p></div>
+<p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#11">slide 11</a> of the Training deck.</p></div>
 </section>
 <section id="adam-momentum-rmsprop-bias-correction" class="level3">
 <h3 class="anchored" data-anchor-id="adam-momentum-rmsprop-bias-correction">4.4 Adam = momentum + RMSProp + bias correction</h3>
@@ -774,7 +774,7 @@ first Adam step in PyTorch: [-0.00099999 -0.00099993  0.00099993] (= -alpha * si
     <div class="m"><span style="color:#70ad47">● RMSProp</span><b data-r="rms">–</b></div>
     <div class="m"><span style="color:#c00000">● Adam</span><b data-r="adam">–</b></div>
   </div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#12">slide 12</a> of the Training deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#13">slide 13</a> of the Training deck.</p>
 </div>
 <p>The same experiment in code, on a bowl with condition number 25 (<span class="math inline">\(J=\frac12(w_1^2+25w_2^2)\)</span>), with the update rules written out by hand:</p>
 <div id="f5453127" class="cell" data-execution_count="10">
@@ -970,7 +970,7 @@ one-cycle                    max |formula - PyTorch| = 0.0e+00</code></pre>
 </div>
 </div>
 <div class="widget"><svg class="fig" data-fig="sched" aria-label="Constant, step decay, warm-up plus cosine and reduce-on-plateau learning-rate schedules"></svg>
-<p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#14">slide 14</a> of the Training deck: constant, step decay, warm-up + cosine and reduce-on-plateau.</p></div>
+<p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#15">slide 15</a> of the Training deck: constant, step decay, warm-up + cosine and reduce-on-plateau.</p></div>
 <p><strong>Where <code>sched.step()</code> goes.</strong> After <code>opt.step()</code>: once per epoch for epoch-based schedules (<code>StepLR</code>, <code>CosineAnnealingLR</code> with <code>T_max=epochs</code>), once per mini-batch for step-based ones (<code>OneCycleLR</code>, warm-up counted in steps), and <code>ReduceLROnPlateau.step(val_loss)</code> after each validation.</p>
 </section>
 <section id="the-model-and-the-pytorch-training-loop" class="level2">
@@ -987,7 +987,7 @@ one-cycle                    max |formula - PyTorch| = 0.0e+00</code></pre>
 <span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>)</span>
 <span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>loss_fn <span class="op">=</span> nn.CrossEntropyLoss()  <span class="co"># softmax inside</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="widget"><svg class="fig" data-fig="shapes-walk" style="max-height:210px" aria-label="Tensor shapes and parameter counts through Flatten, Linear, ReLU, Dropout, Linear and the loss"></svg>
-<p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#15">slide 15</a> of the Training deck.</p></div>
+<p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#16">slide 16</a> of the Training deck.</p></div>
 <p><code>model(xb).shape</code> and <code>sum(p.numel() for p in model.parameters())</code> are the two commands you will type most. A <code>Linear(n_in, n_out)</code> has <span class="math inline">\(n_{\text{in}}n_{\text{out}}\)</span> weights plus <span class="math inline">\(n_{\text{out}}\)</span> biases. Layers with parameters: <code>Linear</code>, <code>Conv2d</code>, <code>Embedding</code>, <code>BatchNorm</code>, <code>LSTM</code>; layers without: <code>ReLU</code>, <code>Dropout</code>, <code>Flatten</code>, <code>MaxPool2d</code>.</p>
 <div id="2e0f439e" class="cell" data-execution_count="12">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>fm <span class="op">=</span> nn.Sequential(nn.Flatten(), nn.Linear(<span class="dv">784</span>, <span class="dv">256</span>), nn.ReLU(), nn.Dropout(<span class="fl">0.2</span>), nn.Linear(<span class="dv">256</span>, <span class="dv">10</span>))</span>
@@ -1082,7 +1082,7 @@ final: train loss 0.0003, val loss 0.205, val acc 0.963</code></pre>
 <h2 class="anchored" data-anchor-id="overfitting-and-underfitting-reading-learning-curves">7. Overfitting and underfitting: reading learning curves</h2>
 <p>A network with 85,002 parameters trained on 500 images can memorise them. Always <strong>plot the learning curves</strong>: training and validation loss per epoch.</p>
 <div class="widget"><svg class="fig" data-fig="curves" style="max-height:255px" aria-label="Training and validation loss for underfitting, a good fit and overfitting"></svg>
-<p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#21">slide 21</a> of the Training deck. The green dashed line marks where early stopping would stop.</p></div>
+<p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#22">slide 22</a> of the Training deck. The green dashed line marks where early stopping would stop.</p></div>
 <table class="caption-top table">
 <colgroup>
 <col style="width: 33%">
@@ -1168,7 +1168,7 @@ J_{\text{reg}}(\mathbf{w})=J(\mathbf{w})+\frac{\lambda}{2}\lVert\mathbf{w}\rVert
   <svg class="fig" style="max-height:360px" aria-label="Decision regions of a large network trained on 40 noisy points, for several strengths of weight decay"></svg>
   <div class="ctl"><label for="ol-l">weight decay λ</label><input type="range" id="ol-l" data-k="l" min="0" max="5" step="1" value="0"><span class="v" data-v="l">0</span></div>
   <div class="ro"><div class="m"><span>train accuracy</span><b data-r="tr">–</b></div><div class="m"><span>accuracy on new data</span><b data-r="te">–</b></div><div class="m"><span>size of the weights ‖w‖</span><b data-r="w">–</b></div><div class="m" style="flex:1"><span>diagnosis</span><b data-r="vd" style="font-size:18px">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#19">slide 19</a> of the Training deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#20">slide 20</a> of the Training deck.</p>
 </div>
 <p>With <span class="math inline">\(\lambda=0\)</span> the network fits all 40 training points (training accuracy 1.000) with large weights (<span class="math inline">\(\lVert\mathbf{w}\rVert\approx30.5\)</span>) and scores 0.827 on the new points. With <span class="math inline">\(\lambda=0.003\)</span> the weights shrink to <span class="math inline">\(\lVert\mathbf{w}\rVert\approx6.2\)</span>, the training accuracy drops to 0.950 and the accuracy on new data rises to 0.902. With <span class="math inline">\(\lambda=0.1\)</span> (<span class="math inline">\(\lVert\mathbf{w}\rVert\approx2.1\)</span>) the border is too simple: 0.925 and 0.810. <span class="math inline">\(\lambda\)</span> is a hyperparameter: choose it on the validation set, never on the test set.</p>
 </section>
@@ -1328,7 +1328,7 @@ t =  3352 (λ = 0.0026): ‖w_GD − w_ridge‖ / ‖w_ridge‖ = 0.02</code></p
   <div class="ctl"><label for="do-p">dropout rate p</label><input type="range" id="do-p" data-k="p" min="0" max="0.8" step="0.05" value="0.3"><span class="v" data-v="p">0.30</span>
     <button type="button" data-k="new" style="border:1px solid var(--blue);background:#fff;color:var(--blue);font:700 15px var(--font);padding:5px 12px;cursor:pointer">new mini-batch</button></div>
   <div class="ctl"><span class="seg" role="group" aria-label="Mode"><button type="button" data-m="train" aria-pressed="true">training</button><button type="button" data-m="eval" aria-pressed="false">prediction</button></span><span class="small">units off: <b data-r="n">–</b></span></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#22">slide 22</a> of the Training deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#23">slide 23</a> of the Training deck.</p>
 </div>
 <p><strong>Expectation is preserved.</strong> <span class="math display">\[
 \mathbb{E}[\tilde a_j]=\frac{a_j}{1-p}\,\mathbb{E}[r_j]=\frac{a_j}{1-p}(1-p)=a_j .
@@ -1435,7 +1435,7 @@ y_i=\gamma\,\hat z_i+\beta .
   <div class="ctl"><label for="bn-g">γ</label><input type="range" id="bn-g" data-k="g" min="0.2" max="3" step="0.1" value="1"><span class="v" data-v="g">1.0</span></div>
   <div class="ctl"><label for="bn-b">β</label><input type="range" id="bn-b" data-k="b" min="-4" max="8" step="0.1" value="0"><span class="v" data-v="b">0.0</span></div>
   <div class="ro"><div class="m"><span>before: mean, std</span><b><span data-r="m0">–</span>, <span data-r="s0">–</span></b></div><div class="m"><span>after: mean, std</span><b><span data-r="m1">–</span>, <span data-r="s1">–</span></b></div></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#23">slide 23</a> of the Training deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#24">slide 24</a> of the Training deck.</p>
 </div>
 </section>
 <section id="batchnorm-the-backward-pass" class="level3">
@@ -1627,7 +1627,7 @@ y_{ij}=\gamma_j\,\frac{z_{ij}-\mu_i}{\sqrt{\sigma_i^2+\varepsilon}}+\beta_j .
 \]</span> It is independent of the batch size and of the other examples, and identical in training and evaluation (no running statistics). That is why it is the standard in transformers (<a href="05_attention_transformers.html">NN note 05</a>) and RNNs, where sequences have different lengths and batches can be small. BatchNorm remains the standard in CNNs. Both end with the same learnable <span class="math inline">\(\gamma\hat z+\beta\)</span>.</p>
 <div class="widget"><svg class="fig" data-fig="norm-axes" aria-label="Two matrices of examples by features, highlighting a column for BatchNorm and a row for LayerNorm"></svg>
 <p class="why">BatchNorm: for each feature, mean and variance over the mini-batch (a column). LayerNorm: for each example, over its own features (a row). For images, BatchNorm2d normalises each channel over batch × height × width.</p>
-<p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#24">slide 24</a> of the Training deck.</p></div>
+<p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#25">slide 25</a> of the Training deck.</p></div>
 <div id="8a882b6e" class="cell" data-execution_count="26">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb53"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>ln <span class="op">=</span> nn.LayerNorm(<span class="dv">6</span>)<span class="op">;</span> zz <span class="op">=</span> torch.randn(<span class="dv">4</span>, <span class="dv">6</span>) <span class="op">*</span> <span class="dv">3</span> <span class="op">+</span> <span class="dv">1</span></span>
 <span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>manual <span class="op">=</span> (zz <span class="op">-</span> zz.mean(<span class="dv">1</span>, keepdim<span class="op">=</span><span class="va">True</span>)) <span class="op">/</span> torch.sqrt(zz.var(<span class="dv">1</span>, unbiased<span class="op">=</span><span class="va">False</span>, keepdim<span class="op">=</span><span class="va">True</span>) <span class="op">+</span> ln.eps)</span>

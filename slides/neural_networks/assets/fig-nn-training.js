@@ -20,6 +20,59 @@ FIG['gd-variants']=root=>{const r=rng(8);const m=200;const D=[];for(let i=0;i<m;
   P.dot(2,3,5,'fk',P.bg);let k='batch';const btns=root.querySelectorAll('.seg button');const info={batch:'all 200 samples per step: smooth, slow per step',sgd:'1 sample per step: many cheap, noisy updates',mini:'16 samples per step: the practical compromise'};
   function draw(){P.clear();const p=paths[k];P.path(p,'ln thin sr');P.dot(p[0][0],p[0][1],6,'fk');setR(root,'n',p.length-1);setR(root,'i',info[k]);setR(root,'j',fmt(J(...p[p.length-1]),3))}
   btns.forEach(b=>b.addEventListener('click',()=>{k=b.dataset.k;btns.forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));draw()}));draw()};
+/* the training loop in time: the tiny 2-2-1 network of chapters 1–2 (same starting weights) trained for real on 64 rows
+   (class 1 around (−1, 1), class 0 around (1, −1)), mini-batches of 16, α = 1, 3 epochs = 12 iterations.
+   Slider t = 0…60: iteration i = ⌈t/5⌉ and stage t − 5(i − 1): 1 mini-batch · 2 forward · 3 loss · 4 backward · 5 update.
+   Elements of the slide with data-hl = the current stage get the class "now" ("e": first stage of an epoch, "0": t = 0) */
+FIG['train-loop']=root=>{const svg=svgOf(root);const slide=root.closest('.slide')||root;
+  const r=rng(3),X=[],Y=[];for(let i=0;i<64;i++){const y=i%2,c=y?[-1,1]:[1,-1];X.push([c[0]+0.8*randn(r),c[1]+0.8*randn(r)]);Y.push(y)}
+  /* p = w11 w12 w21 w22 (W⁽¹⁾, w_ij: input i → hidden j) · b1 b2 (b⁽¹⁾) · v1 v2 (W⁽²⁾) · c (b⁽²⁾); tanh hidden, sigmoid output, mean BCE */
+  let p=[0.5,-0.3,0.2,0.4,0.1,-0.1,0.7,-0.5,0.2];const rs=rng(22),perms=[],its=[];
+  for(let e=0;e<3;e++){const perm=[...Array(64).keys()];for(let i=63;i>0;i--){const j=Math.floor(rs()*(i+1));[perm[i],perm[j]]=[perm[j],perm[i]]}perms.push(perm);
+    for(let b=0;b<4;b++){const g=new Array(9).fill(0);let L=0;
+      perm.slice(16*b,16*b+16).forEach(k=>{const [x1,x2]=X[k],a=[Math.tanh(x1*p[0]+x2*p[2]+p[4]),Math.tanh(x1*p[1]+x2*p[3]+p[5])],yh=1/(1+Math.exp(-(a[0]*p[6]+a[1]*p[7]+p[8]))),d=(yh-Y[k])/16;
+        L-=Math.log(Y[k]?yh:1-yh)/16;g[6]+=d*a[0];g[7]+=d*a[1];g[8]+=d;[0,1].forEach(j=>{const dj=d*p[6+j]*(1-a[j]*a[j]);g[j]+=dj*x1;g[2+j]+=dj*x2;g[4+j]+=dj})});
+      const q=p.map((v,n)=>v-g[n]);its.push({e:e,b:b,L:L,g:g,w0:p,w1:q});p=q}}
+  const C=['#dae3f3','#fbe5d6','#e2f0d9','#fff2cc'],CS=['#4472c4','#ed7d31','#70ad47','#bf9000'],STAGE=['start','mini-batch','forward','loss','backward','update'];
+  const arr=(x1,y1,x2,y2,c,w)=>{E('line',{x1:x1,y1:y1,x2:x2,y2:y2,stroke:c,'stroke-width':w},svg);const a=Math.atan2(y2-y1,x2-x1),cs=Math.cos(a),sn=Math.sin(a),L=8+2*w,W=3+w;
+    E('polygon',{points:[[x2,y2],[x2-L*cs+W*sn,y2-L*sn-W*cs],[x2-L*cs-W*sn,y2-L*sn+W*cs]].map(q=>q.map(v=>v.toFixed(1)).join(',')).join(' '),fill:c},svg)};
+  const label=(x,y,s,c,cls,anchor)=>{const tt=T(svg,x,y,s,cls===undefined?'lab':cls,anchor);if(c)tt.style.fill=c;return tt};
+  stepper(root,t=>{initSvg(svg,700,424);const i=Math.max(1,Math.ceil(t/5)),k=t?t-5*(i-1):0,I=its[i-1],e=I.e,b=I.b;
+    setV(root,'s',STAGE[k]);
+    slide.querySelectorAll('[data-hl]').forEach(el=>{const h=el.dataset.hl;el.classList.toggle('now',t?h===String(k)||(h==='e'&&k===1&&b===0):h==='0')});
+    setR(root,'ep',(e+1)+' of 3');setR(root,'mb',t?(b+1)+' of 4':'–');setR(root,'up',String(i-1+(k===5?1:0)));setR(root,'rows',String(16*(i-1+(k>=2?1:0))));
+    /* the training set: one square per row, coloured by its mini-batch in this epoch; used mini-batches fade */
+    label(14,22,'training set: 64 rows','','lab','start');
+    perms[e].forEach((row,pos)=>{const bb=Math.floor(pos/16),cur=t>0&&bb===b;
+      E('rect',{x:14+(row%8)*19,y:32+Math.floor(row/8)*19,width:17,height:17,rx:2.5,fill:C[bb],stroke:cur?'#404040':'#9a9a9a','stroke-width':cur?2:0.7,opacity:t>0&&(bb<b||(cur&&k===5))?0.25:1},svg)});
+    const st=t===0?['4 mini-batches of 16,','shuffled for epoch 1']:k===5&&b===3?['epoch '+(e+1)+' done:','all 64 rows used once']:k===1&&b===0&&e>0?['epoch '+(e+1)+' of 3:','shuffled again']:['epoch '+(e+1)+' of 3','rows used: '+(16*b+(k===5?16:0))+' of 64'];
+    label(14,204,st[0],'#1f1f1f','lab','start');label(14,221,st[1],null,'','start');
+    /* mini-batch → network (forward on top, backward below) → loss */
+    const bc=t?CS[b]:'#bfbfbf';arr(170,105,266,105,bc,t?3:2);label(218,93,t?'mini-batch '+(b+1):'mini-batches',bc);label(218,124,'16 rows',null,'');
+    drawNet(svg,[2,2,1],{x0:290,y0:35,w:210,h:140,r:16,label:(l,n)=>l===0?'x'+'₁₂'[n]:l===1?'a'+'₁₂'[n]:'ŷ',
+      edgeStyle:()=>k===2?{stroke:'#4472c4',width:2.4}:k===4?{stroke:'#c00000',width:2.4}:k===5?{stroke:'#ffc000',width:3}:{stroke:'#9dafd6',width:1.2}});
+    arr(282,26,512,26,k===2?'#4472c4':'#d0d0d0',k===2?3:2);label(397,16,'forward: the 16 rows at once',k===2?'#4472c4':'#a6a6a6');
+    arr(518,105,543,105,k>=3?'#ed7d31':'#bfbfbf',2);
+    E('rect',{x:546,y:80,width:96,height:50,rx:6,fill:k===3?'#fbe5d6':'#fff',stroke:k===3?'#ed7d31':'#bfbfbf','stroke-width':k===3?2.5:1.2},svg);
+    label(594,99,'loss','#1f1f1f');label(594,121,t&&k>=3?'L = '+f2(I.L):'L = –','#1f1f1f').style.fontWeight='700';label(594,148,'vs their 16 labels',null,'');
+    const bw=k===4?'#c00000':'#d0d0d0';E('line',{x1:594,y1:156,x2:594,y2:176,stroke:bw,'stroke-width':k===4?3:2},svg);arr(594,176,282,176,bw,k===4?3:2);
+    label(438,193,'backward: one gradient per weight',k===4?'#c00000':'#a6a6a6');
+    /* the 9 weights: before, the gradient, after (w − α∇L with α = 1) */
+    const cx=n=>310+40*n+4*((n>=4)+(n>=6)+(n>=8));
+    [['W^{[1]}',0,4],['b^{[1]}',4,2],['W^{[2]}',6,2],['b^{[2]}',8,1]].forEach(([s,a,n])=>TT(svg,(cx(a)+cx(a+n-1)+38)/2,212,s,''));
+    const strip=(y,lab,vals,fill,c,stroke,bold)=>{label(300,y+14,lab,'#1f1f1f','lab','end');vals.forEach((v,n)=>{E('rect',{x:cx(n),y:y,width:38,height:18,fill:fill,stroke:stroke},svg);
+      const tt=label(cx(n)+19,y+13.5,f2(v),c,'');tt.style.fontSize='12px';if(bold)tt.style.fontWeight='700'})};
+    strip(218,'weights w',I.w0,'#fff',k===5?'#8c8c8c':'#1f1f1f','#bfbfbf');
+    if(k>=4)strip(240,'gradient ∇L',I.g,'#fff','#c00000',k===4?'#c00000':'#bfbfbf');
+    if(k===5)strip(262,'w − α∇L',I.w1,'#fff2cc','#1f1f1f','#ffc000',true);
+    /* the run: the loss of every mini-batch, in its colour, grouped by epoch (with the epoch's mean once it is over) */
+    const P=Plot(svg,{at:[0,288],w:700,h:136,x:[0.5,12.5],y:[0,1],m:{l:46,r:12,t:20,b:34}});
+    [0,1,2].forEach(n=>{P.rect(0.5+4*n,0,4.5+4*n,1,'',P.bg).setAttribute('fill',n%2?'#efefef':'#f8f8f8');const over=t>=20*(n+1),m=its.slice(4*n,4*n+4).reduce((s,I2)=>s+I2.L,0)/4;
+      T(P.root,P.X(2.5+4*n),14,'epoch '+(n+1)+(over?' · mean loss '+f2(m):''),'lab');if(over)P.line(0.6+4*n,m,4.4+4*n,m,'ln thin sk dash')});
+    P.axes({xt:[1,2,3,4,5,6,7,8,9,10,11,12],yt:[0,0.5,1],grid:false,xl:'iteration (one mini-batch, one update)',yl:'loss'});
+    if(t)P.line(i,0,i,1,'').setAttribute('style','stroke:#ffc000;stroke-width:8;opacity:.35');
+    const done=its.filter((I2,n)=>t>=5*n+3);if(done.length>1)P.path(done.map((I2,n)=>[n+1,I2.L]),'ln thin sm');
+    done.forEach((I2,n)=>P.dot(n+1,I2.L,5.5,'pt').setAttribute('fill',CS[I2.b]))})};
 /* momentum (PyTorch form: v ← βv + g, θ ← θ − αv) vs plain gradient descent on a very narrow valley */
 FIG['momentum']=root=>{const L1=0.01,L2=2,lr=0.9,T=60;const f=(x,y)=>0.5*(L1*x*x+L2*y*y);const m2={l:34,r:10,t:10,b:30};const xr=[-5.6,1.6];
   const P=Plot(svgOf(root),{w:600,h:340,x:xr,y:equalY(600,340,m2,xr,0),m:m2});P.axes({xt:[-5,-4,-3,-2,-1,0,1],yt:[-1,0,1],xl:'w₁ (flat direction)',yl:'w₂ (steep)'});

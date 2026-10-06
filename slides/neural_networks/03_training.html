@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
 <link rel="stylesheet" href="../assets/deck.css?v=20260930">
-<link rel="stylesheet" href="assets/nn.css?v=20260930">
+<link rel="stylesheet" href="assets/nn.css?v=20261006">
 <script src="../assets/mathjax-config.js?v=20260930"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
 </head>
@@ -97,6 +97,29 @@
       <svg class="fig" aria-label="Paths of batch, stochastic and mini-batch gradient descent on the loss contours of a linear regression"></svg>
       <div class="ctl"><span class="seg" role="group" aria-label="Variant"><button type="button" data-k="batch" aria-pressed="true">Batch</button><button type="button" data-k="sgd" aria-pressed="false">Stochastic</button><button type="button" data-k="mini" aria-pressed="false">Mini-batch (16)</button></span></div>
       <div class="ro"><div class="m" style="flex:1"><span>what happens</span><b data-r="i" style="font-size:17px">–</b></div><div class="m"><span>updates</span><b data-r="n">–</b></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The training loop: iterations and epochs</h2>
+  <div class="cols" style="grid-template-columns:1.55fr 1fr">
+    <div class="widget" data-fig="train-loop" data-auto="s=1 :: Epoch 1, iteration 1: take mini-batch 1, 16 of the 64 shuffled rows|s=2 :: Forward: the 16 rows go through the network together, as one matrix: 16 predictions ŷ|s=3 :: Loss: compare the 16 predictions with their labels and average: L = 0.87, the first dot|s=4 :: Backward: the gradient ∇L, one number per weight (9 here)|s=5 :: Update: every weight takes a step against its gradient, w − α∇L. One iteration = one update|s=10 :: Iteration 2: mini-batch 2, the same five stages, one more update|s=20 :: Iterations 3 and 4: every row has been used once. That is one epoch: 4 iterations, 4 updates|s=40 :: Epoch 2: shuffle again (new mini-batches) and repeat. The mean loss of an epoch falls from 0.64 to 0.28|s=60 :: Epoch 3: 12 updates in total. Every mini-batch gives a slightly different loss, so the dots are noisy, but the trend is down">
+      <svg class="fig" style="max-height:none" aria-label="The training set of 64 rows coloured by mini-batch, the tiny network with forward and backward arrows, the loss, the nine weights with their gradient and update, and the loss of every iteration grouped into three epochs"></svg>
+      <div class="ctl"><label for="tl-s">stage</label><input type="range" id="tl-s" data-k="s" min="0" max="60" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">The tiny network of chapters 1 and 2, with the same starting weights, trained for real: 64 labelled rows, mini-batches of 16, $\alpha=1$, 3 epochs.</p>
+      <pre class="code s"><span class="cl" data-hl="0">loader = DataLoader(data, 16, shuffle=True)</span>
+<span class="cl" data-hl="e">for epoch in range(3):             <span class="c"># epoch</span></span>
+<span class="cl" data-hl="1">    for xb, yb in loader:          <span class="c"># mini-batch</span></span>
+<span class="cl" data-hl="2">        y_hat = model(xb)          <span class="c"># forward</span></span>
+<span class="cl" data-hl="3">        loss = loss_fn(y_hat, yb)  <span class="c"># loss</span></span>
+<span class="cl" data-hl="4">        opt.zero_grad()</span>
+<span class="cl" data-hl="4">        loss.backward()            <span class="c"># backward</span></span>
+<span class="cl" data-hl="5">        opt.step()                 <span class="c"># update</span></span></pre>
+      <div class="ro"><div class="m"><span>epoch</span><b data-r="ep">–</b></div><div class="m"><span>mini-batch</span><b data-r="mb">–</b></div><div class="m"><span>updates so far</span><b data-r="up">–</b></div><div class="m"><span>rows seen</span><b data-r="rows">–</b></div></div>
+      <div class="idea step"><b>1 iteration</b> = 1 mini-batch → forward → loss → backward → <b>1 update</b>. <b>1 epoch</b> = every row once, here $64/16=4$ iterations; then shuffle and start the next one.</div>
     </div>
   </div>
 </section>
@@ -586,8 +609,8 @@ loss_fn = nn.CrossEntropyLoss()  <span class="c"># softmax inside</span></pre>
 </div></div>
 <script src="../assets/figures.js?v=20260930"></script>
 <script src="assets/nn-core.js?v=20260930"></script>
-<script src="assets/fig-nn-intro.js?v=20261005"></script>
-<script src="assets/fig-nn-training.js?v=20261005"></script>
+<script src="assets/fig-nn-intro.js?v=20261006"></script>
+<script src="assets/fig-nn-training.js?v=20261006"></script>
 <script src="../assets/deck.js?v=20260930"></script>
 </body>
 </html>

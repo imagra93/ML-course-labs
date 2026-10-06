@@ -84,6 +84,9 @@ a.colab .co{font-family:var(--mono);font-size:19px;background:#1f1f1f;color:#f9a
 .mrow{border-left:4px solid transparent;padding:1px 8px}
 .mrow[hidden]{display:block;visibility:hidden}
 .mrow.now{border-left-color:var(--gold);background:var(--gold-soft)}
+/* code lines highlighted by a figure's step (<span class="cl" data-hl="…"> inside pre.code): same look as .mrow.now */
+pre.code .cl{display:inline-block;width:calc(100% + 16px);margin:0 -8px;padding:0 5px;border-left:3px solid transparent}
+pre.code .cl.now{background:var(--gold-soft);border-left-color:var(--gold)}
 /* the four hidden units of the MLP build: same colour in the figure, the matrix and the formulas (\class{u1}{…}) */
 .u1{color:#4472c4} .u2{color:#c00000} .u3{color:#7030a0} .u4{color:#bf9000}
 /* phone layout (deck.js adds body.flow below 760 px): one column everywhere */
