@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
 <link rel="stylesheet" href="../assets/deck.css?v=20260930">
-<link rel="stylesheet" href="assets/nn.css?v=20260930">
+<link rel="stylesheet" href="assets/nn.css?v=20261006">
 <script src="../assets/mathjax-config.js?v=20260930"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
 </head>
@@ -22,20 +22,19 @@
 
 <section class="slide">
   <h2>Why Neural Networks and Deep Learning?</h2>
-  <div class="cols c3" style="grid-template-columns:repeat(4,1fr);gap:14px">
-    <div class="note"><h3>Virtual assistants</h3><p class="small">Speech recognition and synthesis.</p></div>
-    <div class="note"><h3>Chatbots</h3><p class="small">ChatGPT and friends: transformers (chapter 6).</p></div>
-    <div class="note"><h3>Fake news detection</h3><p class="small">News aggregation and text classification.</p></div>
-    <div class="note"><h3>Composing music</h3><p class="small">Sequence generation (chapter 5).</p></div>
-    <div class="note"><h3>Image coloring</h3><p class="small">Image-to-image networks.</p></div>
-    <div class="note"><h3>Robotics</h3><p class="small">Perception and control.</p></div>
-    <div class="note"><h3>Image captioning</h3><p class="small">A CNN encoder + a language decoder.</p></div>
-    <div class="note"><h3>YOLO</h3><p class="small">You Only Look Once: real-time object detection (chapter 4).</p></div>
-    <div class="note"><h3>Stable Diffusion</h3><p class="small">Generating new images from text.</p></div>
-    <div class="note"><h3>RAG</h3><p class="small">Chatbots that answer from your own documents (chapter 6).</p></div>
-    <div class="note" style="grid-column:span 2"><h3>Vehicle damage from photos</h3><p class="small">Classify parts, segment damage, locate it with boxes: every block of this course, together.</p></div>
+  <div class="cards c5">
+    <div class="card g app"><h3>Virtual assistants</h3><svg class="fig" data-fig="app" data-app="voice" aria-label="A spoken request turned into text, and a text answer turned back into speech"></svg><p>Siri, Alexa: speech → text, and text → speech.</p></div>
+    <div class="card app"><h3>Chatbots</h3><svg class="fig" data-fig="app" data-app="chat" aria-label="A chat: a question and the chatbot's answer"></svg><p>ChatGPT, Claude, Gemini: transformers (chapter 6).</p></div>
+    <div class="card app"><h3>Fake news detection</h3><svg class="fig" data-fig="app" data-app="news" aria-label="A clickbait headline classified as fake with 96 percent"></svg><p>Text classification: flag dubious claims and spam.</p></div>
+    <div class="card g app"><h3>Composing music</h3><svg class="fig" data-fig="app" data-app="music" aria-label="A melody on a staff: the first notes are given, the next ones generated"></svg><p>Suno, MusicLM: one note after another (chapter 5).</p></div>
+    <div class="card o app"><h3>Image coloring</h3><svg class="fig" data-fig="app" data-app="color" aria-label="A black-and-white landscape and the same landscape in color"></svg><p>Old black-and-white photos, in color (DeOldify).</p></div>
+    <div class="card y app"><h3>Robotics</h3><svg class="fig" data-fig="app" data-app="robot" aria-label="A camera watches a robot arm about to grasp a box"></svg><p>Waymo robotaxis, arms that grasp new objects.</p></div>
+    <div class="card o app"><h3>Image captioning</h3><svg class="fig" data-fig="app" data-app="caption" aria-label="A photo of a dog with a red ball, and its caption"></svg><p>Alt text for blind users: CNN + language decoder.</p></div>
+    <div class="card o app"><h3>YOLO</h3><svg class="fig" data-fig="app" data-app="yolo" aria-label="A street with boxes around a person, a car and a traffic light, each with its class and score"></svg><p>You Only Look Once: real-time detection (chapter 4).</p></div>
+    <div class="card o app"><h3>Stable Diffusion</h3><svg class="fig" data-fig="app" data-app="diffusion" aria-label="From the prompt a rocket in space: pure noise, less noise, then the picture"></svg><p>Text in, new image out. Also DALL·E, Midjourney.</p></div>
+    <div class="card app"><h3>RAG</h3><svg class="fig" data-fig="app" data-app="rag" aria-label="A question, a search over documents, and an answer that cites the document it used"></svg><p>Answers from your own documents (chapter 6).</p></div>
   </div>
-  <p class="small">All of them are built from the <b>same few blocks</b> you will learn in these six chapters. <a href="https://www.youtube.com/watch?v=cHDLvp_NPOk" target="_blank" rel="noopener">YOLO demo video</a></p>
+  <p class="small">Text (blue), images (orange), sound (green), the physical world (gold): all of them are built from the <b>same few blocks</b> you will learn in these six chapters. <a href="https://www.youtube.com/watch?v=cHDLvp_NPOk" target="_blank" rel="noopener">YOLO demo video</a></p>
 </section>
 
 <section class="slide">
@@ -149,15 +148,21 @@
 
 <section class="slide">
   <h2>Review · Logistic regression: a straight boundary</h2>
-  <div class="cols c46">
+  <div class="cols c46 split">
     <div class="stack" style="gap:10px">
       <p>Class 1 (blue) lives inside a circle (dashed). Logistic regression on $(x_1,x_2)$, trained to the minimum of the cross-entropy:</p>
       <div class="ro"><div class="m"><span>h(x) on the 150 points</span><b data-r="hr">–</b></div><div class="m"><span>right answers</span><b data-r="acc">–</b></div><div class="m"><span>orange points</span><b data-r="base">–</b></div></div>
-      <p class="step">$h$ never reaches 0.5, so the model answers "orange" for everybody: right on the 93 orange points, wrong on every blue one. Its boundary $\bth^\top\bx=0$ (black) does not even cross the data.</p>
+      <p class="step">$h$ never reaches 0.5, so the model answers "orange" for everybody: right on the 93 orange points, wrong on every blue one. Its boundary $\bth^\top\bx=0$ (black) lies <b>beyond the data</b>, in the corner.</p>
+    </div>
+    <div class="widget rspan" data-fig="rv-circle" data-auto="m=fit :: h changes in one direction only: its lines of equal value (dotted) are parallel, and h = 0.5 lies beyond the data|m=best :: The best of all straight lines, by brute force: 94 of 150 right, one more than answering orange for everybody">
+      <svg class="fig" aria-label="Circle data: blue points inside a dashed circle, orange outside. Trained model: the plane shaded by h, parallel dotted lines of equal h and the boundary h = 0.5 in the corner, beyond the data. Best line: the best straight boundary of all, with its wrong answers ringed"></svg>
+      <div class="ctl"><span class="seg" role="group" aria-label="Which straight boundary"><button type="button" data-m="fit" aria-pressed="true">trained model</button><button type="button" data-m="best" aria-pressed="false">best straight line</button></span></div>
+      <div class="legend"><span><i style="background:var(--ink)"></i>boundary</span><span><i style="width:12px;height:12px;border:2px solid var(--red);border-radius:50%;background:none"></i>wrong answer</span><span>right answers: <b data-r="ok" style="color:var(--ink)">–</b></span></div>
+    </div>
+    <div class="stack" style="gap:10px">
       <p class="step small">No straight line does much better: the best of all lines, found by brute force, gets 94 of 150 right. Every half-plane that holds the blue disc also holds more orange points than blue ones.</p>
       <div class="idea step">Both models compute the same <b>weighted sum</b> $z=\bth^\top\bx$, followed by nothing (linear) or by a sigmoid (logistic). This chapter keeps that unit and <b>stacks</b> it, so that the network learns its own features instead of us guessing $x_1^2,x_2^2$ (slides 16 and 17).</div>
     </div>
-    <svg class="fig" data-fig="rv-circle" aria-label="Circle data: blue points inside a dashed circle, orange outside, shaded by the probability of the best logistic regression, whose straight boundary lies outside the data"></svg>
   </div>
 </section>
 
@@ -294,32 +299,22 @@
 
 <section class="slide">
   <h2>Multi-layer perceptron:</h2>
-  <div class="cols">
-    <svg class="fig" data-fig="mlp" aria-label="A 3-4-1 multi-layer perceptron"></svg>
+  <div class="cols" style="grid-template-columns:1.4fr 1fr">
+    <div class="widget" data-fig="mlp-build" data-auto="s=1 :: Hidden unit 1 adds up x₁, x₂, x₃ with its own three weights: they fill column 1 of W⁽¹⁾, and its bias goes into b⁽¹⁾|s=2 :: Hidden unit 2: three more weights, column 2|s=3 :: Hidden unit 3: column 3|s=4 :: Hidden unit 4: column 4. Row i of W⁽¹⁾ holds the weights leaving xᵢ, column j the weights entering unit j|s=5 :: The four sums are one matrix product: z = xW⁽¹⁾ + b⁽¹⁾ (the inputs times each column, added up), then a = σ(z)|s=6 :: The output is one more unit, on a₁ … a₄: its four weights form W⁽²⁾, a 4 × 1 column">
+      <svg class="fig" aria-label="A 3-4-1 network. Step by step, the three edges into each hidden unit light up in that unit's colour and their weights fill one column of the 3 by 4 matrix W1; then the four sums become one product, and the output weights fill the 4 by 1 matrix W2"></svg>
+      <div class="ctl"><label for="mb-s">step</label><input type="range" id="mb-s" data-k="s" min="0" max="6" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
     <div class="stack" style="gap:6px">
-      <ul class="small" style="gap:6px">
-        <li>$a_1=\sigma\big(\bW^{[1]\top}_{:,1}\bx+b^{[1]}_1\big)$</li>
-        <li>$a_2=\sigma\big(\bW^{[1]\top}_{:,2}\bx+b^{[1]}_2\big)$</li>
-        <li>$a_3=\sigma\big(\bW^{[1]\top}_{:,3}\bx+b^{[1]}_3\big)$</li>
-        <li>$a_4=\sigma\big(\bW^{[1]\top}_{:,4}\bx+b^{[1]}_4\big)$</li>
-        <li>$h(\bx)=\sigma\big(\bW^{[2]\top}\ba+b^{[2]}\big)$, with $\ba=[a_1,\dots,a_4]$</li>
-      </ul>
-      <p class="small">Column $j$ of $\bW^{[1]}$ holds the weights of hidden unit $j$; the superscript $[l]$ is the layer number.</p>
+      <p class="small">3 inputs, 4 hidden units, 1 output. Every edge carries one weight: $w_{ij}$ goes from input $i$ to hidden unit $j$.</p>
+      <p class="small mrow" data-from="1" data-cur="1">$a_1=\sigma\big(x_1\class{u1}{w_{11}}+x_2\class{u1}{w_{21}}+x_3\class{u1}{w_{31}}+\class{u1}{b_1}\big)$</p>
+      <p class="small mrow" data-from="2" data-cur="2">$a_2=\sigma\big(x_1\class{u2}{w_{12}}+x_2\class{u2}{w_{22}}+x_3\class{u2}{w_{32}}+\class{u2}{b_2}\big)$</p>
+      <p class="small mrow" data-from="3" data-cur="3">$a_3=\sigma\big(x_1\class{u3}{w_{13}}+x_2\class{u3}{w_{23}}+x_3\class{u3}{w_{33}}+\class{u3}{b_3}\big)$</p>
+      <p class="small mrow" data-from="4" data-cur="4">$a_4=\sigma\big(x_1\class{u4}{w_{14}}+x_2\class{u4}{w_{24}}+x_3\class{u4}{w_{34}}+\class{u4}{b_4}\big)$</p>
+      <div class="mrow" data-from="5" data-cur="5"><div class="eq s">$$\ba=\sigma\big(\bx\,\bW^{[1]}+\bb^{[1]}\big)$$</div><p class="why">$(1\times3)\cdot(3\times4)+(1\times4)=(1\times4)$: the four units at once. The superscript $[l]$ is the layer.</p></div>
+      <div class="mrow" data-from="6" data-cur="6"><div class="eq s">$$\hat y=\sigma\big(\ba\,\bW^{[2]}+b^{[2]}\big)$$</div><p class="why">$(1\times4)\cdot(4\times1)+(1\times1)=(1\times1)$</p></div>
       <p class="step small">Each hidden unit is a logistic regression on the inputs. The output is a logistic regression on the <b>hidden units</b>.</p>
       <p class="step small">Parameters: $3\cdot4+4=16$ in layer 1, $4\cdot1+1=5$ in layer 2. <b>21</b> in total. "Fully connected" or "dense": every unit sees every unit of the previous layer.</p>
     </div>
-  </div>
-</section>
-
-<section class="slide">
-  <h2>Going deeper: features of features</h2>
-  <svg class="fig" data-fig="deep-feats" style="max-height:300px" aria-label="The four units of layer 1 draw soft lines, the four units of layer 2 combine them into curved regions, and the output is a closed region"></svg>
-  <div class="cols">
-    <div class="stack" style="gap:6px">
-      <p class="small">A 2-4-4-1 network (two hidden layers, tanh) trained on the circle data. Each heat map shows one unit's value over the whole plane.</p>
-      <div class="eq s">$$\ba^{[1]}=g(\bx\bW^{[1]}+\bb^{[1]}),\qquad\ba^{[2]}=g(\ba^{[1]}\bW^{[2]}+\bb^{[2]})$$$$\hat y=\sigma(\ba^{[2]}\bW^{[3]}+b^{[3]})$$</div>
-    </div>
-    <p class="small">Layer 1 draws <b>lines</b>, layer 2 combines lines into <b>curved regions</b>, the output combines regions. More layers give more complex shapes with fewer units. On images: pixels → edges → textures → parts → objects (chapter 4). That is the <b>deep</b> in deep learning.</p>
   </div>
 </section>
 
@@ -353,6 +348,27 @@
         <div data-i="5"><p class="small">$L=-\log0.633=\mathbf{0.458}$. Not terrible, not great. Chapter 2 computes how to change each of the 9 parameters to lower it.</p></div>
       </div>
       <p class="why">Forward pass = feed the input through the layers, left to right, storing every intermediate value.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Going deeper: features of features</h2>
+  <div class="cols" style="grid-template-columns:1.4fr 1fr">
+    <div class="widget" data-fig="deep-build" data-auto="s=1 :: The inputs are pictures too: x₁ grows from left to right, x₂ from bottom to top|s=2 :: Layer 1: each unit is tanh of a weighted sum of x₁ and x₂, a soft straight line (a wall)|s=3 :: Layer 2: each unit adds up the four walls with its weights (orange edge: add, blue edge: subtract), then tanh: curved regions|s=4 :: Output: σ of a weighted sum of the four regions. The decision is a closed region around the class-1 points">
+      <svg class="fig" aria-label="A 2-4-4-1 network drawn like the forward-pass example. Step by step every unit becomes a small heat map of its value over the plane: the inputs are ramps, layer 1 draws soft straight lines, layer 2 curved regions, and the output a closed region around the class-1 points"></svg>
+      <div class="ctl"><label for="db-s">step</label><input type="range" id="db-s" data-k="s" min="0" max="4" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">The previous slide pushed <b>one</b> example through a network. Now push <b>every point</b> $(x_1,x_2)$ of the plane through a <span style="white-space:nowrap">2-4-4-1</span> network trained on the circle data, and paint each unit with its value: <b>one picture per unit</b>.</p>
+      <div class="panels" style="min-height:190px">
+        <div data-i="0"><p class="small">Each unit computes one number per example: on the previous slide, $a_1=0.762$ for $\bx=(1,2)$. Here every pixel of a picture is one example.</p></div>
+        <div data-i="1"><p class="small">The inputs are the simplest pictures: $x_1$ (left to right) and $x_2$ (bottom to top). Everything else is built from them.</p></div>
+        <div data-i="2"><div class="eq s">$$\ba^{[1]}=\tanh\big(\bx\bW^{[1]}+\bb^{[1]}\big)$$</div><p class="small">A tanh of a weighted sum of $x_1,x_2$ changes in one direction only: each unit of layer 1 draws a soft straight <b>line</b>.</p></div>
+        <div data-i="3"><div class="eq s">$$\ba^{[2]}=\tanh\big(\ba^{[1]}\bW^{[2]}+\bb^{[2]}\big)$$</div><p class="small">Each unit of layer 2 adds up the four lines with its own weights and bends the sum: <b>curved regions</b>, features of features.</p></div>
+        <div data-i="4"><div class="eq s">$$\hat y=\sigma\big(\ba^{[2]}\bW^{[3]}+b^{[3]}\big)$$</div><p class="small">The output combines the regions into a <b>closed region</b> around class 1. Nobody told the network to draw a circle.</p></div>
+      </div>
+      <p class="step small">Layer 1 draws lines, layer 2 combines lines into regions, the output combines regions. More layers give more complex shapes with fewer units. On images: pixels → edges → textures → parts → objects (chapter 4). That is the <b>deep</b> in deep learning.</p>
     </div>
   </div>
 </section>
@@ -968,7 +984,7 @@ probs = logits.softmax(dim=1)     <span class="c"># to read answers</span></pre>
 <script src="assets/nn-core.js?v=20260930"></script>
 <script src="../machine_learning/assets/fig-linear.js?v=20261005"></script>
 <script src="../machine_learning/assets/fig-logistic.js?v=20261005"></script>
-<script src="assets/fig-nn-intro.js?v=20261005"></script>
+<script src="assets/fig-nn-intro.js?v=20261006"></script>
 <script src="../assets/deck.js?v=20260930"></script>
 </body>
 </html>

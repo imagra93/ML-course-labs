@@ -695,7 +695,7 @@ a_j = \sigma\big(\mathbf{W}^{[1]\top}_{:,j}\mathbf{x} + b^{[1]}_j\big) = \sigma\
 \hat y = \sigma(\mathbf{a}^{[2]}\mathbf{W}^{[3]}+b^{[3]}).
 \]</span></p>
 <p>The figure shows such a network trained on the circle data; each heat map is one unit’s value over the whole plane. Layer 1 draws <strong>lines</strong> (soft walls), layer 2 combines lines into <strong>curved regions</strong>, and the output combines regions into a closed decision region. More layers give more complex shapes with fewer units. On images the same happens with pixels → edges → textures → parts → objects (<a href="03_cnn_transfer_multitask.html">NN note 03</a>). That is the <strong>deep</strong> in deep learning.</p>
-<div class="widget"><svg class="fig" data-fig="deep-feats" style="max-height:300px" aria-label="The four units of layer 1 draw soft lines, the four units of layer 2 combine them into curved regions, and the output is a closed region"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#19">slide 19</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="deep-feats" style="max-height:300px" aria-label="The four units of layer 1 draw soft lines, the four units of layer 2 combine them into curved regions, and the output is a closed region"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#21">slide 21</a> of the Neural Networks deck.</p></div>
 </section>
 <section id="the-neural-network-family-of-this-course" class="level2">
 <h2 class="anchored" data-anchor-id="the-neural-network-family-of-this-course">11. The neural-network family of this course</h2>
@@ -736,7 +736,7 @@ a_j = \sigma\big(\mathbf{W}^{[1]\top}_{:,j}\mathbf{x} + b^{[1]}_j\big) = \sigma\
 </tr>
 </tbody>
 </table>
-<div class="widget"><svg class="fig" data-fig="nn-zoo" style="max-height:290px" aria-label="Four architectures side by side: a fully connected MLP, a CNN sliding a filter over an image, an RNN passing a state along a sequence, and a transformer connecting every pair of tokens"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#20">slide 20</a> of the Neural Networks deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="nn-zoo" style="max-height:290px" aria-label="Four architectures side by side: a fully connected MLP, a CNN sliding a filter over an image, an RNN passing a state along a sequence, and a transformer connecting every pair of tokens"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#19">slide 19</a> of the Neural Networks deck.</p></div>
 </section>
 <section id="the-forward-pass-with-numbers" class="level2">
 <h2 class="anchored" data-anchor-id="the-forward-pass-with-numbers">12. The forward pass, with numbers</h2>
@@ -776,7 +776,7 @@ J &amp;= -\log\hat y = -\log 0.633 = 0.458 \\
         <div data-i="4"><p class="small">\(\hat y=\sigma(0.543)=\mathbf{0.633}\): the network says "63 % chance of class 1".</p></div>
         <div data-i="5"><p class="small">\(L=-\log0.633=\mathbf{0.458}\). Not terrible, not great. Chapter 2 computes how to change each of the 9 parameters to lower it.</p></div>
       </div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#21">slide 21</a> of the Neural Networks deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/01_neural_networks.html#20">slide 20</a> of the Neural Networks deck.</p>
 </div>
 <div id="72028d9a" class="cell" data-execution_count="6">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>x_t, y_t <span class="op">=</span> np.array([[<span class="fl">1.0</span>, <span class="fl">2.0</span>]]), <span class="fl">1.0</span></span>

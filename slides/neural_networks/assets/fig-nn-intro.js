@@ -1,7 +1,7 @@
 /* Figures for 01_neural_networks.html */
 (function(){
 'use strict';
-const {FIG,lib}=window.MLFIG;const {E,T,initSvg,Plot,arrowPx,rng,randn,solve,fitLogit,fmt,q,setV,setR,svgOf}=lib;const {drawNet,trainMLP,box,grid,heat,stepper,segs,sig,f2,f3,NET,tinyForward,drawTiny,TT}=window.MLNN;
+const {FIG,lib}=window.MLFIG;const {E,T,initSvg,Plot,arrowPx,rng,randn,solve,fitLogit,halfPlane,fmt,q,setV,setR,svgOf}=lib;const {drawNet,trainMLP,box,grid,heat,stepper,segs,sig,f2,f3,NET,tinyForward,drawTiny,TT}=window.MLNN;
 /* one neuron: linear regression (no activation) or logistic regression (sigmoid) */
 function neuronFig(root,act){const svg=initSvg(svgOf(root),560,300);const ys=[50,110,170,250];const lin=act==='linear';
   ys.forEach((y,i)=>{E('circle',{cx:50,cy:y,r:18,fill:i===3?'#fff':'#70ad47',stroke:'#404040'},svg);T(svg,50,y+5,i===3?'xₙ':'x'+['₁','₂','₃'][i],'lab').style.fill=i===3?'#000':'#fff';
@@ -31,6 +31,69 @@ FIG['bio-neuron']=root=>{const svg=initSvg(svgOf(root),620,300);T(svg,150,20,'a 
   arrowPx(svg,494,130,512,130,'ln thin sk','fk');E('rect',{x:514,y:110,width:40,height:40,rx:6,fill:'#4472c4'},svg);T(svg,534,136,'g','lab').style.fill='#fff';arrowPx(svg,554,130,576,130,'ln thin sk','fk');T(svg,592,136,'ŷ','lab big');
   [[372,'inputs','× weights',372,196],[470,'sum','+ bias',470,154],[545,'activation','(non-linear)',534,150]].forEach(([x,t1,t2,px,py])=>{T(svg,x,238,t1,'lab','middle');T(svg,x,256,t2,'','middle');lead(x,224,px,py+6)});
   TT(svg,470,290,'ŷ = g(w_1x_1 + w_2x_2 + w_3x_3 + b)','lab','middle')};
+/* "Why neural networks": one small picture per application, data-app = voice | chat | news | music | color | robot | caption | yolo |
+   diffusion | rag. viewBox 200 × 110, plain shapes in the deck colours */
+let appClip=0;
+FIG['app']=root=>{const svg=initSvg(svgOf(root),200,110);const k=root.dataset.app;
+  const tx=(x,y,s,o)=>{o=o||{};const t=T(svg,x,y,s,'',o.a);t.setAttribute('style','font-size:'+(o.fs||12)+'px;fill:'+(o.c||'#1f1f1f')+(o.b?';font-weight:700':'')+(o.i?';font-style:italic':''));return t};
+  const rc=(x,y,w,h,fill,o)=>{o=o||{};return E('rect',{x:x,y:y,width:w,height:h,rx:o.rx||0,fill:fill,stroke:o.s||'none','stroke-width':o.sw||1},o.g||svg)};
+  const ci=(x,y,r,fill,o)=>{o=o||{};return E('circle',{cx:x,cy:y,r:r,fill:fill,stroke:o.s||'none','stroke-width':o.sw||1},o.g||svg)};
+  const pa=(d,fill,stroke,sw,g)=>E('path',{d:d,fill:fill||'none',stroke:stroke||'none','stroke-width':sw||1,'stroke-linecap':'round','stroke-linejoin':'round'},g||svg);
+  const ar=(x1,y1,x2,y2)=>{E('line',{x1:x1,y1:y1,x2:x2,y2:y2,stroke:'#7f7f7f','stroke-width':1.6},svg);const a=Math.atan2(y2-y1,x2-x1),c=Math.cos(a),s=Math.sin(a);
+    E('polygon',{points:[[x2,y2],[x2-7*c+3.5*s,y2-7*s-3.5*c],[x2-7*c-3.5*s,y2-7*s+3.5*c]].map(p=>p.map(v=>v.toFixed(1)).join(',')).join(' '),fill:'#7f7f7f'},svg)};
+  /* a picture frame: returns a group clipped to it (the border is drawn by the caller, on top) */
+  const frame=(x,y,w,h)=>{const id='app-cp'+(appClip++);rc(x,y,w,h,'#fff',{g:E('clipPath',{id:id},E('defs',{},svg))});return E('g',{'clip-path':'url(#'+id+')'},svg)};
+  const wave=(x0,y,c)=>[5,11,19,13,25,17,29,15,21,9,17,7,4].forEach((h,i)=>rc(x0+i*4,y-h/2,2.4,h,c,{rx:1.2}));
+  if(k==='voice'){tx(36,9,'you',{fs:10.5,c:'#6b6b6b'});wave(10,30,'#4472c4');ar(66,30,80,30);rc(84,17,112,26,'#dae3f3',{s:'#4472c4',rx:9});tx(140,34,'“timer for 10 min”');
+    rc(4,67,112,26,'#fbe5d6',{s:'#ed7d31',rx:9});tx(60,84,'“Timer set!”');ar(120,80,134,80);wave(140,80,'#ed7d31');tx(166,107,'assistant',{fs:10.5,c:'#6b6b6b'})}
+  else if(k==='chat'){rc(70,6,126,24,'#4472c4',{rx:11});tx(133,22,'Explain overfitting',{c:'#fff'});
+    rc(4,38,128,40,'#f2f2f2',{s:'#d0d0d0',rx:11});tx(12,54,'Learning the noise,',{a:'start'});tx(12,70,'not the pattern.',{a:'start'});
+    rc(4,86,44,18,'#f2f2f2',{s:'#d0d0d0',rx:9});[16,26,36].forEach(x=>ci(x,95,2.4,'#8c8c8c'))}
+  else if(k==='news'){rc(4,6,108,98,'#fff',{s:'#a6a6a6',rx:3});rc(4,6,108,15,'#404040',{rx:3});rc(4,15,108,6,'#404040');tx(58,17.5,'DAILY NEWS',{fs:9.5,c:'#fff',b:1});
+    tx(12,37,'COFFEE MAKES',{a:'start',b:1});tx(12,51,'YOU IMMORTAL!',{a:'start',b:1});[[62,92],[70,84],[78,90],[86,70],[94,86]].forEach(([y,w])=>rc(12,y,w,3.5,'#d9d9d9',{rx:1.5}));
+    ar(116,55,128,55);tx(162,40,'fake 96 %',{b:1,c:'#c00000'});rc(132,45,60*0.96,9,'#c00000');tx(162,72,'real 4 %',{b:1,c:'#548235'});rc(132,77,3,9,'#70ad47')}
+  else if(k==='music'){[30,38,46,54,62].forEach(y=>E('line',{x1:6,x2:194,y1:y,y2:y,stroke:'#a6a6a6'},svg));
+    const note=(x,y,c)=>{E('ellipse',{cx:x,cy:y,rx:4.8,ry:3.5,fill:c,transform:'rotate(-20 '+x+' '+y+')'},svg);const up=y>46,sx=up?x+4.3:x-4.3;E('line',{x1:sx,y1:y,x2:sx,y2:y+(up?-24:24),stroke:c,'stroke-width':1.4},svg)};
+    [[24,54],[44,46],[64,50],[84,38]].forEach(([x,y])=>note(x,y,'#1f1f1f'));[[118,42],[138,46],[158,34],[178,38]].forEach(([x,y])=>note(x,y,'#ed7d31'));
+    E('line',{x1:101,x2:101,y1:16,y2:76,stroke:'#ed7d31','stroke-dasharray':'3 3'},svg);tx(54,97,'given',{c:'#6b6b6b'});tx(148,97,'generated →',{c:'#ed7d31',b:1})}
+  else if(k==='color'){const gray=c=>{const n=parseInt(c.slice(1),16),v=Math.round(0.299*(n>>16)+0.587*(n>>8&255)+0.114*(n&255));return 'rgb('+v+','+v+','+v+')'};
+    const scene=(x,y,f)=>{const g=frame(x,y,80,62);rc(x,y,80,62,f('#bdd7ee'),{g:g});ci(x+62,y+14,8,f('#ffc000'),{g:g});
+      pa('M'+x+','+(y+44)+' L'+(x+22)+','+(y+20)+' L'+(x+40)+','+(y+38)+' L'+(x+56)+','+(y+24)+' L'+(x+80)+','+(y+46)+' V'+(y+62)+' H'+x+' Z',f('#8497b0'),null,1,g);
+      rc(x,y+46,80,16,f('#a9d18e'),{g:g});rc(x+12,y+35,16,12,f('#f4b183'),{g:g});pa('M'+(x+9)+','+(y+36)+' L'+(x+20)+','+(y+27)+' L'+(x+31)+','+(y+36)+' Z',f('#c00000'),null,1,g);
+      rc(x+61,y+40,3,10,f('#843c0c'),{g:g});ci(x+62.5,y+37,7,f('#548235'),{g:g});rc(x,y,80,62,'none',{s:'#7f7f7f'})};
+    scene(6,14,gray);ar(90,45,110,45);scene(114,14,c=>c);tx(46,95,'old photo',{c:'#6b6b6b'});tx(154,95,'colorized',{c:'#6b6b6b'})}
+  else if(k==='robot'){E('line',{x1:4,x2:196,y1:100,y2:100,stroke:'#a6a6a6','stroke-width':1.5},svg);
+    E('line',{x1:162,y1:25,x2:104,y2:76,stroke:'#5b9bd5','stroke-dasharray':'3 3'},svg);E('line',{x1:162,y1:25,x2:128,y2:98,stroke:'#5b9bd5','stroke-dasharray':'3 3'},svg);
+    rc(22,88,40,12,'#7f7f7f',{rx:2});pa('M42,86 L70,42','none','#ffc000',9);pa('M70,42 L116,54','none','#ffc000',8);ci(42,86,6,'#404040');ci(70,42,6,'#404040');ci(116,54,4.5,'#404040');
+    pa('M102,60 H130 M102,60 V74 M130,60 V74','none','#404040',3);rc(104,76,24,22,'#ed7d31',{s:'#c55a11'});
+    rc(150,10,24,15,'#404040',{rx:3});ci(162,17.5,4.5,'#9dc3e6',{s:'#fff'});tx(178,21,'see',{a:'start',fs:11,c:'#4472c4',b:1});tx(150,70,'grasp',{a:'start',fs:11,c:'#c55a11',b:1})}
+  else if(k==='caption'){const g=frame(6,10,84,70);rc(6,10,84,70,'#dae3f3',{g:g});rc(6,56,84,24,'#a9d18e',{g:g});
+    pa('M24,52 Q16,44 19,38','none','#c55a11',3,g);[27,32,43,48].forEach(x=>rc(x,56,3.4,11,'#c55a11',{g:g}));E('ellipse',{cx:38,cy:54,rx:15,ry:8,fill:'#c55a11'},g);
+    ci(55,45,7,'#c55a11',{g:g});E('ellipse',{cx:61.5,cy:47.5,rx:4.5,ry:3.2,fill:'#c55a11'},g);E('ellipse',{cx:51,cy:42,rx:2.6,ry:5,fill:'#843c0c',transform:'rotate(20 51 42)'},g);
+    ci(57,43,1.2,'#1f1f1f',{g:g});ci(65.5,46.5,1.4,'#1f1f1f',{g:g});ci(76,64,5,'#c00000',{g:g});rc(6,10,84,70,'none',{s:'#7f7f7f'});
+    ar(94,45,106,45);['“A dog playing','with a red ball','on the grass.”'].forEach((s,i)=>tx(110,30+16*i,s,{a:'start',i:1}))}
+  else if(k==='yolo'){const g=frame(2,4,196,102);rc(2,4,196,102,'#eef3fa',{g:g});rc(2,84,196,22,'#d0d0d0',{g:g});E('line',{x1:2,x2:198,y1:95,y2:95,stroke:'#fff','stroke-width':2,'stroke-dasharray':'10 8'},g);
+    ci(41,42,6,'#595959',{g:g});rc(35.5,49,11,21,'#ed7d31',{rx:3,g:g});pa('M38,70 L36,86 M44,70 L46,86','none','#595959',3,g);
+    rc(96,63,60,18,'#5b9bd5',{rx:5,g:g});pa('M106,64 L114,51 H138 L147,64 Z','#5b9bd5',null,1,g);rc(116,54,9,9,'#dae3f3',{g:g});rc(128,54,9,9,'#dae3f3',{g:g});ci(110,82,6,'#404040',{g:g});ci(142,82,6,'#404040',{g:g});
+    E('line',{x1:176,x2:176,y1:50,y2:86,stroke:'#7f7f7f','stroke-width':3},g);rc(170,24,12,27,'#404040',{rx:2,g:g});ci(176,30,3,'#c00000',{g:g});ci(176,37.5,3,'#7f7f7f',{g:g});ci(176,45,3,'#7f7f7f',{g:g});
+    rc(2,4,196,102,'none',{s:'#7f7f7f'});
+    const bb=(x,y,w,h,c,lab,right)=>{rc(x,y,w,h,'none',{s:c,sw:2});const tw=lab.length*5.4+8,lx=right?x+w-tw:x;rc(lx,y-13,tw,13,c);tx(lx+tw/2,y-3,lab,{fs:10,c:'#fff',b:1})};
+    bb(28,33,26,56,'#c00000','person 0.91');bb(92,46,68,42,'#548235','car 0.94');bb(166,21,20,33,'#7030a0','light 0.88',true)}
+  else if(k==='diffusion'){tx(100,13,'“a rocket in space”',{i:1});const R=rng(5);
+    const rocket=(x,y,g)=>{rc(x,y,52,52,'#1f3864',{g:g});[[8,9],[40,6],[45,30],[6,38],[20,46],[33,20]].forEach(([a,b])=>ci(x+a,y+b,0.9,'#fff',{g:g}));const cx=x+26,cy=y+24;
+      pa('M'+(cx-5)+','+(cy+4)+' L'+(cx-10)+','+(cy+14)+' L'+(cx-5)+','+(cy+12)+' Z M'+(cx+5)+','+(cy+4)+' L'+(cx+10)+','+(cy+14)+' L'+(cx+5)+','+(cy+12)+' Z','#c00000',null,1,g);
+      pa('M'+(cx-3.5)+','+(cy+12)+' L'+cx+','+(cy+22)+' L'+(cx+3.5)+','+(cy+12)+' Z','#ffc000',null,1,g);
+      pa('M'+cx+','+(cy-16)+' C'+(cx+7)+','+(cy-8)+' '+(cx+7)+','+(cy+6)+' '+(cx+5)+','+(cy+12)+' L'+(cx-5)+','+(cy+12)+' C'+(cx-7)+','+(cy+6)+' '+(cx-7)+','+(cy-8)+' '+cx+','+(cy-16)+' Z','#f2f2f2',null,1,g);
+      ci(cx,cy-3,3,'#5b9bd5',{s:'#404040',g:g})};
+    const noise=(x,y,op,g)=>{const n=12,c=52/n;for(let i=0;i<n;i++)for(let j=0;j<n;j++){const v=[R(),R(),R()].map(t=>Math.round(30+210*t));rc(x+i*c,y+j*c,c+0.3,c+0.3,'rgb('+v.join(',')+')',{g:g}).setAttribute('opacity',op)}};
+    [8,74,140].forEach((x,i)=>{const g=frame(x,22,52,52);if(i)rocket(x,22,g);if(i<2)noise(x,22,i?0.55:1,g);rc(x,22,52,52,'none',{s:'#7f7f7f'})});
+    ar(62,48,72,48);ar(128,48,138,48);tx(34,88,'pure noise',{fs:11,c:'#6b6b6b'});tx(100,88,'less noise',{fs:11,c:'#6b6b6b'});tx(166,88,'the picture',{fs:11,c:'#6b6b6b'});
+    tx(100,105,'denoised step by step',{fs:11,c:'#ed7d31',b:1})}
+  else if(k==='rag'){rc(4,4,112,22,'#4472c4',{rx:10});tx(60,19,'Our refund policy?',{c:'#fff'});
+    ci(140,15,8,'none',{s:'#404040',sw:2.2});pa('M146,21 L153,28','none','#404040',3);tx(160,19,'search',{a:'start',fs:10.5,c:'#6b6b6b'});
+    const doc=(x,y,hi)=>{pa('M'+x+','+y+' h17 l7,7 v25 h-24 Z',hi?'#fff2cc':'#fff',hi?'#bf9000':'#8c8c8c',hi?2:1);[0,1,2,3].forEach(i=>rc(x+4,y+11+i*5,i===3?10:16,2,hi?'#bf9000':'#d0d0d0'))};
+    [10,40,70,100,130].forEach((x,i)=>doc(x,34,i===2));tx(82,78,'doc 3',{fs:10.5,c:'#7f6000',b:1});
+    ar(100,71,112,84);rc(64,85,132,22,'#f2f2f2',{s:'#d0d0d0',rx:10});tx(130,100,'Within 30 days [doc 3]',{fs:11.5})}};
 /* a layer of K neurons + softmax = softmax regression.
    data-later: only the layer and its K scores at first; the softmax block, the probabilities and the caption are one .step */
 FIG['softmax-layer']=root=>{const later=root.hasAttribute('data-later');const svg=initSvg(svgOf(root),600,300);
@@ -80,6 +143,41 @@ FIG['neuron-num']=root=>{const svg=svgOf(root);const X=[2,-1,0.5],W=[0.4,-0.3,1.
     T(svg,390,298,s===0?'x = (2, −1, 0.5), w = (0.4, −0.3, 1.0), b = 0.1':s===1?'multiply each input by its weight':s===2?'add everything up (plus the bias)':'squash into (0, 1) with the sigmoid','','middle')})};
 FIG['mlp']=root=>{const svg=initSvg(svgOf(root),520,330);drawNet(svg,[3,4,1],{x0:60,y0:40,w:380,h:260,r:16,titles:['Input layer','Hidden layer','Output layer'],label:(l,i)=>l===0?'x'+(i+1):l===1?'a'+(i+1):'ŷ'});
   T(svg,150,320,'W⁽¹⁾ ∈ ℝ³ˣ⁴, b⁽¹⁾ ∈ ℝ⁴','');T(svg,380,320,'W⁽²⁾ ∈ ℝ⁴ˣ¹, b⁽²⁾ ∈ ℝ','')};
+/* the same 3-4-1 network turned into its weight matrices, one hidden unit per step (slider data-k="s"):
+   0 the network · 1–4 hidden unit j: its three edges, column j of W⁽¹⁾ and b_j · 5 layer 1 as one product: z = xW⁽¹⁾ + b⁽¹⁾, a = σ(z)
+   · 6 the output unit: W⁽²⁾ (4 × 1) and b⁽²⁾. Each hidden unit keeps one colour (the .u1–.u4 classes of the formulas);
+   elements of the slide with data-cur="k" get the class "now" at step k */
+const UNIT=['#4472c4','#c00000','#7030a0','#bf9000'],UNIT_SOFT=['#dae3f3','#f8d7d7','#e7dcf0','#fff2cc'];
+FIG['mlp-build']=root=>{const svg=svgOf(root);const slide=root.closest('.slide')||root;const sub=['₁','₂','₃','₄'];
+  stepper(root,s=>{initSvg(svg,660,370);svg.setAttribute('viewBox','0 44 660 326');slide.querySelectorAll('[data-cur]').forEach(e=>e.classList.toggle('now',+e.dataset.cur===s));
+    const built=j=>s>j,cur=j=>s===j+1;
+    const pos=drawNet(svg,[3,4,1],{x0:40,y0:72,w:230,h:280,r:17,titles:['inputs x','hidden layer','output'],label:(l,i)=>l===0?'x'+sub[i]:l===1?'a'+sub[i]:'ŷ',
+      fill:(l,i)=>l===0?'#70ad47':l===1?(built(i)?UNIT[i]:'#a6a6a6'):(s>=6?'#ed7d31':'#a6a6a6'),
+      edgeStyle:(l,i,j)=>l===0?(built(j)?{stroke:UNIT[j],width:cur(j)?3:1.6}:{stroke:'#d9d9d9',width:1}):(s>=6?{stroke:'#ed7d31',width:2.4}:{stroke:'#d9d9d9',width:1})});
+    /* weight labels on the edges of the current unit (or of the output unit) */
+    const wl=(a,b,f,t,c)=>{const x=a[0]+(b[0]-a[0])*f,y=a[1]+(b[1]-a[1])*f;E('rect',{x:x-19,y:y-11,width:38,height:20,rx:3,fill:'#fff',stroke:c},svg);TT(svg,x,y+4,t,'').style.fill=c};
+    for(let j=0;j<4;j++)if(cur(j))for(let i=0;i<3;i++)wl(pos[0][i],pos[1][j],0.42,'w_{'+(i+1)+(j+1)+'}',UNIT[j]);
+    if(s>=6)for(let j=0;j<4;j++)wl(pos[1][j],pos[2][0],0.5,'w^{[2]}_'+(j+1),'#c55a11');
+    /* W⁽¹⁾: one row per input, one column per hidden unit; then b⁽¹⁾, z = xW⁽¹⁾ + b⁽¹⁾ and a = σ(z) */
+    const GX=352,GY=104,CW=50,CH=30,cx=j=>GX+CW*j+CW/2;
+    TT(svg,GX+2*CW,64,'W^{[1]}  (3 × 4)','lab');
+    const cell=(x,y,w,t,fill,tc,o)=>{o=o||{};E('rect',{x:x,y:y,width:w,height:CH,fill:fill||'#fff',stroke:o.stroke||'#d9d9d9','stroke-width':o.sw||1},svg);if(t)TT(svg,x+w/2,y+CH/2+5,t,'').style.fill=tc||'#1f1f1f'};
+    const tag=(x,y,t,fill)=>{E('circle',{cx:x,cy:y,r:10,fill:fill,stroke:'#fff','stroke-width':1.5},svg);const tt=T(svg,x,y+4.5,t,'');tt.style.fill='#fff';tt.style.fontSize='12px'};
+    for(let j=0;j<4;j++)tag(cx(j),88,'a'+sub[j],built(j)?UNIT[j]:'#a6a6a6');
+    for(let i=0;i<3;i++)tag(GX-18,GY+CH*i+CH/2,'x'+sub[i],'#70ad47');
+    for(let i=0;i<3;i++)for(let j=0;j<4;j++)cell(GX+CW*j,GY+CH*i,CW,built(j)?'w_{'+(i+1)+(j+1)+'}':'',built(j)?UNIT_SOFT[j]:'#fff',UNIT[j]);
+    TT(svg,GX-18,GY+3*CH+8+CH/2+5,'b^{[1]}','lab');for(let j=0;j<4;j++)cell(GX+CW*j,GY+3*CH+8,CW,built(j)?'b_'+(j+1):'',built(j)?UNIT_SOFT[j]:'#fff',UNIT[j]);
+    for(let j=0;j<4;j++)if(cur(j))E('rect',{x:GX+CW*j,y:GY,width:CW,height:3*CH+8+CH,fill:'none',stroke:UNIT[j],'stroke-width':2.5},svg);
+    if(s>=5){const yb=GY+4*CH+8;T(svg,GX-18,yb+19,'Σ','lab');for(let j=0;j<4;j++)arrowPx(svg,cx(j),yb+2,cx(j),yb+20,'ln thin sk','fk');
+      T(svg,GX-18,yb+22+CH/2+5,'z','lab');for(let j=0;j<4;j++)cell(GX+CW*j,yb+22,CW,'z_'+(j+1),'#fff','#1f1f1f');
+      T(svg,GX-18,yb+22+CH+19,'σ','lab');for(let j=0;j<4;j++)arrowPx(svg,cx(j),yb+22+CH+2,cx(j),yb+22+CH+20,'ln thin sk','fk');
+      T(svg,GX-18,yb+44+CH+CH/2+5,'a','lab');for(let j=0;j<4;j++)cell(GX+CW*j,yb+44+CH,CW,'a_'+(j+1),UNIT[j],'#fff',{stroke:'#fff'})}
+    /* W⁽²⁾: one row per hidden unit, one column for the output; then b⁽²⁾ and ŷ */
+    const HX=592,HW=46;TT(svg,HX+HW/2,64,'W^{[2]} (4 × 1)','lab');tag(HX+HW/2,88,'ŷ',s>=6?'#ed7d31':'#a6a6a6');
+    for(let j=0;j<4;j++){tag(HX-14,GY+CH*j+CH/2,'a'+sub[j],built(j)?UNIT[j]:'#a6a6a6');cell(HX,GY+CH*j,HW,s>=6?'w^{[2]}_'+(j+1):'',s>=6?'#fbe5d6':'#fff','#c55a11')}
+    TT(svg,HX-14,GY+4*CH+12+CH/2+5,'b^{[2]}','','middle');cell(HX,GY+4*CH+12,HW,s>=6?'b^{[2]}':'',s>=6?'#fbe5d6':'#fff','#c55a11');
+    if(s>=6){E('rect',{x:HX,y:GY,width:HW,height:5*CH+12,fill:'none',stroke:'#ed7d31','stroke-width':2.5},svg);arrowPx(svg,HX+HW/2,GY+5*CH+14,HX+HW/2,GY+6*CH+28,'ln thin sk','fk');
+      E('circle',{cx:HX+HW/2,cy:GY+6*CH+46,r:16,fill:'#ed7d31'},svg);const t=T(svg,HX+HW/2,GY+6*CH+51,'ŷ','lab');t.style.fill='#fff'}})};
 FIG['fwd-num']=root=>{const svg=svgOf(root);const F=tinyForward(NET);stepper(root,s=>{initSvg(svg,600,320);drawTiny(svg,NET,F,s,{hiEdge:s===1?1:s===3?2:0})})};
 /* shapes: X (m×n) · W (n×h) + b = Z (m×h) */
 FIG['shapes']=root=>{const svg=initSvg(svgOf(root),620,260);const blk=(x,y,w,h,c,t,rows,cols)=>{E('rect',{x:x,y:y,width:w,height:h,fill:c,stroke:'#404040'},svg);T(svg,x+w/2,y+h/2+6,t,'lab big');T(svg,x+w/2,y+h+18,cols,'');const r=T(svg,x-8,y+h/2+4,rows,'','end')};
@@ -143,8 +241,9 @@ FIG['ua']=root=>{const f=x=>Math.sin(2*Math.PI*x)+0.5*x;const P=Plot(svgOf(root)
   function draw(){const N=+inp.value;setV(root,'n',N);P.clear();const k=40*N;const g=x=>{let s=0;for(let i=0;i<N;i++){const a=i/N,b=(i+1)/N;s+=f((a+b)/2)*(sg(k*(x-a))-sg(k*(x-b)))}return s};
     if(N<=6)for(let i=0;i<N;i++){const a=i/N,b=(i+1)/N,h=f((a+b)/2);P.fn(x=>h*(sg(k*(x-a))-sg(k*(x-b))),'ln thin so',0,1,300)}
     P.fn(g,'ln sr',0,1,500);setR(root,'h',2*N)}inp.addEventListener('input',draw);draw()};
-/* features of features: the units of a 2-4-4-1 network */
-FIG['deep-feats']=root=>{const {X,y}=circleData(3,200);const mdl=trainMLP(X,y,[4,4],'tanh',800,0.02,7);const svg=initSvg(svgOf(root),960,300);const N=24;
+/* features of features: the units of a 2-4-4-1 network (tanh) trained on the circle data; shared by deep-feats and deep-build */
+function deepNet(){const {X,y}=circleData(3,200);return {X,y,mdl:trainMLP(X,y,[4,4],'tanh',800,0.02,7)}}
+FIG['deep-feats']=root=>{const {X,y,mdl}=deepNet();const svg=initSvg(svgOf(root),960,300);const N=24;
   const panel=(x0,y0,sz,fn,mono)=>{const P=Plot(svg,{at:[x0,y0],w:sz,h:sz,x:[-1,1],y:[-1,1],m:{l:1,r:1,t:1,b:1}});for(let a=0;a<N;a++)for(let b=0;b<N;b++){const xx=[-1+2*(a+0.5)/N,-1+2*(b+0.5)/N];const rc=P.rect(-1+2*a/N,-1+2*b/N,-1+2*(a+1)/N,-1+2*(b+1)/N,'');rc.setAttribute('fill',heat(fn(xx),mono));rc.setAttribute('stroke','none')}
     E('rect',{x:x0+1,y:y0+1,width:sz-2,height:sz-2,fill:'none',stroke:'#bfbfbf'},svg)};
   T(svg,160,18,'layer 1: 4 units','lab');T(svg,460,18,'layer 2: 4 units','lab');T(svg,800,18,'output ŷ','lab');
@@ -154,6 +253,25 @@ FIG['deep-feats']=root=>{const {X,y}=circleData(3,200);const mdl=trainMLP(X,y,[4
   arrowPx(svg,284,152,334,152,'ln sk','fk');arrowPx(svg,584,152,680,152,'ln sk','fk');
   T(svg,162,284,'soft straight lines ("walls")','','middle');T(svg,462,284,'combinations of walls: curved regions','','middle');T(svg,800,284,'the decision: a closed region','','middle');
   T(svg,480,300,'hidden units (tanh): orange = +1, blue = −1 · output: dark blue = high probability · dots: class-1 examples','','middle')};
+/* the same network drawn like the forward-pass slide; one layer per step (slider data-k="s"), each unit becomes a picture of its value
+   over the plane: 0 the network · 1 the inputs · 2 layer 1 · 3 layer 2 · 4 the output. A computed layer's edges: orange = positive
+   weight, blue = negative, width ∝ |w| (faded once the next layer is on) */
+FIG['deep-build']=root=>{const svg=svgOf(root);const {X,y,mdl}=deepNet();const sub=['₁','₂','₃','₄'];
+  const pic=(fn,mono)=>{const N=48,c=document.createElement('canvas');c.width=c.height=N;const g=c.getContext('2d');
+    for(let a=0;a<N;a++)for(let b=0;b<N;b++){g.fillStyle=heat(fn([-1+2*(a+0.5)/N,1-2*(b+0.5)/N]),mono);g.fillRect(a,b,1,1)}return c.toDataURL()};
+  const url=[[pic(x=>x[0]),pic(x=>x[1])],[0,1,2,3].map(j=>pic(x=>mdl.forward(x)[1][j])),[0,1,2,3].map(j=>pic(x=>mdl.forward(x)[2][j])),[pic(x=>mdl.forward(x)[3][0],true)]];
+  const wmax=mdl.W.map(Wl=>Math.max(...Wl.flat().map(Math.abs)));
+  stepper(root,s=>{initSvg(svg,660,400);svg.setAttribute('viewBox','0 50 660 350');
+    const pos=drawNet(svg,[2,4,4,1],{x0:56,y0:80,w:510,h:300,r:20,titles:['input x','layer 1 (tanh)','layer 2 (tanh)','output (sigmoid)'],
+      label:(l,i)=>l===0?'x'+sub[i]:l===3?'ŷ':'a'+sub[i],
+      edgeStyle:(l,i,j)=>{if(s<l+2)return {stroke:'#c9d3e8',width:1};const w=mdl.W[l][i][j],op=s===l+2?0.9:0.35;
+        return {stroke:(w>0?'rgba(237,125,49,':'rgba(68,114,196,')+op+')',width:0.6+3.4*Math.abs(w)/wmax[l]}}});
+    pos.forEach((col,l)=>{if(s<l+1)return;const sz=l===3?116:60;col.forEach((p,i)=>{E('image',{href:url[l][i],x:p[0]-sz/2,y:p[1]-sz/2,width:sz,height:sz,preserveAspectRatio:'none'},svg);
+      E('rect',{x:p[0]-sz/2,y:p[1]-sz/2,width:sz,height:sz,fill:'none',stroke:s===l+1?'#ffc000':'#bfbfbf','stroke-width':s===l+1?3:1},svg)})});
+    if(s>=1)pos[0].forEach((p,i)=>T(svg,p[0]-36,p[1]+5,'x'+sub[i],'lab','end'));
+    if(s>=4){const p=pos[3][0];X.forEach((x,i)=>{if(y[i])E('circle',{cx:p[0]+58*x[0],cy:p[1]-58*x[1],r:1.6,fill:'#000'},svg)});
+      T(svg,p[0],p[1]+78,'ŷ: white = 0, blue = 1','','middle');T(svg,p[0],p[1]+96,'dots: class-1 examples','','middle')}
+    if(s>=1)T(svg,330,396,'units: blue −1, white 0, orange +1 · edges: orange = positive weight, blue = negative','','middle')})};
 /* the family of networks in this course, from simple to structured */
 FIG['nn-zoo']=root=>{const svg=initSvg(svgOf(root),960,290);const W=226;
   const panel=(k,title,s1,s2)=>{const x0=6+k*238;E('rect',{x:x0,y:32,width:W,height:188,rx:10,fill:'#f7f9fc',stroke:'#d0d0d0'},svg);T(svg,x0+W/2,20,title,'lab big');T(svg,x0+W/2,244,s1,'lab');T(svg,x0+W/2,266,s2,'');return x0};
@@ -249,14 +367,33 @@ FIG['rv-curve']=root=>{const r=rng(3);const D=[];for(let v=20;v<=130;v+=10)D.pus
   function draw(k){k=+k;const F=fit(k);P.clear();D.forEach(([x,y])=>P.line(x,y,x,F.h(x),'ln thin so dot2'));P.fn(F.h,'ln sr',10,140);D.forEach(([x,y])=>P.dot(x,y,5,'pt fb'));
     const c=F.c;setR(root,'h','h(x) = '+fmt(c[0],1).replace('-','−')+' '+sg(fmt(c[1]/100,2))+'x'+(k===2?' '+sg(fmt(c[2]/1e4,4))+'x²':''));setR(root,'j',fmt(F.J,1))}
   const cur=segs(root,'f',draw);draw(cur()||1)};
-/* Review of logistic regression: the best straight boundary on the circle data of feat-map (same seed and points) */
+/* Review of logistic regression on the circle data of feat-map (same seed and points). seg data-m:
+   fit  = the trained model. h changes along one direction only, so its lines of equal h (dotted) are straight and parallel; h stays
+          below 0.5 on the data, so the boundary h = 0.5 (θᵀx = 0) lies beyond it, in the corner.
+   best = the best of all straight lines, by brute force (720 directions × every cut between two points): blue on one side.
+   Ringed points are answered wrong. */
 FIG['rv-circle']=root=>{const r=rng(21);const pts=[];for(let i=0;i<150;i++){const a=2*r()-1,b=2*r()-1;pts.push([a,b,a*a+b*b<0.42?1:0])}
-  const w=fitLogit(pts.map(p=>[1,p[0],p[1]]),pts.map(p=>p[2]));const h=(a,b)=>sig(w[0]+w[1]*a+w[2]*b);const L=1.3;
-  const P=Plot(svgOf(root),{w:400,h:400,x:[-L,L],y:[-L,L],m:{l:34,r:10,t:10,b:36}});P.axes({xt:[-1,0,1],yt:[-1,0,1],grid:false,xl:'x₁',yl:'x₂'});const N=39;
-  for(let a=0;a<N;a++)for(let b=0;b<N;b++){const x1=-L+2*L*(a+0.5)/N,x2=-L+2*L*(b+0.5)/N,p=h(x1,x2);P.rect(-L+2*L*a/N,-L+2*L*b/N,-L+2*L*(a+1)/N,-L+2*L*(b+1)/N,p>=0.5?'fb':'fo',P.bg).setAttribute('opacity',(0.06+0.5*Math.abs(p-0.5)*2).toFixed(2))}
-  P.path([...Array(121).keys()].map(k=>{const t=2*Math.PI*k/120;return [Math.sqrt(0.42)*Math.cos(t),Math.sqrt(0.42)*Math.sin(t)]}),'ln thin sm dash');
-  P.path([[-L,-(w[0]+w[1]*-L)/w[2]],[L,-(w[0]+w[1]*L)/w[2]]],'ln sk');P.text(0.62,1.2,'θᵀx = 0','lab','end');
-  pts.forEach(p=>P.dot(p[0],p[1],4,'pt '+(p[2]?'fb':'fo')));
+  const w=fitLogit(pts.map(p=>[1,p[0],p[1]]),pts.map(p=>p[2]));const h=(a,b)=>sig(w[0]+w[1]*a+w[2]*b);const L=1.3,N=39;
+  let best={ok:-1};for(let k=0;k<720;k++){const t=Math.PI*k/360,n=[Math.cos(t),Math.sin(t)];const s=pts.map(p=>[n[0]*p[0]+n[1]*p[1],p[2]]).sort((a,b)=>a[0]-b[0]);
+    let ok=s.filter(p=>p[1]).length;s.forEach((p,i)=>{ok+=p[1]?-1:1;if(ok>best.ok)best={ok:ok,n:n,c:i+1<s.length?(p[0]+s[i+1][0])/2:p[0]+0.05}})}
+  const P=Plot(svgOf(root),{w:400,h:400,x:[-L,L],y:[-L,L],m:{l:34,r:10,t:10,b:36}});P.axes({xt:[-1,0,1],yt:[-1,0,1],grid:false,xl:'x₁',yl:'x₂'});
+  const halo='paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round';
+  /* the two ends of the line u·x = k inside the view */
+  const ends=(u,k)=>{const e=[];[-L,L].forEach(v=>{if(u[1]){const b=(k-u[0]*v)/u[1];if(Math.abs(b)<=L)e.push([v,b])}if(u[0]){const a=(k-u[1]*v)/u[0];if(Math.abs(a)<=L)e.push([a,v])}});return e};
+  /* a label on the line u·x = k, 0.15 inside the end chosen by pick(end) (the end with the largest pick) */
+  const tag=(u,k,pick,s,cls)=>{const e=ends(u,k);if(e.length<2)return;const [a,b]=pick(e[0])>=pick(e[1])?e:[e[1],e[0]],d=Math.hypot(b[0]-a[0],b[1]-a[1]);
+    P.text(a[0]+0.15*(b[0]-a[0])/d,a[1]+0.15*(b[1]-a[1])/d,s,cls,'middle',0,4).setAttribute('style',halo)};
+  const circle=[...Array(121).keys()].map(k=>{const t=2*Math.PI*k/120;return [Math.sqrt(0.42)*Math.cos(t),Math.sqrt(0.42)*Math.sin(t)]});
+  function draw(m){P.clear();const fit=m!=='best',u=fit?[w[1],w[2]]:best.n,k=fit?-w[0]:best.c;
+    if(fit){for(let a=0;a<N;a++)for(let b=0;b<N;b++){const p=h(-L+2*L*(a+0.5)/N,-L+2*L*(b+0.5)/N);P.rect(-L+2*L*a/N,-L+2*L*b/N,-L+2*L*(a+1)/N,-L+2*L*(b+1)/N,p>=0.5?'fb':'fo').setAttribute('opacity',(0.06+0.5*Math.abs(p-0.5)*2).toFixed(2))}
+      [0.3,0.35,0.4,0.45].forEach(v=>{const lk=Math.log(v/(1-v))-w[0],e=ends(u,lk);if(e.length<2)return;P.line(e[0][0],e[0][1],e[1][0],e[1][1],'ln thin sm dot2');tag(u,lk,q=>q[0]-q[1],(v===0.3?'h = ':'')+v.toFixed(2),'')})}
+    else{halfPlane(P,u[0],u[1],-k,'fbs');halfPlane(P,-u[0],-u[1],k,'fos')}
+    P.path(circle,'ln thin sm dash');const e=ends(u,k);if(e.length===2)P.line(e[0][0],e[0][1],e[1][0],e[1][1],'ln sk');
+    if(fit&&e.length===2){const t=e[0][1]>=e[1][1]?e[0]:e[1];P.text(t[0]-0.06,t[1]-0.13,'h = 0.5','lab','end').setAttribute('style',halo)}
+    pts.forEach(p=>P.dot(p[0],p[1],4,'pt '+(p[2]?'fb':'fo')));
+    let ok=0;pts.forEach(p=>{if(((u[0]*p[0]+u[1]*p[1]>k)?1:0)===p[2])ok++;else P.dot(p[0],p[1],7.5,'nof').setAttribute('style','stroke:#c00000;stroke-width:1.6')});
+    setR(root,'ok',ok+' of '+pts.length)}
   const hs=pts.map(p=>h(p[0],p[1])),ok=pts.filter((p,i)=>(hs[i]>=0.5?1:0)===p[2]).length,n0=pts.filter(p=>!p[2]).length;
-  setR(root,'acc',ok+' of '+pts.length+' ('+Math.round(100*ok/pts.length)+' %)');setR(root,'base',n0+' of '+pts.length);setR(root,'hr',fmt(Math.min(...hs),2)+' to '+fmt(Math.max(...hs),2))};
+  setR(root,'acc',ok+' of '+pts.length+' ('+Math.round(100*ok/pts.length)+' %)');setR(root,'base',n0+' of '+pts.length);setR(root,'hr',fmt(Math.min(...hs),2)+' to '+fmt(Math.max(...hs),2));
+  const cur=segs(root,'m',draw);draw(cur()||'fit')};
 })();
