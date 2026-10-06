@@ -112,31 +112,24 @@ FIG['chain-num']=root=>{const svg=svgOf(root);
     if(s>=2){E('rect',{x:150,y:204,width:320,height:36,rx:6,fill:'#fff',stroke:'#c00000'},svg);red(310,228,'dy/dx = (dy/du)·(du/dx) = 8 · 3 = 24')}
     if(s>=3){T(svg,310,270,'check: x = 1.01 → u = 4.03 → y = 16.2409, so y grew by 0.24 = 24 × 0.01  ✓','','middle')}
     T(svg,310,24,['forward: compute and keep every intermediate value','each box knows its own local derivative','chain rule: multiply the local derivatives along the path','the derivative predicts what a small nudge does'][Math.min(s,3)],'','middle')})};
-/* TT with coloured parts: parts = [[text, colour, bold], …], each part may use _x, ^{…} like TT */
-function TTc(parent,x,y,parts,cls,anchor){const base=/\bbig\b/.test(cls||'')?19:/\blab\b/.test(cls||'')?16:14;
-  const t=E('text',{x:x,y:y,'text-anchor':anchor||'middle'},parent);if(cls)t.setAttribute('class',cls);let off=0;
-  parts.forEach(([s,c,b])=>{const segs=[];let i=0,cur='';const push=()=>{if(cur)segs.push([cur,0]);cur=''};
-    while(i<s.length){const ch=s[i];if((ch==='_'||ch==='^')&&i+1<s.length){push();const m=ch==='_'?1:2;let body;if(s[i+1]==='{'){const j=s.indexOf('}',i+2);body=s.slice(i+2,j<0?s.length:j);i=j<0?s.length:j+1}else{body=s[i+1];i+=2}segs.push([body,m]);continue}cur+=ch;i++}push();
-    segs.forEach(([txt,m])=>{const target=m===1?0.28*base:m===2?-0.4*base:0;const ts=E('tspan',{},t);if(Math.abs(target-off)>0.01)ts.setAttribute('dy',(target-off).toFixed(1));off=target;
-      if(m)ts.setAttribute('font-size',(0.72*base).toFixed(1)+'px');if(c)ts.setAttribute('fill',c);if(b)ts.setAttribute('font-weight','700');ts.textContent=txt})});
-  return t}
-/* the three local derivatives we already have, on the 2-4-1 network of the previous slide: ① loss + last activation (orange),
-   ② activation derivatives (purple), ③ the linear layer, "times the other input" (blue); in red, the two errors built from them */
-const P1='#c55a11',P2='#7030a0',P3='#2f5597',PR='#c00000';
-FIG['bp-pieces']=root=>{const svg=initSvg(svgOf(root),1160,290);
-  const badge=(x,y,n,c)=>{E('circle',{cx:x,cy:y,r:11,fill:c},svg);const t=T(svg,x,y+5,String(n),'lab');t.style.fill='#fff';t.style.fontSize='14px';t.style.fontWeight='700'};
-  const pos=drawNet(svg,[2,4,1],{x0:90,y0:70,w:700,h:200,r:18,label:(l,i)=>l===0?'x'+(i+1):l===2?'ŷ':'',fill:l=>l===0?'#70ad47':'#a3336b',edgeStyle:()=>({stroke:'#c9d3e8',width:1})});
-  E('rect',{x:930,y:146,width:130,height:48,rx:8,fill:'#fbe5d6',stroke:'#ed7d31'},svg);TT(svg,995,176,'L(ŷ, y)','lab');arrowPx(svg,810,170,928,170,'ln thin sk','fk');
-  TT(svg,90,286,'x (data)','');TT(svg,440,286,'z^{[1]} → a^{[1]} = g(z^{[1]})','');TT(svg,790,286,'z^{[2]} → ŷ = a^{[2]}','');
-  /* the errors, right to left above the network */
-  arrowPx(svg,995,140,995,48,'ln sr','fr');E('line',{x1:995,y1:48,x2:812,y2:48,stroke:PR,'stroke-width':2.5},svg);arrowPx(svg,812,48,800,48,'ln sr','fr');
-  TTc(svg,903,36,[['δ^{[2]} = ',PR,1],['ŷ − y',P1,1]],'lab big');badge(966,30,1,P1);
-  arrowPx(svg,770,48,460,48,'ln sr','fr');
-  TTc(svg,615,36,[['δ^{[1]} = (',PR,1],['δ^{[2]}',PR,1],[' W^{[2]⊤}',P3,1],[') ⊙ ',PR,1],['g′(z^{[1]})',P2,1]],'lab big');badge(727,30,3,P3);badge(752,30,2,P2);
-  E('line',{x1:420,y1:48,x2:110,y2:48,stroke:'#bfbfbf','stroke-width':2,'stroke-dasharray':'6 5'},svg);arrowPx(svg,112,48,100,48,'ln thin sm','fm');T(svg,265,38,'stop: x is data, it needs no error','');
-  /* the weight gradients, on their edges */
-  const wbox=(x,parts,w)=>{E('rect',{x:x-w/2,y:154,width:w,height:32,rx:6,fill:'#fff',stroke:P3,'stroke-width':1.5},svg);TTc(svg,x-10,176,parts,'lab');badge(x+w/2-16,170,3,P3)};
-  wbox(265,[['∂L/∂W^{[1]} = ',null],['x^⊤',P3,1],[' δ^{[1]}',PR,1]],196);wbox(615,[['∂L/∂W^{[2]} = ',null],['a^{[1]⊤}',P3,1],[' δ^{[2]}',PR,1]],206)};
+/* what backprop starts from: a generic network (dots, any depth) whose last layer is opened up, the logit z⁽ᴸ⁾ → g → a⁽ᴸ⁾ = ŷ → the loss
+   with the ground truth y; in red, ∂L/∂z⁽ᴸ⁾ = ŷ − y, already known from chapter 1 */
+FIG['bp-known']=root=>{const svg=initSvg(svgOf(root),640,290);const Y=150,RED='#c00000',ZX=282,AX=474;
+  const col=(x,n,h)=>[...Array(n)].map((_,i)=>[x,Y+(i-(n-1)/2)*h]);const X0=col(28,3,44),H1=col(92,4,36),HL=col(184,4,36);
+  const ln=(a,b,c)=>E('line',{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:c},svg);
+  X0.forEach(a=>H1.forEach(b=>ln(a,b,'#c9d3e8')));H1.forEach(a=>ln(a,[a[0]+20,a[1]],'#c9d3e8'));HL.forEach(b=>ln([b[0]-20,b[1]],b,'#c9d3e8'));HL.forEach(a=>ln(a,[ZX,Y],'#9dafd6'));
+  T(svg,138,Y+6,'⋯','lab big');X0.forEach(p=>E('circle',{cx:p[0],cy:p[1],r:10,fill:'#70ad47'},svg));[...H1,...HL].forEach(p=>E('circle',{cx:p[0],cy:p[1],r:10,fill:'#4472c4'},svg));
+  T(svg,28,Y+90,'x','lab');TT(svg,184,Y+90,'a^{[L−1]}','lab');T(svg,106,24,'a generic network (any depth)','');T(svg,457,24,'the last layer, opened up','');
+  /* logit → activation → prediction → loss, and the ground truth */
+  E('circle',{cx:ZX,cy:Y,r:28,fill:'#fbe5d6',stroke:'#ed7d31','stroke-width':2},svg);TT(svg,ZX,Y+7,'z^{[L]}','lab big');
+  arrowPx(svg,ZX+30,Y,346,Y,'ln thin sk','fk');E('rect',{x:348,y:Y-24,width:60,height:48,rx:6,fill:'#4472c4'},svg);T(svg,378,Y+7,'g','lab big').style.fill='#fff';
+  arrowPx(svg,410,Y,AX-30,Y,'ln thin sk','fk');E('circle',{cx:AX,cy:Y,r:28,fill:'#ed7d31'},svg);TT(svg,AX,Y+7,'a^{[L]}','lab big').style.fill='#fff';
+  arrowPx(svg,AX+30,Y,530,Y,'ln thin sk','fk');E('rect',{x:532,y:Y-28,width:100,height:56,rx:8,fill:'#fbe5d6',stroke:'#ed7d31','stroke-width':2},svg);T(svg,582,Y+2,'L(ŷ, y)','lab big');T(svg,582,Y+20,'loss','');
+  E('rect',{x:556,y:Y+70,width:52,height:36,rx:6,fill:'#e2f0d9',stroke:'#70ad47','stroke-width':2},svg);T(svg,582,Y+95,'y','lab big');arrowPx(svg,582,Y+68,582,Y+30,'ln thin sk','fk');T(svg,582,Y+124,'ground truth','lab');
+  T(svg,ZX,Y+50,'logit','lab');T(svg,378,Y+50,'activation','lab');T(svg,AX,Y+50,'prediction ŷ','lab');
+  /* in red: the derivative we already have */
+  const ry=Y-80;E('path',{d:'M582,'+(Y-30)+' L582,'+ry+' L'+ZX+','+ry,fill:'none',stroke:RED,'stroke-width':2.5,'stroke-linejoin':'round'},svg);arrowPx(svg,ZX,ry,ZX,Y-31,'ln sr','fr');
+  const t=TT(svg,432,ry-10,'∂L/∂z^{[L]} = ŷ − y','lab big');t.style.fill=RED;t.style.fontWeight='700'};
 /* forward and backward on a concrete 3-4-1 network: the step slider (data-k="s", 0–11, as in fb-walk) lights the part of the network
    that is computed, and [data-blocks] draws the matrices of that step to scale. Buttons data-m: "all" = the dataset X (m = 5 rows),
    "one" = a single example x (1 row). The math panels [data-i][data-m] of the slide follow both */
