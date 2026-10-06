@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
 <link rel="stylesheet" href="../assets/deck.css?v=20260930">
-<link rel="stylesheet" href="assets/nn.css?v=20261006">
+<link rel="stylesheet" href="assets/nn.css?v=20261006b">
 <script src="../assets/mathjax-config.js?v=20260930"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
 </head>
@@ -390,6 +390,30 @@
 </section>
 
 <section class="slide">
+  <h2>The forward pass is a loop</h2>
+  <div class="cols" style="grid-template-columns:1.3fr 1fr">
+    <div class="widget" data-fig="fwd-loop" data-auto="s=1 :: l = 1: A⁽⁰⁾ = X goes in, A⁽¹⁾ (m × 4) comes out|s=2 :: l = 2: A⁽¹⁾ goes back in as the input, A⁽²⁾ comes out. Same two lines, new weights|s=3 :: l = 3 = L: A⁽²⁾ goes in, A⁽³⁾ = Ŷ comes out, one prediction per example. The loop stops|s=4 :: Every layer used the same activation, the sigmoid. It does not have to be so">
+      <svg class="fig" aria-label="A 3-4-4-1 network. Step by step one layer lights up: it takes the previous activation A of l minus 1 and returns A of l, which a loop arrow feeds back as the input of the next layer. The last step marks the same sigmoid in every layer"></svg>
+      <div class="ctl"><label for="fl-s">step</label><input type="range" id="fl-s" data-k="s" min="0" max="4" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">Every layer does the same two things. Start at $l=0$ with $\bA^{[0]}=\bX$ and <b>feed each output back in as the next input</b>:</p>
+      <pre class="code"><span class="cl" data-cur="0">A = X                     <span class="c"># l = 0</span></span>
+<span class="cl" data-cur="1,2,3">for l in 1, …, L:</span>
+<span class="cl" data-cur="1,2,3,4">    A = g(A @ W[l] + b[l])   <span class="c"># output → input</span></span>
+<span class="cl" data-cur="3">Y_hat = A                 <span class="c"># A[L]</span></span></pre>
+      <div class="panels" style="min-height:196px">
+        <div data-i="0"><p class="small"><b>$l=0$.</b> Nothing to compute: the input is the "activation" of layer 0.</p><div class="eq s">$$\bA^{[0]}=\bX\qquad(m\times3)$$</div><p class="small">One example per row, one feature per column.</p></div>
+        <div data-i="1"><p class="small"><b>$l=1$.</b> In: $\bA^{[0]}$. Out: $\bA^{[1]}$.</p><div class="eq s">$$\bA^{[1]}=\sigma\big(\bA^{[0]}\bW^{[1]}+\bb^{[1]}\big)$$</div><p class="why">$(m\times3)(3\times4)+(1\times4)=(m\times4)$</p></div>
+        <div data-i="2"><p class="small"><b>$l=2$.</b> In: $\bA^{[1]}$, the output of the previous step. Out: $\bA^{[2]}$.</p><div class="eq s">$$\bA^{[2]}=\sigma\big(\bA^{[1]}\bW^{[2]}+\bb^{[2]}\big)$$</div><p class="why">$(m\times4)(4\times4)+(1\times4)=(m\times4)$</p></div>
+        <div data-i="3"><p class="small"><b>$l=3=L$.</b> In: $\bA^{[2]}$. Out: the predictions.</p><div class="eq s">$$\hat\bY=\bA^{[3]}=\sigma\big(\bA^{[2]}\bW^{[3]}+\bb^{[3]}\big)$$</div><p class="why">$(m\times4)(4\times1)+(1\times1)=(m\times1)$: one probability per example.</p></div>
+        <div data-i="4"><div class="idea"><b>So far: one activation, everywhere.</b> Every layer used the sigmoid. Nothing forces that: each layer picks its own $g^{[l]}$, and hidden layers rarely use the sigmoid. Which ones exist? Next slide.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
   <h2>Activation Layers:</h2>
   <div class="cols c46">
     <div class="stack" style="gap:10px">
@@ -581,13 +605,13 @@
       <p class="step"><b>Proof.</b> With $g(z)=z$ in the hidden layer:</p>
       <div class="eq step">$$\begin{aligned}h(\bx)&amp;=\big(\bx\bW^{[1]}+\bb^{[1]}\big)\bW^{[2]}+\bb^{[2]}\\&amp;=\bx\,\underbrace{\bW^{[1]}\bW^{[2]}}_{\tilde\bW}+\underbrace{\bb^{[1]}\bW^{[2]}+\bb^{[2]}}_{\tilde\bb}\end{aligned}$$</div>
       <p class="step">A composition of linear maps is linear: <b>any number of linear layers collapses into one</b>. Depth buys nothing without a non-linearity.</p>
+      <div class="note step"><p class="small">This is why every hidden layer has an activation. The non-linearity is what lets a stack of layers build new features instead of one big linear map. Try it on the next slide: set the activation to <b>Linear</b> and add as many units as you like. The boundary stays a straight line.</p></div>
     </div>
-    <div class="stack" style="gap:10px">
-      <div class="note step"><p>This is why every hidden layer has an activation. The non-linearity is what lets a stack of layers build new features instead of one big linear map.</p></div>
+    <div class="stack" style="gap:8px">
       <p class="step small"><b>With the numbers of the tiny network</b> (the forward-pass example), if we removed the tanh:</p>
-      <div class="eq s step">$$\tilde\bW=\begin{pmatrix}0.5&amp;-0.3\\0.2&amp;0.4\end{pmatrix}\begin{pmatrix}0.7\\-0.5\end{pmatrix}=\begin{pmatrix}0.50\\-0.06\end{pmatrix}$$$$\tilde b=0.1\cdot0.7+(-0.1)\cdot(-0.5)+0.2=0.32$$</div>
-      <p class="step small">The two-layer "network" is just the single neuron $\hat y=0.50\,x_1-0.06\,x_2+0.32$.</p>
-      <p class="step small">Try it on the next slide: set the activation to <b>Linear</b> and add as many units as you like. The boundary stays a straight line.</p>
+      <svg class="fig step" data-fig="lin-collapse" aria-label="Left: the 2-2-1 tiny network with its weights and a linear hidden layer. Right: the single neuron it equals, with weights 0.50 and minus 0.06 and bias 0.32"></svg>
+      <div class="eq s step">$$\tilde\bW=\bW^{[1]}\bW^{[2]}=\begin{pmatrix}0.5&amp;-0.3\\0.2&amp;0.4\end{pmatrix}\begin{pmatrix}0.7\\-0.5\end{pmatrix}=\begin{pmatrix}0.50\\-0.06\end{pmatrix}$$$$\tilde b=\bb^{[1]}\bW^{[2]}+b^{[2]}=0.1\cdot0.7+(-0.1)\cdot(-0.5)+0.2=0.32$$</div>
+      <p class="step small">Nine parameters, but the two-layer "network" is just the single neuron $\hat y=0.50\,x_1-0.06\,x_2+0.32$: three parameters, a straight line.</p>
     </div>
   </div>
 </section>
@@ -697,8 +721,10 @@
       <div class="bluebox step">$$\frac{\partial L}{\partial z}=\frac{\hat y-y}{\hat y(1-\hat y)}\cdot\hat y(1-\hat y)=\hat y-y$$</div>
     </div>
     <div class="stack" style="gap:8px">
-      <svg class="fig" data-fig="bce-grad" aria-label="The cross-entropy loss as a function of the logit for a positive example, and its slope sigma of z minus one"></svg>
-      <p class="small step">"Prediction minus target": large when the network is confidently wrong, about 0 when it is right. The same happens for softmax + cross-entropy (coming up) and for a linear output + $\frac12$MSE. Chapter 2 starts from here.</p>
+      <p class="small"><b>What are we computing?</b> Whatever comes before, a binary classifier ends in <b>one neuron</b>: the logit $z^{[L]}$ (a weighted sum of the last hidden layer), the sigmoid, and the prediction $\hat y=a^{[L]}=\sigma(z^{[L]})$. The loss compares $\hat y$ with $y$.</p>
+      <svg class="fig" data-fig="out-net" data-out="sigmoid" aria-label="A network of any depth whose last layer is opened up: the logit z of L, the sigmoid, the prediction a of L equal to y hat, and the loss. A red arrow goes back from the loss to the logit: the derivative we want"></svg>
+      <p class="small">We want $\partial L/\partial z^{[L]}$ (red): how the loss reacts when the logit moves. Chapter 2 builds every other gradient of the network from it.</p>
+      <p class="small step">"Prediction minus target": large when the network is confidently wrong (for $y=1$, a prediction of 0.05 gives $-0.95$), about 0 when it is right. The same happens for softmax + cross-entropy and for a linear output + $\frac12$MSE (coming up).</p>
     </div>
   </div>
 </section>
@@ -761,19 +787,24 @@
 <section class="slide">
   <h2>Softmax activation layer:</h2>
   <div class="cols">
-    <div class="stack" style="gap:12px">
-      <ul>
-        <li>Turns the $K$ scores (logits) of the last layer into $K$ <b>probabilities</b>: all positive, adding up to 1.</li>
-        <li>It is applied to the whole <b>vector</b> of scores at once, not to each number separately like ReLU or the sigmoid.</li>
-        <li>For problems where exactly one class is right.</li>
-        <li>The output is a "soft" version of the one-hot target, and the cross-entropy loss compares the two.</li>
-      </ul>
-      <div class="eq">$$\hat y_k=\frac{e^{z_k}}{\sum_je^{z_j}}$$</div><div class="eq">$$L=-\sum_ky_k\log\hat y_k=-\log\hat y_{\text{true class}}$$</div>
-    </div>
-    <div class="stack">
-      <svg class="fig" data-fig="softmax-demo" aria-label="Five scores turned into five probabilities by the softmax"></svg>
+    <ul class="small">
+      <li>Turns the $K$ scores (logits) of the last layer into $K$ <b>probabilities</b>: all positive, adding up to 1.</li>
+      <li>It is applied to the whole <b>vector</b> of scores at once, not to each number separately like ReLU or the sigmoid.</li>
+      <li>For problems where exactly one class is right.</li>
+      <li>The output is a "soft" version of the one-hot target, and the cross-entropy loss compares the two.</li>
+    </ul>
+    <div class="stack" style="gap:6px">
+      <svg class="fig" data-fig="softmax-demo" style="max-height:210px" aria-label="Five scores turned into five probabilities by the softmax"></svg>
       <p class="small why">The exponential makes the biggest score dominate (5.1 → 0.90) but never sends the others to exactly 0.</p>
     </div>
+  </div>
+  <div class="cols" style="align-items:stretch">
+    <div class="hint b step"><div class="hd">The activation · softmax: $K$ scores → $K$ probabilities</div><div class="bd">
+      <div class="eq">$$\hat y_k=\frac{e^{z_k}}{\sum_{j=1}^Ke^{z_j}},\qquad k=1,\dots,K$$</div>
+      <p class="small"><b>Exponentiate</b> (every score becomes positive), then <b>divide by the sum</b> (they add up to 1). Dog: $e^{5.1}/181.7=0.90$.</p></div></div>
+    <div class="hint o step"><div class="hd">The loss · cross-entropy: compare $\hat{\mathbf y}$ with the one-hot $\mathbf y$</div><div class="bd">
+      <div class="eq">$$L=-\sum_{k=1}^Ky_k\log\hat y_k=-\log\hat y_{\text{true class}}$$</div>
+      <p class="small">$\mathbf y$ is 0 except at the true class, so only one term survives: <b>minus the log of the probability given to the right answer</b>. Dog: $-\ln0.90=0.10$; cat: $-\ln0.02=3.9$.</p></div></div>
   </div>
 </section>
 
@@ -818,23 +849,65 @@
 </section>
 
 <section class="slide">
-  <h2>Softmax - gradient calculation:</h2>
+  <h2>Softmax - gradient calculation (1/2): what we want</h2>
   <div class="cols">
+    <div class="stack" style="gap:8px">
+      <p class="small"><b>What are we computing?</b> A $K$-class network ends in <b>$K$ neurons</b>: one logit $z_k$ per class, the softmax turns them into $\hat y_1,\dots,\hat y_K$, and the cross-entropy compares those with the one-hot $\mathbf y$.</p>
+      <svg class="fig" data-fig="out-net" data-out="softmax" aria-label="A network of any depth whose last layer is opened up: three logits, the softmax, three predicted probabilities, and the cross-entropy loss with the one-hot label. A red arrow goes back from the loss to the logits"></svg>
+      <p class="small">We want $\partial L/\partial z_j$ for <b>every</b> class $j$ (red). Harder than with the sigmoid: each $z_j$ moves <b>every</b> $\hat y_k$, through the sum in the denominator.</p>
+    </div>
     <div class="stack" style="gap:8px">
       <p><b>Step 1.</b> Substitute the softmax into the cross-entropy:</p>
       <div class="eq">$$L=-\sum_jy_j\log\frac{e^{z_j}}{\sum_ke^{z_k}}=-\sum_jy_j\Big(z_j-\log\sum_ke^{z_k}\Big)$$</div>
-      <p class="step">Since $\by$ is one-hot ($\sum_jy_j=1$, and $y_i=1$ for the correct class $i$), this simplifies to:</p>
-      <div class="eq step">$$L=-\Big(z_i-\log\sum_ke^{z_k}\Big)$$</div>
-      <p class="step"><b>Step 2.</b> Differentiate with respect to $z_j$. Two cases:</p>
+      <p class="step">$\by$ is one-hot: $y_i=1$ for the correct class $i$, 0 for the rest (so $\sum_jy_j=1$). Only the true class survives:</p>
+      <div class="hint b step"><div class="hd">The loss as a function of the scores</div><div class="bd"><div class="eq">$$L=-z_i+\log\sum_ke^{z_k}$$</div></div></div>
+      <p class="step small">Two forces: $-z_i$ rewards a <b>high score for the true class</b>; the log-sum of all exponentials penalises <b>every score</b>, mostly the largest ones. Next slide: differentiate it.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Softmax - gradient calculation (2/2): the result</h2>
+  <div class="cols" style="align-items:center">
+    <p><b>Step 2.</b> Differentiate $L=-z_i+\log\sum_ke^{z_k}$ with respect to every score $z_j$. The log-sum term gives the softmax back:</p>
+    <div class="eq">$$\frac{\partial}{\partial z_j}\log\sum_ke^{z_k}=\frac{e^{z_j}}{\sum_ke^{z_k}}=\hat y_j$$</div>
+  </div>
+  <div class="cols">
+    <div class="card g step"><h3>Case 1 · $j=i$, the correct class</h3><div class="eq">$$\frac{\partial L}{\partial z_i}=-1+\hat y_i=\hat y_i-1$$</div><p>Negative (as $\hat y_i&lt;1$): gradient descent pushes the score of the true class <b>up</b>.</p></div>
+    <div class="card o step"><h3>Case 2 · $j\ne i$, a wrong class</h3><div class="eq">$$\frac{\partial L}{\partial z_j}=0+\hat y_j=\hat y_j$$</div><p>Positive: every wrong score is pushed <b>down</b>, the hardest where the network is most wrongly confident.</p></div>
+  </div>
+  <div class="cols" style="align-items:center">
+    <div class="stack" style="gap:6px">
+      <div class="bluebox step" style="align-self:stretch">$$\frac{\partial L}{\partial z_j}=\hat y_j-y_j\qquad\frac{\partial L}{\partial\bz^{[L]}}=\hat{\mathbf y}-\mathbf y$$</div>
+      <p class="small step">Both cases in one formula, since $y_i=1$ and $y_j=0$: the same <b>prediction minus target</b> as sigmoid + cross-entropy.</p>
+    </div>
+    <div class="stack step" style="gap:6px">
+      <table class="t xs" style="text-align:center;table-layout:fixed"><tr><th style="width:26%">true class: dog</th><th>cat</th><th>dog</th><th>car</th><th>tree</th><th>boat</th></tr>
+        <tr><td>$\hat y_j$</td><td>0.02</td><td>0.90</td><td>0.05</td><td>0.01</td><td>0.02</td></tr>
+        <tr><td>$y_j$</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td></tr>
+        <tr><td>$\hat y_j-y_j$</td><td>0.02</td><td style="color:#548235"><b>−0.10</b></td><td>0.05</td><td>0.01</td><td>0.02</td></tr></table>
+      <p class="small">The softmax example: push the dog score up, all the others slightly down.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The derivative for regression: linear output + MSE</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:6px">
+      <p class="small">One example, a real-valued label $y$ (a price, a temperature), a linear output $\hat y=z$ (no activation), loss</p>
+      <div class="eq s">$$L=\tfrac12\big(\hat y-y\big)^2$$</div>
+      <p class="small step"><b>1 ·</b> Derivative with respect to the prediction (the ½ cancels the 2 of the square):</p>
+      <div class="eq s step">$$\frac{\partial L}{\partial\hat y}=\tfrac12\cdot2\,(\hat y-y)=\hat y-y$$</div>
+      <p class="small step"><b>2 ·</b> The slope of the linear activation, $g(z)=z$: $\ \dfrac{\partial\hat y}{\partial z}=g'(z)=1$</p>
+      <p class="small step"><b>3 ·</b> Chain rule: nothing to cancel this time.</p>
+      <div class="bluebox step">$$\frac{\partial L}{\partial z}=(\hat y-y)\cdot1=\hat y-y$$</div>
     </div>
     <div class="stack" style="gap:8px">
-      <p class="step"><b>Case 1: $j=i$ (correct class).</b></p>
-      <div class="eq step">$$\frac{\partial L}{\partial z_i}=-\Big(1-\frac{e^{z_i}}{\sum_ke^{z_k}}\Big)=\hat y_i-1$$</div>
-      <p class="step"><b>Case 2: $j\ne i$ (incorrect classes).</b></p>
-      <div class="eq step">$$\frac{\partial L}{\partial z_j}=-\Big(0-\frac{e^{z_j}}{\sum_ke^{z_k}}\Big)=\hat y_j$$</div>
-      <p class="step"><b>Vectorized form</b>, for all classes:</p>
-      <div class="bluebox step">$$\frac{\partial L}{\partial z_j}=\hat y_j-y_j$$</div>
-      <p class="step small">With the example above and true class "dog": gradient $=(0.02,\,0.90-1,\,0.05,\,0.01,\,0.02)$: push the dog score up, all the others slightly down.</p>
+      <p class="small"><b>What are we computing?</b> A regression network ends in one neuron <b>without activation</b>: the prediction is the logit itself, $\hat y=a^{[L]}=z^{[L]}$, any real number.</p>
+      <svg class="fig" data-fig="out-net" data-out="linear" aria-label="A network of any depth whose last layer is opened up: the logit z of L, the identity activation, the prediction a of L equal to y hat, and the squared-error loss. A red arrow goes back from the loss to the logit"></svg>
+      <p class="small">We want $\partial L/\partial z^{[L]}$ (red), as for the two classifiers.</p>
+      <p class="small step">Again <b>prediction minus target</b>. $y=3$, $\hat y=2.5$: $\partial L/\partial z=-0.5$, push the output up. It grows with the error, so an outlier pulls hard. <code>nn.MSELoss</code> has no ½ and averages over the batch: gradient $\frac2m(\hat y-y)$, same direction.</p>
     </div>
   </div>
 </section>
@@ -866,14 +939,16 @@
         <tr><td>linear</td><td>$\tfrac12(\hat y-y)^2$</td><td>$\hat y-y$</td></tr>
         <tr><td>sigmoid</td><td>binary cross-entropy</td><td>$\hat y-y$</td></tr>
         <tr><td>softmax</td><td>categorical cross-entropy</td><td>$\hat y_k-y_k$ for each class</td></tr></table>
-      <p class="small step">The last two are the derivations we did for sigmoid + cross-entropy and for softmax + cross-entropy. For the first: $\hat y=z$, so $\frac{\partial}{\partial z}\tfrac12(z-y)^2=z-y$.</p>
-      <div class="bluebox step" style="font-size:21px">$$\frac{\partial J}{\partial\bZ^{[L]}}=\frac1m\big(\bA^{[L]}-\bY\big)$$</div>
-      <p class="small step">For a mini-batch: predictions minus targets, divided by $m$. This is the <b>first line of backpropagation</b> (chapter 2).</p>
+      <p class="small step">The three derivations of this chapter: in each pair the derivative of the activation cancels against the loss.</p>
+      <div class="warnbox step"><p class="small"><b>A mismatched pair is worse.</b> Sigmoid + ½ MSE keeps an extra factor $\hat y(1-\hat y)$. Label $y=1$, logit $z=-5$ ($\hat y=0.0067$):</p>
+        <table class="t xs" style="text-align:center;margin:6px 0"><tr><td>sigmoid + BCE</td><td>$\hat y-y=-0.993$</td></tr><tr><td>sigmoid + ½ MSE</td><td>$(\hat y-y)\,\hat y(1-\hat y)=-0.0066$</td></tr></table>
+        <p class="small">A gradient <b>150 times smaller</b> exactly when it should learn fast. Cross-entropy cancels the sigmoid's flat tails.</p></div>
     </div>
-    <div class="stack" style="gap:10px">
-      <p class="step"><b>A mismatched pair is worse.</b> Sigmoid with the squared error: the derivative gets an extra factor $\hat y(1-\hat y)$.</p>
-      <table class="t step" style="font-size:18px;text-align:center"><tr><th colspan="2">label $y=1$, logit $z=-5$ ($\hat y=0.0067$)</th></tr><tr><td>sigmoid + BCE</td><td>$\hat y-y=-0.993$</td></tr><tr><td>sigmoid + ½ MSE</td><td>$(\hat y-y)\,\hat y(1-\hat y)=-0.0066$</td></tr></table>
-      <p class="small step">A confidently wrong prediction gets a gradient <b>150 times smaller</b>: it learns slowly exactly when it should learn fast. Cross-entropy cancels the sigmoid's flat tails.</p>
+    <div class="stack" style="gap:8px">
+      <p class="small step">For a mini-batch of $m$ examples ($J$ = the average loss), the three cases are one matrix formula. It is the <b>error at the output</b>, $\bdelta^{[L]}$ (red):</p>
+      <svg class="fig step" data-fig="out-net" data-out="delta" aria-label="A network of any depth whose last layer is opened up in matrix form: Z of L, the activation g, A of L equal to Y hat, and the mean loss J. A red arrow from J back to Z of L is delta of L, A of L minus Y over m; a dashed red arrow carries it further back through the network: delta of L minus 1 down to delta of 1, chapter 2"></svg>
+      <div class="bluebox step" style="font-size:21px">$$\bdelta^{[L]}=\frac{\partial J}{\partial\bZ^{[L]}}=\frac1m\big(\bA^{[L]}-\bY\big)$$</div>
+      <p class="small step">Predictions minus targets, divided by $m$. This is the <b>first line of backpropagation</b>: chapter 2 sends $\bdelta^{[L]}$ back through the network (dashed) to get every other gradient.</p>
     </div>
   </div>
 </section>
@@ -984,7 +1059,7 @@ probs = logits.softmax(dim=1)     <span class="c"># to read answers</span></pre>
 <script src="assets/nn-core.js?v=20260930"></script>
 <script src="../machine_learning/assets/fig-linear.js?v=20261005"></script>
 <script src="../machine_learning/assets/fig-logistic.js?v=20261005"></script>
-<script src="assets/fig-nn-intro.js?v=20261006"></script>
+<script src="assets/fig-nn-intro.js?v=20261006b"></script>
 <script src="../assets/deck.js?v=20260930"></script>
 </body>
 </html>

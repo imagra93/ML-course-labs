@@ -396,4 +396,73 @@ FIG['rv-circle']=root=>{const r=rng(21);const pts=[];for(let i=0;i<150;i++){cons
   const hs=pts.map(p=>h(p[0],p[1])),ok=pts.filter((p,i)=>(hs[i]>=0.5?1:0)===p[2]).length,n0=pts.filter(p=>!p[2]).length;
   setR(root,'acc',ok+' of '+pts.length+' ('+Math.round(100*ok/pts.length)+' %)');setR(root,'base',n0+' of '+pts.length);setR(root,'hr',fmt(Math.min(...hs),2)+' to '+fmt(Math.max(...hs),2));
   const cur=segs(root,'m',draw);draw(cur()||'fit')};
+/* the forward pass as a loop, on a 3-4-4-1 network (slider data-k="s"): 0 A⁽⁰⁾ = X · 1–3 layer l takes A⁽ˡ⁻¹⁾ and returns A⁽ˡ⁾,
+   which goes back in as the input of layer l + 1 · 4 the same σ in every layer. One colour per layer, as in the formulas.
+   Elements of the slide with data-cur="k,k…" get the class "now" at those steps */
+const LCOL=['#70ad47','#4472c4','#7030a0','#ed7d31'],LSOFT=['#c5e0b4','#b4c7e7','#d5c3e6','#f8cbad'];
+FIG['fwd-loop']=root=>{const svg=svgOf(root);const slide=root.closest('.slide')||root;const n=[3,4,4,1],sub=['₁','₂','₃'];
+  stepper(root,s=>{initSvg(svg,640,420);slide.querySelectorAll('[data-cur]').forEach(e=>e.classList.toggle('now',e.dataset.cur.split(',').map(Number).includes(s)));
+    const l=Math.min(s,3),done=k=>s>=4||k<=l,cur=k=>s<4&&k===l;
+    const pos=drawNet(svg,n,{x0:70,y0:66,w:480,h:184,r:16,label:(k,i)=>k===0?'x'+sub[i]:k===3?'ŷ':'',fill:k=>done(k)?LCOL[k]:'#d9d9d9',
+      edgeStyle:(k)=>cur(k+1)?{stroke:LCOL[k+1],width:2.4}:done(k+1)?{stroke:LSOFT[k+1],width:1.4}:{stroke:'#e6e6e6',width:1}});
+    /* column titles and shapes; under each block of edges its weights, or (last step) its activation */
+    const nm=['A^{[0]} = X','A^{[1]}','A^{[2]}','A^{[3]} = Ŷ'];
+    pos.forEach((c,k)=>{const t=TT(svg,c[0][0],26,nm[k],'lab');t.style.fill=done(k)?LCOL[k]:'#a6a6a6';if(cur(k))t.style.fontWeight='700';T(svg,c[0][0],45,'m × '+n[k],'').style.fill=done(k)?'#595959':'#bfbfbf'});
+    for(let k=1;k<4;k++){const x=(pos[k-1][0][0]+pos[k][0][0])/2;
+      if(s>=4){E('rect',{x:x-44,y:256,width:88,height:24,rx:12,fill:'#fff2cc',stroke:'#bf9000'},svg);TT(svg,x,273,'g^{[' +k+']} = σ','lab')}
+      else{const t=TT(svg,x,273,'W^{['+k+']}: '+n[k-1]+' × '+n[k],'');t.style.fill=cur(k)?LCOL[k]:done(k)?'#595959':'#bfbfbf';if(cur(k))t.style.fontWeight='700'}}
+    /* the loop: A⁽ˡ⁻¹⁾ → layer l → A⁽ˡ⁾, and A⁽ˡ⁾ back to the input */
+    const Y0=300,pill=(x,t,sz,c)=>{E('rect',{x:x,y:Y0+14,width:120,height:48,rx:24,fill:c},svg);TT(svg,x+60,Y0+35,t,'lab').style.fill='#fff';TT(svg,x+60,Y0+54,sz,'').style.fill='#fff'};
+    const inC=s===0?LCOL[0]:s>=4?'#7f7f7f':LCOL[l-1],outC=s>=4?'#7f7f7f':LCOL[l];
+    pill(20,s===0?'X':s>=4?'A^{[l−1]}':'A^{['+(l-1)+']}',s>=4?'m × n_{l−1}':'m × '+n[Math.max(0,l-1)],inC);
+    pill(500,s>=4?'A^{[l]}':l===3?'A^{[3]} = Ŷ':'A^{['+l+']}',s>=4?'m × n_l':'m × '+n[l],outC);
+    arrowPx(svg,142,Y0+38,178,Y0+38,'ln thin sk','fk');arrowPx(svg,462,Y0+38,498,Y0+38,'ln thin sk','fk');
+    E('rect',{x:180,y:Y0,width:280,height:76,rx:8,fill:'#fff',stroke:s>=4?'#7f7f7f':LCOL[l],'stroke-width':2},svg);
+    if(s===0){TT(svg,320,Y0+30,'layer 0: nothing to compute','lab');TT(svg,320,Y0+54,'A^{[0]} = X, the input','')}
+    else{const L=s>=4?'l':String(l),P=s>=4?'l−1':String(l-1);
+      if(s>=4)E('rect',{x:244,y:Y0+52,width:152,height:22,rx:4,fill:'#fff2cc'},svg);
+      const h=TT(svg,320,Y0+21,s>=4?'layer l (any l)':'layer l = '+l,'');h.style.fill=s>=4?'#595959':LCOL[l];h.style.fontWeight='700';
+      TT(svg,320,Y0+44,'Z^{['+L+']} = A^{['+P+']} W^{['+L+']} + b^{['+L+']}','lab');TT(svg,320,Y0+68,'A^{['+L+']} = σ(Z^{['+L+']})','lab')}
+    const last=s===3,fb=E('path',{d:'M560,'+(Y0+62)+' L560,'+(Y0+92)+' L80,'+(Y0+92)+' L80,'+(Y0+76),fill:'none',stroke:last?'#bfbfbf':'#404040','stroke-width':1.6,'stroke-dasharray':last?'5 4':''},svg);
+    arrowPx(svg,80,Y0+78,80,Y0+64,last?'ln thin sm':'ln thin sk',last?'fm':'fk');
+    const msg=s===0?'A^{[0]} goes in as the input of layer 1':s<3?'the output A^{['+l+']} goes back in: the input of layer '+(l+1):s===3?'l = L: stop. A^{[3]} = Ŷ, one prediction per example':'the same activation σ in every layer, so far';
+    const mt=TT(svg,320,Y0+112,msg,'lab');if(s>=4)mt.style.fill='#7f6000'})};
+/* a linear hidden layer collapses: the tiny 2-2-1 network without its tanh is one neuron, W̃ = W⁽¹⁾W⁽²⁾ and b̃ = b⁽¹⁾W⁽²⁾ + b⁽²⁾ */
+FIG['lin-collapse']=root=>{const svg=initSvg(svgOf(root),620,250);svg.setAttribute('viewBox','0 24 620 228');const N=NET,mn=v=>String(v).replace('-','−');
+  const wl=(a,b,f,t,c)=>{const x=a[0]+(b[0]-a[0])*f,y=a[1]+(b[1]-a[1])*f;E('rect',{x:x-25,y:y-11,width:50,height:20,rx:3,fill:'#fff',stroke:c},svg);T(svg,x,y+4,t,'').style.fill=c==='#9dafd6'?'#595959':c};
+  const p=drawNet(svg,[2,2,1],{x0:40,y0:56,w:270,h:150,r:18,label:(l,i)=>l===0?'x'+['₁','₂'][i]:l===1?'z'+['₁','₂'][i]:'ŷ',fill:l=>l===0?'#70ad47':l===1?'#a5a5a5':'#ed7d31',edgeStyle:()=>({stroke:'#9dafd6',width:1.2})});
+  wl(p[0][0],p[1][0],0.42,mn(N.W1[0][0]),'#9dafd6');wl(p[0][0],p[1][1],0.3,mn(N.W1[0][1]),'#9dafd6');wl(p[0][1],p[1][0],0.3,mn(N.W1[1][0]),'#9dafd6');wl(p[0][1],p[1][1],0.42,mn(N.W1[1][1]),'#9dafd6');
+  wl(p[1][0],p[2][0],0.5,mn(N.W2[0][0]),'#9dafd6');wl(p[1][1],p[2][0],0.5,mn(N.W2[1][0]),'#9dafd6');
+  T(svg,p[1][0][0],p[1][0][1]-26,'b = '+mn(N.b1[0]),'');T(svg,p[1][1][0],p[1][1][1]+36,'b = '+mn(N.b1[1]),'');T(svg,p[2][0][0],p[2][0][1]-28,'b = '+mn(N.b2[0]),'');
+  T(svg,175,42,'two layers, g(z) = z in the hidden layer','lab');
+  T(svg,358,140,'=','lab').style.fontSize='34px';
+  const Wt=[0,1].map(i=>N.W1[i][0]*N.W2[0][0]+N.W1[i][1]*N.W2[1][0]),bt=N.b1[0]*N.W2[0][0]+N.b1[1]*N.W2[1][0]+N.b2[0];
+  const q2=drawNet(svg,[2,1],{x0:410,y0:56,w:160,h:150,r:18,label:(l,i)=>l===0?'x'+['₁','₂'][i]:'ŷ',fill:l=>l===0?'#70ad47':'#ed7d31',edgeStyle:()=>({stroke:'#ed7d31',width:1.8})});
+  [0,1].forEach(i=>wl(q2[0][i],q2[1][0],0.45,f2(Wt[i]),'#c55a11'));T(svg,q2[1][0][0],q2[1][0][1]-28,'b = '+f2(bt),'').style.fill='#c55a11';
+  T(svg,490,42,'one neuron: the same function','lab');
+  TT(svg,175,244,'ŷ = (xW^{[1]} + b^{[1]}) W^{[2]} + b^{[2]}','lab');const r=TT(svg,490,244,'ŷ = '+f2(Wt[0])+' x_1 '+(Wt[1]<0?'− ':'+ ')+f2(Math.abs(Wt[1]))+' x_2 + '+f2(bt),'lab');r.style.fill='#c55a11'};
+/* the end of a network, opened up: … → a⁽ᴸ⁻¹⁾ → z⁽ᴸ⁾ → activation → a⁽ᴸ⁾ = ŷ → loss; in red, the derivative we want, ∂L/∂z⁽ᴸ⁾.
+   data-out: sigmoid | linear | softmax (K = 3 outputs) | delta (matrix form for a mini-batch: δ⁽ᴸ⁾ and where backprop takes it next) */
+FIG['out-net']=root=>{const k=root.getAttribute('data-out')||'sigmoid';const svg=initSvg(svgOf(root),600,260);const SM=k==='softmax',D=k==='delta';
+  const RED='#c00000',Y=146,ZX=262,AX=432,col=(x,n,h)=>[...Array(n)].map((_,i)=>[x,Y+(i-(n-1)/2)*h]);
+  const X0=col(26,3,44),H1=col(88,4,34),HL=col(176,4,34),outs=SM?[Y-42,Y,Y+42]:[Y],R=SM?16:22;
+  const ln=(a,b,c)=>E('line',{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:c},svg);
+  X0.forEach(a=>H1.forEach(b=>ln(a,b,'#c9d3e8')));H1.forEach(a=>ln(a,[a[0]+20,a[1]],'#c9d3e8'));HL.forEach(b=>ln([b[0]-20,b[1]],b,'#c9d3e8'));T(svg,132,Y+6,'⋯','lab big');
+  HL.forEach(a=>outs.forEach(y=>ln(a,[ZX,y],'#9dafd6')));
+  X0.forEach(p=>E('circle',{cx:p[0],cy:p[1],r:9,fill:'#70ad47'},svg));[...H1,...HL].forEach(p=>E('circle',{cx:p[0],cy:p[1],r:9,fill:'#4472c4'},svg));
+  T(svg,26,Y+82,D?'X':'x','lab');TT(svg,176,Y+82,D?'A^{[L−1]}':'a^{[L−1]}','lab');const tY=SM||D?22:62;if(!SM&&!D)svg.setAttribute('viewBox','0 40 600 220');T(svg,100,tY,'a network of any depth','');
+  /* the last layer: logit(s) → activation → prediction(s) → loss */
+  const act=SM?'softmax':k==='linear'?'g(z) = z':D?'g':'σ',actC=k==='linear'?'#a5a5a5':'#4472c4';
+  outs.forEach((y,i)=>{E('circle',{cx:ZX,cy:y,r:R,fill:'#fbe5d6',stroke:'#ed7d31','stroke-width':1.5},svg);TT(svg,ZX,y+5,SM?'z_'+(i+1):D?'Z^{[L]}':'z^{[L]}','lab');
+    arrowPx(svg,ZX+R+1,y,302,y,'ln thin sk','fk');arrowPx(svg,376,y,AX-R-2,y,'ln thin sk','fk');
+    E('circle',{cx:AX,cy:y,r:R,fill:'#ed7d31'},svg);TT(svg,AX,y+5,SM?'ŷ_'+(i+1):D?'A^{[L]}':'a^{[L]}','lab').style.fill='#fff';arrowPx(svg,AX+R+1,y,486,Y+(y-Y)*0.3,'ln thin sk','fk')});
+  const bh=SM?126:44;E('rect',{x:304,y:Y-bh/2,width:70,height:bh,rx:6,fill:actC},svg);T(svg,339,Y+(SM?5:6),act,SM?'lab':k==='linear'?'':'lab big').style.fill='#fff';
+  E('rect',{x:488,y:Y-22,width:100,height:44,rx:6,fill:'#fbe5d6',stroke:'#ed7d31'},svg);TT(svg,538,Y+6,D?'J(A^{[L]}, Y)':'L(ŷ, y)','lab');
+  arrowPx(svg,538,Y+60,538,Y+24,'ln thin sk','fk');T(svg,538,Y+76,D?'Y':SM?'y (one-hot)':'y','lab');
+  const yb=Y+(SM?82:40);TT(svg,ZX,yb,SM?'logits z^{[L]}':'logit','');TT(svg,AX,yb,D?'= Ŷ':SM?'a^{[L]} = ŷ':'= ŷ',D||SM?'':'lab');
+  T(svg,420,tY,SM?'the last layer, K = 3 classes':'the last layer, opened up','');
+  /* in red, backward: the derivative of the loss with respect to the logit(s) */
+  const top=Y-(SM?42+R:R),ry=SM||D?70:top-16;E('path',{d:'M538,'+(Y-24)+' L538,'+ry+' L'+ZX+','+ry,fill:'none',stroke:RED,'stroke-width':2.2,'stroke-linejoin':'round'},svg);arrowPx(svg,ZX,ry,ZX,top-2,'ln sr','fr');
+  const lab=D?'δ^{[L]} = ∂J/∂Z^{[L]} = (A^{[L]} − Y) / m':SM?'we want: ∂L/∂z_k for every class k':'we want: ∂L/∂z^{[L]}';TT(svg,(ZX+538)/2,ry-8,lab,'lab').style.fill=RED;
+  if(D){E('line',{x1:ZX-8,y1:ry,x2:30,y2:ry,stroke:RED,'stroke-width':2,'stroke-dasharray':'6 5'},svg);arrowPx(svg,40,ry,20,ry,'ln sr','fr');TT(svg,130,ry-8,'δ^{[L−1]}, …, δ^{[1]}: chapter 2','').style.fill=RED}};
 })();

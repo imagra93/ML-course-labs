@@ -1,7 +1,7 @@
 /* Figures for 02_backpropagation.html */
 (function(){
 'use strict';
-const {FIG,lib}=window.MLFIG;const {E,T,initSvg,Plot,arrowPx,rng,randn,fmt,q,setV,setR,svgOf}=lib;const {drawNet,box,stepper,sig,f2,f3,NET,tinyForward,drawTiny,TT}=window.MLNN;
+const {FIG,lib}=window.MLFIG;const {E,T,initSvg,Plot,arrowPx,rng,randn,fmt,q,setV,setR,svgOf}=lib;const {drawNet,box,stepper,segs,sig,f2,f3,NET,tinyForward,drawTiny,TT}=window.MLNN;
 const FWD=['X','Z^{[1]}','A^{[1]}','Z^{[2]}','A^{[2]}','L'],FSUB=['input','linear','activation','linear','prediction','loss'];const BWD=['∂W^{[1]}, ∂b^{[1]}','δ^{[1]}','∂A^{[1]}','∂W^{[2]}, ∂b^{[2]}','δ^{[2]}','L'];
 function chain(svg,y,labels,subs,hi,col,back){labels.forEach((t,i)=>{const x=12+i*101;const on=hi.includes(i);E('rect',{x:x,y:y,width:90,height:52,rx:8,fill:on?col:'#f2f2f2',stroke:on?col:'#bfbfbf'},svg);
   const tt=TT(svg,x+45,y+24,t,'lab');tt.style.fill=on?'#fff':'#595959';const st=T(svg,x+45,y+43,subs[i],'');st.style.fill=on?'#fff':'#8c8c8c';if(i<labels.length-1)arrowPx(svg,back?x+100:x+91,y+26,back?x+91:x+100,y+26,'ln thin sm','fm')})}
@@ -12,8 +12,8 @@ FIG['fb-walk']=root=>{const svg=initSvg(root.querySelector('svg'),620,170);const
     T(svg,10,100,'← Backward','lab','start');chain(svg,108,BWD,['gradient','hidden error','','gradient','output error','loss'],s<6?[]:bwdHi[s-6],'#a3336b',true);
     panels.forEach(p=>p.hidden=(+p.dataset.i!==s))}inp.addEventListener('input',draw);draw()};
 FIG['net-back']=root=>{const svg=initSvg(svgOf(root),520,300);drawNet(svg,[2,4,1],{x0:50,y0:40,w:400,h:220,r:16,label:(l,i)=>l===0?'x'+(i+1):l===1?'':'L',fill:(l)=>l===0?'#70ad47':l===1?'#a3336b':'#a3336b'});
-  arrowPx(svg,420,24,280,24,'ln sr','fr');T(svg,350,16,'δ₂','lab');arrowPx(svg,230,24,90,24,'ln sr','fr');T(svg,160,16,'δ₁','lab');
-  T(svg,260,292,'The error starts at the loss and travels backward: output → δ₂ → hidden → δ₁ → input','','middle')};
+  arrowPx(svg,420,24,280,24,'ln sr','fr');TT(svg,350,18,'δ^{[2]}','lab');arrowPx(svg,230,24,90,24,'ln sr','fr');TT(svg,160,18,'δ^{[1]}','lab');
+  TT(svg,260,292,'The error starts at the loss and travels backward: output → δ^{[2]} → hidden → δ^{[1]} → input','','middle')};
 /* ---- (a+b)·c computational graph with numbers ---- */
 FIG['graph-num']=root=>{const svg=svgOf(root);
   stepper(root,s=>{initSvg(svg,600,330);const node=(x,y,t,c)=>{E('circle',{cx:x,cy:y,r:26,fill:c,stroke:'#404040'},svg);T(svg,x,y+6,t,'lab big')};
@@ -112,4 +112,81 @@ FIG['chain-num']=root=>{const svg=svgOf(root);
     if(s>=2){E('rect',{x:150,y:204,width:320,height:36,rx:6,fill:'#fff',stroke:'#c00000'},svg);red(310,228,'dy/dx = (dy/du)·(du/dx) = 8 · 3 = 24')}
     if(s>=3){T(svg,310,270,'check: x = 1.01 → u = 4.03 → y = 16.2409, so y grew by 0.24 = 24 × 0.01  ✓','','middle')}
     T(svg,310,24,['forward: compute and keep every intermediate value','each box knows its own local derivative','chain rule: multiply the local derivatives along the path','the derivative predicts what a small nudge does'][Math.min(s,3)],'','middle')})};
+/* TT with coloured parts: parts = [[text, colour, bold], …], each part may use _x, ^{…} like TT */
+function TTc(parent,x,y,parts,cls,anchor){const base=/\bbig\b/.test(cls||'')?19:/\blab\b/.test(cls||'')?16:14;
+  const t=E('text',{x:x,y:y,'text-anchor':anchor||'middle'},parent);if(cls)t.setAttribute('class',cls);let off=0;
+  parts.forEach(([s,c,b])=>{const segs=[];let i=0,cur='';const push=()=>{if(cur)segs.push([cur,0]);cur=''};
+    while(i<s.length){const ch=s[i];if((ch==='_'||ch==='^')&&i+1<s.length){push();const m=ch==='_'?1:2;let body;if(s[i+1]==='{'){const j=s.indexOf('}',i+2);body=s.slice(i+2,j<0?s.length:j);i=j<0?s.length:j+1}else{body=s[i+1];i+=2}segs.push([body,m]);continue}cur+=ch;i++}push();
+    segs.forEach(([txt,m])=>{const target=m===1?0.28*base:m===2?-0.4*base:0;const ts=E('tspan',{},t);if(Math.abs(target-off)>0.01)ts.setAttribute('dy',(target-off).toFixed(1));off=target;
+      if(m)ts.setAttribute('font-size',(0.72*base).toFixed(1)+'px');if(c)ts.setAttribute('fill',c);if(b)ts.setAttribute('font-weight','700');ts.textContent=txt})});
+  return t}
+/* the three local derivatives we already have, on the 2-4-1 network of the previous slide: ① loss + last activation (orange),
+   ② activation derivatives (purple), ③ the linear layer, "times the other input" (blue); in red, the two errors built from them */
+const P1='#c55a11',P2='#7030a0',P3='#2f5597',PR='#c00000';
+FIG['bp-pieces']=root=>{const svg=initSvg(svgOf(root),1160,290);
+  const badge=(x,y,n,c)=>{E('circle',{cx:x,cy:y,r:11,fill:c},svg);const t=T(svg,x,y+5,String(n),'lab');t.style.fill='#fff';t.style.fontSize='14px';t.style.fontWeight='700'};
+  const pos=drawNet(svg,[2,4,1],{x0:90,y0:70,w:700,h:200,r:18,label:(l,i)=>l===0?'x'+(i+1):l===2?'ŷ':'',fill:l=>l===0?'#70ad47':'#a3336b',edgeStyle:()=>({stroke:'#c9d3e8',width:1})});
+  E('rect',{x:930,y:146,width:130,height:48,rx:8,fill:'#fbe5d6',stroke:'#ed7d31'},svg);TT(svg,995,176,'L(ŷ, y)','lab');arrowPx(svg,810,170,928,170,'ln thin sk','fk');
+  TT(svg,90,286,'x (data)','');TT(svg,440,286,'z^{[1]} → a^{[1]} = g(z^{[1]})','');TT(svg,790,286,'z^{[2]} → ŷ = a^{[2]}','');
+  /* the errors, right to left above the network */
+  arrowPx(svg,995,140,995,48,'ln sr','fr');E('line',{x1:995,y1:48,x2:812,y2:48,stroke:PR,'stroke-width':2.5},svg);arrowPx(svg,812,48,800,48,'ln sr','fr');
+  TTc(svg,903,36,[['δ^{[2]} = ',PR,1],['ŷ − y',P1,1]],'lab big');badge(966,30,1,P1);
+  arrowPx(svg,770,48,460,48,'ln sr','fr');
+  TTc(svg,615,36,[['δ^{[1]} = (',PR,1],['δ^{[2]}',PR,1],[' W^{[2]⊤}',P3,1],[') ⊙ ',PR,1],['g′(z^{[1]})',P2,1]],'lab big');badge(727,30,3,P3);badge(752,30,2,P2);
+  E('line',{x1:420,y1:48,x2:110,y2:48,stroke:'#bfbfbf','stroke-width':2,'stroke-dasharray':'6 5'},svg);arrowPx(svg,112,48,100,48,'ln thin sm','fm');T(svg,265,38,'stop: x is data, it needs no error','');
+  /* the weight gradients, on their edges */
+  const wbox=(x,parts,w)=>{E('rect',{x:x-w/2,y:154,width:w,height:32,rx:6,fill:'#fff',stroke:P3,'stroke-width':1.5},svg);TTc(svg,x-10,176,parts,'lab');badge(x+w/2-16,170,3,P3)};
+  wbox(265,[['∂L/∂W^{[1]} = ',null],['x^⊤',P3,1],[' δ^{[1]}',PR,1]],196);wbox(615,[['∂L/∂W^{[2]} = ',null],['a^{[1]⊤}',P3,1],[' δ^{[2]}',PR,1]],206)};
+/* forward and backward on a concrete 3-4-1 network: the step slider (data-k="s", 0–11, as in fb-walk) lights the part of the network
+   that is computed, and [data-blocks] draws the matrices of that step to scale. Buttons data-m: "all" = the dataset X (m = 5 rows),
+   "one" = a single example x (1 row). The math panels [data-i][data-m] of the slide follow both */
+FIG['fb-concrete']=root=>{const svg=svgOf(root);const slide=root.closest('.slide')||root;const bsv=slide.querySelector('svg[data-blocks]');const inp=q(root,'s');
+  const panels=[...slide.querySelectorAll('[data-i][data-m]')];let mode='all';
+  const FW='#2e7d5b',BW='#a3336b',GR='#d9d9d9',LC=['#70ad47','#4472c4','#ed7d31'],sub=['₁','₂','₃','₄'];
+  const FILL={x:'#e2f0d9',w:'#dae3f3',b:'#fff2cc',z:'#fbe5d6',y:'#e7e6e6',d:'#f4dce8'};
+  function net(s){const M=mode==='all';initSvg(svg,600,350);const n=[3,4,1];
+    const done=[s>=0,s>=1,s>=3],back=[false,s>=10,s>=7];
+    const ring=s<6?[[0],[1,2],[3,4]].findIndex(a=>a.includes(s)):s===7?2:(s===9||s===10)?1:-1;
+    const eW=k=>{const fw=s<6&&((k===0&&s===1)||(k===1&&s===3)),bw=(k===1&&(s===8||s===9))||(k===0&&s===11),bd=(k===1&&s>8)||(k===0&&s>11);
+      return fw?{stroke:FW,width:2.4}:bw?{stroke:BW,width:2.6}:bd?{stroke:'#e3b5cb',width:1.3}:{stroke:'#c9d3e8',width:1}};
+    const lab=(l,i)=>l===0?'x'+sub[i]:l===1?(back[1]?'δ':s===9?'∂a':s===1?'z':s>=2?'a':''):(back[2]?'δ':s===3?'z':s>=4?'ŷ':'');
+    const fill=(l)=>back[l]?BW:done[l]?LC[l]:GR;
+    /* "dataset" mode: every unit holds one number per example, drawn as a small stack behind it */
+    const P=[];n.forEach((c,l)=>{const x=60+l*190;for(let i=0;i<c;i++)P.push([x,58+230*(i+0.5)/c,l])});
+    if(M)P.forEach(([x,y,l])=>{[10,5].forEach(o=>E('circle',{cx:x+o,cy:y-o,r:17,fill:fill(l),'fill-opacity':o>5?0.25:0.45,stroke:'#fff','stroke-width':1.5},svg))});
+    const pos=drawNet(svg,n,{x0:60,y0:58,w:380,h:230,r:17,label:lab,fill:fill,edgeStyle:(l)=>eW(l)});
+    if(ring>=0)pos[ring].forEach(p=>E('circle',{cx:p[0],cy:p[1],r:22,fill:'none',stroke:s<6?FW:BW,'stroke-width':3},svg));
+    /* loss */
+    const lc=s>=5?(s>=6?'#f4dce8':'#fbe5d6'):'#f2f2f2';E('rect',{x:494,y:149,width:82,height:52,rx:8,fill:lc,stroke:s===5?FW:s===6?BW:'#bfbfbf','stroke-width':s===5||s===6?3:1},svg);
+    TT(svg,535,181,'L','lab big').style.fill=s>=5?'#1f1f1f':'#a6a6a6';arrowPx(svg,450,175,492,175,'ln thin sm','fm');
+    if(s>=5){arrowPx(svg,535,246,535,203,'ln thin sk','fk');TT(svg,535,264,M?'Y (5 × 1)':'y (1 × 1)','')}
+    /* titles: the matrix of each column with its shape; under the edges, the weights */
+    const ttl=[[M?'X':'x',M?'5 × 3':'1 × 3'],[M?'Z^{[1]}, A^{[1]}':'z^{[1]}, a^{[1]}',M?'5 × 4':'1 × 4'],[M?'Z^{[2]}, A^{[2]}':'z^{[2]}, a^{[2]}',M?'5 × 1':'1 × 1']];
+    ttl.forEach(([a,b],l)=>{const x=60+l*190;const t=TT(svg,x,20,a,'lab');t.style.fill=back[l]?BW:done[l]?'#1f1f1f':'#a6a6a6';T(svg,x,38,b,'').style.fill=done[l]?'#595959':'#bfbfbf'});
+    TT(svg,535,20,'loss','lab').style.fill=s>=5?'#1f1f1f':'#a6a6a6';T(svg,535,38,'1 × 1','').style.fill=s>=5?'#595959':'#bfbfbf';
+    [[155,'W^{[1]}: 3 × 4,  b^{[1]}: 1 × 4',0],[345,'W^{[2]}: 4 × 1,  b^{[2]}: 1 × 1',1]].forEach(([x,t,k])=>{const st=eW(k),c=st.stroke==='#c9d3e8'?'#7f7f7f':st.stroke==='#e3b5cb'?BW:st.stroke;const e=TT(svg,x,330,t,'');e.style.fill=c;if(c!=='#7f7f7f')e.style.fontWeight='700'});
+    if(M)T(svg,250,348,'each unit holds 5 numbers, one per example: a column of the matrix','').style.fill='#7f7f7f'}
+  /* the matrices of the step, to scale (one cell = one number). items: [label, rows, cols, fill] or an operator string */
+  function blocks(s){if(!bsv)return;const m=mode==='all'?5:1,C=17;initSvg(bsv,560,160);
+    const X=(l)=>[l||(m>1?'X':'x'),m,3,FILL.x],A1=(l)=>[l||(m>1?'A^{[1]}':'a^{[1]}'),m,4,FILL.x],Z1=[m>1?'Z^{[1]}':'z^{[1]}',m,4,FILL.z],Z2=[m>1?'Z^{[2]}':'z^{[2]}',m,1,FILL.z],
+      A2=[m>1?'A^{[2]}':'ŷ',m,1,FILL.x],Y=[m>1?'Y':'y',m,1,FILL.y],D2=['δ^{[2]}',m,1,FILL.d],D1=['δ^{[1]}',m,4,FILL.d],dA=[m>1?'∂A^{[1]}':'∂a^{[1]}',m,4,FILL.d];
+    const S=[[X()],[X(),'·',['W^{[1]}',3,4,FILL.w],'+',['b^{[1]}',1,4,FILL.b],'=',Z1],['g(',Z1,')','=',A1()],[A1(),'·',['W^{[2]}',4,1,FILL.w],'+',['b^{[2]}',1,1,FILL.b],'=',Z2],['g(',Z2,')','=',A2],
+      ['L(',A2,',',Y,')','=',['L',1,1,FILL.z]],[['∂L/∂L = 1',1,1,FILL.d]],[D2,'=',m>1?'(':'',A2,'−',Y,m>1?') / 5':''],
+      [['∂W^{[2]}',4,1,FILL.d],'=',A1((m>1?'A':'a')+'^{[1]⊤}').map((v,i)=>i===1?4:i===2?m:v),'·',D2,'  ',['∂b^{[2]}',1,1,FILL.d],'=',m>1?'Σ_{rows}':'',D2],
+      [dA,'=',D2,'·',['W^{[2]⊤}',1,4,FILL.w]],[D1,'=',dA,'⊙',[m>1?'g′(Z^{[1]})':'g′(z^{[1]})',m,4,FILL.z]],
+      [['∂W^{[1]}',3,4,FILL.d],'=',X(m>1?'X^⊤':'x^⊤').map((v,i)=>i===1?3:i===2?m:v),'·',D1,'  ',['∂b^{[1]}',1,4,FILL.d],'=',m>1?'Σ_{rows}':'',D1]][s].filter(v=>v!=='');
+    const wOf=it=>typeof it==='string'?(it.trim()?Math.max(16,it.replace(/[_^{}]/g,'').length*9):18):it[2]*C;
+    const tot=S.reduce((a,it)=>a+wOf(it)+8,-8);let x=280-tot/2;const mid=84;
+    S.forEach((it,k)=>{const w=wOf(it);if(typeof it==='string'){TT(bsv,x+w/2,mid+6,it,'lab big');x+=w+8;return}
+      const [l,r,c,f]=it,h=r*C,y0=mid-h/2,isG=f===FILL.d;
+      for(let i=0;i<r;i++)for(let j=0;j<c;j++)E('rect',{x:x+j*C,y:y0+i*C,width:C,height:C,fill:f,stroke:isG?'#c06c95':'#8c8c8c','stroke-width':0.8},bsv);
+      E('rect',{x:x,y:y0,width:w,height:h,fill:'none',stroke:isG?BW:'#404040','stroke-width':1.4},bsv);
+      const lt=TT(bsv,x+w/2,y0-8,l,'lab');if(isG)lt.style.fill=BW;
+      /* the shape, with the inner sizes of a product in green */
+      const pre=S[k-1]==='·',post=S[k+1]==='·',t=E('text',{x:x+w/2,y:y0+h+17,'text-anchor':'middle'},bsv);
+      [[String(r),pre],[' × ',false],[String(c),post]].forEach(([v,hi])=>{const ts=E('tspan',{},t);ts.textContent=v;if(hi){ts.setAttribute('fill',FW);ts.setAttribute('font-weight','700')}});
+      x+=w+8})}
+  function draw(){const s=+inp.value;setV(root,'s',s<6?'forward '+(s+1)+'/6':'backward '+(s-5)+'/6');net(s);blocks(s);panels.forEach(p=>p.hidden=!(+p.dataset.i===s&&p.dataset.m===mode))}
+  segs(root,'m',v=>{mode=v;draw()});mode=(root.querySelector('.seg button[aria-pressed="true"]')||{dataset:{m:'all'}}).dataset.m;
+  inp.addEventListener('input',draw);draw()};
 })();

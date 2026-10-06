@@ -289,7 +289,7 @@ The running example is a network with one hidden layer; the superscript $[l]$ is
       <div data-i="10"><p><b>Error term at the hidden layer, \(\boldsymbol{\delta}^{[1]}\).</b> Same chain rule, one layer further back:</p><div class="eq big">\[\boldsymbol{\delta}^{[1]}=\frac{\partial L}{\partial\mathbf{Z}^{[1]}}=\big(\boldsymbol{\delta}^{[2]}\mathbf{W}^{[2]\top}\big)\odot g'(\mathbf{Z}^{[1]})\]</div></div>
       <div data-i="11"><p><b>Gradient with respect to \(\mathbf{W}^{[1]}\) and \(\mathbf{b}^{[1]}\).</b> Exactly the same shape as step 8, one layer earlier (\(\mathbf{X}\) plays the role \(\mathbf{A}^{[1]}\) played):</p><div class="eq big">\[\frac{\partial L}{\partial\mathbf{W}^{[1]}}=\mathbf{X}^\top\boldsymbol{\delta}^{[1]},\qquad\frac{\partial L}{\partial\mathbf{b}^{[1]}}=\sum_{i=1}^m\boldsymbol{\delta}^{[1]}_{i}\]</div></div>
     </div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/02_backpropagation.html#10">slide 10</a> of the Backpropagation deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/02_backpropagation.html#11">slide 11</a> of the Backpropagation deck.</p>
 </div>
 ```
 
@@ -346,7 +346,7 @@ Reading the numbers: $\delta^{[2]} < 0$ says the output should go **up**. The hi
         <div data-i="6"><p class="small">\(\mathbf{W}^{[2]}\leftarrow(0.840,-0.430)\), \(b^{[2]}\leftarrow0.384\), \(\mathbf{W}^{[1]}\leftarrow\begin{pmatrix}0.554&amp;-0.379\\0.308&amp;0.243\end{pmatrix}\), \(\mathbf{b}^{[1]}\leftarrow(0.154,-0.179)\).</p></div>
         <div data-i="7"><p class="small">New loss <b data-r="l1">–</b>, down from <b data-r="l0">–</b>. With a mini-batch, every gradient is the <b>average</b> of these numbers over the examples.</p></div>
       </div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/02_backpropagation.html#11">slide 11</a> of the Backpropagation deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/02_backpropagation.html#13">slide 13</a> of the Backpropagation deck.</p>
 </div>
 ```
 
@@ -1004,7 +1004,7 @@ $$
         <span class="seg" data-g="init" role="group" aria-label="Initialization"><button type="button" data-v="small" data-init="small" aria-pressed="false">too small</button><button type="button" data-v="good" data-init="good" aria-pressed="true">Xavier / He</button><button type="button" data-v="large" data-init="large" aria-pressed="false">too large</button></span></div>
       <div class="ro"><div class="m"><span>rule</span><b data-r="v" style="font-size:17px">–</b></div><div class="m"><span>activations, layer 10</span><b data-r="a">–</b></div><div class="m"><span>gradient, layer 1</span><b data-r="g">–</b></div></div>
       <p class="why">10 layers of 100 units, 200 random inputs. The dashed line is "size 1".</p>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/02_backpropagation.html#16">slide 16</a> of the Backpropagation deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/02_backpropagation.html#18">slide 18</a> of the Backpropagation deck.</p>
 </div>
 ```
 
@@ -1074,7 +1074,7 @@ Apply it for $k = L, L-1, \dots, l+1$ and chain the inequalities. $\blacksquare$
 **Consequences.** The sigmoid has $\gamma = \frac14$: if every $\lVert\mathbf{W}^{[k]}\rVert_2 < 4$, the gradient shrinks at least geometrically, by $(\lVert\mathbf{W}\rVert_2/4)$ per layer. With $\lVert\mathbf{W}\rVert_2\approx1$, after 10 layers it can be $4^{-10}\approx10^{-6}$: early layers barely learn. These are **vanishing gradients**, the reason why deep sigmoid/tanh networks were hard to train before about 2010. Large weights make the factors $> 1$ and allow **exploding gradients** (the loss becomes `inf`, then `nan`), very common in recurrent networks ([NN note 04](04_rnn_lstm.html)). The bound is a worst case: the *typical* factor per layer is governed by the variances of section 14 (for a random $n\times n$ matrix with entries of standard deviation $s$, $\lVert\mathbf{W}\rVert_2\approx2s\sqrt n$, about twice the typical stretch $s\sqrt n$), so a layer can be well initialised and still have $\gamma\lVert\mathbf{W}\rVert_2 > 1$.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="vanish-chain" style="max-height:190px" aria-label="Two chains of ten layers ending at the loss, with lines whose width shows the gradient size, shrinking towards layer 1 for sigmoid and constant for ReLU"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/02_backpropagation.html#17">slide 17</a> of the Backpropagation deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="vanish-chain" style="max-height:190px" aria-label="Two chains of ten layers ending at the loss, with lines whose width shows the gradient size, shrinking towards layer 1 for sigmoid and constant for ReLU"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/02_backpropagation.html#19">slide 19</a> of the Backpropagation deck.</p></div>
 ```
 
 The weight-gradient norms of a 12-hidden-layer network with PyTorch's default initialisation, for three activations:

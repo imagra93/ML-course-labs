@@ -92,3 +92,9 @@ pre.code .cl.now{background:var(--gold-soft);border-left-color:var(--gold)}
 /* phone layout (deck.js adds body.flow below 760 px): one column everywhere */
 body.flow .cards,body.flow .cards.c3,body.flow .cards.c4,body.flow .cards.c2,body.flow .cards.c5{grid-template-columns:minmax(0,1fr)}
 body.flow .cols.split>.rspan{grid-column:auto;grid-row:auto}
+/* boxed key formulas: .hint (deck.css) with a blue or orange header */
+.hint.b{border-color:var(--blue)} .hint.b>.hd{background:var(--blue);color:#fff} .hint.b>.bd{background:#f5f8fd}
+.hint.o{border-color:var(--orange)} .hint.o>.hd{background:var(--orange);color:#fff} .hint.o>.bd{background:#fef8f3}
+.hint.b,.hint.o{display:flex;flex-direction:column} .hint.b>.bd,.hint.o>.bd{flex:1}
+/* a numbered colour badge (links a card to the same number in a figure) */
+.badge{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;color:#fff;font-weight:700;font-size:15px;vertical-align:2px;margin-right:8px}

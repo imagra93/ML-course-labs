@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
 <link rel="stylesheet" href="../assets/deck.css?v=20260930">
-<link rel="stylesheet" href="assets/nn.css?v=20260930">
+<link rel="stylesheet" href="assets/nn.css?v=20261006b">
 <script src="../assets/mathjax-config.js?v=20260930"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
 </head>
@@ -138,6 +138,23 @@
 </section>
 
 <section class="slide">
+  <h2>The derivatives we already have</h2>
+  <p class="small">Backpropagation needs no new calculus: it multiplies <b>three local derivatives that we already know</b>. The same network as before; the colours show where each one enters the errors $\delta$.</p>
+  <svg class="fig" data-fig="bp-pieces" style="max-height:262px" aria-label="The 2-4-1 network with the loss. Above it, in red, the output error delta 2 equals y hat minus y, and the hidden error delta 1 equals delta 2 times W2 transposed, element-wise times g prime of z1; a grey arrow stops at the inputs. On the edges, the weight gradients x transposed delta 1 and a1 transposed delta 2. Numbered badges link each part to the three derivatives below"></svg>
+  <div class="cards">
+    <div class="card o step"><h3><span class="badge" style="background:#c55a11">1</span>Loss + last activation</h3>
+      <div class="eq s">$$\frac{\partial L}{\partial z^{[L]}}=\hat y-y$$</div>
+      <p>Sigmoid + BCE, softmax + CE, linear + ½MSE (chapter 1). It <b>is</b> the output error $\delta^{[2]}$.</p></div>
+    <div class="card step" style="border-top-color:#7030a0"><h3><span class="badge" style="background:#7030a0">2</span>Activation derivatives</h3>
+      <div class="eq s">$$\frac{\partial a}{\partial z}=g'(z)$$</div>
+      <p>Sigmoid $a(1-a)$, tanh $1-a^2$, ReLU 0 or 1 (chapter 1). One per unit: element by element, $\odot$.</p></div>
+    <div class="card step" style="border-top-color:#2f5597"><h3><span class="badge" style="background:#2f5597">3</span>The linear layer $z=aW+b$</h3>
+      <div class="eq s">$$\frac{\partial z}{\partial W}\to a,\qquad\frac{\partial z}{\partial a}\to W,\qquad\frac{\partial z}{\partial b}=1$$</div>
+      <p>The multiply gate: "times the other input". The add gate: copy (slide 6).</p></div>
+  </div>
+</section>
+
+<section class="slide">
   <h2>Forward and backward propagation:</h2>
   <div class="cols c46">
     <table class="t" style="font-size:18px">
@@ -154,7 +171,7 @@
       <p>A network with one hidden layer, the same example for all the derivations. The superscript $[l]$ is the layer, as in chapter 1 and in Lab 7.</p>
       <p><b>Forward</b>: compute and <b>store</b> every intermediate result from $\bX$ to $L$.</p>
       <p><b>Backward</b>: go from $L$ back to $\bX$, turning each stored result into a gradient.</p>
-      <p class="why">Next slide: walk through both, one step at a time. Then the same walk with the numbers of the tiny network.</p>
+      <p class="why">Next slide: walk through both, one step at a time. Then the same walk on a concrete network with the exact matrix sizes, and with the numbers of the tiny network.</p>
     </div>
   </div>
 </section>
@@ -182,6 +199,46 @@
 </section>
 
 <section class="slide">
+  <h2>Forward and backward: a concrete 3-4-1 network</h2>
+  <div class="cols" style="grid-template-columns:1.1fr 1fr;gap:28px">
+    <div class="widget" data-fig="fb-concrete" data-auto="s=1 :: | s=2 :: | s=3 :: | s=4 :: | s=5 :: | s=6 :: | s=7 :: | s=8 :: | s=9 :: | s=10 :: | s=11 ::">
+      <svg class="fig" aria-label="The 3-4-1 network of chapter 1 with the shape of every matrix. Each step lights the part being computed: green going forward, magenta going backward. In dataset mode every unit is drawn as a small stack, one number per example"></svg>
+      <div class="ctl"><label for="fc-s">Step</label><input type="range" id="fc-s" data-k="s" min="0" max="11" step="1" value="0"><span class="v" data-v="s" style="min-width:150px">forward 1/6</span></div>
+      <div class="ctl"><span class="muted" style="font-size:17px">input:</span><span class="seg" role="group" aria-label="Input"><button type="button" data-m="one" aria-pressed="false">one example: x is 1 × 3</button><button type="button" data-m="all" aria-pressed="true">the dataset: X is 5 × 3</button></span></div>
+    </div>
+    <div class="stack" style="gap:8px;background:#f5f7fb;padding:12px 18px">
+      <div style="min-height:186px">
+        <div data-i="0" data-m="all"><p class="small"><b>Start.</b> The whole dataset at once: $\bA^{[0]}=\bX$.</p><div class="eq">$$\underbrace{\bX}_{5\times3}$$</div><p class="small">One row per example (5), one column per feature (3).</p></div>
+        <div data-i="1" data-m="all" hidden><p class="small"><b>1 · Hidden layer, linear step.</b></p><div class="eq">$$\underbrace{\bZ^{[1]}}_{5\times4}=\underbrace{\bX}_{5\times3}\,\underbrace{\bW^{[1]}}_{3\times4}+\underbrace{\bb^{[1]}}_{1\times4}$$</div><p class="small">The inner sizes match (3 = 3). The bias row is added to each of the 5 rows.</p></div>
+        <div data-i="2" data-m="all" hidden><p class="small"><b>2 · Hidden layer, activation.</b></p><div class="eq">$$\underbrace{\bA^{[1]}}_{5\times4}=g\big(\underbrace{\bZ^{[1]}}_{5\times4}\big)$$</div><p class="small">Element by element: the shape does not change.</p></div>
+        <div data-i="3" data-m="all" hidden><p class="small"><b>3 · Output layer, linear step.</b></p><div class="eq">$$\underbrace{\bZ^{[2]}}_{5\times1}=\underbrace{\bA^{[1]}}_{5\times4}\,\underbrace{\bW^{[2]}}_{4\times1}+\underbrace{\bb^{[2]}}_{1\times1}$$</div><p class="small">The output of layer 1 is the input of layer 2.</p></div>
+        <div data-i="4" data-m="all" hidden><p class="small"><b>4 · Output layer, activation: the predictions.</b></p><div class="eq">$$\underbrace{\hat\bY=\bA^{[2]}}_{5\times1}=g\big(\underbrace{\bZ^{[2]}}_{5\times1}\big)$$</div><p class="small">One prediction per example.</p></div>
+        <div data-i="5" data-m="all" hidden><p class="small"><b>5 · The loss</b>: the average over the 5 examples.</p><div class="eq">$$\underbrace{L}_{1\times1}=\frac15\sum_{i=1}^{5}\ell\big(\hat y_i,y_i\big)$$</div><p class="small">One number. Forward done: every $\bZ$ and $\bA$ is stored.</p></div>
+        <div data-i="6" data-m="all" hidden><p class="small"><b>Backward starts at the loss</b>, $\partial L/\partial L=1$.</p><p class="small">The rule for every step from here: <b>a gradient has the shape of what it differentiates</b>. $\partial L/\partial\bW^{[l]}$ is the size of $\bW^{[l]}$, $\partial L/\partial\bA^{[1]}$ the size of $\bA^{[1]}$.</p></div>
+        <div data-i="7" data-m="all" hidden><p class="small"><b>Output error</b> (chapter 1).</p><div class="eq">$$\underbrace{\bdelta^{[2]}}_{5\times1}=\frac15\big(\underbrace{\bA^{[2]}}_{5\times1}-\underbrace{\bY}_{5\times1}\big)$$</div><p class="small">One error per example: prediction minus target, divided by $m=5$ because $L$ is an average.</p></div>
+        <div data-i="8" data-m="all" hidden><p class="small"><b>Gradients of layer 2.</b></p><div class="eq">$$\underbrace{\frac{\partial L}{\partial\bW^{[2]}}}_{4\times1}=\underbrace{\bA^{[1]\top}}_{4\times5}\,\underbrace{\bdelta^{[2]}}_{5\times1},\quad\underbrace{\frac{\partial L}{\partial\bb^{[2]}}}_{1\times1}=\sum_{i=1}^5\bdelta^{[2]}_i$$</div><p class="small">The inner size is $m=5$: the product adds up the contributions of the 5 examples.</p></div>
+        <div data-i="9" data-m="all" hidden><p class="small"><b>Back through $\bW^{[2]}$.</b></p><div class="eq">$$\underbrace{\frac{\partial L}{\partial\bA^{[1]}}}_{5\times4}=\underbrace{\bdelta^{[2]}}_{5\times1}\,\underbrace{\bW^{[2]\top}}_{1\times4}$$</div><p class="small">Each example sends its error to the 4 hidden units, weighted by $\bW^{[2]}$.</p></div>
+        <div data-i="10" data-m="all" hidden><p class="small"><b>Hidden error</b>: through the activation.</p><div class="eq">$$\underbrace{\bdelta^{[1]}}_{5\times4}=\underbrace{\frac{\partial L}{\partial\bA^{[1]}}}_{5\times4}\odot\underbrace{g^\prime(\bZ^{[1]})}_{5\times4}$$</div><p class="small">Element by element: both shapes must be equal.</p></div>
+        <div data-i="11" data-m="all" hidden><p class="small"><b>Gradients of layer 1.</b></p><div class="eq">$$\underbrace{\frac{\partial L}{\partial\bW^{[1]}}}_{3\times4}=\underbrace{\bX^\top}_{3\times5}\,\underbrace{\bdelta^{[1]}}_{5\times4},\quad\underbrace{\frac{\partial L}{\partial\bb^{[1]}}}_{1\times4}=\sum_{i=1}^5\bdelta^{[1]}_i$$</div><p class="small">The shape of $\bW^{[1]}$, ready for the update $\bW^{[1]}\leftarrow\bW^{[1]}-\alpha\,\partial L/\partial\bW^{[1]}$.</p></div>
+        <div data-i="0" data-m="one" hidden><p class="small"><b>Start.</b> One example: $\ba^{[0]}=\bx$, a row vector.</p><div class="eq">$$\underbrace{\bx}_{1\times3}$$</div><p class="small">Three features, one row.</p></div>
+        <div data-i="1" data-m="one" hidden><p class="small"><b>1 · Hidden layer, linear step.</b></p><div class="eq">$$\underbrace{\bz^{[1]}}_{1\times4}=\underbrace{\bx}_{1\times3}\,\underbrace{\bW^{[1]}}_{3\times4}+\underbrace{\bb^{[1]}}_{1\times4}$$</div><p class="small">The weights do not depend on the number of examples: $\bW^{[1]}$ is $3\times4$ in both modes.</p></div>
+        <div data-i="2" data-m="one" hidden><p class="small"><b>2 · Hidden layer, activation.</b></p><div class="eq">$$\underbrace{\ba^{[1]}}_{1\times4}=g\big(\underbrace{\bz^{[1]}}_{1\times4}\big)$$</div><p class="small">Element by element: the shape does not change.</p></div>
+        <div data-i="3" data-m="one" hidden><p class="small"><b>3 · Output layer, linear step.</b></p><div class="eq">$$\underbrace{z^{[2]}}_{1\times1}=\underbrace{\ba^{[1]}}_{1\times4}\,\underbrace{\bW^{[2]}}_{4\times1}+\underbrace{b^{[2]}}_{1\times1}$$</div><p class="small">The output of layer 1 is the input of layer 2.</p></div>
+        <div data-i="4" data-m="one" hidden><p class="small"><b>4 · Output layer, activation: the prediction.</b></p><div class="eq">$$\underbrace{\hat y=a^{[2]}}_{1\times1}=g\big(z^{[2]}\big)$$</div><p class="small">A single number.</p></div>
+        <div data-i="5" data-m="one" hidden><p class="small"><b>5 · The loss</b> of this example.</p><div class="eq">$$\underbrace{L}_{1\times1}=\ell\big(\hat y,y\big)$$</div><p class="small">Forward done: every $\bz$ and $\ba$ is stored.</p></div>
+        <div data-i="6" data-m="one" hidden><p class="small"><b>Backward starts at the loss</b>, $\partial L/\partial L=1$.</p><p class="small">The rule for every step from here: <b>a gradient has the shape of what it differentiates</b>. $\partial L/\partial\bW^{[l]}$ is the size of $\bW^{[l]}$, $\partial L/\partial\ba^{[1]}$ the size of $\ba^{[1]}$.</p></div>
+        <div data-i="7" data-m="one" hidden><p class="small"><b>Output error</b> (chapter 1).</p><div class="eq">$$\underbrace{\delta^{[2]}}_{1\times1}=\hat y-y$$</div><p class="small">Prediction minus target. No $\frac1m$: there is only one example.</p></div>
+        <div data-i="8" data-m="one" hidden><p class="small"><b>Gradients of layer 2.</b></p><div class="eq">$$\underbrace{\frac{\partial L}{\partial\bW^{[2]}}}_{4\times1}=\underbrace{\ba^{[1]\top}}_{4\times1}\,\underbrace{\delta^{[2]}}_{1\times1},\quad\frac{\partial L}{\partial b^{[2]}}=\delta^{[2]}$$</div><p class="small">Each weight gets the activation it multiplies, times the error.</p></div>
+        <div data-i="9" data-m="one" hidden><p class="small"><b>Back through $\bW^{[2]}$.</b></p><div class="eq">$$\underbrace{\frac{\partial L}{\partial\ba^{[1]}}}_{1\times4}=\underbrace{\delta^{[2]}}_{1\times1}\,\underbrace{\bW^{[2]\top}}_{1\times4}$$</div><p class="small">The error reaches each hidden unit, weighted by its weight in $\bW^{[2]}$.</p></div>
+        <div data-i="10" data-m="one" hidden><p class="small"><b>Hidden error</b>: through the activation.</p><div class="eq">$$\underbrace{\bdelta^{[1]}}_{1\times4}=\underbrace{\frac{\partial L}{\partial\ba^{[1]}}}_{1\times4}\odot\underbrace{g^\prime(\bz^{[1]})}_{1\times4}$$</div><p class="small">Element by element: both shapes must be equal.</p></div>
+        <div data-i="11" data-m="one" hidden><p class="small"><b>Gradients of layer 1.</b></p><div class="eq">$$\underbrace{\frac{\partial L}{\partial\bW^{[1]}}}_{3\times4}=\underbrace{\bx^\top}_{3\times1}\,\underbrace{\bdelta^{[1]}}_{1\times4},\quad\underbrace{\frac{\partial L}{\partial\bb^{[1]}}}_{1\times4}=\bdelta^{[1]}$$</div><p class="small">A column times a row (an outer product): still $3\times4$. With the dataset, the same product also adds up the examples.</p></div>
+      </div>
+      <svg class="fig" data-blocks aria-label="The matrices of the current step drawn to scale, one cell per number, with their shapes; inner sizes of each product in green"></svg>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
   <h2>The tiny network: backward with numbers</h2>
   <div class="cols c64">
     <div class="widget" data-fig="net-num" data-auto="s=1 :: output error: δ⁽²⁾ = ∂L/∂z⁽²⁾ = ŷ − y = 0.633 − 1 = −0.367, the result we already calculated in chapter 1 (sigmoid + cross-entropy) | s=2 :: gradients of layer 2: ∂W⁽²⁾ = a⁽¹⁾ᵀ δ⁽²⁾, ∂b⁽²⁾ = δ⁽²⁾ (multiply gate: the other input) | s=3 :: send δ⁽²⁾ back through W⁽²⁾: ∂a⁽¹⁾ = δ⁽²⁾ · W⁽²⁾ᵀ = (−0.367·0.7, −0.367·(−0.5)) | s=4 :: through the tanh: δ⁽¹⁾ = ∂a⁽¹⁾ ⊙ (1 − a²) = (−0.257·0.420, 0.184·0.856), where 1 − a² is the tanh derivative of chapter 1 | s=5 :: gradients of layer 1: ∂W⁽¹⁾ = xᵀ δ⁽¹⁾ (x = (1, 2)), ∂b⁽¹⁾ = δ⁽¹⁾ | s=6 :: update every weight and bias: w ← w − 0.5 · ∂w | s=7 :: forward again with the new weights">
@@ -195,7 +252,7 @@
         <div data-i="1"><p class="small">$\delta^{[2]}=\dfrac{\partial L}{\partial z^{[2]}}=\hat y-y=-0.367$: the chapter 1 result for sigmoid + cross-entropy. Negative: the output should go <b>up</b>.</p></div>
         <div data-i="2"><p class="small">$\partial\bW^{[2]}=\ba^{[1]\top}\delta^{[2]}$ $=(0.762,0.380)\cdot(-0.367)=(-0.280,-0.140)$. The unit with the larger activation gets the larger gradient.</p></div>
         <div data-i="3"><p class="small">$\partial\ba^{[1]}=\delta^{[2]}\bW^{[2]\top}=(-0.257,\,0.184)$: hidden unit 1 (positive weight 0.7) should grow, unit 2 (weight −0.5) should shrink.</p></div>
-        <div data-i="4"><p class="small">$\bdelta^{[1]}=(-0.257\cdot0.420,\ 0.184\cdot0.856)=(-0.108,\,0.157)$. Unit 1 is already fairly saturated ($a=0.76$), so its gradient is damped: $g^\prime=1-a^2=0.42$ (tanh derivative, chapter 1).</p></div>
+        <div data-i="4"><div class="eq s">$$\begin{aligned}\bdelta^{[1]}&amp;=(-0.257\cdot0.420,\ 0.184\cdot0.856)\\&amp;=(-0.108,\,0.157)\end{aligned}$$</div><p class="small">Unit 1 is already fairly saturated ($a=0.76$), so its gradient is damped: $g^\prime=1-a^2=0.42$ (tanh derivative, chapter 1).</p></div>
         <div data-i="5"><p class="small">$\partial\bW^{[1]}=\bx^\top\bdelta^{[1]}=\begin{pmatrix}-0.108&amp;0.157\\-0.216&amp;0.314\end{pmatrix}$, $\ \partial\bb^{[1]}=(-0.108,0.157)$. Row 2 is twice row 1 because $x_2=2x_1$.</p></div>
         <div data-i="6"><p class="small">$\bW^{[2]}\leftarrow(0.840,-0.430)$, $b^{[2]}\leftarrow0.384$, $\bW^{[1]}\leftarrow\begin{pmatrix}0.554&amp;-0.379\\0.308&amp;0.243\end{pmatrix}$, $\bb^{[1]}\leftarrow(0.154,-0.179)$.</p></div>
         <div data-i="7"><p class="small">New loss <b data-r="l1">–</b>, down from <b data-r="l0">–</b>. With a mini-batch, every gradient is the <b>average</b> of these numbers over the examples.</p></div>
@@ -396,7 +453,7 @@ optimizer.step()           <span class="c"># update</span></pre>
 </div></div>
 <script src="../assets/figures.js?v=20260930"></script>
 <script src="assets/nn-core.js?v=20260930"></script>
-<script src="assets/fig-nn-backprop.js?v=20261004"></script>
+<script src="assets/fig-nn-backprop.js?v=20261006"></script>
 <script src="../assets/deck.js?v=20260930"></script>
 </body>
 </html>
