@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="author" content="Imanol Granada (imanolgranada@gmail.com)">
-<title>ML Course Slides</title>
+<title>Extra Topics Slides</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
-<link rel="stylesheet" href="assets/deck.css">
+<link rel="stylesheet" href="../assets/deck.css?v=20260930">
 <style>
-body.index{overflow:auto;background:#05070c url(assets/img/cover-sky.jpg) center/cover fixed no-repeat;color:#fff;min-height:100%;padding-inline:16px}
+body.index{overflow:auto;background:#05070c url(../assets/img/cover-sky.jpg) center/cover fixed no-repeat;color:#fff;min-height:100%;padding-inline:16px}
 .index main{max-width:980px;margin:0 auto;padding-block:72px 48px;display:flex;flex-direction:column;gap:28px}
 .index h1{font-size:72px;line-height:1;font-weight:400;color:#fff}
 .index .rule{width:56px;height:2px;background:#fff}
@@ -20,6 +20,9 @@ body.index{overflow:auto;background:#05070c url(assets/img/cover-sky.jpg) center
 .index li a:hover,.index li a:focus-visible{background:#fff;outline:3px solid var(--gold)}
 .index li .n{color:var(--blue);font-weight:700;width:36px;flex:none}
 .index li .d{margin-left:auto;font-size:17px;color:#6b6b6b}
+.index h2.labs-h{font-size:28px;font-weight:400;color:#fff;margin-top:8px}
+.index ol.labs li a{padding:10px 22px;font-size:20px;background:rgba(242,248,238,.94)}
+.index ol.labs li .n{color:#548235;width:52px}
 .index footer{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;font-size:18px}
 .index footer img{height:52px}
 @media (max-width:600px){.index h1{font-size:44px}.index li a{flex-wrap:wrap}.index li .d{margin-left:0}}
@@ -27,16 +30,19 @@ body.index{overflow:auto;background:#05070c url(assets/img/cover-sky.jpg) center
 </head>
 <body class="index">
 <main>
-  <h1>ML Course</h1>
+  <h1>Extra Topics</h1>
   <div class="rule"></div>
-  <p class="sub">Máster en Innovación Tecnológica (MINT) · class slides</p>
+  <p class="sub">Máster en Innovación Tecnológica (MINT) · advanced topics, after the neural-network part</p>
   <ol>
-    <li><a href="machine_learning/index.html"><span class="n">I</span><span>Machine Learning</span><span class="d">9 topics · Python intro, regression, classification, trees, ensembles, SVM</span></a></li>
-    <li><a href="neural_networks/index.html"><span class="n">II</span><span>Neural Networks</span><span class="d">6 topics · MLP, backprop, training, CNN, RNN/LSTM, transformers</span></a></li>
-    <li><a href="extra/index.html"><span class="n">III</span><span>Extra topics</span><span class="d">advanced · graph neural networks</span></a></li>
-    <li><a href="../notes/index.html"><span class="n">§</span><span>Course notes</span><span class="d">16 notes · full derivations, assumptions, diagnostics</span></a></li>
+    <li><a href="01_gnn.html"><span class="n">01</span><span>Graph neural networks</span><span class="d">message passing, GCN with numbers, the Laplacian and over-smoothing, GraphSAGE, GAT, GIN and the WL test, readout, link prediction · Extra 1</span></a></li>
   </ol>
-  <footer><img src="assets/img/unav-logo-white.png" alt="Universidad de Navarra"><em>imanolgranada@gmail.com</em></footer>
+  <h2 class="labs-h">Labs</h2>
+  <ol class="labs">
+    <li><a href="01_gnn.html#37"><span class="n">E1</span><span>Graph neural networks, from scratch to PyG</span><span class="d">end of extra 1</span></a></li>
+  </ol>
+  <p style="font-size:18px"><a href="../neural_networks/index.html" style="color:#fff">← Neural Networks slides</a></p>
+  <p style="font-size:18px">Present: open a topic, then → / Space to advance, ← to go back, F for full screen. Each lab has a green slide with an "Open in Colab" button.</p>
+  <footer><img src="../assets/img/unav-logo-white.png" alt="Universidad de Navarra"><em>imanolgranada@gmail.com</em></footer>
 </main>
 </body>
 </html>

@@ -17,3 +17,5 @@ gdown>=5.1                 # downloads the face dataset from Google Drive
 transformers>=4.40         # lab 14 (text generation), lab 15 (RAG)
 
 ultralytics>=8.3           # lab 13, Object detection with YOLO (YOLO11)
+
+torch_geometric>=2.5        # extra 01, Graph Neural Networks (datasets, GCNConv/GATConv/GINConv)

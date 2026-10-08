@@ -267,3 +267,23 @@ order: follow the topics below.
   - [Embeddings, retrieval and RAG](https://imagra93.github.io/ML-course-labs/notes/neural_networks/06_embeddings_rag.html):
     TF-IDF, BM25, LSA, neural embeddings, IVF / HNSW / PQ, retrieval metrics, hybrid search and
     re-ranking, chunking, RAG
+
+---
+
+# Part 3 · Extra topics
+
+Advanced topics for students who finished Part 2. Same format: slides, a lab notebook, Colab.
+All extra slides: **<https://imagra93.github.io/ML-course-labs/slides/extra/>**
+
+## Extra 1 · Graph neural networks
+
+- **Slides:** [Graph neural networks](https://imagra93.github.io/ML-course-labs/slides/extra/01_gnn.html)
+- **Content:** graphs as data, node/edge/graph tasks, permutation equivariance and invariance; message
+  passing, self-loops and normalisation, the GCN layer with numbers, layers = hops, semi-supervised
+  training; the Laplacian, GCN as a low-pass filter, over-smoothing; GraphSAGE, GAT, transformers as
+  GNNs, sum/mean/max, the Weisfeiler–Lehman test and its limits; readout and batching, link prediction
+  and edge leakage, gather + scatter, PyTorch Geometric
+- **Notebook:** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/extra/extra%2001%20-%20Graph%20Neural%20Networks.ipynb)
+  [Extra 1 · Graph Neural Networks](notebooks/extra/extra%2001%20-%20Graph%20Neural%20Networks.ipynb):
+  GCN from scratch (dense and with `edge_index`), Cora (MLP vs label propagation vs GCN vs GAT, depth),
+  the WL test, MUTAG with GIN, link prediction and edge leakage, checked against PyTorch Geometric

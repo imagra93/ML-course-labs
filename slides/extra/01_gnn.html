@@ -1,0 +1,599 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="author" content="Imanol Granada (imanolgranada@gmail.com)">
+<title>Graph Neural Networks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="../assets/deck.css?v=20260930">
+<link rel="stylesheet" href="../neural_networks/assets/nn.css?v=20261006c">
+<script src="../assets/mathjax-config.js?v=20260930"></script>
+<script>Object.assign(MathJax.tex.macros,{bH:'\\mathbf{H}',bD:'\\mathbf{D}',hA:'\\hat{\\mathbf{A}}',tA:'\\tilde{\\mathbf{A}}',tD:'\\tilde{\\mathbf{D}}',Nb:'\\mathcal{N}'});</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
+</head>
+<body data-deck="Extra 1 · Graph neural networks">
+<div id="viewport"><div id="stage">
+<section class="slide cover">
+  <div class="inner"><h1>Extra topics</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Graph neural networks</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+
+<section class="slide">
+  <h2>Where we are</h2>
+  <svg class="fig" data-fig="gnn-shapes" style="max-height:215px" aria-label="Five data shapes: a vector for an MLP, a grid for a CNN, a chain for an RNN, a complete graph for a transformer, and a general graph for a GNN"></svg>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p class="small">Every architecture of the course builds in an assumption about the <b>shape</b> of the data. A CNN knows which pixels are neighbours, an RNN which word comes next, a transformer lets every token talk to every other.</p>
+      <p class="small step">Many data have none of these shapes: atoms joined by bonds, papers citing papers, claims that share a phone number. The neighbours are <b>given by the data</b>, and every node has a different number of them.</p>
+    </div>
+    <div class="stack" style="gap:10px">
+      <div class="note step"><p class="small"><b>Graph neural network (GNN)</b>: a network whose layers update each node's vector from its neighbours' vectors, with the same weights at every node.</p></div>
+      <p class="small step why">Four parts: <b>A</b> graphs as data, <b>B</b> message passing and the GCN with numbers, <b>C</b> variants and limits (spectral view, over-smoothing, GraphSAGE, GAT, GIN, the WL test), <b>D</b> graph- and edge-level tasks and practice. It ends with the Extra 1 lab.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card blue"><h1><b>Part A</b><br>Graphs as data</h1><ul class="small"><li>where graphs appear</li><li>nodes, edges, features, adjacency</li><li>node, edge and graph tasks</li><li>the node order is arbitrary</li></ul></div></section>
+
+<section class="slide">
+  <h2>Graphs are everywhere</h2>
+  <div class="cards c3" style="gap:12px">
+    <div class="card app"><h3>Molecules</h3><svg class="fig" data-fig="gnn-app" data-app="mol" aria-label="A molecule drawn as atoms joined by bonds"></svg><p><b>nodes</b> atoms · <b>edges</b> bonds · <b>task</b> is it toxic, soluble, active? (one label per graph). A GNN found the antibiotic halicin (2020).</p></div>
+    <div class="card o app"><h3>Social networks</h3><svg class="fig" data-fig="gnn-app" data-app="social" aria-label="People connected by friendships, with a suggested new friendship dashed"></svg><p><b>nodes</b> users · <b>edges</b> friendships, follows · <b>task</b> suggest a friend (edge), flag a bot (node).</p></div>
+    <div class="card g app"><h3>Citation networks</h3><svg class="fig" data-fig="gnn-app" data-app="cite" aria-label="Papers as boxes with arrows for citations, coloured by topic"></svg><p><b>nodes</b> papers · <b>edges</b> citations · <b>task</b> the topic of each paper (node). Cora, in the lab.</p></div>
+    <div class="card y app"><h3>Road networks</h3><svg class="fig" data-fig="gnn-app" data-app="road" aria-label="A road map: junctions joined by road segments, with traffic colours"></svg><p><b>nodes</b> road segments · <b>edges</b> connections · <b>task</b> travel time. Google Maps' arrival times use a GNN (2021).</p></div>
+    <div class="card r app"><h3>Insurance claims</h3><svg class="fig" data-fig="gnn-app" data-app="fraud" aria-label="Claims, people, cars and a workshop linked by shared entities, forming a ring"></svg><p><b>nodes</b> claims, people, cars, workshops · <b>edges</b> "shares" · <b>task</b> fraud rings: suspicious only together.</p></div>
+    <div class="card app"><h3>Recommenders</h3><svg class="fig" data-fig="gnn-app" data-app="rec" aria-label="A bipartite graph of users and items with a predicted click dashed"></svg><p><b>nodes</b> users and items · <b>edges</b> clicks, purchases · <b>task</b> the next click (edge). Pinterest: 3 billion nodes.</p></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Anatomy of a graph</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="gnn-anatomy" data-auto="s=1 :: the neighbourhood of C: N(C) = {A, B, D}, so its degree is 3 | s=2 :: the adjacency matrix: row C has a 1 in the columns of A, B and D | s=3 :: the features: one row of X per node, d = 2 numbers each | s=4 :: in code: a list of edges, each stored in both directions">
+      <svg class="fig" aria-label="The toy graph with nodes A to E, its adjacency matrix and its feature matrix"></svg>
+      <div class="ctl"><label for="an-s">step</label><input type="range" id="an-s" data-k="s" min="0" max="4" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">$G=(V,E)$: $n$ nodes and $|E|$ edges. Here $n=5$, $|E|=5$: a triangle with a tail.</p>
+      <p class="small"><b>Adjacency</b> $\bA\in\{0,1\}^{n\times n}$: $A_{uv}=1$ if $u$–$v$ is an edge. Undirected graph: $\bA=\bA^\top$.</p>
+      <p class="small"><b>Neighbourhood</b> $\Nb(v)$ and <b>degree</b> $d_v=|\Nb(v)|=\sum_uA_{vu}$, the row sums of $\bA$. Degree matrix $\bD=\mathrm{diag}(d_1,\dots,d_n)$.</p>
+      <p class="small"><b>Node features</b> $\bX\in\R^{n\times d}$, one row per node: rows are examples, as in the whole course.</p>
+      <p class="small why">Optional extras: edge features $\mathbf e_{uv}$ (bond type, distance), directed or weighted edges, graph-level features. In code a graph is a list of edges, not an $n\times n$ matrix: real graphs are sparse (Cora: 0.14 % of the entries of $\bA$ are 1).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Three kinds of task</h2>
+  <svg class="fig" data-fig="gnn-tasks" style="max-height:250px" aria-label="Node-level: every node gets a class. Edge-level: a missing edge gets a probability. Graph-level: the whole graph gets one label."></svg>
+  <div class="cols c3">
+    <div class="stack" style="gap:4px"><h3>Node level</h3><p class="small">One prediction per node. The topic of a paper, is this account a bot, is this claim part of a fraud ring.</p></div>
+    <div class="stack" style="gap:4px"><h3>Edge level</h3><p class="small">One prediction per pair of nodes. Will these users connect, do these two drugs interact, which product is clicked next.</p></div>
+    <div class="stack" style="gap:4px"><h3>Graph level</h3><p class="small">One prediction per graph. Is this molecule toxic, what is its energy, which class is this 3-D shape.</p></div>
+  </div>
+  <p class="small step"><b>Transductive</b>: the test nodes are in the graph during training, only their labels are hidden (Cora). <b>Inductive</b>: new nodes or new graphs at test time (a new molecule, a new claim). The second needs a model of the <em>neighbourhood</em>, not a vector memorised per node.</p>
+</section>
+
+<section class="slide">
+  <h2>The order of the nodes is arbitrary</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="gnn-perm" data-auto="p=2 :: the same graph with the nodes renumbered: a different adjacency matrix | p=1 :: back to the first numbering">
+      <svg class="fig" aria-label="The same five-node graph under two numberings, with the two different adjacency matrices"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-p="1" aria-pressed="true">numbering 1</button><button type="button" data-p="2" aria-pressed="false">numbering 2</button></span></div>
+    </div>
+    <div class="stack" style="gap:9px">
+      <p class="small">To store a graph we number its nodes, and the numbering is arbitrary: $n!$ choices. $5!=120$ here, $34!\approx3\times10^{38}$ for a 34-person club.</p>
+      <p class="small">Renumbering = a permutation matrix $\mathbf P$. The features become $\mathbf P\bX$, the adjacency $\mathbf P\bA\mathbf P^\top$: different matrices, <b>the same graph</b>.</p>
+      <div class="warnbox step"><p class="small"><b>Naive idea:</b> flatten $\bA$ and $\bX$ into one vector and use an MLP.</p>
+        <ul class="small"><li>a different output for each numbering of the same graph</li><li>the input size fixes $n$: no graphs of other sizes</li><li>$n^2$ inputs, almost all zeros</li></ul></div>
+      <p class="small step why">An MLP could learn the symmetry from data, but it would need to see every graph under many of its $n!$ numberings. Better to build it into the architecture, as a CNN builds in translations.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Equivariance and invariance</h2>
+  <div class="cols c46">
+    <svg class="fig" data-fig="gnn-commute" aria-label="A square: renumbering then applying the layer gives the same result as applying the layer then renumbering"></svg>
+    <div class="stack" style="gap:9px">
+      <p class="small">A layer that computes one vector per node must be <b>equivariant</b>: renumber the input and the output rows are renumbered the same way.</p>
+      <div class="bluebox" style="font-size:20px">$$f(\mathbf P\bX,\ \mathbf P\bA\mathbf P^\top)=\mathbf P\,f(\bX,\bA)$$</div>
+      <p class="small">A prediction for the whole graph must be <b>invariant</b>: $\ g(\mathbf P\bX,\mathbf P\bA\mathbf P^\top)=g(\bX,\bA)$.</p>
+      <p class="small step"><b>Recipe:</b> stack equivariant layers, end with an invariant <b>readout</b> (sum, mean or max over the nodes). It is the CNN recipe: convolutions are equivariant to shifts, global pooling makes the class invariant.</p>
+      <p class="small step"><b>Building block:</b> sum, mean and max of a set of vectors do not depend on the order of the set, and they work for any number of vectors. They will aggregate the neighbours.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card green"><h1><b>Part B</b><br>Message passing<br>and the GCN</h1><ul class="small"><li>neighbours send messages</li><li>neighbour sum = multiply by $\bA$</li><li>self-loops and normalisation</li><li>the GCN layer, with numbers</li><li>layers = hops; training</li></ul></div></section>
+
+<section class="slide">
+  <h2>The idea: message passing</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="gnn-mp" data-auto="s=1 :: focus on node C: it will compute a new vector | s=2 :: message: each neighbour sends its vector, here transformed by W | s=3 :: aggregate: sum (or mean, or max) the messages, in any order | s=4 :: update: combine the sum with C's own vector, apply a non-linearity | s=5 :: every node does the same, at the same time, with the same weights: one layer">
+      <svg class="fig" aria-label="Node C receives messages from A, B and D, sums them and updates its vector; then all nodes do the same"></svg>
+      <div class="ctl"><label for="mp-s">step</label><input type="range" id="mp-s" data-k="s" min="0" max="5" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">One layer turns the node vectors $\bh_v^{(k)}$ into $\bh_v^{(k+1)}$. Each node, in parallel:</p>
+      <div class="bluebox" style="font-size:18px;padding:6px 12px">$$\bh_v^{(k+1)}=\mathrm{UPD}\Big(\bh_v^{(k)},\ \underset{u\in\Nb(v)}{\mathrm{AGG}}\ \mathrm{MSG}\big(\bh_u^{(k)},\bh_v^{(k)}\big)\Big)$$</div>
+      <p class="small"><b>MSG</b>: what $u$ tells $v$; often just $\bh_u\bW$.</p>
+      <p class="small"><b>AGG</b>: sum, mean or max. Permutation invariant, any number of neighbours.</p>
+      <p class="small"><b>UPD</b>: combine with $v$'s own vector; a non-linearity or an MLP.</p>
+      <p class="small why">Same functions at every node: weight sharing, like one convolution filter slid over the whole graph. $\bh_v^{(0)}=\bx_v$, the input features.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Neighbour sum = multiply by $\bA$</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="gnn-ax" data-auto="s=1 :: node C adds the feature vectors of its neighbours A, B and D | s=2 :: the same number as row C of A times X: the 1s of row C pick A, B and D | s=3 :: one matrix product does it for every node at once">
+      <svg class="fig" aria-label="The toy graph and the product of the adjacency matrix with the feature matrix, row C highlighted"></svg>
+      <div class="ctl"><label for="ax-s">step</label><input type="range" id="ax-s" data-k="s" min="0" max="3" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">Node C sums its neighbours' features:</p>
+      <div class="eq s">$$\sum_{u\in\Nb(C)}\bx_u=\bx_A+\bx_B+\bx_D=(1,0)+(0,1)+(2,0)=(3,1)$$</div>
+      <p class="small step">Row $v$ of $\bA\bX$ is $\sum_uA_{vu}\,\bx_u$. Since $A_{vu}=1$ only for the neighbours, it is exactly that sum:</p>
+      <div class="bluebox step" style="font-size:20px">$$(\bA\bX)_v=\sum_{u\in\Nb(v)}\bx_u$$</div>
+      <p class="small step">All nodes at once: A $(1,2)$, B $(2,1)$, C $(3,1)$, D $(1,3)$, E $(2,0)$. With a sparse $\bA$ the cost is $O(|E|\,d)$, not $O(n^2d)$.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Two problems, two fixes</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="gnn-norm" data-auto="m=self :: fix 1: self-loops. Now each node adds its own vector too | m=mean :: fix 2a: divide by the degree (with the self-loop). Hubs and leaves are on the same scale | m=sym :: fix 2b: the GCN choice, weight 1/√(d̃ᵤ d̃ᵥ) per edge">
+      <svg class="fig" aria-label="The toy graph with the aggregated vector of every node under four aggregation rules"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-m="sum" aria-pressed="true">sum A X</button><button type="button" data-m="self" aria-pressed="false">+ self-loops</button><button type="button" data-m="mean" aria-pressed="false">mean</button><button type="button" data-m="sym" aria-pressed="false">symmetric</button></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small"><b>1 · A node forgets itself.</b> Row C of $\bA\bX$ has no $\bx_C$. Fix: add <b>self-loops</b>, $\tA=\bA+\bI$, with degrees $\tilde d_v=d_v+1$.</p>
+      <p class="small"><b>2 · Hubs explode.</b> A node with 1,000 neighbours gets a sum 1,000 times larger than a leaf, and the gap grows with every layer. Fix: <b>normalise</b> by the degree.</p>
+      <ul class="small" style="gap:3px"><li><b>mean</b>: $\tD^{-1}\tA$, row $v$ divided by $\tilde d_v$</li>
+        <li><b>symmetric</b>: $\hA=\tD^{-1/2}\tA\tD^{-1/2}$, edge $u$–$v$ weighted $1/\sqrt{\tilde d_u\tilde d_v}$. A popular neighbour counts less for each of its many neighbours.</li></ul>
+      <p class="small step why">With the mean, A and B both get $(0.667, 0.667)$: they average the same three nodes $\{A,B,C\}$, so their different features are already blurred together. Remember it for over-smoothing.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The GCN layer (Kipf &amp; Welling, 2017)</h2>
+  <div class="bluebox" style="align-self:center;font-size:24px">$$\bH^{(k+1)}=\sigma\big(\hA\,\bH^{(k)}\,\bW^{(k)}\big),\qquad \hA=\tD^{-1/2}(\bA+\bI)\,\tD^{-1/2}$$</div>
+  <svg class="fig" data-fig="gnn-shapes-gcn" style="max-height:175px" aria-label="Matrix shapes: n by n times n by d times d by d prime gives n by d prime"></svg>
+  <div class="cols c3">
+    <p class="small"><b>$\bH\bW$</b>: the same linear map for every node, a shared per-node layer (like a $1\times1$ convolution). $d\times d'$ parameters, whatever the graph size.</p>
+    <p class="small"><b>$\hA\,(\cdot)$</b>: each node takes a weighted average of its own and its neighbours' transformed vectors. No parameters: the graph decides who mixes with whom.</p>
+    <p class="small"><b>$\sigma$</b>: ReLU between layers. Two or three layers; the last one gives class scores, with a softmax for node classification.</p>
+  </div>
+  <div class="eq s step">$$\text{one node: }\ \bh_v^{(k+1)}=\sigma\Big(\sum_{u\in\Nb(v)\cup\{v\}}\frac{1}{\sqrt{\tilde d_u\,\tilde d_v}}\;\bh_u^{(k)}\bW^{(k)}\Big)$$</div>
+</section>
+
+<section class="slide">
+  <h2>One GCN layer with numbers</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="gnn-gcn-num" data-auto="s=1 :: Â X: every node averages its closed neighbourhood | s=2 :: times W: the same 2×2 map for every node | s=3 :: ReLU: negative entries become 0">
+      <svg class="fig" aria-label="The normalised adjacency matrix, the feature matrix, their product, the product with W and the ReLU output"></svg>
+      <div class="ctl"><label for="gn-s">step</label><input type="range" id="gn-s" data-k="s" min="0" max="3" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:6px">
+      <p class="small">Toy graph, $\bX$ as before, $\ \bW=\begin{pmatrix}1&-1\\0.5&1\end{pmatrix}$, ReLU. Follow node C:</p>
+      <div class="panels" style="min-height:262px">
+        <div data-i="0"><p class="small">Row C of $\hA$: C keeps $1/\tilde d_C=1/4=0.25$ of itself; each neighbour gets $1/\sqrt{3\cdot4}=0.289$ (A, B and D have $\tilde d=3$). E is not a neighbour: 0.</p></div>
+        <div data-i="1"><p class="small">$(\hA\bX)_C=0.289\,(1,0)+0.289\,(0,1)$</p><p class="small">$\qquad\quad+\,0.25\,(1,1)+0.289\,(2,0)=(1.116,\ 0.539)$</p><p class="small why">A and B get the same row $(0.622, 0.622)$: same closed neighbourhood, same weights.</p></div>
+        <div data-i="2"><p class="small">$(1.116,\ 0.539)\,\bW=(1.116+0.270,\ -1.116+0.539)$</p><p class="small">$\qquad=(1.385,\ -0.577)$</p><p class="small why">$(\hA\bX)\bW=\hA(\bX\bW)$: libraries compute $\bX\bW$ first, cheaper when $d'\lt d$.</p></div>
+        <div data-i="3"><p class="small">$\bh_C'=\mathrm{ReLU}(1.385,\,-0.577)=(1.385,\ 0)$.</p><p class="small">All rows: A $(0.933, 0)$, B $(0.933, 0)$, C $(1.385, 0)$, D $(1.508, 0.150)$, E $(1.316, 0.184)$.</p><p class="small why">Stack a second layer with its own $\bW^{(2)}$ and C hears from E too.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>More layers, more hops</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="gnn-hops" data-auto="k=1 :: after 1 layer, node 16 has heard from its 2 neighbours | k=3 :: after 3 layers, from 17 other members | k=5 :: after 5 layers, from everyone: node 16 is the most remote member">
+      <svg class="fig" aria-label="The karate club graph; the nodes within k hops of one member are highlighted"></svg>
+      <div class="ctl"><label for="hp-k">layers</label><input type="range" id="hp-k" data-k="k" min="0" max="5" step="1" value="0"><span class="v" data-v="k"></span></div>
+    </div>
+    <div class="stack" style="gap:9px">
+      <p class="small">After one layer $\bh_v$ depends on $v$ and its neighbours; after two, on the neighbours of the neighbours. After $K$ layers: the <b>$K$-hop neighbourhood</b>, the receptive field of the node, as in a CNN.</p>
+      <p class="small step">The graph is Zachary's karate club (1977): 34 members, 78 friendships. Node 16 is its most remote member: 3 layers reach 18 members, 5 reach all 34. For the average member, 3 layers already reach 29 of the 34.</p>
+      <p class="small step">Social and citation graphs are <b>small worlds</b>: a few hops cover a large fraction of the graph. That is one reason GNNs are shallow (2 or 3 layers), while CNNs need dozens of layers to see the whole image.</p>
+      <p class="small step why">The other reason, over-smoothing, is in Part C.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The computation tree of one node</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="gnn-tree" aria-label="Two GCN layers unrolled for node C: C at the root, its closed neighbourhood below, and their closed neighbourhoods at the leaves"></svg>
+    <div class="stack" style="gap:9px">
+      <p class="small">Unroll two layers for node C. Each node in the tree is computed from its own closed neighbourhood one level down; the leaves are the raw features $\bx$.</p>
+      <p class="small step">Every node has its own tree, but all trees use the <b>same</b> $\bW^{(1)}$ at the bottom and the same $\bW^{(2)}$ at the top: weight sharing.</p>
+      <p class="small step">The tree grows like $d^K$: C appears 4 times, and in a social graph a 3-layer tree can contain millions of leaves. This <b>neighbour explosion</b> is why large graphs are trained on <b>sampled</b> trees (GraphSAGE, Part C).</p>
+      <p class="small step">A mini-batch on a big graph = a few target nodes plus their $K$-hop trees. A GNN only ever sees a node through its tree: if two nodes have identical trees, it cannot tell them apart.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Training: few labels, all the nodes</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:9px">
+      <p class="small"><b>Semi-supervised node classification.</b> The loss uses the labelled nodes $V_L$ only:</p>
+      <div class="eq s">$$J=-\frac{1}{|V_L|}\sum_{v\in V_L}\log\hat p_{v,\,y_v}$$</div>
+      <p class="small">The forward pass runs on <b>every</b> node: the unlabelled ones pass their features on, and backpropagation goes through them.</p>
+      <p class="small step"><b>Cora</b>: 2,708 papers, 5,278 citations, a 1,433-word bag of words per paper, 7 topics. Only <b>140 labels</b> (20 per topic), 500 for validation, 1,000 for test.</p>
+      <p class="small step">Features alone (MLP) or the graph alone (label propagation) do poorly. Together they work: the topic of a paper is predicted from its words <b>and</b> those of the papers around it.</p>
+    </div>
+    <div class="widget step">
+      <svg class="fig" data-fig="gnn-cora-bars" aria-label="Test accuracy on Cora: MLP 55.1, label propagation 68.0, GCN 81.5, GAT 83.0 percent"></svg>
+      <p class="why" style="font-size:15px">Test accuracy on Cora as reported in the GCN (Kipf &amp; Welling, 2017) and GAT (Veličković et al., 2018) papers. The lab, on a short CPU budget, gets 57.3, 73.1, 81.0 and 81.7 %.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The karate club: a GCN with two labels</h2>
+  <div class="widget" data-fig="gnn-karate" data-auto="e=15 :: epoch 15: the classifier line moves between the groups, 30 of 32 right | e=50 :: epoch 50: training also pushes the groups apart | e=300 :: epoch 300: 31 of the 32 unlabelled members right">
+    <svg class="fig" style="max-height:345px" aria-label="Left: the karate club coloured by predicted faction. Right: the two-dimensional GCN embedding of every member, at a given training epoch."></svg>
+    <div class="ctl"><label for="ka-e">epoch</label><input type="range" id="ka-e" data-k="e" min="0" max="300" step="5" value="0"><span class="v" data-v="e"></span></div>
+  </div>
+  <div class="cols" style="gap:24px">
+    <p class="small">3-layer GCN $34\to4\to4\to2$ with tanh, then a linear classifier. Input: a one-hot node id, so <b>no features at all</b>. Labels: only member 0 (the instructor) and member 33 (the president).</p>
+    <p class="small"><b>Epoch 0</b>, random weights: the embeddings are tiny (the plot zooms in) but already roughly group the two factions, because $\hA$ averages over neighbourhoods. Only the classifier is random: 16 of 32. Training first moves the line, then spreads the groups.</p>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card purple"><h1><b>Part C</b><br>Variants and limits</h1><ul class="small"><li>the Laplacian; GCN as a low-pass filter</li><li>over-smoothing</li><li>GraphSAGE, GAT; transformers as GNNs</li><li>sum, mean, max; the WL test</li><li>what message passing cannot see</li></ul></div></section>
+
+<section class="slide">
+  <h2>The Laplacian measures smoothness</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:6px">
+      <p class="small">Graph <b>Laplacian</b> $\bL=\bD-\bA$. For a signal $\bx$ with one number per node:</p>
+      <div class="bluebox" style="font-size:20px">$$\bx^\top\bL\bx=\sum_{(u,v)\in E}(x_u-x_v)^2$$</div>
+      <p class="small why">Proof: $\bx^\top\bD\bx=\sum_vd_vx_v^2$ counts each edge's $x_u^2+x_v^2$ once, and $\bx^\top\bA\bx=2\sum_Ex_ux_v$. Toy graph, $\bx=(1,3,2,0,4)$: $4+1+1+4+16=26$.</p>
+      <p class="small step">Small when neighbours have similar values: a <b>smooth</b> signal.</p>
+      <p class="small step">The eigenvectors $\mathbf u_k$ of $\bL$ ($\lambda_0=0\le\lambda_1\le\dots$) are the graph's <b>Fourier modes</b>: $\lambda_k=\mathbf u_k^\top\bL\mathbf u_k$ is how rough mode $k$ is. On a path they are exactly cosines.</p>
+      <p class="small step">The second eigenvector, the <b>Fiedler vector</b> (mode 1 here, $\mathbf u_2$ in the lab), is the smoothest non-constant signal: its sign cuts the graph where few edges cross. On the karate club it predicts the split for 32 of 34 members.</p>
+    </div>
+    <div class="widget" data-fig="gnn-modes" data-auto="k=1 :: mode 1: one slow wave, a single sign change | k=2 :: mode 2: two sign changes, a bit rougher | k=19 :: the last mode: neighbours alternate, the roughest signal | g=karate;k=1 :: on the karate club, the Fiedler vector splits the two factions">
+      <svg class="fig" aria-label="Laplacian eigenvectors drawn as node colours, on a path graph or on the karate club, with the spectrum below"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-g="path" aria-pressed="true">path</button><button type="button" data-g="karate" aria-pressed="false">karate club</button></span><label for="md-k">mode</label><input type="range" id="md-k" data-k="k" min="0" max="19" step="1" value="0"><span class="v" data-v="k"></span></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>A GCN layer is a low-pass filter</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:7px">
+      <p class="small">$\hA=\bI-\tilde\bL_{\text{sym}}$ shares its eigenvectors with the normalised Laplacian (with self-loops), whose eigenvalues lie in $[0,2)$.</p>
+      <p class="small step">So multiplying by $\hA$ multiplies the component of the signal along mode $\lambda$ by $(1-\lambda)$. Smooth modes pass, rough ones are damped: a <b>low-pass filter</b>.</p>
+      <p class="small step">A GCN layer = a learned feature map $\bW$ + a fixed low-pass filter on the graph. It helps when labels are smooth over the graph: <b>homophily</b>. In Cora 81 % of the citations join papers of the same topic.</p>
+      <p class="small step">$K$ layers apply $(1-\lambda)^K$: everything but the smoothest direction fades. That is <b>over-smoothing</b>, next slide.</p>
+      <p class="small step"><b>Why the self-loops:</b> without them $\lambda$ can reach 2, where $|1-\lambda|^K=1$: the roughest modes would pass undamped, flipping sign at every layer. With them the spectrum stays well below 2 (grey band).</p>
+      <p class="small step why">History: spectral CNNs (2014) learned a filter per eigenvalue, $O(n^3)$; ChebNet (2016) used polynomials of $\bL$; GCN (2017) kept degree 1 and added the self-loops.</p>
+    </div>
+    <div class="widget" data-fig="gnn-lowpass" data-auto="K=2 :: two layers: rough modes are already halved | K=8 :: eight layers: only the smoothest modes survive">
+      <svg class="fig" aria-label="Gain of K GCN propagations as a function of the graph frequency lambda"></svg>
+      <div class="ctl"><label for="lp-k">layers K</label><input type="range" id="lp-k" data-k="K" min="1" max="16" step="1" value="1"><span class="v" data-v="K"></span></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Over-smoothing: deep GCNs make every node alike</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="gnn-smooth" data-auto="k=1 :: 1 propagation: neighbours start to agree | k=4 :: 4: communities share a colour | k=16 :: 16: almost one colour | k=64 :: 64: every node is (almost) the same, up to its degree">
+      <svg class="fig" aria-label="A random signal on the karate club graph, smoothed by repeated multiplication by the normalised adjacency, and its roughness against the number of propagations"></svg>
+      <div class="ctl"><label for="sm-k">propagations</label><input type="range" id="sm-k" data-k="k" min="0" max="64" step="1" value="0"><span class="v" data-v="k"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">Start from random node values and multiply by $\hA$ again and again (a GCN without weights). Each node converges to $\sqrt{\tilde d_v}$ times one common number: the nodes become <b>indistinguishable</b>.</p>
+      <p class="small step">With weights it happens too: in the lab a plain GCN on Cora scores 81 % with 2 layers, 76 % with 4 and <b>20 %</b> with 8. Residual connections keep 76 % at 8.</p>
+      <p class="small step"><b>Fixes:</b> residual connections $\bh+f(\bh)$; jumping knowledge (concatenate every layer's output); normalisation (PairNorm); DropEdge; or decouple: a few propagation steps on precomputed features (SGC, APPNP).</p>
+      <p class="small step why">Two more classic limits: <b>over-squashing</b>, exponentially many nodes squeezed into one fixed-size vector; <b>heterophily</b>, neighbours that differ, where smoothing destroys the signal.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>GraphSAGE: sample, aggregate, concatenate</h2>
+  <div class="cols c46">
+    <svg class="fig" data-fig="gnn-sage" aria-label="A target node with a sampled set of 3 neighbours, and 2 sampled neighbours for each of them; the other neighbours are greyed out"></svg>
+    <div class="stack" style="gap:8px">
+      <div class="bluebox" style="font-size:19px">$$\bh_v'=\sigma\Big(\big[\,\bh_v\ \big\|\ \underset{u\in S(v)}{\mathrm{mean}}\ \bh_u\,\big]\,\bW\Big)$$</div>
+      <p class="small"><b>Concatenate</b> (Hamilton et al., 2017): "me" and "my neighbours" get separate weights; GCN mixes them in one average. It helps when neighbours differ from the node.</p>
+      <p class="small step"><b>Sample</b>: $S(v)$ = a fixed number of random neighbours per layer (e.g. 25, then 10). A target costs at most $25\cdot10=250$ nodes whatever the degrees, so mini-batches work on huge graphs. PinSage (Pinterest, 2018): 3 billion nodes, 18 billion edges.</p>
+      <p class="small step"><b>Inductive</b>: it learns how to aggregate, not one vector per node. A node that appears after training (a new user, a new claim) gets an embedding from its neighbourhood.</p>
+      <p class="small step why">Other aggregators: max of an MLP of the neighbours, an LSTM over a random order.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>GAT: attention over the neighbours</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="gnn-gat" data-auto="s=1 :: a score for each neighbour from both ends: aᵀ[Wh_C ‖ Wh_u], then LeakyReLU | s=2 :: softmax over the neighbours of C only: the weights sum to 1 | s=3 :: the output: a weighted sum of the transformed neighbours">
+      <svg class="fig" aria-label="Node C, its neighbours A, B, D and itself, with attention scores, softmax weights drawn as edge widths, and the output vector"></svg>
+      <div class="ctl"><label for="ga-s">step</label><input type="range" id="ga-s" data-k="s" min="0" max="3" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:6px">
+      <p class="small">GCN fixes the weight of edge $u$–$v$ from the degrees. <b>GAT</b> (Veličković et al., 2018) learns it from the features of both ends:</p>
+      <div class="eq xs">$$e_{vu}=\mathrm{LeakyReLU}\big(\mathbf a^\top[\,\bh_v\bW\,\|\,\bh_u\bW\,]\big)$$</div>
+      <div class="eq xs">$$\alpha_{vu}=\frac{e^{e_{vu}}}{\sum_{w\in\Nb(v)\cup\{v\}}e^{e_{vw}}},\qquad\bh_v'=\sigma\Big(\sum_{u}\alpha_{vu}\,\bh_u\bW\Big)$$</div>
+      <p class="small">The softmax runs over the neighbours only: attention with the graph as a mask. <b>Multi-head</b>: 8 heads, concatenated (Cora).</p>
+      <p class="small step why">Numbers: $\bh\bW=\bX\bW$ from the GCN slide, $\mathbf a=(0.2,0\,;\,0.5,1)$. On Cora the learned weights are almost uniform, so GAT ≈ GCN there (lab: 81.7 vs 81.0 %). Subtlety: with the monotonic LeakyReLU outside, every node ranks its neighbours in the same order ("static" attention); GATv2 (2022) fixes it.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>A transformer is a GNN on the complete graph</h2>
+  <div class="cols c46">
+    <svg class="fig" data-fig="gnn-complete" aria-label="Left: four tokens, every pair connected, as in self-attention. Right: a molecule where only bonded atoms are connected."></svg>
+    <div class="stack" style="gap:9px">
+      <table class="t xs">
+        <tr><th></th><th>who are the neighbours</th><th>weight of $u$'s message to $v$</th></tr>
+        <tr><td><b>GCN</b></td><td>the graph's edges</td><td>$1/\sqrt{\tilde d_u\tilde d_v}$, fixed</td></tr>
+        <tr><td><b>GAT</b></td><td>the graph's edges</td><td>softmax of a learned score</td></tr>
+        <tr><td><b>transformer</b></td><td>every token</td><td>softmax of $\bq_v\cdot\bk_u/\sqrt{d_k}$</td></tr>
+      </table>
+      <p class="small step">Self-attention is message passing on the <b>complete</b> graph. It is permutation equivariant, which is exactly why a transformer needs positional encodings: the complete graph says nothing about who is next to whom.</p>
+      <p class="small step"><b>Graph transformers</b> (Graphormer, GPS) attend between all nodes and put the graph back as encodings: Laplacian eigenvectors as positions, shortest-path distances as an attention bias. Good against over-squashing; the price is $O(n^2)$.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Sum, mean or max?</h2>
+  <svg class="fig" data-fig="gnn-agg" style="max-height:255px" aria-label="Three pairs of neighbourhoods with scalar features, and whether sum, mean and max give different results for each pair"></svg>
+  <div class="cols">
+    <div class="stack" style="gap:7px">
+      <p class="small"><b>mean</b> sees the proportions of the neighbours, <b>max</b> only which values occur, <b>sum</b> the values with their counts (the multiset).</p>
+      <p class="small step">Pair 3 fools the sum of the raw numbers, $1+3=2+2$. Not if each value first goes through a non-linear $f$: $f(1)+f(3)\ne 2f(2)$. With the right $f$, $\sum_uf(\bh_u)$ is injective on multisets (Xu et al., 2019).</p>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small step"><b>GIN</b>, the Graph Isomorphism Network, puts an MLP after the sum:</p>
+      <div class="bluebox step" style="font-size:19px">$$\bh_v'=\mathrm{MLP}\Big((1+\epsilon)\,\bh_v+\sum_{u\in\Nb(v)}\bh_u\Big)$$</div>
+      <p class="small step why">Mean is fine when the degree is noise (how many papers cite you), max for "is there any …" features. Sum when counts matter: two oxygen atoms are not one.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>How powerful is message passing? The WL test</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="gnn-wl" data-auto="t=1 :: round 1: the new colour encodes the degree. Same histogram: 2 + 2 + 2 nodes | t=2 :: round 2: the colour encodes the neighbours' degrees. The histograms differ: not the same graph">
+      <svg class="fig" aria-label="Two graphs with the same degrees, coloured by Weisfeiler-Lehman refinement over rounds, with their colour histograms"></svg>
+      <div class="ctl"><label for="wl-t">round</label><input type="range" id="wl-t" data-k="t" min="0" max="2" step="1" value="0"><span class="v" data-v="t"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small"><b>1-WL colour refinement</b> (Weisfeiler and Lehman, 1968). Start with one colour for every node, then repeat:</p>
+      <div class="note" style="font-size:18px">new colour of $v$ = a new name for (colour of $v$, multiset of its neighbours' colours)</div>
+      <p class="small">Different colour histograms ⇒ the graphs are different. Equal histograms ⇒ maybe the same.</p>
+      <p class="small step">A message-passing GNN runs the same algorithm with a learned function instead of renaming. So its vector for $v$ can depend only on $v$'s WL colour: <b>nodes or graphs that 1-WL cannot tell apart get the same embedding in every message-passing GNN</b> (Xu et al.; Morris et al., 2019).</p>
+      <p class="small step">GIN's sum + MLP is injective, so GIN is <b>as powerful as 1-WL</b>. GCN (weighted mean) and GraphSAGE-mean are weaker.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>What message passing cannot see</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="gnn-wlfail" aria-label="Two disjoint triangles and one hexagon: every node has degree 2 and keeps the same WL colour in every round"></svg>
+    <div class="stack" style="gap:8px">
+      <p class="small">Two triangles and one hexagon: 6 nodes, 6 edges, every node has 2 neighbours, each with 2 neighbours… In every round all nodes keep one colour.</p>
+      <p class="small step">So GCN, GAT, GraphSAGE and GIN give the two graphs <b>identical</b> embeddings, whatever the weights. The lab checks it.</p>
+      <p class="small step">Yet one has triangles and the other a 6-ring, and a chemist cares about rings. In general message passing cannot count triangles, find cycles of a given length, or compute distances beyond its depth.</p>
+      <div class="idea step"><b>Fixes:</b> add structural features (degree, cycle counts, Laplacian eigenvectors as positions); random features or node ids (break the symmetry, invariant only on average); higher-order GNNs ($k$-WL, subgraph GNNs); graph transformers with structural encodings.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card coral"><h1><b>Part D</b><br>Tasks and practice</h1><ul class="small"><li>graph level: readout and batching</li><li>edge level: link prediction</li><li>gather and scatter: the code</li><li>a practical guide</li></ul></div></section>
+
+<section class="slide">
+  <h2>Graph-level tasks: readout and batching</h2>
+  <svg class="fig" data-fig="gnn-batch" style="max-height:265px" aria-label="Three small graphs become one block-diagonal adjacency matrix with a batch vector; node vectors are summed per graph and fed to an MLP"></svg>
+  <div class="cols">
+    <div class="stack" style="gap:7px">
+      <p class="small"><b>Readout</b>: $\ \bh_G=\sum_{v\in G}\bh_v^{(K)}$ (or mean, or max), then an MLP. Invariant by construction. GIN concatenates the readouts of every layer, to keep shallow and deep features.</p>
+      <p class="small step">Example: MUTAG, 188 molecules (about 18 atoms each, 7 atom types), mutagenic or not. With so few graphs, report the mean ± std of a 10-fold cross-validation: the std is several points.</p>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small step"><b>Batching</b>: put $B$ graphs side by side as one big graph with no edges between them. Its adjacency is block diagonal, so messages never cross from one graph to another.</p>
+      <p class="small step">A <code>batch</code> vector says which graph each node belongs to; the readout sums per segment. No padding: each graph costs exactly its own nodes and edges.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Edge-level tasks: link prediction</h2>
+  <div class="cols c46">
+    <svg class="fig" data-fig="gnn-link" aria-label="A graph whose edges are split into message-passing edges, training targets, held-out test edges and sampled non-edges"></svg>
+    <div class="stack" style="gap:8px">
+      <p class="small">Score a pair from the two node vectors: $\ \hat p_{uv}=\sigma(\bh_u^\top\bh_v)$, or an MLP on $[\bh_u\|\bh_v]$ or on $\bh_u\odot\bh_v$.</p>
+      <p class="small step"><b>Training:</b> positives = existing edges; negatives = random pairs (<b>negative sampling</b>, fresh every epoch); binary cross-entropy. Metric: ROC-AUC, or hits@K and MRR against many negatives.</p>
+      <div class="warnbox step"><p class="small"><b>The trap.</b> Split the edges into train, validation and test, and <b>remove the validation and test edges from the message-passing graph</b> too. Otherwise $u$ and $v$ exchange messages through the very edge we ask about, and the score is inflated: in the lab, ROC-AUC 0.92 done right, 0.97 with the leak.</p></div>
+      <p class="small step why">Typed edges (a person <em>drives</em> a car, a claim <em>involves</em> a workshop) need one $\bW$ per relation: relational GNNs (R-GCN), heterogeneous graphs.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>In code: gather, then scatter</h2>
+  <div class="cols c46">
+    <svg class="fig" data-fig="gnn-scatter" aria-label="The edge list of the toy graph: messages are gathered from the source nodes, scaled, and added into the target nodes"></svg>
+    <div class="stack" style="gap:8px">
+      <p class="small">A graph in code is <code>edge_index</code>: a $2\times|E|$ integer tensor, one column per directed edge (sources, targets). One GCN layer, no $n\times n$ matrix:</p>
+<pre class="code s">src, dst = edge_index            <span class="c"># with self-loops, both directions</span>
+deg  = torch.bincount(dst, minlength=n).float()
+norm = (deg[src] * deg[dst]).rsqrt()   <span class="c"># 1/√(d̃ᵤ d̃ᵥ)</span>
+msg  = (h @ W)[src] * norm[:, None]    <span class="c"># gather: one row per edge</span>
+out  = torch.zeros(n, W.shape[1])
+out.index_add_(0, dst, msg)            <span class="c"># scatter: sum at the target</span></pre>
+      <p class="small step">Time $O(|E|\,d)$, memory $O(|E|+nd)$. A dense $\hA$ for Cora would have 7.3 million entries for 13 thousand non-zeros.</p>
+      <p class="small step">Libraries do exactly this. PyTorch Geometric: <code>GCNConv(16, 7)(h, edge_index)</code>; also <code>SAGEConv</code>, <code>GATConv</code>, <code>GINConv</code>. DGL is the other big library.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Node classification in PyTorch Geometric</h2>
+  <div class="cols c64">
+<pre class="code s">import torch, torch.nn.functional as F
+from torch_geometric.datasets import Planetoid
+from torch_geometric.nn import GCNConv
+
+data = Planetoid("data", "Cora")[0]   <span class="c"># x, edge_index, y, masks</span>
+
+class GCN(torch.nn.Module):
+    def __init__(self, d_in, d_hid, n_cls):
+        super().__init__()
+        self.c1 = GCNConv(d_in, d_hid)
+        self.c2 = GCNConv(d_hid, n_cls)
+    def forward(self, x, ei):
+        x = F.dropout(x, 0.5, self.training)
+        x = F.relu(self.c1(x, ei))
+        x = F.dropout(x, 0.5, self.training)
+        return self.c2(x, ei)            <span class="c"># class scores</span>
+
+model = GCN(1433, 16, 7)
+opt = torch.optim.Adam(model.parameters(), lr=0.01,
+                       weight_decay=5e-4)
+for epoch in range(200):
+    model.train(); opt.zero_grad()
+    out = model(data.x, data.edge_index)        <span class="c"># all nodes</span>
+    m = data.train_mask                         <span class="c"># 140 labels</span>
+    F.cross_entropy(out[m], data.y[m]).backward()
+    opt.step()</pre>
+    <div class="stack" style="gap:9px">
+      <p class="small"><b>One graph, one batch</b>: Cora fits in memory, so every step is full batch.</p>
+      <p class="small"><b>Forward on all nodes, loss on 140.</b> The masks select the labelled, validation and test nodes.</p>
+      <p class="small"><b>Strong regularisation</b>: dropout 0.5 and weight decay, because 140 labels are overfitted in a few dozen epochs. Pick the epoch on <code>val_mask</code>.</p>
+      <p class="small"><b>16 hidden units, 2 layers</b>: about 23 thousand parameters, 99 % of them in the first layer's $1433\times16$ matrix.</p>
+      <p class="small why">Test accuracy ≈ 81 %. The lab builds this layer from scratch first, then checks that <code>GCNConv</code> gives the same numbers.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>A practical guide: what to do when…</h2>
+  <table class="t xs">
+    <tr><th style="width:33%">situation</th><th>what to do</th></tr>
+    <tr><td>first model</td><td>baselines first: an MLP on the node features and label propagation on the graph. Then a 2-layer GCN or GraphSAGE.</td></tr>
+    <tr><td>neighbours tend to differ (heterophily)</td><td>measure the homophily; concatenate self and neighbours (GraphSAGE), add skip connections, or compare against the MLP.</td></tr>
+    <tr><td>more layers do not help</td><td>expected beyond 2–3. Residuals or jumping knowledge before going deeper.</td></tr>
+    <tr><td>the graph does not fit on the GPU</td><td>neighbour sampling (GraphSAGE), subgraph batches (ClusterGCN, GraphSAINT), or precompute $\hA^K\bX$ once (SGC).</td></tr>
+    <tr><td>counts or structure matter</td><td>sum aggregation (GIN); add degree, cycle counts or Laplacian positional encodings as features.</td></tr>
+    <tr><td>graph-level task, few graphs</td><td>10-fold cross-validation, mean ± std; for molecules, split by scaffold, not at random.</td></tr>
+    <tr><td>link prediction</td><td>hide the validation and test edges from message passing; fresh negatives every epoch.</td></tr>
+    <tr><td>several node and edge types</td><td>a heterogeneous GNN (R-GCN, <code>HeteroConv</code>): one set of weights per relation.</td></tr>
+    <tr><td>the graph changes over time</td><td>split by time, never at random; temporal GNNs for event streams.</td></tr>
+  </table>
+</section>
+
+<section class="slide">
+  <h2>The topic in one slide</h2>
+  <div class="cards c2" style="gap:12px">
+    <div class="card"><h3>A · Graphs as data</h3><ul>
+      <li>$G=(V,E)$, features $\bX$ ($n\times d$), adjacency $\bA$, degrees $\bD$</li>
+      <li>node-, edge- and graph-level tasks; transductive or inductive</li>
+      <li>the node order is arbitrary: equivariant layers, invariant readout</li></ul></div>
+    <div class="card g"><h3>B · Message passing and the GCN</h3><ul>
+      <li>$\bh_v'=\mathrm{UPD}(\bh_v,\mathrm{AGG}_{u\in\Nb(v)}\mathrm{MSG}(\bh_u,\bh_v))$</li>
+      <li>GCN: $\sigma(\hA\bH\bW)$, $\hA=\tD^{-1/2}(\bA+\bI)\tD^{-1/2}$</li>
+      <li>$K$ layers = $K$ hops; loss on labelled nodes, forward on all</li></ul></div>
+    <div class="card y"><h3>C · Variants and limits</h3><ul>
+      <li>$\hA$ is a low-pass filter: deep GCNs over-smooth</li>
+      <li>SAGE: concat + sampling; GAT: learned edge weights; transformer = complete graph</li>
+      <li>GIN (sum + MLP) = 1-WL; two triangles = one hexagon for every MPNN</li></ul></div>
+    <div class="card o"><h3>D · Tasks and practice</h3><ul>
+      <li>graphs: readout + block-diagonal batching; edges: $\sigma(\bh_u^\top\bh_v)$, negatives</li>
+      <li>hide test edges from message passing</li>
+      <li>code: gather + scatter on <code>edge_index</code>, $O(|E|d)$; baselines first</li></ul></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Vocabulary of Extra 1</h2>
+  <div class="cols">
+    <dl class="gloss" style="font-size:16px;gap:5px 14px">
+      <dt>adjacency matrix</dt><dd>$A_{uv}=1$ if $u$ and $v$ are joined by an edge.</dd>
+      <dt>degree, $\Nb(v)$</dt><dd>the number of neighbours, and the set of them.</dd>
+      <dt>edge_index</dt><dd>the edge list, $2\times|E|$, the way code stores a graph.</dd>
+      <dt>equivariant / invariant</dt><dd>renumbering the nodes renumbers the output / leaves it unchanged.</dd>
+      <dt>message passing</dt><dd>each node aggregates its neighbours' messages and updates its vector.</dd>
+      <dt>self-loop</dt><dd>an edge from a node to itself: $\tA=\bA+\bI$.</dd>
+      <dt>$\hA$</dt><dd>$\tD^{-1/2}\tA\tD^{-1/2}$, the GCN's normalised adjacency.</dd>
+      <dt>GCN</dt><dd>$\sigma(\hA\bH\bW)$: weighted mean of the neighbours, shared weights.</dd>
+      <dt>receptive field</dt><dd>the $K$-hop neighbourhood a $K$-layer GNN can see.</dd>
+      <dt>transductive / inductive</dt><dd>test nodes seen without labels / new nodes or graphs at test time.</dd>
+      <dt>homophily</dt><dd>the fraction of edges that join nodes of the same class.</dd>
+    </dl>
+    <dl class="gloss" style="font-size:16px;gap:5px 14px">
+      <dt>Laplacian</dt><dd>$\bL=\bD-\bA$; $\bx^\top\bL\bx$ = the roughness of a signal.</dd>
+      <dt>over-smoothing</dt><dd>with depth, all node vectors converge to the same one.</dd>
+      <dt>over-squashing</dt><dd>too many distant nodes squeezed into one fixed-size vector.</dd>
+      <dt>GraphSAGE</dt><dd>concatenate self and sampled neighbours; inductive, scalable.</dd>
+      <dt>GAT</dt><dd>neighbour weights from a learned attention score and a softmax.</dd>
+      <dt>GIN</dt><dd>sum + MLP aggregation: as powerful as the 1-WL test.</dd>
+      <dt>1-WL test</dt><dd>colour refinement; the ceiling of message-passing GNNs.</dd>
+      <dt>readout</dt><dd>sum, mean or max over the nodes: one vector per graph.</dd>
+      <dt>batch vector</dt><dd>for each node, the index of its graph in the mini-batch.</dd>
+      <dt>negative sampling</dt><dd>random non-edges used as negatives in link prediction.</dd>
+      <dt>edge leakage</dt><dd>test edges left in the message-passing graph.</dd>
+    </dl>
+  </div>
+  <p class="labline">Original papers: <a href="https://arxiv.org/abs/1609.02907" target="_blank" rel="noopener">GCN</a> · <a href="https://arxiv.org/abs/1706.02216" target="_blank" rel="noopener">GraphSAGE</a> · <a href="https://arxiv.org/abs/1710.10903" target="_blank" rel="noopener">GAT</a> · <a href="https://arxiv.org/abs/1810.00826" target="_blank" rel="noopener">GIN and the WL test</a> · <a href="https://distill.pub/2021/gnn-intro/" target="_blank" rel="noopener">A gentle introduction (Distill)</a>.</p>
+</section>
+
+<section class="slide lab">
+  <div class="labtag">EXTRA 1</div>
+  <h2>Graph neural networks, from scratch to PyG</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:10px">
+      <p>Build every layer of this deck by hand in PyTorch, check it against PyTorch Geometric, and measure where GNNs shine and where they break.</p>
+      <ol class="todo">
+        <li>The karate club as matrices; permutations and equivariance, checked numerically.</li>
+        <li>Message passing on the toy graph; the Laplacian, its modes and over-smoothing.</li>
+        <li>A GCN from scratch, dense then with <code>edge_index</code> (gather + scatter).</li>
+        <li>Cora: MLP vs label propagation vs GCN vs GAT; accuracy against depth.</li>
+        <li>The WL test from scratch: two triangles vs a hexagon.</li>
+        <li>MUTAG with GIN and three readouts; link prediction and edge leakage.</li>
+      </ol>
+    </div>
+    <div class="labcard">
+      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/extra/extra 01 - Graph Neural Networks.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <dl class="gloss">
+        <dt>notebook</dt><dd><code>extra 01 - Graph Neural Networks.ipynb</code></dd>
+        <dt>you need</dt><dd>MLPs, backprop and the PyTorch training loop (Neural networks 1–3); attention (chapter 6) for GAT</dd>
+        <dt>runs on</dt><dd>CPU, no GPU needed</dd>
+        <dt>data</dt><dd>karate club (in NetworkX), Cora and MUTAG (downloaded by PyG, a few MB)</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section class="slide cover">
+  <div class="inner"><h1>Extra topics</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Graph neural networks · end</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+</div></div>
+<script src="../assets/figures.js?v=20260930"></script>
+<script src="../neural_networks/assets/nn-core.js?v=20260930"></script>
+<script src="assets/gnn-data.js?v=20261008"></script>
+<script src="assets/fig-gnn.js?v=20261008"></script>
+<script src="../assets/deck.js?v=20260930"></script>
+</body>
+</html>
