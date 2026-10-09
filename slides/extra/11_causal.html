@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="author" content="Imanol Granada (imanolgranada@gmail.com)">
+<title>Causal Inference and Uplift</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="../assets/deck.css?v=20260930">
+<link rel="stylesheet" href="../neural_networks/assets/nn.css?v=20261006c">
+<script src="../assets/mathjax-config.js?v=20260930"></script>
+<script>Object.assign(MathJax.tex.macros,{do:'\\mathrm{do}',ind:'\\perp\\!\\!\\!\\perp',ATE:'\\mathrm{ATE}',ATT:'\\mathrm{ATT}',hmu:'\\hat\\mu',he:'\\hat e'});</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
+</head>
+<body data-deck="Extra 11 · Causal inference and uplift modelling" data-prev="10_conformal.html" data-next="12_reinforcement_learning.html">
+<div id="viewport"><div id="stage">
+<section class="slide cover">
+  <div class="inner"><h1>Extra topics</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Causal inference and uplift modelling</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+
+<section class="slide">
+  <h2>Where we are</h2>
+  <svg class="fig" data-fig="ca-where" style="max-height:215px" aria-label="Left: a churn model predicts the probability that a customer leaves. Right: an intervention compares the customer's retention with and without a call."></svg>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p class="small">Every model of the course answers <b>"what will happen?"</b>: $P(Y\mid X)$, learned from data and checked on a test set. Business decisions ask <b>"what happens if we act?"</b>: call this customer, give this discount, send this claim to a fast-track handler.</p>
+      <p class="small step">The second question is about $P(Y\mid\do(T=t))$, a world we change. A model trained on observational data does not answer it: the customers we acted on were chosen for a reason. Extra 9 said it about explanations: a SHAP value describes the model, not the world.</p>
+    </div>
+    <div class="stack" style="gap:10px">
+      <div class="note step"><p class="small"><b>Causal inference</b>: estimating what would happen under an intervention, from experiments or from observational data plus assumptions. <b>Uplift modelling</b>: estimating it person by person, to decide whom to treat.</p></div>
+      <p class="small step why">Four parts: <b>A</b> prediction vs intervention and potential outcomes, <b>B</b> causal graphs, <b>C</b> estimating effects from observational data, <b>D</b> heterogeneous effects and uplift. It ends with the Extra 11 lab.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card blue"><h1><b>Part A</b><br>Prediction vs<br>intervention</h1><ul class="small"><li>Simpson's paradox</li><li>potential outcomes, ATE, ATT</li><li>the selection bias</li><li>why randomisation works</li><li>the four assumptions</li></ul></div></section>
+
+<section class="slide">
+  <h2>Simpson's paradox: kidney stones</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ca-simpson" data-auto="v=strat :: by stone size: A has the higher success rate in both groups | v=all :: all patients together: B looks better, 82.6 % against 78.0 % | v=adj :: adjusted for stone size: if everybody got A, 83.3 % would recover; with B, 77.9 %">
+      <svg class="fig" aria-label="Success rates of two kidney-stone treatments by stone size, pooled, and adjusted"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-v="strat" aria-pressed="true">by stone size</button><button type="button" data-v="all" aria-pressed="false">all patients</button><button type="button" data-v="adj" aria-pressed="false">adjusted</button></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">A real study (Charig et al., 1986): open surgery (A) against a less invasive procedure (B), 350 patients each.</p>
+      <p class="small step">Large stones are harder to treat, and doctors gave A to the hard cases: <b>75 %</b> of A's patients had a large stone, <b>23 %</b> of B's. Stone size is a <b>confounder</b>: it drives both the treatment and the outcome.</p>
+      <p class="small step">"What if everybody got A?" keeps the population's mix of stone sizes $P(z)$ and uses A's success rate <em>within</em> each size:</p>
+      <div class="bluebox step" style="font-size:19px">$$P(Y{=}1\mid\do(T{=}t))=\sum_z P(Y{=}1\mid t,z)\,P(z)$$</div>
+      <p class="small step why">$0.931\cdot0.51+0.730\cdot0.49=0.833$ for A, $0.867\cdot0.51+0.688\cdot0.49=0.779$ for B. Same data, opposite conclusion. If the third variable were caused by the treatment, the pooled table would be the right one: only the causal story decides (Part B).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Potential outcomes</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ca-po" data-auto="s=1 :: the simulator also knows the outcome under the other choice | s=2 :: the individual effect τᵢ = Yᵢ(1) − Yᵢ(0) of each driver | s=3 :: averages over these six drivers: the naive difference is far from the ATE">
+      <svg class="fig" aria-label="Six drivers of the lab's telematics data with their two potential outcomes; the unobserved ones are shown as question marks"></svg>
+      <div class="ctl"><label for="po-s">step</label><input type="range" id="po-s" data-k="s" min="0" max="3" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">Running example: a fictional <b>telematics programme</b> (a box in the car, feedback, a discount). Outcome: next year's claim cost.</p>
+      <p class="small">Each driver has two <b>potential outcomes</b>: $Y_i(1)$ if he joins, $Y_i(0)$ if not. We observe one (<b>consistency</b>):</p>
+      <div class="eq s">$$Y_i=T_i\,Y_i(1)+(1-T_i)\,Y_i(0)$$</div>
+      <p class="small step"><b>Fundamental problem</b>: the effect $\tau_i=Y_i(1)-Y_i(0)$ is never observed. Causal inference is a missing-data problem.</p>
+      <ul class="small step" style="gap:3px"><li>$\ATE=\E[Y(1)-Y(0)]$, everybody</li><li>$\ATT=\E[Y(1)-Y(0)\mid T=1]$, the treated</li><li>$\tau(x)=\E[Y(1)-Y(0)\mid X=x]$, the CATE</li></ul>
+      <p class="small step why">The lab simulates 5,000 drivers and keeps both outcomes: ATE $=-51.9$ €, ATT $=-37.7$ €. The members are careful drivers, for whom the programme does less.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The naive difference = ATT + selection bias</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ca-decomp" data-auto="s=1 :: what the members would have cost without the programme: only the simulator knows | s=2 :: the gap splits into the effect on the members and the selection bias">
+      <svg class="fig" aria-label="Mean claim cost of members and non-members, and the members' cost without the programme, splitting the naive difference"></svg>
+      <div class="ctl"><label for="dc-s">step</label><input type="range" id="dc-s" data-k="s" min="0" max="2" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:6px">
+      <p class="small">Members cost 121 € less than non-members. Add and subtract $\E[Y(0)\mid T=1]$, the members' cost <em>without</em> the programme:</p>
+      <div class="eq xs">$$\underbrace{\E[Y\mid T{=}1]-\E[Y\mid T{=}0]}_{\text{naive}}=\underbrace{\E[Y(1)-Y(0)\mid T{=}1]}_{\ATT}$$</div>
+      <div class="eq xs">$$\qquad+\underbrace{\E[Y(0)\mid T{=}1]-\E[Y(0)\mid T{=}0]}_{\text{selection bias}}$$</div>
+      <p class="small step">Consistency gives $Y=Y(1)$ among the treated and $Y=Y(0)$ among the controls, so it is an identity. Lab: $-120.9=-37.7-83.1$.</p>
+      <p class="small step">The selection bias is the gap <b>had nobody been treated</b>. Careful drivers join and are cheaper anyway: two thirds of the raw difference is not caused by the programme.</p>
+      <p class="small step why">More data does not help: the bias does not shrink with $n$. Only the design or assumptions can remove it.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Why the A/B test is the gold standard</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:7px">
+      <p class="small">If $T$ is a coin flip, it is independent of the potential outcomes, $(Y(1),Y(0))\ind T$. Then</p>
+      <div class="eq xs">$$\E[Y\mid T{=}1]-\E[Y\mid T{=}0]=\E[Y(1)\mid T{=}1]-\E[Y(0)\mid T{=}0]$$</div>
+      <div class="bluebox" style="font-size:18px;padding:4px 14px">$$=\E[Y(1)]-\E[Y(0)]=\ATE$$</div>
+      <p class="small step">The selection bias is zero and $\ATT=\ATE$. No model, no assumption about covariates. In the lab, 500 coin-flip replays on the same drivers average $-52.1$ € (true $-51.9$); 500 self-selected replays $-123.8$ €.</p>
+      <p class="small step"><b>When we cannot randomise</b>: the data are historical; an experiment is too slow (claims develop over years), too expensive, unfair (a discount for some customers only) or unethical. Then we replace the coin flip by assumptions.</p>
+    </div>
+    <div class="widget" data-fig="ca-rand" data-auto="a=rand :: coin flip: the 500 naive estimates are centred on the true ATE | a=conf :: self-selection: centred on −123.8 €, far from the truth | a=both :: same drivers, same effects: only the assignment differs">
+      <svg class="fig" aria-label="Histograms of 500 naive estimates under randomised and under self-selected assignment, with the true ATE"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-a="rand" aria-pressed="true">coin flip</button><button type="button" data-a="conf" aria-pressed="false">self-selection</button><button type="button" data-a="both" aria-pressed="false">both</button></span></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Four assumptions replace the coin flip</h2>
+  <div class="cards c2" style="gap:12px">
+    <div class="card"><h3>SUTVA</h3><svg class="fig" data-fig="ca-assume" data-k="sutva" aria-label="Two customers: the treatment of one changes the outcome of the other"></svg><p>One version of the treatment, and no interference: my outcome does not depend on your treatment. Fails for vaccines, or a discount that spreads by word of mouth.</p></div>
+    <div class="card o"><h3>Consistency</h3><svg class="fig" data-fig="ca-assume" data-k="cons" aria-label="The observed outcome equals the potential outcome of the treatment received"></svg><p>The observed outcome is the potential outcome of the treatment received, $Y=Y(T)$. "Telematics" must mean one well-defined thing.</p></div>
+    <div class="card g"><h3>Ignorability</h3><svg class="fig" data-fig="ca-assume" data-k="ign" aria-label="Covariates X drive T and Y; an unmeasured U would break the assumption"></svg><p>$(Y(1),Y(0))\ind T\mid X$: among drivers with the same $X$, joining is as good as random. <b>Untestable</b>: it is a claim about what we did not measure.</p></div>
+    <div class="card y"><h3>Positivity (overlap)</h3><svg class="fig" data-fig="ca-assume" data-k="pos" aria-label="Propensity distributions of treated and controls; a region with only controls has no overlap"></svg><p>$0\lt e(x)\lt 1$ for every $x$, with $e(x)=P(T{=}1\mid X{=}x)$: every kind of driver could be in either group. <b>Testable</b>, and must be checked.</p></div>
+  </div>
+  <p class="small step">Under them: $\E[Y(t)\mid X]=\E[Y(t)\mid T{=}t,X]=\E[Y\mid T{=}t,X]=\mu_t(X)$. Every estimator of Part C follows from this line.</p>
+</section>
+
+<section class="slide divider"><div class="card green"><h1><b>Part B</b><br>Causal graphs</h1><ul class="small"><li>DAGs: confounders, mediators, colliders</li><li>chain, fork, collider</li><li>collider bias</li><li>the backdoor criterion</li><li>do and bad controls</li></ul></div></section>
+
+<section class="slide">
+  <h2>Causal graphs (DAGs)</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="ca-dag" aria-label="The lab's causal graph: age, claims, km and urban cause T and Y; T causes brake, which causes Y; T and Y cause renew"></svg>
+    <div class="stack" style="gap:8px">
+      <p class="small">An arrow $A\to B$: $A$ is a direct cause of $B$. No cycles. The graph is drawn from domain knowledge, <b>before</b> looking at the outcome. Pearl (2000).</p>
+      <p class="small step"><b>Confounder</b>: a common cause of $T$ and $Y$ (age, past claims, km, urban). Must be adjusted for.</p>
+      <p class="small step"><b>Mediator</b>: on a causal path, $T\to M\to Y$ (the harsh-braking score). Adjusting for it removes part of the effect.</p>
+      <p class="small step"><b>Collider</b>: an effect of two variables, $T\to C\leftarrow Y$ (renewing next year). Adjusting for it, or selecting on it, creates a false association.</p>
+      <p class="small step why">This is the lab's simulator, so here it is the truth. In real work it is an assumption, and writing it down is what makes it discussable.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Chain, fork, collider</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ca-junction" data-auto="j=chain :: chain X → Z → Y: X and Y are correlated | c=on :: condition on Z (a thin slice): the correlation vanishes | j=fork;c=off :: fork X ← Z → Y: correlated through the common cause | c=on :: conditioning on Z blocks the path | j=collider;c=off :: collider X → Z ← Y: X and Y are independent | c=on :: conditioning on Z creates a correlation">
+      <svg class="fig" aria-label="Scatter of X against Y for the selected junction; with conditioning on, points in a thin slice of Z are highlighted"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-j="chain" aria-pressed="true">chain</button><button type="button" data-j="fork" aria-pressed="false">fork</button><button type="button" data-j="collider" aria-pressed="false">collider</button></span><span class="seg"><button type="button" data-c="off" aria-pressed="true">all data</button><button type="button" data-c="on" aria-pressed="false">condition on Z</button></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <table class="t xs">
+        <tr><th>junction</th><th>marginally</th><th>given $Z$</th></tr>
+        <tr><td>chain $X\to Z\to Y$</td><td>dependent</td><td><b>blocked</b></td></tr>
+        <tr><td>fork $X\leftarrow Z\to Y$</td><td>dependent</td><td><b>blocked</b></td></tr>
+        <tr><td>collider $X\to Z\leftarrow Y$</td><td>independent</td><td><b>opened</b></td></tr>
+      </table>
+      <p class="small">Every path is built from these three. A path is <b>blocked</b> by a set $S$ if it has a chain or fork whose middle is in $S$, or a collider with neither it nor a descendant in $S$. All paths blocked: $X$ and $Y$ are <b>d-separated</b>, hence independent given $S$.</p>
+      <p class="small step why">Lab, all coefficients 1, 5,000 points: correlation 0.578 → 0.012 (chain), 0.500 → −0.001 (fork), −0.014 → −0.516 (collider). Theory: $1/\sqrt3$, $0.5$ and $0\to-0.5$.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Collider bias: selecting creates correlation</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ca-collider" data-auto="k=-3 :: no selection: talent and looks are independent | k=0 :: keep the top half on talent + looks: a negative correlation appears | k=1.5 :: keep the top 14 %: among actors, r is about −0.6">
+      <svg class="fig" aria-label="Talent against looks for 2,000 people; those above a selection line become actors, and the correlation among them is shown"></svg>
+      <div class="ctl"><label for="co-k">selection talent + looks &gt;</label><input type="range" id="co-k" data-k="k" min="-3" max="2.5" step="0.25" value="-3"><span class="v" data-v="k"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">Talent and looks are independent. People become actors when talent + looks is large enough. Being an actor is a <b>collider</b>: talent → actor ← looks.</p>
+      <p class="small step">Among actors, a handsome one is probably less talented: the two traits become negatively correlated, $r=-0.64$ in the lab. Nothing links them; the selection does.</p>
+      <p class="small step"><b>Berkson's paradox</b>: two diseases look negatively associated among hospitalised patients, because either one gets you admitted.</p>
+      <div class="warnbox step"><p class="small"><b>In the lab</b>: renewing depends on the programme and on the claim cost. Analysing only the customers who renewed gives $-38.8$ €, while their true effect is $-46.7$ €.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The backdoor criterion</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ca-backdoor" data-auto="s=1 :: the direct causal path: keep it open | s=2 :: through the mediator: also causal, keep it open | s=3 :: a backdoor path through age: blocked by adjusting for age | s=4 :: a backdoor path through past claims: blocked | s=5 :: age → claims → Y: blocked by claims | s=6 :: through the collider renew: blocked as long as we leave renew alone | s=7 :: add brake to the set: a causal path is blocked (over-control) | s=8 :: add renew to the set: the collider path opens (selection bias)">
+      <svg class="fig" aria-label="A simplified telematics DAG with each path from T to Y highlighted in turn, and whether the adjustment set blocks it"></svg>
+      <div class="ctl"><label for="bd-s">path</label><input type="range" id="bd-s" data-k="s" min="0" max="8" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">A <b>backdoor path</b> starts with an arrow <em>into</em> $T$: $T\leftarrow\text{age}\to Y$. It carries association that is not causation.</p>
+      <p class="small">A set $S$ satisfies the <b>backdoor criterion</b> if</p>
+      <ol class="small" style="gap:2px"><li>no variable in $S$ is a descendant of $T$, and</li><li>$S$ blocks every backdoor path.</li></ol>
+      <p class="small">Then ignorability holds given $S$, and</p>
+      <div class="bluebox" style="font-size:18px;padding:4px 12px">$$P(Y\mid\do(t))=\sum_s P(Y\mid t,s)\,P(s)$$</div>
+      <p class="small step why">The lab's full DAG has 29 paths from T to Y: 2 causal, 21 backdoor. A from-scratch blocking test and NetworkX's d-separation agree: {age, km, claims, urban} is valid; without age, 2 backdoor paths stay open.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The do-operator and bad controls</h2>
+  <div class="cols c46">
+    <svg class="fig" data-fig="ca-do" aria-label="Left: the observational graph with arrows into T. Right: after do(T = 1) the arrows into T are cut and T is fixed."></svg>
+    <div class="stack" style="gap:7px">
+      <p class="small">$\do(T{=}t)$: set $T$ by intervention. In the graph, <b>cut the arrows into $T$</b>; the rest of the mechanism is unchanged. $P(Y\mid\do(t))$ is $Y$'s distribution in that mutilated graph, $P(Y\mid t)$ in the original one.</p>
+      <p class="small step">The backdoor adjustment turns the first into observable quantities. When no valid set exists, other identification rules may (front-door, do-calculus).</p>
+      <p class="small step"><b>Bad controls</b>, from the lab (true ATE $-51.9$ €):</p>
+      <table class="t xs step">
+        <tr><th>adjust for</th><th>estimate</th><th>why</th></tr>
+        <tr><td>age, km, claims, urban</td><td>$-51.1$ €</td><td>valid backdoor set</td></tr>
+        <tr><td>+ braking score</td><td>$-20.0$ €</td><td>mediator: direct effect only ($-21.9$)</td></tr>
+        <tr><td>renewers only</td><td>$-38.8$ €</td><td>collider: selection bias</td></tr>
+        <tr><td>nothing</td><td>$-120.9$ €</td><td>backdoor paths open</td></tr>
+      </table>
+      <p class="small step why">"Put every variable in the model" is the habit of prediction, and it is wrong here. Adjust for pre-treatment causes only.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card purple"><h1><b>Part C</b><br>Estimating effects<br>from observational data</h1><ul class="small"><li>regression adjustment, matching</li><li>propensity score and overlap</li><li>IPW, stabilised weights</li><li>AIPW and the bootstrap</li><li>sensitivity; DiD and IV</li></ul></div></section>
+
+<section class="slide">
+  <h2>Regression adjustment and matching</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ca-gcomp" data-auto="m=reg :: regression adjustment: fit one model per arm, average the gap over everybody | m=match :: matching: compare each member with the most similar non-member">
+      <svg class="fig" aria-label="Toy data: claim cost against a carefulness score for members and non-members, with group means, fitted lines per arm, or matched pairs"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-m="raw" aria-pressed="true">naive</button><button type="button" data-m="reg" aria-pressed="false">regression</button><button type="button" data-m="match" aria-pressed="false">matching</button></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small"><b>Regression adjustment</b> (g-computation): from $\E[Y(t)\mid X]=\mu_t(X)$,</p>
+      <div class="bluebox" style="font-size:18px;padding:4px 12px">$$\widehat{\ATE}=\frac1n\sum_{i=1}^n\big(\hmu_1(x_i)-\hmu_0(x_i)\big)$$</div>
+      <p class="small">The continuous adjustment formula: predict both outcomes for every unit. Weak point: $\hmu_1$ extrapolates to drivers unlike the members.</p>
+      <p class="small step"><b>Matching</b>: impute the missing outcome with the nearest unit of the other arm (on $X$, or on the propensity score). Easy to explain; noisy, and needs overlap.</p>
+      <p class="small step why">Lab (true $-51.9$ €): spline regression per arm $-51.1$ €; 1-NN matching on the propensity $-47.8$ €, one control reused 18 times. A single OLS coefficient for $T$ gives $-33.8$ €: it assumes one effect for all.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The propensity score</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="ca-overlap" aria-label="Histogram of the estimated propensity of members and non-members, and the standardised mean differences of the four covariates before and after adjustment"></svg>
+    <div class="stack" style="gap:7px">
+      <p class="small">$e(x)=P(T{=}1\mid X{=}x)$. <b>Rosenbaum–Rubin (1983)</b>: it is a balancing score, $X\ind T\mid e(X)$. So ignorability given $X$ implies ignorability given the single number $e(X)$.</p>
+      <p class="small why">Proof: $P(T{=}1\mid X,e(X))=e(X)$ depends on $X$ only through $e(X)$.</p>
+      <p class="small step">Estimate it (logistic regression, or calibrated boosting), then check two things:</p>
+      <ul class="small step" style="gap:3px"><li><b>overlap</b>: both groups cover the same range of $\he$. Lab: 197 drivers have $\he\lt0.05$ and only 6 of them joined.</li>
+        <li><b>balance</b>: after matching or weighting, $|\text{SMD}|\lt0.1$ for every covariate. Lab: age $0.80\to-0.01$, claims $-0.45\to0.01$.</li></ul>
+      <p class="small step why">The propensity is a tool for balance, not a prediction contest: a model with a higher AUC that uses instruments or post-treatment variables is worse.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Inverse probability weighting</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ca-ipw" data-auto="s=1 :: the propensity e(x): careful drivers join more often | s=2 :: weights 1/e for members, 1/(1 − e) for non-members (dot size) | s=3 :: the weighted means build a pseudo-population where T does not depend on x">
+      <svg class="fig" aria-label="Toy data with point sizes proportional to inverse probability weights, raw and weighted group means"></svg>
+      <div class="ctl"><label for="ip-s">step</label><input type="range" id="ip-s" data-k="s" min="0" max="3" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:6px">
+      <div class="eq xs">$$\widehat{\ATE}_{\text{IPW}}=\frac1n\sum_i\frac{T_iY_i}{\he(x_i)}-\frac1n\sum_i\frac{(1-T_i)Y_i}{1-\he(x_i)}$$</div>
+      <p class="small"><b>Unbiased</b>: by consistency $TY=T\,Y(1)$, then ignorability:</p>
+      <div class="eq xs">$$\E\Big[\frac{TY}{e(X)}\Big]=\E\Big[\frac{\E[T\mid X]\,\E[Y(1)\mid X]}{e(X)}\Big]=\E[Y(1)]$$</div>
+      <p class="small step">A member with $e=0.1$ stands for ten drivers like him, nine of whom did not join. The weighted sample is a <b>pseudo-population</b>, as if randomised. Positivity lets us divide by $e$.</p>
+      <p class="small step why">Kidney stones: weighting each patient by $1/P(\text{his treatment}\mid\text{stone size})$ gives exactly 83.3 % and 77.9 %. Telematics lab: $-49.1$ € (true $-51.9$).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Weights in practice: stabilise, check, beware</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:7px">
+      <p class="small"><b>Hájek / stabilised weights</b>: divide each weighted mean by its sum of weights, equivalently $sw_i=P(T{=}T_i)/P(T{=}T_i\mid x_i)$, mean ≈ 1. Errors in the total weight cancel.</p>
+      <p class="small step"><b>Effective sample size</b> $(\sum w)^2/\sum w^2$. Lab: the 1,847 members are worth 909; the largest weight is 68.7 (a member with $\he=0.015$).</p>
+      <p class="small step"><b>Extreme weights</b>: a unit with $e\approx0$ that was treated anyway dominates the estimate. The stress test repeats the lab 100 times with the selection strength multiplied by $s$.</p>
+      <p class="small step why">Clipping or trimming $\he$ (say to $[0.05,0.95]$) lowers the variance but changes the population: lab $-55.1$ € instead of $-49.1$ €. First look at the overlap plot.</p>
+    </div>
+    <div class="widget" data-fig="ca-stress" data-auto="s=1 :: s = 1, the lab's data: Horvitz–Thompson's error is already 3.4 × that of AIPW | s=3 :: s = 2: the median largest weight is 194 | s=4 :: s = 3: the effective sample is 8 % of n and Horvitz–Thompson's RMSE explodes">
+      <svg class="fig" aria-label="RMSE of four estimators against the selection strength, on a log scale, with the median largest weight and the effective sample size"></svg>
+      <div class="ctl"><label for="st-s">selection strength</label><input type="range" id="st-s" data-k="s" min="0" max="4" step="1" value="1"><span class="v" data-v="s"></span></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Doubly robust: AIPW</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:6px">
+      <div class="eq xs">$$\widehat{\ATE}=\frac1n\sum_i\Big[\hmu_1-\hmu_0+\frac{T_i(Y_i-\hmu_1)}{\he}-\frac{(1-T_i)(Y_i-\hmu_0)}{1-\he}\Big]$$</div>
+      <p class="small">Regression adjustment plus weighted residuals. Consistent if <b>either</b> the outcome models <b>or</b> the propensity is right:</p>
+      <ul class="small" style="gap:3px"><li>$\hmu_t=\mu_t$: the residual terms have mean zero, whatever the weights;</li><li>$\he=e$: the weighted residuals correct the bias of $\hmu$ exactly.</li></ul>
+      <table class="t xs step">
+        <tr><th>outcome model</th><th>propensity</th><th>AIPW (lab)</th></tr>
+        <tr><td>right</td><td>right</td><td>$-51.0$ €</td></tr>
+        <tr><td>right</td><td>wrong (constant)</td><td>$-51.1$ €</td></tr>
+        <tr><td>wrong (one mean per arm)</td><td>right</td><td>$-49.2$ €</td></tr>
+        <tr><td>wrong</td><td>wrong</td><td>$-120.9$ € = naive</td></tr>
+      </table>
+      <p class="small step why">With ML models fit $\hmu$ and $\he$ by <b>cross-fitting</b>: double machine learning (Chernozhukov et al., 2018). The bracket terms give a standard error: 4.2 €.</p>
+    </div>
+    <div class="stack" style="gap:6px">
+      <svg class="fig step" data-fig="ca-forest" aria-label="Point estimates and 95 % bootstrap intervals of five estimators, with the true ATE"></svg>
+      <p class="small step"><b>Bootstrap</b>: resample rows, refit <em>everything</em> (propensity included), 500 times, take the 2.5 and 97.5 % quantiles. Lab: the naive interval excludes the truth; the four adjusted ones contain it. AIPW: bootstrap SE 4.31, analytic 4.23.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Refutation and unobserved confounding</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="ca-sens" aria-label="Left: 200 placebo estimates around zero and the real estimate. Right: the AIPW estimate when each confounder in turn is hidden."></svg>
+    <div class="stack" style="gap:7px">
+      <p class="small"><b>Refuters</b> test consequences of the analysis (DoWhy automates them):</p>
+      <ul class="small" style="gap:3px"><li><b>placebo treatment</b>: permute $T$; lab: 200 estimates, mean $-0.19$ €, sd 3.4, none near $-51.0$;</li><li><b>random common cause</b>: add a noise covariate; lab: change $+0.08$ €.</li></ul>
+      <p class="small step"><b>Unobserved confounding</b> is invisible to them. Hide past claims and AIPW says $-80.0$ €, with clean overlap, balance and refuters.</p>
+      <p class="small step"><b>Sensitivity analysis</b>: how strong must a hidden confounder be to explain the effect away? Rosenbaum's $\Gamma$, the E-value, omitted-variable bounds benchmarked on observed covariates, as on the right.</p>
+      <p class="small step why">Linear intuition: bias ≈ (effect of $U$ on $Y$) × (imbalance of $U$ between the arms).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Another design: difference-in-differences</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="ca-did" aria-label="Mean claim cost before and after for a region that launched the programme and one that did not, with the parallel counterfactual trend"></svg>
+    <div class="stack" style="gap:8px">
+      <p class="small">No randomisation, no credible list of confounders, but a <b>before and after</b>: the programme is launched in region A in 2025, not in region B.</p>
+      <div class="bluebox" style="font-size:17px;padding:4px 12px">$$\widehat\tau=(\bar y_{A,\text{after}}-\bar y_{A,\text{before}})-(\bar y_{B,\text{after}}-\bar y_{B,\text{before}})$$</div>
+      <p class="small step">Toy numbers: $(440-470)-(540-520)=-30-20=-50$ €. B's change (+20 €, claims inflation) estimates what would have happened in A without the programme.</p>
+      <p class="small step"><b>Key assumption: parallel trends.</b> Without the programme, A and B would have moved by the same amount. Level differences are allowed; different trends are not.</p>
+      <p class="small step why">Check: plot several years before the launch. In regression form, $\widehat\tau$ is the interaction coefficient of $Y\sim\text{group}+\text{period}+\text{group}\times\text{period}$.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Another design: instrumental variables</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="ca-iv" aria-label="Instrument Z causes T, T causes Y, and an unmeasured U causes both T and Y; Z has no other path to Y"></svg>
+    <div class="stack" style="gap:8px">
+      <p class="small">An unmeasured $U$ (driving style) confounds $T$ and $Y$. An <b>instrument</b> $Z$ shifts $T$ but touches $Y$ only through $T$: a randomised encouragement letter to join.</p>
+      <div class="bluebox" style="font-size:17px;padding:4px 12px">$$\widehat\tau_{\text{Wald}}=\frac{\E[Y\mid Z{=}1]-\E[Y\mid Z{=}0]}{\E[T\mid Z{=}1]-\E[T\mid Z{=}0]}$$</div>
+      <p class="small step">Toy numbers: the letter raises joining from 25 % to 45 % and lowers the mean cost from 490 to 480 €: $\ -10/0.20=-50$ € per joiner.</p>
+      <p class="small step"><b>Key assumptions</b>: relevance ($Z$ moves $T$), independence ($Z$ as good as random), <b>exclusion</b> ($Z$ affects $Y$ only through $T$: untestable). With monotonicity it estimates the effect on the <b>compliers</b> (LATE).</p>
+      <p class="small step why">Weak instruments (a small denominator) give huge, unstable estimates. Two-stage least squares generalises the Wald ratio to covariates.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card coral"><h1><b>Part D</b><br>Heterogeneous effects<br>and uplift</h1><ul class="small"><li>CATE and the four customer types</li><li>S-, T-, X-learners</li><li>uplift and Qini curves</li><li>targeting the persuadables</li><li>practice</li></ul></div></section>
+
+<section class="slide">
+  <h2>Uplift: four kinds of customer</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ca-quad" data-auto="q=1 :: sure things stay anyway: a call is wasted | q=2 :: persuadables leave unless called: the only profitable calls | q=3 :: lost causes leave anyway: a call is wasted | q=4 :: sleeping dogs stay unless called: the call makes them leave | q=5 :: churn risk is not uplift: the riskiest customers are mostly lost causes">
+      <svg class="fig" aria-label="The four customer types by their two potential outcomes, with their shares in the lab, and a scatter of churn risk against true uplift"></svg>
+      <div class="ctl"><label for="qd-q">type</label><input type="range" id="qd-q" data-k="q" min="0" max="5" step="1" value="0"><span class="v" data-v="q"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">An insurer calls a <b>random half</b> of 40,000 renewing customers with a retention offer (an A/B test). Retention: 82.7 % without a call, 88.0 % with one.</p>
+      <p class="small">Whom to call next year? We need the <b>uplift</b>, the CATE:</p>
+      <div class="eq xs">$$\tau(x)=P(Y{=}1\mid\do(T{=}1),x)-P(Y{=}1\mid\do(T{=}0),x)$$</div>
+      <p class="small step">The ATE = share of persuadables − share of sleeping dogs: each persuadable adds a stay, each sleeping dog removes one.</p>
+      <p class="small step why">A churn model ranks by $P(\text{leave}\mid x)$. In the lab, churn risk and uplift correlate only 0.29: risk-based targeting spends the budget on lost causes.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Meta-learners: CATE from ordinary models</h2>
+  <svg class="fig" data-fig="ca-meta" style="max-height:250px" aria-label="Three pipelines: the S-learner fits one model with T as a feature; the T-learner fits one model per arm; the X-learner imputes individual effects and regresses them"></svg>
+  <div class="cols c3">
+    <p class="small"><b>S-learner</b>: one model $\hmu(x,t)$, $\hat\tau(x)=\hmu(x,1)-\hmu(x,0)$. Simple; regularisation may ignore $t$ and shrink the effect to zero.</p>
+    <p class="small"><b>T-learner</b>: $\hmu_1$ on the treated, $\hmu_0$ on the controls, $\hat\tau=\hmu_1-\hmu_0$. Each sees half the data; the errors add up.</p>
+    <p class="small"><b>X-learner</b> (Künzel et al., 2019): impute $\tilde D^1_i=Y_i-\hmu_0(x_i)$, $\tilde D^0_i=\hmu_1(x_i)-Y_i$, regress them, combine with $g=\he(x)$. Good with unequal arms.</p>
+  </div>
+  <p class="small step"><b>R- and DR-learners</b> regress an orthogonal pseudo-outcome (residual on residual, or the AIPW terms) with cross-fitting: the workhorses of EconML. <b>Uplift trees</b> split on the difference in response between arms instead of on purity (CausalML, causal forests).</p>
+</section>
+
+<section class="slide">
+  <h2>Meta-learners in the lab</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ca-learners" data-auto="l=S :: S-learner: one boosting model with T as a feature | l=T :: T-learner: the noisiest, two models subtracted | l=X :: X-learner: imputed effects smoothed by a second model">
+      <svg class="fig" aria-label="Estimated uplift against true uplift for 400 test customers, for the selected meta-learner"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-l="S" aria-pressed="true">S-learner</button><button type="button" data-l="T" aria-pressed="false">T-learner</button><button type="button" data-l="X" aria-pressed="false">X-learner</button></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">20,000 training customers, gradient boosting as the base model, 20,000 test customers. The true uplift is known only because we simulate.</p>
+      <table class="t xs">
+        <tr><th>learner</th><th>RMSE</th><th>corr. with truth</th></tr>
+        <tr><td>S</td><td>0.040</td><td>0.93</td></tr>
+        <tr><td>T</td><td>0.064</td><td>0.86</td></tr>
+        <tr><td>X</td><td>0.039</td><td>0.94</td></tr>
+        <tr><td>churn risk</td><td>–</td><td>0.30</td></tr>
+      </table>
+      <p class="small step">All three recover the shape from data where no individual effect was ever observed. Here the effect is large, so the S-learner does not shrink it.</p>
+      <p class="small step why">In real life the truth is unknown: we evaluate a <b>ranking</b> on a randomised hold-out instead. Next slide.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The Qini curve, step by step</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ca-qini" data-auto="k=1 :: customer 1 was called and stayed: Q = 1 | k=3 :: two treated stayed, the control left: Q = 2 | k=5 :: Q(5) = 3 − 0 · 3/2 = 3, the peak | k=8 :: now the controls stay: Q(8) = 4 − 2 · 4/4 = 2 | k=12 :: the end: 4 − 4 · 6/6 = 0; calling everybody gains nothing">
+      <svg class="fig" aria-label="Twelve customers sorted by predicted uplift with treatment and outcome, the cumulative counts, and the Qini curve up to the current customer"></svg>
+      <div class="ctl"><label for="qn-k">top k</label><input type="range" id="qn-k" data-k="k" min="0" max="12" step="1" value="0"><span class="v" data-v="k"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">Sort a <b>randomised</b> test set by predicted uplift. Among the top $k$: $n_t,n_c$ treated and controls, $r_t,r_c$ of them stayed.</p>
+      <div class="bluebox" style="font-size:18px;padding:4px 12px">$$Q(k)=r_t(k)-r_c(k)\,\frac{n_t(k)}{n_c(k)}$$</div>
+      <p class="small">Incremental stays among the treated, controls rescaled to the same size. The <b>uplift curve</b> $U(k)=\big(\tfrac{r_t}{n_t}-\tfrac{r_c}{n_c}\big)k$ counts extra stays if all top $k$ were called.</p>
+      <p class="small step">A random ranking gives the straight line to $Q(n)$. <b>Qini coefficient</b>: the area between the curve and that line ($x$ = fraction called). Here 1.55.</p>
+      <p class="small step why">A good curve rises (persuadables), flattens (sure things, lost causes) and falls at the end (sleeping dogs).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Targeting: churn risk vs uplift</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ca-target" data-auto="b=20 :: a budget of 20 %: the X-learner's ranking brings about twice the extra stays of the churn ranking | b=70 :: near the peak: calling more would now lose customers | b=100 :: calling everybody: 1,134 expected extra stays, fewer than the peak">
+      <svg class="fig" aria-label="Uplift curves of the random, churn-risk, X-learner and oracle rankings on the test set, with the value at the chosen budget"></svg>
+      <div class="ctl"><label for="tg-b">customers called (%)</label><input type="range" id="tg-b" data-k="b" min="0" max="100" step="5" value="0"><span class="v" data-v="b"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">Lab, 20,000 test customers, a budget of 20 % (4,000 calls). True expected extra stays:</p>
+      <table class="t xs">
+        <tr><th>rank by</th><th>extra stays</th><th>persuadables</th><th>lost causes</th></tr>
+        <tr><td>random</td><td>215</td><td>8 %</td><td>10 %</td></tr>
+        <tr><td>churn risk</td><td>432</td><td>11 %</td><td>33 %</td></tr>
+        <tr><td>X-learner</td><td>813</td><td>19 %</td><td>5 %</td></tr>
+        <tr><td>oracle</td><td>834</td><td>20 %</td><td>6 %</td></tr>
+      </table>
+      <p class="small step">Qini coefficients: S 311, X 302, T 278, churn risk 186, random −9 (oracle 318).</p>
+      <p class="small step">With a call cost $c$ and a customer value $V$: <b>call if $V\hat\tau(x)\gt c$</b>. $V=150$ €, $c=5$ €: the X-learner calls 53 % and earns 163 k€; the same calls by churn risk 135 k€; calling everybody 70 k€.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>In practice: a checklist</h2>
+  <table class="t xs">
+    <tr><th style="width:30%">step</th><th>what to do</th></tr>
+    <tr><td>the question</td><td>which treatment, which outcome, which population (ATE, ATT, CATE)? What decision will the number change?</td></tr>
+    <tr><td>can we randomise?</td><td>if yes, run the A/B test, and keep a random hold-out for uplift models. Everything else is second best.</td></tr>
+    <tr><td>draw the DAG first</td><td>before seeing the outcome: confounders in, mediators and colliders out, pre-treatment variables only.</td></tr>
+    <tr><td>check overlap and balance</td><td>propensity histograms, SMD &lt; 0.1 after weighting, effective sample size; trim only knowingly.</td></tr>
+    <tr><td>estimate several ways</td><td>regression adjustment, IPW, AIPW (with cross-fitting for ML models); they should agree.</td></tr>
+    <tr><td>report uncertainty</td><td>bootstrap the whole pipeline (or AIPW's standard error); never a bare point estimate.</td></tr>
+    <tr><td>try to refute it</td><td>placebo treatment, random common cause, data subsets, placebo outcomes; then a sensitivity analysis.</td></tr>
+    <tr><td>no credible confounder set</td><td>look for a design: difference-in-differences, instrumental variables, regression discontinuity.</td></tr>
+    <tr><td>uplift</td><td>meta-learners on a randomised sample; evaluate with Qini and uplift curves; decide with $V\hat\tau(x)\gt c$.</td></tr>
+    <tr><td>libraries</td><td><b>DoWhy</b> (graphs, identification, refuters), <b>EconML</b> (DML, R/DR-learners, causal forests), <b>CausalML</b> and <b>scikit-uplift</b> (meta-learners, uplift trees, Qini).</td></tr>
+  </table>
+</section>
+
+<section class="slide">
+  <h2>The topic in one slide</h2>
+  <div class="cards c2" style="gap:12px">
+    <div class="card"><h3>A · Prediction vs intervention</h3><ul>
+      <li>$P(Y\mid t)\ne P(Y\mid\do(t))$; Simpson: B looks better, A is (83.3 vs 77.9 %)</li>
+      <li>$\tau_i=Y_i(1)-Y_i(0)$ never observed; naive = ATT + selection bias</li>
+      <li>randomisation: bias zero; else SUTVA, consistency, ignorability, positivity</li></ul></div>
+    <div class="card g"><h3>B · Causal graphs</h3><ul>
+      <li>chain and fork blocked by conditioning, collider opened</li>
+      <li>backdoor criterion → $P(Y\mid\do(t))=\sum_sP(Y\mid t,s)P(s)$</li>
+      <li>bad controls: mediators ($-20.0$ €), colliders ($-38.8$ €)</li></ul></div>
+    <div class="card y"><h3>C · Estimation</h3><ul>
+      <li>g-computation, matching, IPW $\frac{TY}{e}-\frac{(1-T)Y}{1-e}$, AIPW (doubly robust)</li>
+      <li>lab: $-51.1$, $-47.8$, $-49.1$, $-51.0$ € vs true $-51.9$, naive $-120.9$</li>
+      <li>overlap, bootstrap, refuters; DiD (parallel trends), IV (exclusion)</li></ul></div>
+    <div class="card o"><h3>D · Uplift</h3><ul>
+      <li>persuadables, sure things, lost causes, sleeping dogs</li>
+      <li>S-, T-, X-learners; Qini $Q(k)=r_t-r_cn_t/n_c$</li>
+      <li>top 20 %: X-learner 813 extra stays vs churn risk 432; call if $V\hat\tau\gt c$</li></ul></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Vocabulary of Extra 11</h2>
+  <div class="cols">
+    <dl class="gloss" style="font-size:16px;gap:5px 14px">
+      <dt>potential outcomes</dt><dd>$Y(1)$, $Y(0)$: the outcome under each treatment.</dd>
+      <dt>ATE / ATT / CATE</dt><dd>average effect: everybody / the treated / given $x$.</dd>
+      <dt>selection bias</dt><dd>$\E[Y(0)\mid T{=}1]-\E[Y(0)\mid T{=}0]$.</dd>
+      <dt>confounder</dt><dd>a common cause of the treatment and the outcome.</dd>
+      <dt>ignorability</dt><dd>$(Y(1),Y(0))\ind T\mid X$: no unmeasured confounders.</dd>
+      <dt>positivity</dt><dd>$0\lt e(x)\lt1$: both treatments possible for every $x$.</dd>
+      <dt>DAG</dt><dd>directed acyclic graph of direct causes.</dd>
+      <dt>mediator / collider</dt><dd>$T\to M\to Y$ / $A\to C\leftarrow B$.</dd>
+      <dt>backdoor criterion</dt><dd>block every path into $T$, no descendants of $T$.</dd>
+      <dt>$\do(T{=}t)$</dt><dd>an intervention: cut the arrows into $T$.</dd>
+      <dt>DiD / IV</dt><dd>designs relying on parallel trends / an instrument.</dd>
+    </dl>
+    <dl class="gloss" style="font-size:16px;gap:5px 14px">
+      <dt>propensity score</dt><dd>$e(x)=P(T{=}1\mid x)$, a balancing score.</dd>
+      <dt>g-computation</dt><dd>average of $\hmu_1(x)-\hmu_0(x)$ over the sample.</dd>
+      <dt>IPW</dt><dd>weights $1/e$ and $1/(1-e)$: a pseudo-population.</dd>
+      <dt>stabilised weights</dt><dd>normalised weights (Hájek); mean ≈ 1.</dd>
+      <dt>AIPW</dt><dd>regression + weighted residuals; doubly robust.</dd>
+      <dt>SMD</dt><dd>standardised mean difference, the balance check.</dd>
+      <dt>refuter</dt><dd>placebo treatment, random common cause, subsets.</dd>
+      <dt>uplift</dt><dd>the CATE of an action on a customer.</dd>
+      <dt>persuadable / sleeping dog</dt><dd>stays only if called / leaves only if called.</dd>
+      <dt>S-, T-, X-learner</dt><dd>CATE estimators built from ordinary models.</dd>
+      <dt>Qini curve</dt><dd>$r_t(k)-r_c(k)\,n_t(k)/n_c(k)$ along a ranking.</dd>
+    </dl>
+  </div>
+  <p class="labline">Read more: <a href="https://www.hsph.harvard.edu/miguel-hernan/causal-inference-book/" target="_blank" rel="noopener">Hernán &amp; Robins, Causal Inference: What If</a> · <a href="https://matheusfacure.github.io/python-causality-handbook/" target="_blank" rel="noopener">Causal Inference for the Brave and True</a> · <a href="https://doi.org/10.1093/biomet/70.1.41" target="_blank" rel="noopener">Rosenbaum &amp; Rubin 1983</a> · <a href="https://arxiv.org/abs/1706.03461" target="_blank" rel="noopener">X-learner</a> · <a href="https://arxiv.org/abs/1608.00060" target="_blank" rel="noopener">Double ML</a>.</p>
+</section>
+
+<section class="slide lab">
+  <div class="labtag">EXTRA 11</div>
+  <h2>Causal inference and uplift, from scratch</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:9px">
+      <p>Simulate worlds where the true effects are known, and check every estimator of this deck against the truth.</p>
+      <ol class="todo">
+        <li>Simpson's paradox on the kidney-stone data; adjustment formula = IPW.</li>
+        <li>Potential outcomes: the selection bias, and 500 replays with and without randomisation.</li>
+        <li>Junctions and collider bias simulated; the backdoor criterion from scratch vs NetworkX.</li>
+        <li>Telematics: regression adjustment, bad controls, propensity, overlap, balance, matching.</li>
+        <li>IPW, stabilised weights, AIPW and double robustness; the overlap stress test; bootstrap CIs.</li>
+        <li>Placebo and random-common-cause refuters; hiding a confounder.</li>
+        <li>Retention campaign: four types, S-, T-, X-learners, Qini curves, risk vs uplift targeting.</li>
+      </ol>
+    </div>
+    <div class="labcard">
+      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/extra/extra 11 - Causal Inference and Uplift.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <dl class="gloss">
+        <dt>notebook</dt><dd><code>extra 11 - Causal Inference and Uplift.ipynb</code></dd>
+        <dt>you need</dt><dd>linear and logistic regression, gradient boosting, the bootstrap idea; Extra 9 helps</dd>
+        <dt>runs on</dt><dd>CPU, about 15 seconds; NumPy, scikit-learn, NetworkX</dd>
+        <dt>data</dt><dd>kidney-stone counts (Charig et al., 1986) and two synthetic datasets with known effects</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section class="slide cover">
+  <div class="inner"><h1>Extra topics</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Next: Reinforcement learning</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+</div></div>
+<script src="../assets/figures.js?v=20260930"></script>
+<script src="../neural_networks/assets/nn-core.js?v=20260930"></script>
+<script src="assets/causal-data.js?v=20261009"></script>
+<script src="assets/fig-causal.js?v=20261009"></script>
+<script src="../assets/deck.js?v=20260930"></script>
+</body>
+</html>

@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="author" content="Imanol Granada (imanolgranada@gmail.com)">
+<title>Diffusion Models</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="../assets/deck.css?v=20260930">
+<link rel="stylesheet" href="../neural_networks/assets/nn.css?v=20261006c">
+<script src="../assets/mathjax-config.js?v=20260930"></script>
+<script>Object.assign(MathJax.tex.macros,{beps:'\\boldsymbol{\\epsilon}',bmu:'\\boldsymbol{\\mu}',tmu:'\\tilde{\\boldsymbol{\\mu}}',abar:'\\bar\\alpha',Nc:'\\mathcal{N}',KL:'D_{\\mathrm{KL}}',hx:'\\hat{\\mathbf{x}}'});</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
+</head>
+<body data-deck="Extra 7 · Diffusion models" data-prev="06_dimensionality_reduction.html" data-next="08_self_supervised.html">
+<div id="viewport"><div id="stage">
+<section class="slide cover">
+  <div class="inner"><h1>Extra topics</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Diffusion models</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+
+<section class="slide">
+  <h2>Where we are</h2>
+  <svg class="fig" data-fig="df-three" style="max-height:215px" aria-label="Three generative models: a VAE decodes a latent vector in one pass, a GAN generator is trained against a critic, a diffusion model removes noise in many small steps"></svg>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p class="small">A VAE (Extra 3) and a GAN (Extra 4) turn a random vector into a sample in <b>one network pass</b>. VAEs are stable but blurry; GANs are sharp but hard to train, and they drop modes.</p>
+      <p class="small step">A <b>diffusion model</b> takes a different road: destroy the data with noise in many small steps, and learn to undo <b>one small step</b>. Each step is a plain regression, and the samples are sharp <b>and</b> diverse.</p>
+    </div>
+    <div class="stack" style="gap:10px">
+      <div class="note step"><p class="small"><b>Diffusion model</b>: a fixed process that adds Gaussian noise step by step, and a network $\beps_\theta(\bx_t,t)$ trained to predict that noise. Sampling runs the steps backwards from pure noise.</p></div>
+      <p class="small step why">Four parts: <b>A</b> the forward process, <b>B</b> the reverse process and the loss, <b>C</b> scores, ODEs and faster sampling, <b>D</b> guidance, text and latent diffusion. It ends with the Extra 7 lab.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card blue"><h1><b>Part A</b><br>Destroying data:<br>the forward process</h1><ul class="small"><li>noise, then denoise</li><li>one step of noise</li><li>jump to any step</li><li>schedules and the SNR</li></ul></div></section>
+
+<section class="slide">
+  <h2>The idea: destroy slowly, rebuild slowly</h2>
+  <svg class="fig" data-fig="df-idea" style="max-height:262px" aria-label="A handwritten 7 after 0, 100, 250, 500, 750 and 1000 noising steps; forward arrows add noise, reverse arrows remove it"></svg>
+  <div class="cols">
+    <div class="stack" style="gap:8px">
+      <p class="small"><b>Forward</b> (fixed): add a little Gaussian noise, 1000 times. At the end the image is gone; only $\Nc(\mathbf 0,\bI)$ is left, whatever the data were.</p>
+      <p class="small"><b>Reverse</b> (learned): one network removes a little noise per step. Start from pure noise and run it 1000 times: a new sample.</p>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small step"><b>Why small steps?</b> Undoing a <em>small</em> Gaussian step is itself almost Gaussian, so the network only predicts a mean: a regression with a squared error. No adversary as in a GAN, no encoder to learn as in a VAE. The price: many network calls per sample.</p>
+      <p class="small step why">Used in Stable Diffusion, DALL·E 2 and 3, Imagen, Midjourney (images); Sora, Veo (video); DiffWave (speech); RFdiffusion and AlphaFold 3 (proteins); GenCast (weather).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>One forward step</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="df-1d" data-auto="t=50 :: t = 50: the two bumps are slightly blurred | t=150 :: t = 150: the signal shrinks, the noise grows | t=300 :: t = 300: the two bumps merge | t=600 :: t = 600: almost the standard Gaussian | t=1000 :: t = 1000: x_T ~ N(0, 1), the data are forgotten">
+      <svg class="fig" aria-label="The density of x_t for a two-bump 1-D data distribution at a chosen step t, with the data density and N(0,1) dashed"></svg>
+      <div class="ctl"><label for="d1-t">step t</label><input type="range" id="d1-t" data-k="t" min="0" max="1000" step="10" value="0"><span class="v" data-v="t"></span></div>
+      <div class="ro"><div class="m"><span>ᾱ<sub>t</sub></span><b data-r="ab"></b></div><div class="m"><span>signal √ᾱ<sub>t</sub></span><b data-r="sa"></b></div><div class="m"><span>noise √(1−ᾱ<sub>t</sub>)</span><b data-r="sn"></b></div></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">Step $t$ shrinks the point a little and adds noise of variance $\beta_t$:</p>
+      <div class="bluebox" style="font-size:20px">$$q(\bx_t\mid\bx_{t-1})=\Nc\big(\sqrt{1-\beta_t}\,\bx_{t-1},\ \beta_t\bI\big)$$</div>
+      <p class="small">that is $\ \bx_t=\sqrt{1-\beta_t}\,\bx_{t-1}+\sqrt{\beta_t}\,\beps$, with $\beps\sim\Nc(\mathbf 0,\bI)$.</p>
+      <p class="small step"><b>Why $\sqrt{1-\beta_t}$:</b> if $\bx_{t-1}$ has variance 1, then $\bx_t$ has $(1-\beta_t)\cdot1+\beta_t=1$. The process is <b>variance preserving</b>: the cloud never blows up, it only loses its shape.</p>
+      <p class="small step">DDPM (Ho et al., 2020): $T=1000$, $\beta_t$ from $10^{-4}$ to $0.02$. The first step is $\bx_1=0.99995\,\bx_0+0.01\,\beps$.</p>
+      <p class="small step why">Notation: $\alpha_t=1-\beta_t$ and $\abar_t=\alpha_1\alpha_2\cdots\alpha_t$, the signal kept after $t$ steps.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Jumping to any step: the closed form</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:8px">
+      <p class="small"><b>Induction.</b> Assume $\bx_{t-1}=\sqrt{\abar_{t-1}}\,\bx_0+\sqrt{1-\abar_{t-1}}\,\beps'$. One more step with fresh $\beps''$:</p>
+      <div class="eq xs">$$\bx_t=\sqrt{\abar_t}\,\bx_0+\underbrace{\sqrt{\alpha_t(1-\abar_{t-1})}\,\beps'+\sqrt{1-\alpha_t}\,\beps''}_{\text{two independent Gaussians}}$$</div>
+      <p class="small">Their sum is Gaussian with variance $\alpha_t-\alpha_t\abar_{t-1}+1-\alpha_t=1-\abar_t$. $\square$</p>
+      <div class="bluebox step" style="font-size:20px">$$\bx_t=\sqrt{\abar_t}\,\bx_0+\sqrt{1-\abar_t}\,\beps$$</div>
+      <p class="small step">Training never iterates: draw $t$ and $\beps$, jump. Signal power $\abar_t$, noise power $1-\abar_t$: the <b>signal-to-noise ratio</b> $\mathrm{SNR}(t)=\abar_t/(1-\abar_t)$ is the clock of the process.</p>
+    </div>
+    <div class="stack step" style="gap:8px">
+      <p class="small">Check from the lab: 100,000 chains start at $x_0=2$ and take 1000 small steps.</p>
+      <table class="t xs">
+        <tr><th>$t$</th><th>$2\sqrt{\abar_t}$</th><th>mean of the chains</th><th>$1-\abar_t$</th><th>variance of the chains</th></tr>
+        <tr><td>1</td><td>1.9999</td><td>1.9999</td><td>0.00010</td><td>0.00010</td></tr>
+        <tr><td>100</td><td>1.8942</td><td>1.8932</td><td>0.10298</td><td>0.10259</td></tr>
+        <tr><td>250</td><td>1.4479</td><td>1.4465</td><td>0.47591</td><td>0.47678</td></tr>
+        <tr><td>500</td><td>0.5607</td><td>0.5645</td><td>0.92141</td><td>0.91787</td></tr>
+        <tr><td>1000</td><td>0.0127</td><td>0.0118</td><td>0.99996</td><td>0.99989</td></tr>
+      </table>
+      <p class="small why">All differences are within 5 standard errors of 100,000 chains (the lab asserts it). After 500 steps a point at 2 sits at 0.56 on average, with noise of standard deviation 0.96.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Noise schedules and the signal-to-noise ratio</h2>
+  <div class="widget" data-fig="df-sched" data-auto="t=100 :: t = 100: both images still clear | t=260 :: t = 260: the linear schedule has lost half of the signal power (SNR = 1) | t=500 :: t = 500: linear is almost noise, cosine is at SNR = 1 | t=750 :: t = 750: the linear chain has nothing left to destroy">
+    <svg class="fig" style="max-height:300px" aria-label="The signal kept, alpha-bar, against the step for the linear and cosine schedules, and the same digit noised to the chosen step under each schedule"></svg>
+    <div class="ctl"><label for="sc-t">step t</label><input type="range" id="sc-t" data-k="t" min="0" max="1000" step="10" value="0"><span class="v" data-v="t"></span></div>
+  </div>
+  <div class="cols">
+    <p class="small"><b>Linear</b> (DDPM): $\beta_t$ grows linearly. $\abar_t$ drops below 0.5 at $t=260$, and 33 % of the steps have $\mathrm{SNR}\lt0.01$: almost pure noise, nearly wasted.</p>
+    <p class="small step"><b>Cosine</b> (Nichol and Dhariwal, 2021): $\abar_t=\cos^2\!\big(\tfrac{t/T+s}{1+s}\tfrac{\pi}{2}\big)$, SNR 1 at $t=497$, only 6 % of the steps in pure noise. It destroys information more evenly; better for small images.</p>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The forward process on 2-D data</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="df-2d" data-auto="t=50 :: t = 50: the arms get thicker | t=100 :: t = 100: blurred, but still three arms | t=200 :: t = 200: a vague triangle | t=400 :: t = 400: only a faint trace of the data | t=1000 :: t = 1000: a round Gaussian cloud">
+      <svg class="fig" aria-label="Six hundred points of a three-arm spiral, noised to the chosen step with the closed form"></svg>
+      <div class="ctl"><label for="d2-t">step t</label><input type="range" id="d2-t" data-k="t" min="0" max="1000" step="10" value="0"><span class="v" data-v="t"></span></div>
+    </div>
+    <div class="stack" style="gap:9px">
+      <p class="small">The lab's toy data: <b>three spiral arms</b>, 4000 points, scaled to unit variance like the noise. Every point moves by the same rule, $\bx_t=\sqrt{\abar_t}\,\bx_0+\sqrt{1-\abar_t}\,\beps$, with its own $\beps$.</p>
+      <p class="small step">The cloud keeps mean 0 and standard deviation 1 at every step (1.01 and 1.02 at $t=1000$ in the lab): only its <b>shape</b> dissolves.</p>
+      <p class="small step">At $t=1000$ the signal left is $\sqrt{\abar_T}=0.006$: $\bx_T$ is $\Nc(\mathbf 0,\bI)$ for any data. So sampling can start from noise we draw ourselves.</p>
+      <p class="small step why">Generation will run this film backwards. The only hard part is the reverse step.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card green"><h1><b>Part B</b><br>Learning to undo it</h1><ul class="small"><li>the reverse step is almost Gaussian</li><li>the ELBO: one KL per step</li><li>predict the noise</li><li>training and sampling algorithms</li><li>the loss with numbers</li></ul></div></section>
+
+<section class="slide">
+  <h2>The reverse step, given $\bx_0$, is a Gaussian</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="df-post" data-auto="k=2 :: t = 10: prior and likelihood have similar widths; the posterior is a compromise | k=5 :: t = 100: the likelihood is much narrower: the posterior is almost the likelihood | k=7 :: t = 500: one step back is almost certain, up to noise of std √β">
+      <svg class="fig" aria-label="For x_0 = 2 and a given x_t: the prior q(x_{t-1}|x_0), the likelihood q(x_t|x_{t-1}) and their product, the posterior"></svg>
+      <div class="ctl"><label for="po-k">step</label><input type="range" id="po-k" data-k="k" min="0" max="8" step="1" value="0"><span class="v" data-v="k"></span></div>
+      <div class="ro"><div class="m"><span>prior</span><b data-r="pr"></b></div><div class="m"><span>likelihood</span><b data-r="li"></b></div><div class="m"><span>posterior</span><b data-r="po"></b></div><div class="m"><span>β̃<sub>t</sub> / β<sub>t</sub></span><b data-r="ra"></b></div></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">The true reverse step $q(\bx_{t-1}\mid\bx_t)$ needs the distribution of the data: intractable. <b>Given $\bx_0$</b> it is a product of two Gaussians in $\bx_{t-1}$, $q(\bx_t\mid\bx_{t-1})\,q(\bx_{t-1}\mid\bx_0)$:</p>
+      <div class="bluebox" style="font-size:18px;padding:6px 12px">$$q(\bx_{t-1}\mid\bx_t,\bx_0)=\Nc\big(\tmu_t,\ \tilde\beta_t\bI\big)$$</div>
+      <div class="eq xs">$$\tmu_t=\frac{\sqrt{\abar_{t-1}}\,\beta_t}{1-\abar_t}\,\bx_0+\frac{\sqrt{\alpha_t}\,(1-\abar_{t-1})}{1-\abar_t}\,\bx_t,\qquad \tilde\beta_t=\frac{1-\abar_{t-1}}{1-\abar_t}\,\beta_t$$</div>
+      <p class="small step"><b>Proof:</b> precisions add, $\frac{\alpha_t}{\beta_t}+\frac{1}{1-\abar_{t-1}}=\frac{1}{\tilde\beta_t}$; the mean is the precision-weighted average. The lab checks it by Monte Carlo: 1.6070 ± 0.0448 against 1.6076 ± 0.0451.</p>
+      <p class="small step">For small $\beta_t$ the step without $\bx_0$ is close to a Gaussian too (Feller, 1949). So the model is $p_\theta(\bx_{t-1}\mid\bx_t)=\Nc(\bmu_\theta(\bx_t,t),\sigma_t^2\bI)$: <b>only the mean is learned</b>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The loss is an ELBO, one KL term per step</h2>
+  <svg class="fig" data-fig="df-chain" style="max-height:270px" aria-label="The chain x_0, x_1, ..., x_t-1, x_t, ..., x_T: fixed forward arrows above, learned reverse arrows below, with the loss terms L_0, L_t-1 and L_T"></svg>
+  <div class="cols">
+    <div class="stack" style="gap:7px">
+      <p class="small">As in a VAE (Extra 3): the latents are $\bx_1,\dots,\bx_T$ and the "encoder" $q$ is fixed. The bound splits into one term per step:</p>
+      <div class="eq xs">$$-\log p_\theta(\bx_0)\le\E_q\Big[L_T+\sum_{t=2}^{T}L_{t-1}+L_0\Big]$$</div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small step">$L_{t-1}$ compares two Gaussians with the same covariance $\sigma_t^2\bI$, so the KL is a distance between their means:</p>
+      <div class="eq xs step">$$L_{t-1}=\frac{1}{2\sigma_t^2}\,\big\|\tmu_t(\bx_t,\bx_0)-\bmu_\theta(\bx_t,t)\big\|^2$$</div>
+      <p class="small step why">$L_T$ has no parameters ($\bx_T$ is noise). A diffusion model is a VAE with 1000 latent layers, a fixed encoder and one shared decoder.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Predict the noise</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:6px">
+      <div class="deriv s">
+        <div class="eq">$$\bx_0=\frac{\bx_t-\sqrt{1-\abar_t}\,\beps}{\sqrt{\abar_t}}$$</div><p class="why">invert the closed form</p>
+        <div class="eq step">$$\tmu_t=\frac{1}{\sqrt{\alpha_t}}\Big(\bx_t-\frac{\beta_t}{\sqrt{1-\abar_t}}\,\beps\Big)$$</div><p class="why step">substitute in $\tmu_t$: only $\beps$ is unknown</p>
+        <div class="eq step">$$\bmu_\theta=\frac{1}{\sqrt{\alpha_t}}\Big(\bx_t-\frac{\beta_t}{\sqrt{1-\abar_t}}\,\beps_\theta(\bx_t,t)\Big)$$</div><p class="why step">so give the network the same form</p>
+        <div class="eq step">$$L_{t-1}=\lambda_t\,\|\beps-\beps_\theta(\bx_t,t)\|^2$$</div><p class="why step">$\bx_t$ cancels; $\lambda_t=\frac{\beta_t^2}{2\sigma_t^2\alpha_t(1-\abar_t)}$</p>
+      </div>
+      <div class="bluebox step" style="font-size:18px;padding:6px 12px">$$L_{\text{simple}}=\E_{t,\bx_0,\beps}\big\|\beps-\beps_\theta(\sqrt{\abar_t}\,\bx_0+\sqrt{1-\abar_t}\,\beps,\ t)\big\|^2$$</div>
+    </div>
+    <div class="stack step" style="gap:8px">
+      <svg class="fig" data-fig="df-lambda" aria-label="The ELBO weight lambda_t on a log scale: 0.60 at t = 2, about 0.01 from t = 100 on"></svg>
+      <p class="small">Ho et al. (2020) drop $\lambda_t$: the ELBO puts 59 times more weight on $t=2$ than on $t=1000$. $L_{\text{simple}}$ up-weights the noisy steps, where the global structure is decided: better samples, slightly worse likelihood.</p>
+      <p class="small why">The whole loss: noise an example, ask the network for the noise, squared error.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The denoising loss with numbers</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="df-loss" data-auto="s=1 :: t = 50: x_t is close to x_0; the noise is hard to tell from the arm's thickness | s=3 :: t = 200: the network's noise (blue dashed) almost matches the true one (orange) | s=5 :: t = 500: x̂_0 still lands on the right arm | s=8 :: t = 1000: pure noise: ε is easy to predict, the clean point is a guess">
+      <svg class="fig" aria-label="One held-out point x_0, a fixed noise draw, the noisy x_t at the chosen step, the trained network's noise estimate and the implied clean point"></svg>
+      <div class="ctl"><label for="lo-s">step</label><input type="range" id="lo-s" data-k="s" min="0" max="8" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">The trained toy model of the lab, on a held-out point. Green: $\bx_0$; hollow: $\sqrt{\abar_t}\,\bx_0$; orange arrow: the true noise $\sqrt{1-\abar_t}\,\beps$; black: $\bx_t$.</p>
+      <p class="small">The network sees only $\bx_t$ and $t$. Blue dashed: its noise $\sqrt{1-\abar_t}\,\beps_\theta$, ending at $\bx_t$. Star: the implied clean point $\hx_0=(\bx_t-\sqrt{1-\abar_t}\,\beps_\theta)/\sqrt{\abar_t}$.</p>
+      <p class="small step"><b>Small $t$:</b> large loss, tiny error on $\hx_0$. <b>Large $t$:</b> loss near 0, $\hx_0$ is a guess. In the lab, held-out loss 0.72 for $t\lt51$ and $\lt10^{-3}$ for $t\gt950$; error of $\hx_0$ 0.007 and 1.28 (per coordinate).</p>
+      <p class="small step why">The two are tied: $\|\bx_0-\hx_0\|^2=\|\beps-\beps_\theta\|^2/\mathrm{SNR}(t)$. The training loss plateaus at 0.234, not 0: the same $\bx_t$ can come from many $(\bx_0,\beps)$.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Training and sampling (Ho et al., 2020)</h2>
+  <div class="cols">
+    <div class="hint b"><div class="hd">ALGORITHM 1 · TRAINING</div><div class="bd stack" style="gap:6px">
+      <p class="small"><b>repeat</b></p>
+      <p class="small">$\quad\bx_0\sim$ data, $\ t\sim\mathcal U\{1,\dots,T\}$, $\ \beps\sim\Nc(\mathbf 0,\bI)$</p>
+      <p class="small">$\quad\bx_t=\sqrt{\abar_t}\,\bx_0+\sqrt{1-\abar_t}\,\beps$</p>
+      <p class="small">$\quad$gradient step on $\ \|\beps-\beps_\theta(\bx_t,t)\|^2$</p>
+      <p class="small"><b>until</b> converged</p>
+      <p class="small why">One random $t$ per example: every step of the chain is trained, in any order, with one network.</p>
+    </div></div>
+    <div class="hint o step"><div class="hd">ALGORITHM 2 · SAMPLING</div><div class="bd stack" style="gap:6px">
+      <p class="small">$\bx_T\sim\Nc(\mathbf 0,\bI)$</p>
+      <p class="small"><b>for</b> $t=T,\dots,1$:</p>
+      <p class="small">$\quad\mathbf z\sim\Nc(\mathbf 0,\bI)$ if $t\gt1$, else $\mathbf z=\mathbf 0$</p>
+      <div class="eq xs">$$\bx_{t-1}=\frac{1}{\sqrt{\alpha_t}}\Big(\bx_t-\frac{\beta_t}{\sqrt{1-\abar_t}}\,\beps_\theta(\bx_t,t)\Big)+\sigma_t\mathbf z$$</div>
+      <p class="small"><b>return</b> $\bx_0$</p>
+      <p class="small why">$\sigma_t^2=\beta_t$ or $\tilde\beta_t$. <b>Ancestral sampling</b>: 1000 network calls per sample.</p>
+    </div></div>
+  </div>
+  <p class="small step">Each sampling step removes a bit of the predicted noise and adds a bit of fresh noise. In the lab the toy model trains in 8000 steps (under a minute on a CPU), and 2000 samples take about 5 s.</p>
+</section>
+
+<section class="slide">
+  <h2>The reverse process on 2-D data</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="df-rev" data-auto="k=5 :: t = 500: still a Gaussian cloud, a bit smaller | k=8 :: t = 250: a vague triangle appears | k=11 :: t = 100: three arms | k=13 :: t = 50: the arms sharpen | k=16 :: t = 0: the samples, on the spiral">
+      <svg class="fig" aria-label="Three hundred DDPM samples of the trained toy model at a chosen step of the reverse process, with six trajectories"></svg>
+      <div class="ctl"><label for="rv-k">step</label><input type="range" id="rv-k" data-k="k" min="0" max="16" step="1" value="0"><span class="v" data-v="k"></span></div>
+    </div>
+    <div class="stack" style="gap:9px">
+      <p class="small">The lab's toy network: a residual MLP, 120,450 parameters, with the time embedding added in every block. Algorithm 2, 1000 steps.</p>
+      <p class="small step"><b>As good as real data.</b> Mean distance from a sample to the nearest held-out point: 0.0213; for fresh real points: 0.0217. From the data to the samples: 0.0224 against 0.0219.</p>
+      <p class="small step"><b>No mode dropped.</b> 34.6 %, 32.4 % and 33.1 % of the samples on the three arms (a third each in the data).</p>
+      <p class="small step why">The trajectories are random walks: fresh noise at every step. Part C removes that noise.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>In code</h2>
+  <div class="cols c64">
+<pre class="code s">T = 1000
+beta  = torch.linspace(1e-4, 0.02, T + 1); beta[0] = 0
+alpha = 1 - beta
+abar  = torch.cumprod(alpha, 0)        <span class="c"># abar[t], abar[0] = 1</span>
+
+for x0 in loader:                       <span class="c"># Algorithm 1</span>
+    t   = torch.randint(1, T + 1, (len(x0),))
+    eps = torch.randn_like(x0)
+    a   = abar[t].view(-1, *[1] * (x0.dim() - 1))
+    xt  = a.sqrt() * x0 + (1 - a).sqrt() * eps
+    loss = F.mse_loss(model(xt, t), eps)
+    opt.zero_grad(); loss.backward(); opt.step()
+
+@torch.no_grad()                        <span class="c"># Algorithm 2</span>
+def sample(model, shape):
+    x = torch.randn(shape)
+    for t in range(T, 0, -1):
+        tt  = torch.full((shape[0],), t)
+        eps = model(x, tt)
+        x = (x - beta[t] / (1 - abar[t]).sqrt() * eps) / alpha[t].sqrt()
+        if t > 1:
+            var = (1 - abar[t-1]) / (1 - abar[t]) * beta[t]
+            x = x + var.sqrt() * torch.randn(shape)
+    return x</pre>
+    <div class="stack" style="gap:9px">
+      <p class="small"><b>The model</b> takes $\bx_t$ and $t$ and returns a tensor of the shape of $\bx_t$: an MLP for points, a U-Net for images (Part D).</p>
+      <p class="small"><b>No encoder, no discriminator, no KL term</b>: one regression loss. Training is as stable as fitting any network with MSE.</p>
+      <p class="small"><b>Everything else is the schedule</b>: three arrays, computed once.</p>
+      <p class="small why">Libraries: Hugging Face <code>diffusers</code> (<code>DDPMScheduler</code>, <code>DDIMScheduler</code>, <code>UNet2DModel</code>) packages exactly these pieces. The lab writes them from scratch.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card purple"><h1><b>Part C</b><br>Scores, ODEs and<br>faster sampling</h1><ul class="small"><li>denoising = estimating the score</li><li>Langevin dynamics</li><li>the SDE and ODE view</li><li>DDIM: fewer steps, no noise</li></ul></div></section>
+
+<section class="slide">
+  <h2>Denoising = estimating the score</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="df-score" data-auto="k=4 :: t = 700: p_t is almost a Gaussian: the arrows point to the centre | k=3 :: t = 300: the arrows start to bend | k=2 :: t = 100: they point to the arms | k=0 :: t = 10: towards the nearest arm, from everywhere">
+      <svg class="fig" aria-label="The learned score field of the trained toy model as arrows on a grid, over the noised data, at a chosen step"></svg>
+      <div class="ctl"><label for="sf-k">step</label><input type="range" id="sf-k" data-k="k" min="0" max="4" step="1" value="0"><span class="v" data-v="k"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">The <b>score</b> of a density, $\nabla_{\bx}\log p(\bx)$, points towards higher density. Let $p_t$ be the distribution of $\bx_t$.</p>
+      <p class="small step"><b>Tweedie's formula:</b> $\ \nabla\log p_t(\bx_t)=-\,\E[\beps\mid\bx_t]/\sqrt{1-\abar_t}$.</p>
+      <p class="small step why">Proof: $\nabla_{\bx}q(\bx\mid\bx_0)=-q(\bx\mid\bx_0)\,\beps/\sqrt{1-\abar_t}$; integrate against $p(\bx_0)$ and divide by $p_t(\bx)$: the weights are the posterior $p(\bx_0\mid\bx)$.</p>
+      <p class="small step">The MSE minimiser is $\E[\beps\mid\bx_t]$. So a trained denoiser is a score estimator:</p>
+      <div class="bluebox step" style="font-size:19px;padding:6px 12px">$$\beps_\theta(\bx_t,t)\approx-\sqrt{1-\abar_t}\;\nabla_{\bx}\log p_t(\bx_t)$$</div>
+      <p class="small step">Lab: against the exact score of the training set, median cosine 0.991 at $t=20$, 0.999 at $t=100$. Diffusion and <b>score-based models</b> (Song and Ermon, 2019) are one family.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Langevin dynamics: sampling with a score</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="df-langevin" data-auto="k=5 :: 5 steps: the points rush towards the nearest mode | k=50 :: 50 steps: three clean clusters, but the left one should hold 60 % | k=300 :: 300 steps: still about a third each: plain Langevin gets the weights wrong | m=annealed;k=50 :: annealed: start with a heavily blurred density | m=annealed;k=300 :: annealed, 300 steps: close to 60 / 20 / 20">
+      <svg class="fig" aria-label="Three hundred points moved by Langevin dynamics on a mixture of three Gaussians with weights 60, 20 and 20 percent, plain or annealed"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-m="plain" aria-pressed="true">plain</button><button type="button" data-m="annealed" aria-pressed="false">annealed</button></span><label for="lg-k">step</label><input type="range" id="lg-k" data-k="k" min="0" max="300" step="5" value="0"><span class="v" data-v="k"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">With the score of $p$ we can sample $p$ directly. Repeat:</p>
+      <div class="bluebox" style="font-size:19px;padding:6px 12px">$$\bx\leftarrow\bx+\frac{\eta}{2}\,\nabla_{\bx}\log p(\bx)+\sqrt{\eta}\,\mathbf z$$</div>
+      <p class="small">Climb the log-density, plus noise so the points do not collapse onto the modes. For small $\eta$ and many steps, the points are distributed as $p$.</p>
+      <p class="small step"><b>Trap:</b> with separated modes each point stays in the basin where it started, so the weights come out wrong. <b>Annealing</b> starts from a heavily noised $p$ (one blob) and lowers the noise: that is exactly the diffusion chain.</p>
+      <p class="small step why">Lab: annealed Langevin with the toy network, 7 noise levels × 30 steps = 210 calls, also draws the spiral (0.0363 / 0.0238, a bit worse than DDPM).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The SDE and ODE view (Song et al., 2021)</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="df-sde" data-auto="m=sde :: reverse SDE: the DDPM sampler, with fresh noise at every step | m=ode :: probability flow ODE: the same marginals, no noise, smooth paths">
+      <svg class="fig" aria-label="The density of the noised 1-D mixture over all steps as a heat map, with sample paths of the reverse SDE or of the probability flow ODE"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-m="sde" aria-pressed="true">reverse SDE</button><button type="button" data-m="ode" aria-pressed="false">ODE</button></span></div>
+    </div>
+    <div class="stack" style="gap:6px">
+      <p class="small">With infinitely many tiny steps the forward chain becomes a stochastic differential equation:</p>
+      <div class="eq xs">$$d\bx=-\tfrac12\beta(t)\,\bx\,dt+\sqrt{\beta(t)}\,d\mathbf w$$</div>
+      <p class="small step">It can be run backwards in time, if we know the score:</p>
+      <div class="eq xs step">$$d\bx=\big[-\tfrac12\beta(t)\,\bx-\beta(t)\nabla\log p_t(\bx)\big]dt+\sqrt{\beta(t)}\,d\bar{\mathbf w}$$</div>
+      <p class="small step">A deterministic ODE has the <b>same marginals</b> $p_t$ at every $t$:</p>
+      <div class="eq xs step">$$\frac{d\bx}{dt}=-\tfrac12\beta(t)\big[\bx+\nabla\log p_t(\bx)\big]$$</div>
+      <p class="small step why">DDPM is a discretised reverse SDE; DDIM a discretised ODE. The figure uses the exact score of a 1-D mixture. ODE solvers bring sampling down to 10–50 steps; the ODE also gives exact likelihoods.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>DDIM: fewer steps, no noise</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="df-ddim" data-auto="k=0 :: 5 steps: both samplers are rough | k=1 :: 10 steps: already recognisable | k=2 :: 20 steps: close to the 1000-step quality | k=5 :: 1000 steps: same network, 50 times more calls">
+      <svg class="fig" aria-label="Samples of the toy model and eight MNIST digits with S steps, for the stochastic sampler and for DDIM, from the same starting noise"></svg>
+      <div class="ctl"><label for="dd-k">steps</label><input type="range" id="dd-k" data-k="k" min="0" max="5" step="1" value="0"><span class="v" data-v="k"></span></div>
+    </div>
+    <div class="stack" style="gap:6px">
+      <p class="small">Jump from step $t$ to any earlier $t'$ with the <b>same trained network</b> (Song, Meng and Ermon, 2021): guess $\hx_0$, then noise it again to level $t'$:</p>
+      <div class="eq xs">$$\bx_{t'}=\sqrt{\abar_{t'}}\,\hx_0+\sqrt{1-\abar_{t'}-\sigma^2}\,\beps_\theta(\bx_t,t)+\sigma\mathbf z$$</div>
+      <p class="small">$\sigma=\eta\sqrt{\frac{1-\abar_{t'}}{1-\abar_t}\big(1-\frac{\abar_t}{\abar_{t'}}\big)}$. $\ \eta=1$, $t'=t-1$: exactly Algorithm 2 (the lab: difference $2\cdot10^{-5}$).</p>
+      <p class="small step"><b>$\eta=0$: DDIM</b>, deterministic. The same $\bx_T$ always gives the same $\bx_0$, so it can be <b>inverted</b>: the lab encodes held-out points to Gaussian latents and decodes them back with mean error 0.021. Basis of image editing.</p>
+      <p class="small step why">With 20 steps both are close to 1000 (toy: DDPM 0.0210, DDIM 0.0253, real 0.0217). On large images DDIM wins at 10–50 steps; on our small MNIST model both look alike.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card coral"><h1><b>Part D</b><br>Conditioning<br>and scale</h1><ul class="small"><li>classifier-free guidance</li><li>text through cross-attention</li><li>latent diffusion</li><li>the U-Net and its cost</li><li>VAE vs GAN vs diffusion</li></ul></div></section>
+
+<section class="slide">
+  <h2>Classifier-free guidance</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="df-cfg" data-auto="k=0 :: w = 0: the plain conditional model, every sample on arm 0 | k=2 :: w = 1: the samples move outwards along the arm | k=4 :: w = 3: thinner, more typical, less diverse | k=6 :: w = 8: crowded at the tip, overshooting | c=free :: no label: the same network samples all three arms">
+      <svg class="fig" aria-label="Samples of the class-conditional toy model for one arm at a chosen guidance scale w, or without a label"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-c="0" aria-pressed="true">arm 0</button><button type="button" data-c="1" aria-pressed="false">arm 1</button><button type="button" data-c="2" aria-pressed="false">arm 2</button><button type="button" data-c="free" aria-pressed="false">no label</button></span><label for="cf-k">w</label><input type="range" id="cf-k" data-k="k" min="0" max="6" step="1" value="0"><span class="v" data-v="k"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small"><b>Train</b> $\beps_\theta(\bx_t,t,c)$ with the label $c$ replaced by "no label" $\varnothing$ 20 % of the time: one network, conditional and unconditional. <b>Sample</b> with</p>
+      <div class="bluebox" style="font-size:18px;padding:6px 12px">$$\tilde\beps=(1+w)\,\beps_\theta(\bx_t,t,c)-w\,\beps_\theta(\bx_t,t,\varnothing)$$</div>
+      <p class="small step">In scores, with Bayes: $\ \nabla\log p_t(\bx\mid c)+w\,\nabla\log p_t(c\mid\bx)$. An <b>implicit classifier</b> pushes the samples to where $c$ is unmistakable.</p>
+      <p class="small step">Lab, arm 0: mean radius 1.29, 1.48, 1.63, 1.73 for $w$ = 0, 1, 3, 8 (the arm's data: 1.34); distance from the arm's data 0.018 → 0.043. <b>Guidance trades diversity for typicality.</b></p>
+      <p class="small step why">Ho and Salimans (2021). Stable Diffusion writes $s=1+w$, default 7.5. Two network calls per step.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Text conditioning: cross-attention</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="df-xattn" aria-label="A pixel of the U-Net feature map sends a query to the token vectors of the prompt a red car on grass; the line widths show the attention weights; the map shows attention to the word car"></svg>
+    <div class="stack" style="gap:9px">
+      <p class="small">A frozen <b>text encoder</b> turns the prompt into one vector per token: CLIP in Stable Diffusion (77 tokens × 768 numbers), T5 in Imagen.</p>
+      <p class="small step">Inside the U-Net, <b>cross-attention</b> layers (chapter 6 of the neural networks course): the <b>queries</b> come from the image features, the <b>keys and values</b> from the tokens.</p>
+      <div class="eq s step">$$\mathrm{softmax}\Big(\frac{\bQ_{\text{image}}\bK_{\text{text}}^\top}{\sqrt{d}}\Big)\bV_{\text{text}}$$</div>
+      <p class="small step">Every pixel takes what it needs from the words. The attention maps show where each word is painted, and editing them edits the image (prompt-to-prompt).</p>
+      <p class="small step why">For training, the text is dropped 10 % of the time: classifier-free guidance with a prompt.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Latent diffusion (Rombach et al., 2022)</h2>
+  <svg class="fig" data-fig="df-latent" style="max-height:250px" aria-label="An image is encoded to a small latent, diffusion runs in the latent space with a text-conditioned U-Net, and a decoder turns the result into an image"></svg>
+  <div class="cols c3">
+    <p class="small"><b>Two stages.</b> First an autoencoder ($E$, $D$), as in Extra 3: a small KL term on the latent, plus perceptual and adversarial losses for sharp decodings. Trained once.</p>
+    <p class="small step"><b>Then diffusion on $\bz=E(\bx)$</b>, a 64 × 64 × 4 tensor: 48 times fewer numbers than the 512 × 512 × 3 image, and the U-Net no longer spends its capacity on invisible pixel details.</p>
+    <p class="small step"><b>Stable Diffusion 1</b>: a VAE of 84 M parameters, a U-Net of 860 M, a CLIP text encoder of 123 M; about 150,000 A100 hours of training. Generation runs on a laptop GPU.</p>
+  </div>
+  <div class="note step"><p class="small"><b>The alternative: a cascade in pixel space.</b> Imagen and DALL·E 2 generate a 64 × 64 image, then two diffusion models conditioned on it upsample it to 256 × 256 and 1024 × 1024. Latent diffusion won in practice: one model, and the autoencoder is reused for every task (inpainting, super-resolution, video).</p></div>
+</section>
+
+<section class="slide">
+  <h2>The denoiser: a U-Net with a time embedding</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="df-unet" aria-label="The lab's mini U-Net: 16 by 16, 8 by 8, 4 by 4 and back, with skip connections; the step t becomes a sinusoidal embedding, an MLP, and is added into every block"></svg>
+    <div class="stack" style="gap:8px">
+      <p class="small"><b>U-Net</b> (as in segmentation): down (strided convolutions), up (transposed convolutions), and skip connections that carry the fine details across. Output: one noise value per pixel.</p>
+      <p class="small step"><b>Time</b>: the step $t$ becomes sines and cosines, as transformer positions, $\big(\sin(\omega_k t),\cos(\omega_k t)\big)$ with $\omega_k=10000^{-k/16}$; an MLP; added to every block as a bias per channel.</p>
+      <p class="small step"><b>Sizes</b>: the lab's U-Net, 590,049 parameters (16 × 16 MNIST); DDPM on CIFAR-10, 35.7 M; Stable Diffusion, 860 M, with self-attention at low resolution. Newer models (SD 3, Sora) replace the U-Net by a transformer on patches.</p>
+      <p class="small step"><b>Cost</b>: one call per step. Lab: 64 digits take 15.5 s with 1000 steps, 0.8 s with 50 (DDIM). Distillation and consistency models go down to 1–4 steps.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>VAE vs GAN vs diffusion</h2>
+  <div class="cols c64">
+    <table class="t xs">
+      <tr><th></th><th>VAE (Extra 3)</th><th>GAN (Extra 4)</th><th>diffusion</th></tr>
+      <tr><td><b>sample quality</b></td><td>blurry</td><td>sharp</td><td>sharp (FID 3.17 on CIFAR-10, DDPM)</td></tr>
+      <tr><td><b>diversity</b></td><td>good</td><td>mode dropping</td><td>good: no mode dropped in the lab</td></tr>
+      <tr><td><b>training</b></td><td>stable, one loss</td><td>a two-player game, fragile</td><td>stable, one MSE</td></tr>
+      <tr><td><b>sampling speed</b></td><td>1 pass</td><td>1 pass</td><td>10–1000 passes</td></tr>
+      <tr><td><b>likelihood</b></td><td>a lower bound (ELBO)</td><td>none</td><td>a bound, exact with the ODE</td></tr>
+      <tr><td><b>latent space</b></td><td>small, meaningful</td><td>small</td><td>as large as $\bx$ (DDIM inversion)</td></tr>
+      <tr><td><b>conditioning</b></td><td>possible</td><td>possible</td><td>easy: guidance, cross-attention</td></tr>
+    </table>
+    <div class="stack" style="gap:8px">
+      <svg class="fig" data-fig="df-trilemma" aria-label="A triangle with high quality, fast sampling and mode coverage at the corners; GANs, VAEs and diffusion each sit on one side"></svg>
+      <p class="small why">Diffusion beat GANs on ImageNet in 2021 (Dhariwal and Nichol). The race now is speed: fewer steps, distillation, flow matching move diffusion towards the "fast" corner.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The topic in one slide</h2>
+  <div class="cards c2" style="gap:12px">
+    <div class="card"><h3>A · The forward process</h3><ul>
+      <li>$\bx_t=\sqrt{1-\beta_t}\,\bx_{t-1}+\sqrt{\beta_t}\,\beps$: variance preserving</li>
+      <li>closed form $\bx_t=\sqrt{\abar_t}\,\bx_0+\sqrt{1-\abar_t}\,\beps$</li>
+      <li>schedules (linear, cosine); $\mathrm{SNR}=\abar_t/(1-\abar_t)$ is the clock</li></ul></div>
+    <div class="card g"><h3>B · Reverse process and loss</h3><ul>
+      <li>$q(\bx_{t-1}\mid\bx_t,\bx_0)=\Nc(\tmu_t,\tilde\beta_t\bI)$; learn only the mean</li>
+      <li>ELBO = one KL per step → $\|\beps-\beps_\theta(\bx_t,t)\|^2$</li>
+      <li>Algorithm 1: noise and regress; Algorithm 2: 1000 small steps</li></ul></div>
+    <div class="card y"><h3>C · Scores and fast sampling</h3><ul>
+      <li>$\beps_\theta\approx-\sqrt{1-\abar_t}\,\nabla\log p_t$: denoising = score</li>
+      <li>Langevin, annealed; reverse SDE and probability flow ODE</li>
+      <li>DDIM: deterministic, invertible, 20–50 steps</li></ul></div>
+    <div class="card o"><h3>D · Conditioning and scale</h3><ul>
+      <li>guidance: $(1+w)\beps_\theta(\bx_t,t,c)-w\,\beps_\theta(\bx_t,t,\varnothing)$</li>
+      <li>text via cross-attention; diffusion in a VAE's latent space</li>
+      <li>U-Net + sinusoidal time embedding; sharp, diverse, slow</li></ul></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Vocabulary of Extra 7</h2>
+  <div class="cols">
+    <dl class="gloss" style="font-size:16px;gap:5px 14px">
+      <dt>forward process</dt><dd>$q$: the fixed chain that adds Gaussian noise.</dd>
+      <dt>reverse process</dt><dd>$p_\theta$: the learned chain that removes it.</dd>
+      <dt>noise schedule</dt><dd>the variances $\beta_1,\dots,\beta_T$: linear, cosine.</dd>
+      <dt>$\abar_t$, SNR</dt><dd>signal kept after $t$ steps; $\abar_t/(1-\abar_t)$.</dd>
+      <dt>posterior $q(\bx_{t-1}\mid\bx_t,\bx_0)$</dt><dd>Gaussian with mean $\tmu_t$, variance $\tilde\beta_t$.</dd>
+      <dt>$\beps$-prediction</dt><dd>the network outputs the noise, not the image.</dd>
+      <dt>$L_{\text{simple}}$</dt><dd>$\|\beps-\beps_\theta(\bx_t,t)\|^2$ with $t$ uniform.</dd>
+      <dt>ancestral sampling</dt><dd>DDPM's sampler: $T$ steps, fresh noise each.</dd>
+      <dt>$\hx_0$</dt><dd>the clean data implied by $\bx_t$ and $\beps_\theta$.</dd>
+      <dt>time embedding</dt><dd>sines and cosines of $t$, added in every block.</dd>
+      <dt>EMA</dt><dd>running average of the weights, used to sample.</dd>
+    </dl>
+    <dl class="gloss" style="font-size:16px;gap:5px 14px">
+      <dt>score</dt><dd>$\nabla_{\bx}\log p(\bx)$, points to higher density.</dd>
+      <dt>Tweedie's formula</dt><dd>score $=-\E[\beps\mid\bx_t]/\sqrt{1-\abar_t}$.</dd>
+      <dt>Langevin dynamics</dt><dd>score step + noise; annealed: from blurry to sharp.</dd>
+      <dt>probability flow ODE</dt><dd>deterministic paths with the same marginals.</dd>
+      <dt>DDIM</dt><dd>$\eta=0$ sampler: few steps, deterministic, invertible.</dd>
+      <dt>classifier-free guidance</dt><dd>extrapolate from unconditional to conditional.</dd>
+      <dt>guidance scale $w$</dt><dd>more $w$: more typical, less diverse.</dd>
+      <dt>cross-attention</dt><dd>image queries, text keys and values.</dd>
+      <dt>latent diffusion</dt><dd>diffusion on an autoencoder's latent.</dd>
+      <dt>U-Net</dt><dd>encoder–decoder CNN with skip connections.</dd>
+      <dt>distillation</dt><dd>train a student to sample in a few steps.</dd>
+    </dl>
+  </div>
+  <p class="labline">Original papers: <a href="https://arxiv.org/abs/2006.11239" target="_blank" rel="noopener">DDPM</a> · <a href="https://arxiv.org/abs/2102.09672" target="_blank" rel="noopener">improved DDPM (cosine)</a> · <a href="https://arxiv.org/abs/2010.02502" target="_blank" rel="noopener">DDIM</a> · <a href="https://arxiv.org/abs/2011.13456" target="_blank" rel="noopener">score SDE</a> · <a href="https://arxiv.org/abs/2207.12598" target="_blank" rel="noopener">classifier-free guidance</a> · <a href="https://arxiv.org/abs/2112.10752" target="_blank" rel="noopener">latent diffusion</a> · <a href="https://lilianweng.github.io/posts/2021-07-11-diffusion-models/" target="_blank" rel="noopener">tutorial (Lilian Weng)</a>.</p>
+</section>
+
+<section class="slide lab">
+  <div class="labtag">EXTRA 7</div>
+  <h2>Diffusion models, from scratch</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:10px">
+      <p>Build DDPM piece by piece on 2-D points, check every formula numerically, then train a small U-Net on MNIST.</p>
+      <ol class="todo">
+        <li>The forward process on a three-arm spiral; linear vs cosine schedules.</li>
+        <li>The closed form and the posterior, checked numerically.</li>
+        <li>A noise predictor with a time embedding; the loss at each $t$.</li>
+        <li>DDPM sampling; samples vs data; the score and Langevin.</li>
+        <li>DDIM: fewer steps, determinism, inversion.</li>
+        <li>Classifier-free guidance on the three arms.</li>
+        <li>MNIST with a mini U-Net: $\hx_0$ at each $t$, DDPM and DDIM samples.</li>
+      </ol>
+    </div>
+    <div class="labcard">
+      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/extra/extra 07 - Diffusion Models.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <dl class="gloss">
+        <dt>notebook</dt><dd><code>extra 07 - Diffusion Models.ipynb</code></dd>
+        <dt>you need</dt><dd>MLPs, CNNs and the PyTorch loop (Neural networks 1–4); the ELBO of Extra 3</dd>
+        <dt>runs on</dt><dd>CPU, about 7 min with 4 threads; a GPU is optional</dd>
+        <dt>data</dt><dd>a generated 2-D spiral; MNIST (torchvision, about 60 MB unpacked)</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section class="slide cover">
+  <div class="inner"><h1>Extra topics</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Next: Self-supervised and contrastive learning</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+</div></div>
+<script src="../assets/figures.js?v=20260930"></script>
+<script src="../neural_networks/assets/nn-core.js?v=20260930"></script>
+<script src="assets/diffusion-data.js?v=20261008"></script>
+<script src="assets/fig-diffusion.js?v=20261008"></script>
+<script src="../assets/deck.js?v=20260930"></script>
+</body>
+</html>

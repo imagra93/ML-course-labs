@@ -287,3 +287,129 @@ All extra slides: **<https://imagra93.github.io/ML-course-labs/slides/extra/>**
   [Extra 1 · Graph Neural Networks](notebooks/extra/extra%2001%20-%20Graph%20Neural%20Networks.ipynb):
   GCN from scratch (dense and with `edge_index`), Cora (MLP vs label propagation vs GCN vs GAT, depth),
   the WL test, MUTAG with GIN, link prediction and edge leakage, checked against PyTorch Geometric
+
+## Extra 2 · Clustering
+
+- **Slides:** [Clustering](https://imagra93.github.io/ML-course-labs/slides/extra/02_clustering.html)
+- **Content:** what a cluster is and why the distance and units decide; k-means (Lloyd with numbers, convergence,
+  k-means++, elbow and silhouette, mini-batch, colour quantisation); Gaussian mixtures and EM (the monotonicity proof,
+  k-means as the hard limit, BIC); hierarchical clustering, DBSCAN and HDBSCAN, spectral clustering; ARI, NMI,
+  stability, no free lunch, t-SNE caveats, Gower distance for mixed data
+- **Notebook:** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/extra/extra%2002%20-%20Clustering.ipynb)
+  [Extra 2 · Clustering](notebooks/extra/extra%2002%20-%20Clustering.ipynb):
+  k-means, k-means++, silhouette, EM, DBSCAN, spectral clustering, ARI/NMI and Gower from scratch,
+  each checked against scikit-learn; 7 algorithms × 6 datasets; digits; colour quantisation (CPU, under a minute)
+
+## Extra 3 · Autoencoders and VAEs
+
+- **Slides:** [Autoencoders and VAEs](https://imagra93.github.io/ML-course-labs/slides/extra/03_autoencoders.html)
+- **Content:** encoder, bottleneck, decoder; reconstruction losses as likelihoods; PCA and the linear autoencoder;
+  sparse, denoising and convolutional AEs; why an AE cannot generate; KL, the ELBO, the Gaussian KL, reparameterisation;
+  β-VAE, posterior collapse, blurry samples, conditional VAE, VQ-VAE and latent diffusion
+- **Notebook:** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/extra/extra%2003%20-%20Autoencoders%20and%20VAEs.ipynb)
+  [Extra 3 · Autoencoders and VAEs](notebooks/extra/extra%2003%20-%20Autoencoders%20and%20VAEs.ipynb):
+  PCA and a linear AE from scratch (same subspace), AEs vs PCA, a denoising AE, a VAE from scratch with
+  its ELBO checked against the exact log-likelihood, a β sweep, posterior collapse, a conditional VAE on MNIST (CPU, ~3 min)
+
+## Extra 4 · Generative adversarial networks
+
+- **Slides:** [Generative adversarial networks](https://imagra93.github.io/ML-course-labs/slides/extra/04_gans.html)
+- **Content:** the minimax game with a worked step, the optimal discriminator and Jensen–Shannon, the non-saturating
+  loss, mode collapse, two-player dynamics, the Wasserstein GAN and gradient penalty, DCGAN, conditional and
+  image-to-image GANs, StyleGAN, FID, precision/recall, GANs vs VAEs vs diffusion
+- **Notebook:** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/extra/extra%2004%20-%20GANs.ipynb)
+  [Extra 4 · GANs](notebooks/extra/extra%2004%20-%20GANs.ipynb):
+  a 1-D GAN with every theorem checked numerically, the bilinear game, vanilla GAN vs WGAN-GP on a ring
+  of 8 Gaussians, a DCGAN and a conditional GAN on MNIST scored with an FID-like metric computed from scratch (CPU, ~4 min)
+
+## Extra 5 · Anomaly detection
+
+- **Slides:** [Anomaly detection](https://imagra93.github.io/ML-course-labs/slides/extra/05_anomaly_detection.html)
+- **Content:** point, contextual and collective anomalies; base rates and the alert budget; z-score and masking,
+  median/MAD, Mahalanobis and MCD; k-NN, KDE, GMM, LOF, Isolation Forest, one-class SVM; reconstruction error;
+  ROC-AUC vs PR-AUC, precision@k, thresholds from costs, features, explanations, drift
+- **Notebook:** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/extra/extra%2005%20-%20Anomaly%20Detection.ipynb)
+  [Extra 5 · Anomaly Detection](notebooks/extra/extra%2005%20-%20Anomaly%20Detection.ipynb):
+  MAD, MCD, LOF and Isolation Forest from scratch (checked against scikit-learn), the Satellite benchmark,
+  an MNIST autoencoder, synthetic insurance claims and a seasonal time series (CPU, ~1 min + downloads)
+
+## Extra 6 · Dimensionality reduction
+
+- **Slides:** [Dimensionality reduction](https://imagra93.github.io/ML-course-labs/slides/extra/06_dimensionality_reduction.html)
+- **Content:** the curse of dimensionality; PCA as maximum variance = minimum error, eigenvectors vs SVD, choosing k,
+  standardisation, eigenfaces, probabilistic PCA; random projections and JL, LDA, LSA, NMF; kernel PCA, MDS, Isomap,
+  LLE; t-SNE and what its plots hide, UMAP; kNN preservation and leakage
+- **Notebook:** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/extra/extra%2006%20-%20Dimensionality%20Reduction.ipynb)
+  [Extra 6 · Dimensionality Reduction](notebooks/extra/extra%2006%20-%20Dimensionality%20Reduction.ipynb):
+  PCA, kernel PCA, classical MDS, Isomap and t-SNE from scratch, checked against scikit-learn; JL on faces,
+  eigenfaces, the Swiss roll, perplexity sweeps and t-SNE illusions (CPU, under a minute)
+
+## Extra 7 · Diffusion models
+
+- **Slides:** [Diffusion models](https://imagra93.github.io/ML-course-labs/slides/extra/07_diffusion.html)
+- **Content:** forward noising and its closed form, schedules, the Gaussian posterior and the ELBO as a noise-prediction
+  MSE, DDPM sampling, denoising as score estimation, Langevin and the SDE/ODE view, DDIM, classifier-free guidance,
+  cross-attention, latent diffusion and the U-Net
+- **Notebook:** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/extra/extra%2007%20-%20Diffusion%20Models.ipynb)
+  [Extra 7 · Diffusion Models](notebooks/extra/extra%2007%20-%20Diffusion%20Models.ipynb):
+  DDPM from scratch on a 2-D spiral with every formula checked numerically, DDIM, guidance, and a mini
+  U-Net on MNIST (CPU, ~7 min)
+
+## Extra 8 · Self-supervised and contrastive learning
+
+- **Slides:** [Self-supervised and contrastive learning](https://imagra93.github.io/ML-course-labs/slides/extra/08_self_supervised.html)
+- **Content:** labels are expensive, data are cheap; pretext tasks, linear probes and fine-tuning; contrastive learning
+  (two views, the InfoNCE loss as a cross-entropy with numbers, temperature, alignment and uniformity, augmentations,
+  projection head, batch size); collapse, BYOL/SimSiam, Barlow Twins/VICReg; MAE, DINO, CLIP; few-label curves
+- **Notebook:** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/extra/extra%2008%20-%20Self-Supervised%20and%20Contrastive%20Learning.ipynb)
+  [Extra 8 · Self-Supervised and Contrastive Learning](notebooks/extra/extra%2008%20-%20Self-Supervised%20and%20Contrastive%20Learning.ipynb):
+  InfoNCE by hand, SimCLR on 60,000 unlabelled MNIST digits, a linear probe from scratch, the few-label curve,
+  alignment/uniformity, collapse without the stop-gradient vs SimSiam, an augmentation ablation (CPU, ~6.5 min)
+
+## Extra 9 · Explainability
+
+- **Slides:** [Explainability](https://imagra93.github.io/ML-course-labs/slides/extra/09_explainability.html)
+- **Content:** global and local explanations on a simulated insurance portfolio with a known truth: impurity vs
+  permutation importance, PDP, ICE and ALE, surrogates, exact Shapley values and their axioms, interventional vs
+  conditional SHAP, KernelSHAP, LIME, Integrated Gradients and Grad-CAM with the sanity check, counterfactuals, fairness
+- **Notebook:** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/extra/extra%2009%20-%20Explainability.ipynb)
+  [Extra 9 · Explainability](notebooks/extra/extra%2009%20-%20Explainability.ipynb):
+  every method from scratch, graded against the known truth; a CNN on MNIST for the gradient methods (CPU, ~1.5 min)
+
+## Extra 10 · Uncertainty and conformal prediction
+
+- **Slides:** [Uncertainty and conformal prediction](https://imagra93.github.io/ML-course-labs/slides/extra/10_conformal.html)
+- **Content:** aleatoric vs epistemic uncertainty, prediction vs confidence intervals; heteroscedastic Gaussian networks,
+  quantile regression and the pinball loss, deep ensembles, MC dropout; calibration, ECE and temperature scaling; split
+  conformal prediction, the (n+1) quantile and the rank proof of coverage, marginal vs conditional coverage; normalised
+  scores and CQR; prediction sets (LAC, APS), Mondrian conformal; distribution shift, adaptive conformal inference
+- **Notebook:** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/extra/extra%2010%20-%20Uncertainty%20and%20Conformal%20Prediction.ipynb)
+  [Extra 10 · Uncertainty and Conformal Prediction](notebooks/extra/extra%2010%20-%20Uncertainty%20and%20Conformal%20Prediction.ipynb):
+  split conformal from scratch (coverage over 1,000 splits vs the Beta law, coverage by bins, normalised scores and CQR),
+  California housing, Fashion-MNIST calibration and LAC/APS/Mondrian sets, distribution shift and ACI (CPU, ~1 min)
+
+## Extra 11 · Causal inference and uplift
+
+- **Slides:** [Causal inference and uplift](https://imagra93.github.io/ML-course-labs/slides/extra/11_causal.html)
+- **Content:** prediction vs intervention, Simpson's paradox, potential outcomes (ATE, ATT, CATE), why randomisation works
+  and the assumptions that replace it; causal graphs, chain/fork/collider, collider bias, the backdoor criterion, bad
+  controls; regression adjustment, matching, propensity scores, IPW, doubly robust AIPW, bootstrap intervals, refutation
+  tests, difference-in-differences, instrumental variables; uplift, S/T/X-learners, Qini curves, targeting
+- **Notebook:** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/extra/extra%2011%20-%20Causal%20Inference%20and%20Uplift.ipynb)
+  [Extra 11 · Causal Inference and Uplift](notebooks/extra/extra%2011%20-%20Causal%20Inference%20and%20Uplift.ipynb):
+  synthetic data with known effects: every estimator from scratch and graded against the truth (naive vs adjustment,
+  matching, IPW, AIPW), refuters, a randomised retention campaign with S/T/X-learners, uplift and Qini curves, and the
+  cost of targeting by churn risk instead of uplift (CPU, ~15 s)
+
+## Extra 12 · Reinforcement learning
+
+- **Slides:** [Reinforcement learning](https://imagra93.github.io/ML-course-labs/slides/extra/12_reinforcement_learning.html)
+- **Content:** the agent–environment loop and how RL differs from supervised learning; bandits (ε-greedy, UCB, Thompson
+  sampling, regret); MDPs, the Bellman equations, policy and value iteration with numbers; Monte Carlo vs TD, SARSA vs
+  Q-learning on the cliff, DQN and the deadly triad; REINFORCE, baselines, actor–critic, PPO's clipped objective; RLHF
+  (Bradley–Terry reward model, PPO with a KL penalty, DPO), reward hacking, RL in practice
+- **Notebook:** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/extra/extra%2012%20-%20Reinforcement%20Learning.ipynb)
+  [Extra 12 · Reinforcement Learning](notebooks/extra/extra%2012%20-%20Reinforcement%20Learning.ipynb):
+  no RL library: bandits with regret curves, a gridworld MDP with policy evaluation, value and policy iteration from
+  scratch, MC vs TD, SARSA vs Q-learning, REINFORCE with a baseline on a NumPy CartPole, a tiny DQN, and RLHF in
+  miniature with reward over-optimisation (CPU, ~1.5 min)

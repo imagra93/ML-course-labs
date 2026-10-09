@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="author" content="Imanol Granada (imanolgranada@gmail.com)">
+<title>Dimensionality Reduction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="../assets/deck.css?v=20260930">
+<link rel="stylesheet" href="../neural_networks/assets/nn.css?v=20261006c">
+<script src="../assets/mathjax-config.js?v=20260930"></script>
+<script>Object.assign(MathJax.tex.macros,{bS:'\\mathbf{S}',bU:'\\mathbf{U}',bSigma:'\\boldsymbol{\\Sigma}',bLambda:'\\boldsymbol{\\Lambda}',bJ:'\\mathbf{J}',bB:'\\mathbf{B}',bw:'\\mathbf{w}',bD:'\\mathbf{D}',bone:'\\mathbf{1}',bmu:'\\boldsymbol{\\mu}',bR:'\\mathbf{R}',bH:'\\mathbf{H}',xbar:'\\bar{\\mathbf{x}}'});</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
+</head>
+<body data-deck="Extra 6 · Dimensionality reduction" data-prev="05_anomaly_detection.html" data-next="07_diffusion.html">
+<div id="viewport"><div id="stage">
+<section class="slide cover">
+  <div class="inner"><h1>Extra topics</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Dimensionality reduction</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+
+<section class="slide">
+  <h2>Where we are</h2>
+  <svg class="fig" data-fig="dr-where" style="max-height:225px" aria-label="A digit image is 64 numbers, a point in 64 dimensions; dimensionality reduction maps the 1,797 digits to a 2-D map where the ten digits form islands"></svg>
+  <div class="cols">
+    <div class="stack" style="gap:8px">
+      <p class="small">Data come with many columns: 64 pixels per digit, 4,096 per face photo, thousands of word counts per document. They rarely fill all those dimensions: pixels are correlated, words come in topics, columns repeat each other.</p>
+      <p class="small step"><b>Why reduce:</b> to <b>see</b> the data (a 2-D map), to <b>compress</b> (21 numbers keep 90 % of a digit's variance), to <b>denoise</b>, to make other models <b>faster</b>, to remove <b>collinear</b> features, and because distances misbehave in high dimension.</p>
+    </div>
+    <div class="stack" style="gap:8px">
+      <div class="note step"><p class="small"><b>Dimensionality reduction</b>: a map $\bx_i\in\R^d\mapsto\bz_i\in\R^k$, $k\ll d$, that keeps what matters: variance, distances, classes or neighbourhoods. Which one we keep defines the method.</p></div>
+      <p class="small step why">Four parts: <b>A</b> why reduce, and PCA in depth; <b>B</b> other linear methods (random projections, LDA, LSA, NMF); <b>C</b> manifold learning (kernel PCA, MDS, Isomap); <b>D</b> t-SNE, UMAP and practice. It ends with the Extra 6 lab.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Notation</h2>
+  <table class="t xs">
+    <tr><th style="width:30%">symbol</th><th>meaning</th></tr>
+    <tr><td>$\bX\in\R^{n\times d}$, $\ \bx_i$</td><td>data matrix, <b>one row per example</b>, as in the whole course; row $i$</td></tr>
+    <tr><td>$\xbar$, $\ \bX_c=\bX-\bone\xbar^\top$</td><td>mean of the rows; centred data</td></tr>
+    <tr><td>$\bS=\frac{1}{n-1}\bX_c^\top\bX_c$</td><td>covariance matrix, $d\times d$</td></tr>
+    <tr><td>$\lambda_1\ge\dots\ge\lambda_d$, $\ \bv_1,\dots,\bv_d$</td><td>eigenvalues and unit eigenvectors of $\bS$: the principal directions</td></tr>
+    <tr><td>$\bX_c=\bU\bSigma\bV^\top$, $\ \sigma_j$</td><td>SVD of the centred data; $\lambda_j=\sigma_j^2/(n-1)$</td></tr>
+    <tr><td>$k$, $\ \bV_k=[\bv_1\cdots\bv_k]$</td><td>target dimension; the first $k$ directions, $d\times k$</td></tr>
+    <tr><td>$\bZ=\bX_c\bV_k$, $\ \bz_i$</td><td>scores, the embedding: one row per example, $n\times k$</td></tr>
+    <tr><td>$\hat\bX=\bZ\bV_k^\top+\bone\xbar^\top$</td><td>reconstruction</td></tr>
+    <tr><td>$\bK$, $\ \bJ=\bI-\frac1n\bone\bone^\top$</td><td>kernel (Gram) matrix; centring matrix</td></tr>
+    <tr><td>$p_{j\mid i}$, $\ p_{ij}$, $\ q_{ij}$</td><td>t-SNE similarities: high-D conditional, symmetrised, low-D</td></tr>
+    <tr><td>$\mathrm{Perp}$</td><td>perplexity $2^{H(P_i)}$: the effective number of neighbours</td></tr>
+  </table>
+  <p class="labline">scikit-learn stores $\bV_k^\top$ in <code>PCA.components_</code> (one direction per row) and $\lambda_j$ in <code>explained_variance_</code>. The lab uses the same symbols.</p>
+</section>
+
+<section class="slide divider"><div class="card blue"><h1><b>Part A</b><br>Why reduce,<br>and PCA</h1><ul class="small"><li>distances concentrate</li><li>max variance = min reconstruction error</li><li>eigenvectors or SVD</li><li>choosing $k$; scaling; whitening</li><li>eigenfaces; probabilistic PCA; limits</li></ul></div></section>
+
+<section class="slide">
+  <h2>The curse of dimensionality</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="dr-curse" data-auto="d=1 :: d = 10: distances already bunch around their mean | d=2 :: d = 100: a narrow peak | d=3 :: d = 1000: nearest and farthest are almost the same distance">
+      <svg class="fig" aria-label="Histogram of the pairwise distances of 200 random points in the unit cube, divided by their mean, for a chosen dimension"></svg>
+      <div class="ctl"><label for="cu-d">dimension</label><input type="range" id="cu-d" data-k="d" min="0" max="3" step="1" value="0"><span class="v" data-v="d"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">$n$ random points in the cube $[0,1]^d$. How much farther is the farthest point than the nearest one? In the lab (500 points): <b>86.5×</b> in 2-D, <b>3.36×</b> in 10-D, <b>1.11×</b> in 1000-D.</p>
+      <p class="small step"><b>Why.</b> For uniform $x,y$: $\E[(x-y)^2]=\frac16$, $\mathrm{Var}[(x-y)^2]=\frac{7}{180}$. A squared distance sums $d$ such terms:</p>
+      <div class="eq s step">$$\frac{\mathrm{std}\,\lVert\bx-\by\rVert^2}{\mathrm{mean}\,\lVert\bx-\by\rVert^2}=\frac{\sqrt{7d/180}}{d/6}=\frac{1.183}{\sqrt d}\to0$$</div>
+      <p class="small step">All distances look alike, so kNN, k-means and RBF kernels lose their contrast. Volume misbehaves too: the unit ball fills 79 % of $[-1,1]^2$ but 0.25 % of $[-1,1]^{10}$.</p>
+      <p class="small step why">Real data escape the curse because their coordinates are <b>not</b> independent: they live near a low-dimensional subset. Every method of this deck looks for it.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>PCA: two views of the same problem</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="dr-views" data-auto="a=0 :: w horizontal: captured variance and error | a=125 :: the worst direction: little variance, a large error | a=35 :: the first principal direction: maximum variance AND minimum error">
+      <svg class="fig" aria-label="A 2-D cloud, a direction w, the projections on its line and the residuals; bars show the captured variance plus the reconstruction error, always equal to the total"></svg>
+      <div class="ctl"><label for="vw-a">angle of w</label><input type="range" id="vw-a" data-k="a" min="0" max="175" step="5" value="0"><span class="v" data-v="a"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">Centre the data. Project each point on the line of a unit vector $\bw$: coordinate $z_i=\bw^\top\bx_i$, reconstruction $z_i\bw$.</p>
+      <p class="small"><b>Max variance:</b> keep the spread $\frac{1}{n-1}\sum_iz_i^2=\bw^\top\bS\bw$.<br><b>Min error:</b> lose little, $\frac{1}{n-1}\sum_i\lVert\bx_i-z_i\bw\rVert^2$.</p>
+      <p class="small step">The residual is orthogonal to $\bw$, so by Pythagoras $\lVert\bx_i\rVert^2=z_i^2+\lVert\bx_i-z_i\bw\rVert^2$. Summing:</p>
+      <div class="bluebox step" style="font-size:18px;padding:6px 12px">$$\underbrace{\mathrm{tr}\,\bS}_{\text{fixed}}=\underbrace{\bw^\top\bS\bw}_{\text{captured}}+\underbrace{\text{error}(\bw)}_{\text{lost}}$$</div>
+      <p class="small step">Whatever raises one term lowers the other: <b>the same $\bw$ solves both</b>. The lab checks it over 720 directions: the sum equals $\mathrm{tr}\,\bS=4.69$ to $10^{-15}$.</p>
+      <p class="small step why">Reconstruction is also what a linear autoencoder minimises: it learns the PCA subspace (Extra 3 · Autoencoders).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Maximum variance gives an eigenvector</h2>
+  <div class="cols c46">
+    <svg class="fig" data-fig="dr-ellipse" aria-label="The covariance ellipse of a 2-D cloud with its axes v1 and v2 of half-lengths square root of lambda 1 and lambda 2, and the variance along a direction w drawn as a polar curve touching the ellipse axes"></svg>
+    <div class="stack" style="gap:7px">
+      <p class="small">Maximise $\bw^\top\bS\bw$ subject to $\bw^\top\bw=1$. Lagrangian:</p>
+      <div class="deriv s">
+        <div class="eq">$$\mathcal L=\bw^\top\bS\bw-\lambda(\bw^\top\bw-1)$$</div><div class="why">one multiplier for one constraint</div>
+        <div class="eq step">$$\nabla_\bw\mathcal L=2\bS\bw-2\lambda\bw=\bzero$$</div><div class="why step">$\bS$ is symmetric</div>
+        <div class="eq step">$$\bS\bw=\lambda\bw$$</div><div class="why step">stationary points are eigenvectors</div>
+        <div class="eq step">$$\bw^\top\bS\bw=\lambda\,\bw^\top\bw=\lambda$$</div><div class="why step">the variance along $\bw$ is its eigenvalue</div>
+      </div>
+      <p class="small step">So take the <b>largest</b> eigenvalue: $\bv_1$, variance $\lambda_1$. The next direction maximises again among vectors orthogonal to $\bv_1$: that is $\bv_2$, and so on.</p>
+      <div class="idea step">With $k$ directions: captured variance $\lambda_1+\dots+\lambda_k$, reconstruction error $\lambda_{k+1}+\dots+\lambda_d$. In the lab's 2-D cloud, $\lambda_1=4.312$, $\lambda_2=0.380$: the best line keeps 92 %.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Two algorithms: eigenvectors of $\bS$ or the SVD of $\bX_c$</h2>
+  <svg class="fig" data-fig="dr-svd" style="max-height:200px" aria-label="Matrix shapes: X_c (n by d) equals U (n by r) times Sigma (r by r) times V transposed (r by d); the covariance S (d by d) equals V Lambda V transposed"></svg>
+  <div class="cols">
+    <div class="stack" style="gap:7px">
+      <p class="small"><b>Eigen route:</b> form $\bS$ ($d\times d$), diagonalise $\bS=\bV\bLambda\bV^\top$, sort, keep $\bV_k$, scores $\bZ=\bX_c\bV_k$. Cost $O(nd^2+d^3)$.</p>
+      <p class="small step"><b>SVD route:</b> $\bX_c^\top\bX_c=\bV\bSigma\bU^\top\bU\bSigma\bV^\top=\bV\bSigma^2\bV^\top$, so the right singular vectors are the directions and</p>
+      <div class="bluebox step" style="font-size:20px;padding:6px 14px">$$\lambda_j=\frac{\sigma_j^2}{n-1},\qquad\bZ=\bX_c\bV_k=\bU_k\bSigma_k$$</div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small step"><b>Prefer the SVD.</b> Forming $\bX^\top\bX$ squares the condition number. Läuchli matrix with $\varepsilon=10^{-8}$: the SVD finds $\sigma_2=10^{-8}$, the eigenvalues of $\bX^\top\bX$ give 0. scikit-learn's <code>PCA</code> uses the SVD (randomized for big data).</p>
+      <p class="small step"><b>Signs are arbitrary</b>: $-\bv$ is as good as $\bv$. On the digits 6 of 10 columns came out flipped between the two routes; after aligning signs they agree with scikit-learn to $10^{-12}$.</p>
+      <p class="small step why">Eckart–Young: $\bU_k\bSigma_k\bV_k^\top$ is the best rank-$k$ approximation of $\bX_c$ in squared error, the "reconstruction" view again.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>How many components?</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="dr-scree" data-auto="k=1 :: k = 1: the mean digit plus one direction | k=5 :: k = 5: 54.5 % of the variance, the shape appears | k=10 :: k = 10: 73.8 %, recognisable | k=21 :: k = 21: 90 % of the variance | k=40 :: k = 40: 98.8 %, almost the original">
+      <svg class="fig" aria-label="Scree plot of the 64 digit components with the cumulative explained variance, and a digit reconstructed from its first k components"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-g="0" aria-pressed="false">0</button><button type="button" data-g="1" aria-pressed="true">3</button><button type="button" data-g="2" aria-pressed="false">5</button><button type="button" data-g="3" aria-pressed="false">8</button></span><label for="sc-k">k</label><input type="range" id="sc-k" data-k="k" min="1" max="40" step="1" value="2"><span class="v" data-v="k"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small"><b>Explained variance ratio</b> of component $j$: $\lambda_j/\sum_l\lambda_l$. Plotted against $j$: the <b>scree plot</b>. Ways to choose $k$:</p>
+      <ul class="small" style="gap:3px"><li>a threshold on the cumulative ratio, 90 % or 95 %</li><li>the <b>elbow</b>, where the curve flattens</li><li><b>Kaiser</b>: $\lambda_j\gt1$ on standardised data</li><li>best: $k$ as a hyper-parameter, by cross-validation</li></ul>
+      <p class="small step">Digits ($d=64$): 90 % needs <b>21</b> components, 95 % needs 29. The rest is mostly noise and border pixels that are always 0.</p>
+      <p class="small step">Reconstruction: $\hat\bx=\xbar+z_1\bv_1+\dots+z_k\bv_k$. Its squared error, summed and divided by $n-1$, is exactly $\sum_{j\gt k}\lambda_j$ (lab: 314.7 for $k=10$).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Scale first: standardise or not?</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="dr-wine" data-auto="m=std :: standardised: every feature has variance 1; the three cultivars separate | m=raw :: raw again: PC1 is proline, the feature with the largest unit">
+      <svg class="fig" aria-label="Wine data: scatter of the first two principal components, coloured by cultivar, and the loadings of PC1 on the 13 features, for raw or standardised data"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-m="raw" aria-pressed="true">raw features</button><button type="button" data-m="std" aria-pressed="false">standardised</button></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">PCA maximises variance, and variance depends on units: metres to millimetres multiplies it by $10^6$.</p>
+      <p class="small step"><b>Wine</b>: 178 wines, 3 cultivars, 13 measurements. Proline has std 314, hue 0.23. Raw PCA: PC1 explains <b>99.8 %</b> and is just the proline axis. Standardised: 36.2 %, 19.2 %, 11.1 %…; 5-NN on 2 PCs goes from 0.691 to <b>0.966</b>.</p>
+      <p class="small step"><b>Rule:</b> different units → standardise (PCA on the correlation matrix). Same unit and meaningful scale (pixels, counts) → keep it.</p>
+      <div class="hint b step"><div class="hd">Whitening</div><div class="bd" style="font-size:17px">$\bZ_w=\bZ\bLambda_k^{-1/2}$ has covariance $\bI$: uncorrelated, unit variance. Rotate back, $\bZ_w\bV_k^\top$: ZCA whitening. Used before ICA and some clustering; it blows small, noisy directions up to the size of the signal.</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>PCA on images: eigenfaces</h2>
+  <div class="widget" data-fig="dr-faces" data-auto="k=1 :: k = 5: lighting and the rough shape (54 % of the variance) | k=2 :: k = 20: the person is recognisable | k=3 :: k = 50: 87 % of the variance | k=6 :: k = 399: all components, an exact copy">
+    <svg class="fig" style="max-height:300px" aria-label="Olivetti faces: the mean face and the first six eigenfaces, and one face reconstructed from its first k components"></svg>
+    <div class="ctl"><label for="fa-k">components</label><input type="range" id="fa-k" data-k="k" min="0" max="6" step="1" value="0"><span class="v" data-v="k"></span></div>
+  </div>
+  <div class="cols" style="gap:28px">
+    <p class="small">400 photos, $64\times64=4{,}096$ pixels, 40 people (Olivetti). A direction $\bv_j$ is itself an image: an <b>eigenface</b> (Turk and Pentland, 1991). Each face = mean + weighted sum of eigenfaces. With $n\lt d$ at most $n-1=399$ directions carry variance; 90 % needs 66.</p>
+    <p class="small step"><b>Denoising.</b> Noise spreads equally over all $d$ directions; the signal lives in the top ones. Projecting on $k$ directions keeps a fraction $k/d$ of the noise. Lab: noisy digits (σ = 4) have MSE 16.0; projected on 18 components, <b>6.91</b>.</p>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Probabilistic PCA in one slide</h2>
+  <div class="cols c46">
+    <svg class="fig" data-fig="dr-ppca" aria-label="Generative model: a 2-D latent z drawn from a standard Gaussian is mapped by W onto a plane in 3-D, shifted by mu, and blurred by isotropic noise"></svg>
+    <div class="stack" style="gap:8px">
+      <p class="small">A <b>generative</b> version (Tipping and Bishop, 1999): a low-dimensional cause plus noise,</p>
+      <div class="bluebox" style="font-size:19px;padding:6px 14px">$$\bz\sim\mathcal N(\bzero,\bI_k),\quad\bx=\bW\bz+\bmu+\boldsymbol\varepsilon,\quad\boldsymbol\varepsilon\sim\mathcal N(\bzero,\sigma^2\bI_d)$$</div>
+      <p class="small">so $\bx\sim\mathcal N(\bmu,\ \bW\bW^\top+\sigma^2\bI)$. Maximum likelihood has a closed form:</p>
+      <div class="eq s">$$\sigma^2_{\text{ML}}=\frac{1}{d-k}\sum_{j\gt k}\lambda_j,\qquad\bW_{\text{ML}}=\bV_k(\bLambda_k-\sigma^2\bI)^{1/2}\bR$$</div>
+      <p class="small step">The noise is the average discarded variance; $\bW$ spans the PCA subspace ($\bR$ any rotation). As $\sigma^2\to0$ we recover PCA.</p>
+      <p class="small step"><b>What it adds:</b> a likelihood (choose $k$, score outliers), EM with missing values, mixtures of PPCA. With a diagonal noise $\boldsymbol\Psi$ instead of $\sigma^2\bI$ it is <b>factor analysis</b>; with a neural network instead of $\bW$, a <b>VAE</b> (Extra 3).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The limits of PCA</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="dr-limits" data-auto="c=out :: one outlier, far away: PC1 swings towards it | c=arc :: curved data: no straight line follows the arc | c=ok :: back to a clean linear cloud">
+      <svg class="fig" aria-label="A 2-D dataset and its first principal direction: a clean cloud, the same cloud with one outlier, or points on an arc"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-c="ok" aria-pressed="true">clean cloud</button><button type="button" data-c="out" aria-pressed="false">+ one outlier</button><button type="button" data-c="arc" aria-pressed="false">curved data</button></span></div>
+    </div>
+    <div class="stack" style="gap:9px">
+      <p class="small"><b>Linear only.</b> PCA finds flat subspaces. Data on a curve or a rolled sheet need $k$ as large as the space the curve spans: an arc in 2-D needs both components. Parts C and D handle curved data.</p>
+      <p class="small step"><b>Outliers.</b> Squared error lets one far point pull the directions. Fixes: robust PCA (low rank + sparse), PCA on ranks, or remove the outliers first.</p>
+      <p class="small step"><b>Scale.</b> Not unit-invariant (wine). Decide on standardisation consciously.</p>
+      <p class="small step"><b>Variance ≠ importance.</b> The direction that separates two classes can have little variance; PCA may throw it away. If labels exist, see LDA.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card green"><h1><b>Part B</b><br>Other linear<br>methods</h1><ul class="small"><li>random projections, Johnson–Lindenstrauss</li><li>LDA: reduce with the labels</li><li>LSA: truncated SVD of word counts</li><li>NMF: parts, not eigenfaces</li></ul></div></section>
+
+<section class="slide">
+  <h2>Random projections and the Johnson–Lindenstrauss lemma</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="dr-jl" data-auto="k=2 :: k = 20: squared distances off by about 30 % | k=4 :: k = 100: std √(2/100) = 0.14 | k=7 :: k = 1000: every pair within a few per cent, still independent of d">
+      <svg class="fig" aria-label="Histogram of projected over original squared distance for all pairs of 60 points in 1000 dimensions, after a Gaussian random projection to k dimensions"></svg>
+      <div class="ctl"><label for="jl-k">target k</label><input type="range" id="jl-k" data-k="k" min="0" max="7" step="1" value="0"><span class="v" data-v="k"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">Multiply by a random $\bR\in\R^{d\times k}$, entries $\mathcal N(0,1/k)$. No fitting, one matrix product.</p>
+      <p class="small step"><b>Why distances survive:</b> for a fixed $\bx$, each coordinate of $\bR^\top\bx$ is $\mathcal N(0,\lVert\bx\rVert^2/k)$, so $\lVert\bR^\top\bx\rVert^2/\lVert\bx\rVert^2\sim\chi^2_k/k$: mean 1, std $\sqrt{2/k}$, <b>whatever $d$</b>.</p>
+      <div class="note step"><p class="small"><b>JL lemma (1984).</b> For any $n$ points and $0\lt\varepsilon\lt1$, if $\ k\ge\dfrac{4\ln n}{\varepsilon^2/2-\varepsilon^3/3}$, every squared distance is kept within a factor $1\pm\varepsilon$.</p></div>
+      <p class="small step">Lab, 400 faces ($d=4096$): $\varepsilon=0.2$ needs $k\ge1{,}383$; the worst of 79,800 pairs is off by 0.168. At $k=100$ the std is 0.146 (theory 0.141).</p>
+      <p class="small step why">Used for fast nearest neighbours (LSH), randomized SVD, sketching. PCA keeps distances better on average but only shrinks them, and needs the data.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>LDA: reduce with the labels</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="dr-lda" data-auto="m=lda :: LDA: the direction that separates the class means relative to their spread | m=pca :: PCA: the direction of largest variance mixes the two classes">
+      <svg class="fig" aria-label="Two elongated classes in 2-D, a projection direction, and the histograms of the two classes projected on it, for PCA or LDA"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-m="pca" aria-pressed="true">PCA direction</button><button type="button" data-m="lda" aria-pressed="false">LDA direction</button></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">Fisher (1936): separate the class means, relative to the spread inside each class.</p>
+      <div class="eq xs">$$\bS_W=\sum_c\sum_{i\in c}(\bx_i-\bmu_c)(\bx_i-\bmu_c)^\top,\quad\bS_B=\sum_cn_c(\bmu_c-\bmu)(\bmu_c-\bmu)^\top$$</div>
+      <div class="bluebox" style="font-size:19px;padding:4px 14px">$$J(\bw)=\frac{\bw^\top\bS_B\bw}{\bw^\top\bS_W\bw}\ \Rightarrow\ \bS_B\bw=\lambda\bS_W\bw$$</div>
+      <p class="small step">Same Lagrange story as PCA, with a generalised eigenproblem. $\bS_B$ has rank $\le C-1$: <b>at most $C-1$ directions</b>.</p>
+      <p class="small step">Lab, wine: $J$ = 9.08 along LDA, 4.00 along PC1. Digits in 2-D: 5-NN accuracy 0.624 (LDA) vs 0.512 (PCA).</p>
+      <p class="small step why">Supervised: fit it inside the cross-validation folds, never on the test labels.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>LSA and NMF</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:8px">
+      <h3>LSA: truncated SVD of word counts</h3>
+      <p class="small">Documents × terms, counts: huge and sparse. <b>Do not centre</b> (it would fill every zero); take $\bX\approx\bU_k\bSigma_k\bV_k^\top$ directly (<code>TruncatedSVD</code>). Terms get vectors $\bV_k\bSigma_k$.</p>
+      <p class="small step">Lab, 8 tiny documents: "car" and "automobile" never share one, cosine <b>0.000</b> in counts; both co-occur with "engine" and "road", cosine <b>0.985</b> in 2-D LSA. The ancestor of word embeddings.</p>
+      <h3 class="step">NMF: non-negative parts</h3>
+      <p class="small step">$\bX\approx\bW\bH$ with $\bW,\bH\ge0$ (Lee and Seung, 1999). No subtraction allowed, so the basis images become <b>parts</b>. Lab, 16 components: 15.5 % near-zero pixels against 2.9 % for eigenfaces; error 93.76 vs PCA's optimal 92.15.</p>
+    </div>
+    <svg class="fig" data-fig="dr-nmf" aria-label="Six eigenfaces, spread over the whole face with positive and negative values, above six NMF components, which are localised parts such as eyes, nose and cheeks"></svg>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card purple"><h1><b>Part C</b><br>Manifold<br>learning</h1><ul class="small"><li>the manifold hypothesis</li><li>kernel PCA: PCA in a feature space</li><li>classical MDS = PCA on distances</li><li>Isomap: geodesics; LLE</li></ul></div></section>
+
+<section class="slide">
+  <h2>The manifold hypothesis</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="dr-manifold" aria-label="The Swiss roll in 3-D: between its two ends the straight line is short, 19.0, while the path along the sheet is 92.6"></svg>
+    <div class="stack" style="gap:9px">
+      <p class="small">High-dimensional data often lie near a low-dimensional <b>curved surface</b>, a manifold. Photos of one face under different poses: thousands of pixels, a handful of degrees of freedom (angles, light).</p>
+      <p class="small step">On a curved surface the straight-line distance lies. The <b>Swiss roll</b> of the lab: 1,500 points on a rolled-up rectangle. Its two ends are <b>19.0</b> apart through the air but <b>92.6</b> along the sheet (the geodesic).</p>
+      <p class="small step">PCA can only project the roll flat: the layers land on top of each other, and its best coordinate correlates only 0.21 with the position along the roll.</p>
+      <p class="small step why">Two ways out: bend the space so that the data become linear (kernel PCA), or measure distances along the manifold (Isomap) and keep only neighbourhoods (LLE, t-SNE, UMAP).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Kernel PCA</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="dr-kpca" data-auto="g=2 :: RBF, γ = 2: component 1 alone separates the rings | g=0.1 :: γ = 0.1: the kernel barely bends space, like linear PCA | g=50 :: γ = 50: too local; each point sees only its neighbours">
+      <svg class="fig" aria-label="Two concentric rings and their embedding by linear PCA or by RBF kernel PCA for several values of gamma"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-g="lin" aria-pressed="true">linear</button><button type="button" data-g="0.1" aria-pressed="false">γ 0.1</button><button type="button" data-g="1" aria-pressed="false">γ 1</button><button type="button" data-g="2" aria-pressed="false">γ 2</button><button type="button" data-g="10" aria-pressed="false">γ 10</button><button type="button" data-g="50" aria-pressed="false">γ 50</button></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">PCA needs only inner products: the scores $\bU\bSigma$ come from the Gram matrix $\bX_c\bX_c^\top=\bU\bSigma^2\bU^\top$. Replace it by a <b>kernel</b> $K_{ij}=k(\bx_i,\bx_j)=\boldsymbol\phi(\bx_i)^\top\boldsymbol\phi(\bx_j)$: PCA in a feature space we never compute, the trick of the SVM chapter.</p>
+      <ol class="small step" style="gap:2px"><li>centre in feature space: $\tilde\bK=\bJ\bK\bJ$</li><li>eigen: $\tilde\bK=\mathbf A\,\mathrm{diag}(\mu_j)\,\mathbf A^\top$</li><li>scores: $z_{ij}=\sqrt{\mu_j}\,a_{ij}$</li></ol>
+      <p class="small step">Lab, two rings, RBF $e^{-\gamma\lVert\bx-\bx'\rVert^2}$: a logistic regression on component 1 scores 0.450 with linear PCA, <b>1.000</b> with $\gamma=2$, 0.705 with $\gamma=50$.</p>
+      <p class="small step why">An $n\times n$ eigenproblem: $O(n^3)$, a few thousand points (Nyström for more). Linear kernel = PCA, checked in the lab.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Classical MDS: a map from a table of distances</h2>
+  <div class="cols c46">
+    <svg class="fig" data-fig="dr-mds" aria-label="Twelve Spanish cities: true positions as circles and the classical MDS solution from their great-circle distances as dots, after a Procrustes rotation"></svg>
+    <div class="stack" style="gap:7px">
+      <p class="small">Only distances $D_{ij}$ are known. Find points whose Euclidean distances reproduce them (Torgerson, 1952). Key identity:</p>
+      <div class="bluebox" style="font-size:19px;padding:4px 14px">$$\bB=-\tfrac12\,\bJ\,\bD^{(2)}\bJ=\bX_c\bX_c^\top,\quad D^{(2)}_{ij}=D_{ij}^2$$</div>
+      <p class="small step"><b>Proof.</b> $D_{ij}^2=\lVert\bx_i\rVert^2+\lVert\bx_j\rVert^2-2\bx_i^\top\bx_j$. $\bJ$ subtracts row and column means: terms in $i$ alone or $j$ alone vanish, the cross term becomes the centred Gram matrix.</p>
+      <p class="small step">Then $\bB=\bU\bLambda\bU^\top$, $\bZ=\bU_k\bLambda_k^{1/2}$. On Euclidean distances <b>classical MDS is PCA</b> (lab: equal to $10^{-12}$).</p>
+      <p class="small step">From 66 great-circle distances (Madrid–Barcelona 505 km) it redraws Spain, up to rotation and mirror: Procrustes disparity 0.0008. Small negative eigenvalues (down to −236) flag non-Euclidean input: a sphere.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Isomap: distances along the manifold</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="dr-iso" data-auto="s=1 :: 1. a k-nearest-neighbour graph (k = 10; edges shown for one strip) | s=2 :: 2. geodesic = shortest path in the graph: 92.6 instead of 19.0 | s=3 :: 3. classical MDS on the geodesics: the roll is unrolled (ρ = 0.9999) | s=4 :: PCA for comparison: layers overlap (ρ = 0.21) | s=5 :: k = 40: an edge jumps between layers and the unrolling fails (ρ = 0.27)">
+      <svg class="fig" aria-label="The Swiss roll, its nearest-neighbour graph, a geodesic path, and the 2-D embeddings by Isomap and by PCA"></svg>
+      <div class="ctl"><label for="is-s">step</label><input type="range" id="is-s" data-k="s" min="0" max="5" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small"><b>Isomap</b> (Tenenbaum et al., 2000):</p>
+      <ol class="small" style="gap:2px"><li>$k$-NN graph, edges weighted by Euclidean length (short distances are trustworthy)</li><li>geodesic distances = shortest paths (Dijkstra)</li><li>classical MDS on them</li></ol>
+      <p class="small step">Lab: the three steps match scikit-learn's <code>Isomap</code> to rounding. Correlation of the best coordinate with the position along the roll: 1.000 for $k$ = 5, 10, 20, then <b>0.746</b> at 30 and <b>0.273</b> at 40: <b>short circuits</b>.</p>
+      <p class="small step"><b>LLE</b> (Roweis and Saul, 2000) keeps local geometry instead: write $\bx_i\approx\sum_jw_{ij}\bx_j$ from its neighbours, then find low-D points rebuilt by the <b>same</b> weights (bottom eigenvectors of $(\bI-\mathbf W)^\top(\bI-\mathbf W)$). It orders the roll too (0.9999) but bends the rectangle into a wedge.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card coral"><h1><b>Part D</b><br>t-SNE, UMAP<br>and practice</h1><ul class="small"><li>similarities as probabilities</li><li>KL, its gradient, the heavy tail</li><li>what a t-SNE plot does not show</li><li>UMAP; which method when</li><li>measuring an embedding; leakage</li></ul></div></section>
+
+<section class="slide">
+  <h2>t-SNE: similarities as probabilities</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="dr-perp" data-auto="p=1 :: perplexity 5: a narrow Gaussian, only the close cluster counts | p=3 :: perplexity 20: σ grows until about 20 neighbours share the probability | p=4 :: perplexity 40: the far group gets weight too">
+      <svg class="fig" aria-label="A focus point and 47 other points; the circle area of each point is its probability p of j given i under a Gaussian whose width sigma is set by the perplexity"></svg>
+      <div class="ctl"><label for="pp-p">perplexity</label><input type="range" id="pp-p" data-k="p" min="0" max="4" step="1" value="0"><span class="v" data-v="p"></span></div>
+    </div>
+    <div class="stack" style="gap:6px">
+      <p class="small">t-SNE (van der Maaten and Hinton, 2008) keeps <b>neighbourhoods</b>, not distances. High-D: a Gaussian around each point,</p>
+      <div class="eq xs">$$p_{j\mid i}=\frac{e^{-\lVert\bx_i-\bx_j\rVert^2/2\sigma_i^2}}{\sum_{l\ne i}e^{-\lVert\bx_i-\bx_l\rVert^2/2\sigma_i^2}},\qquad p_{ij}=\frac{p_{j\mid i}+p_{i\mid j}}{2n}$$</div>
+      <p class="small step">$\sigma_i$ by binary search so that $\mathrm{Perp}=2^{H(P_i)}$ hits a target (5–50): a smooth "number of neighbours". Dense regions get small $\sigma_i$. Lab, 600 digits at 30: $\sigma_i$ from 7.41 to 13.94.</p>
+      <p class="small step">Low-D: a <b>Student-t</b> (Cauchy) kernel, heavy-tailed:</p>
+      <div class="eq xs step">$$q_{ij}=\frac{(1+\lVert\bz_i-\bz_j\rVert^2)^{-1}}{\sum_{l\ne m}(1+\lVert\bz_l-\bz_m\rVert^2)^{-1}}$$</div>
+      <p class="small step">Then move the $\bz_i$ until $Q$ matches $P$.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The objective, its gradient and the heavy tail</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:7px">
+      <div class="bluebox" style="font-size:19px;padding:4px 14px">$$\min_{\bz}\ \mathrm{KL}(P\Vert Q)=\sum_{i\ne j}p_{ij}\log\frac{p_{ij}}{q_{ij}}$$</div>
+      <div class="eq xs">$$\frac{\partial\,\mathrm{KL}}{\partial\bz_i}=4\sum_j(p_{ij}-q_{ij})\,\frac{\bz_i-\bz_j}{1+\lVert\bz_i-\bz_j\rVert^2}$$</div>
+      <p class="small step"><b>Springs:</b> $p_{ij}\gt q_{ij}$ (neighbours too far apart) attracts; $p_{ij}\lt q_{ij}$ repels.</p>
+      <p class="small step"><b>Asymmetry:</b> a large $p$ with a small $q$ (neighbours torn apart) costs a lot; a small $p$ with a large $q$ costs little. Local structure is kept, large distances are free.</p>
+      <p class="small step"><b>Crowding:</b> in 10-D a point has room for 11 equidistant neighbours, in 2-D for 3. The Cauchy tail ($1/r^2$, not $e^{-r^2}$) lets moderately far points move <b>much farther</b> for the same $q$: room is made and clusters separate.</p>
+      <p class="small step why">Tricks: early exaggeration ($P\times12$ for 250 steps), momentum, gains. The lab's 50-line version reaches KL 0.473; scikit-learn's exact one 0.468.</p>
+    </div>
+    <svg class="fig" data-fig="dr-kernels" aria-label="Gaussian and Student-t kernels against distance on a log scale; for a similarity of 0.01 the Gaussian needs distance 3.0 and the Student-t 9.9"></svg>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>t-SNE on the digits: the perplexity</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="dr-tsne" data-auto="p=5 :: perplexity 5: many small clumps | p=100 :: perplexity 100: round islands, pushed together | p=30 :: perplexity 30, the default: the best neighbour preservation of the three">
+      <svg class="fig" aria-label="t-SNE maps of the 1,797 digits coloured by digit, for perplexity 5, 30 or 100"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-p="5" aria-pressed="false">perplexity 5</button><button type="button" data-p="30" aria-pressed="true">30</button><button type="button" data-p="100" aria-pressed="false">100</button></span></div>
+    </div>
+    <div class="stack" style="gap:9px">
+      <p class="small">All 1,797 digits, scikit-learn <code>TSNE</code> (Barnes–Hut, $O(n\log n)$ per step, PCA initialisation), a few seconds each.</p>
+      <p class="small step">Share of each point's 10 nearest neighbours (in 64-D) kept in the map: <b>0.543</b> at perplexity 5, <b>0.584</b> at 30, <b>0.541</b> at 100. PCA's map keeps 0.118.</p>
+      <p class="small step">Low perplexity: every point cares about ~5 neighbours, the map shatters into clumps. High: rounder islands, more global arrangement, less local detail.</p>
+      <p class="small step why">The KL values (0.944, 0.754, 0.594) are not comparable across perplexities: $P$ itself changes. Try several; no value is "right".</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>What a t-SNE plot does not show</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="dr-lies" data-auto="m=gaps :: three clusters with gaps 10 and 50: t-SNE spaces them equally | m=sizes :: two clusters, one 10 times wider: t-SNE draws them the same size">
+      <svg class="fig" aria-label="Left: 2-D data; right: its t-SNE map. Either two clusters of very different spread, or three clusters at very different distances"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-m="sizes" aria-pressed="true">cluster sizes</button><button type="button" data-m="gaps" aria-pressed="false">cluster gaps</button></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small"><b>Sizes lie.</b> Spread ratio 10.5 in the data, <b>0.89</b> in the map. Each $\sigma_i$ adapts to its density, so density is normalised away.</p>
+      <p class="small step"><b>Gaps lie.</b> C is 5× farther from B than B from A (4.9 in the data); in the map the ratio is <b>1.02</b>. Once clusters are apart, nothing pulls on large distances.</p>
+      <p class="small step"><b>Positions are random.</b> Two seeds (random init) on the digits: Procrustes disparity 0.754; the island next to the 0s is the 2s in one map, the 7s in the other.</p>
+      <div class="idea step">Read a t-SNE map for <b>who is with whom</b>. Not for sizes, densities, distances between clusters or axes. Check with several perplexities and seeds.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>UMAP</h2>
+  <div class="cols c46">
+    <svg class="fig" data-fig="dr-umap" aria-label="UMAP in two steps: a fuzzy k-nearest-neighbour graph with edge weights in high dimension, then a low-dimensional layout where edges attract and random non-neighbours repel"></svg>
+    <div class="stack" style="gap:7px">
+      <p class="small">McInnes, Healy and Melville (2018). Same spirit as t-SNE, different machinery:</p>
+      <p class="small"><b>1 · fuzzy kNN graph.</b> $w_{j\mid i}=\exp\!\big(-(d_{ij}-\rho_i)/\sigma_i\big)$ over the $k$ neighbours, $\rho_i$ the distance to the nearest one; symmetrise $w_{ij}=w_{j\mid i}+w_{i\mid j}-w_{j\mid i}w_{i\mid j}$.</p>
+      <p class="small step"><b>2 · layout.</b> Low-D similarity $v_{ij}=(1+a\lVert\bz_i-\bz_j\rVert^{2b})^{-1}$; minimise the <b>cross-entropy</b></p>
+      <div class="eq xs step">$$\sum_{ij}\Big[w_{ij}\log\frac{w_{ij}}{v_{ij}}+(1-w_{ij})\log\frac{1-w_{ij}}{1-v_{ij}}\Big]$$</div>
+      <p class="small step">The second term <b>repels</b> non-neighbours explicitly, with negative sampling: SGD over edges, no normalisation over all pairs.</p>
+      <p class="small step"><b>vs t-SNE:</b> much faster, scales to millions, keeps more global structure (debated: mostly the initialisation), has <code>transform</code> for new points, any $k$. Library <code>umap-learn</code>; not used in the lab.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Which method when</h2>
+  <table class="t xs">
+    <tr><th style="width:21%">goal</th><th style="width:21%">method</th><th>why, and the catch</th></tr>
+    <tr><td>compress, denoise, speed up a model</td><td><b>PCA</b> (standardise if units differ)</td><td>optimal linear compression, fast, has <code>transform</code>; linear only, sensitive to outliers and scale</td></tr>
+    <tr><td>huge $d$, streams, no fitting</td><td><b>random projection</b></td><td>JL guarantee for all pairs, one matrix product; needs $k\sim\ln n/\varepsilon^2$</td></tr>
+    <tr><td>features for a classifier</td><td><b>LDA</b>, or PCA + CV on $k$</td><td>LDA uses labels: at most $C-1$ dims, fit inside the folds</td></tr>
+    <tr><td>sparse text or counts</td><td><b>truncated SVD</b> (LSA), <b>NMF</b></td><td>no centring keeps sparsity; NMF gives non-negative, readable parts</td></tr>
+    <tr><td>only distances are known</td><td><b>classical / metric MDS</b></td><td>equals PCA on Euclidean distances; negative eigenvalues flag non-Euclidean input</td></tr>
+    <tr><td>a smooth curved manifold</td><td><b>Isomap</b>, LLE, kernel PCA</td><td>keep global geometry of one manifold; sensitive to $k$, noise and short circuits</td></tr>
+    <tr><td>look at clusters in 2-D</td><td><b>t-SNE</b>, <b>UMAP</b> (often after PCA to ~50)</td><td>best neighbourhoods; sizes, gaps, positions are not meaningful; no inverse map</td></tr>
+    <tr><td>non-linear compression, generation</td><td><b>autoencoders</b>, VAEs</td><td>learned encoder and decoder (Extra 3); need more data and tuning</td></tr>
+  </table>
+</section>
+
+<section class="slide">
+  <h2>Measuring an embedding, and three pitfalls</h2>
+  <div class="cols c46">
+    <svg class="fig" data-fig="dr-quality" aria-label="Bar charts from the lab: kNN preservation and global distance correlation of PCA, Isomap and t-SNE on the digits and on the Swiss roll"></svg>
+    <div class="stack" style="gap:7px">
+      <p class="small"><b>kNN preservation</b>: the share of each point's $k$ nearest neighbours that stay its neighbours in the map,</p>
+      <div class="eq xs">$$Q_k=\frac{1}{nk}\sum_i\big|\mathcal N_k^{\text{high}}(i)\cap\mathcal N_k^{\text{low}}(i)\big|$$</div>
+      <p class="small">1 = perfect; a random map scores $\approx k/n$. Related: <code>trustworthiness</code>. For global shape: correlation of all pairwise distances.</p>
+      <p class="small step"><b>No single winner:</b> on the digits t-SNE keeps neighbours (0.584) but PCA the global layout; on the roll Isomap keeps both.</p>
+      <p class="small step"><b>1 · Fit on train only.</b> Pure noise, 2,000 features, 60 examples: selecting 20 features on all data gives a CV accuracy of <b>0.95</b>; inside a pipeline, 0.50. PCA leaks far less (0.895 vs 0.896), but the rule is the same.</p>
+      <p class="small step"><b>2 · Scale first</b> when units differ. <b>3 · PCA to ~50 dims before t-SNE</b> on very wide data: less noise, faster.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The topic in one slide</h2>
+  <div class="cards c2" style="gap:12px">
+    <div class="card"><h3>A · Why reduce, and PCA</h3><ul>
+      <li>distances concentrate: relative spread $1.183/\sqrt d$</li>
+      <li>max variance = min error; $\bS\bw=\lambda\bw$; error $=\sum_{j\gt k}\lambda_j$</li>
+      <li>SVD: $\lambda_j=\sigma_j^2/(n-1)$, $\bZ=\bU_k\bSigma_k$; standardise if units differ</li></ul></div>
+    <div class="card g"><h3>B · Other linear methods</h3><ul>
+      <li>random projection: ratio $\sim\chi^2_k/k$; JL $k\ge4\ln n/(\varepsilon^2/2-\varepsilon^3/3)$</li>
+      <li>LDA: $\bS_B\bw=\lambda\bS_W\bw$, at most $C-1$ dims, supervised</li>
+      <li>LSA: uncentred truncated SVD; NMF: $\bX\approx\bW\bH\ge0$, parts</li></ul></div>
+    <div class="card y"><h3>C · Manifold learning</h3><ul>
+      <li>kernel PCA: eigenvectors of $\bJ\bK\bJ$, scores $\sqrt{\mu_j}\mathbf a_j$</li>
+      <li>classical MDS: $-\frac12\bJ\bD^{(2)}\bJ=\bX_c\bX_c^\top$, = PCA</li>
+      <li>Isomap: kNN graph + shortest paths + MDS; beware short circuits</li></ul></div>
+    <div class="card o"><h3>D · t-SNE, UMAP, practice</h3><ul>
+      <li>Gaussian $p_{j\mid i}$ (perplexity), Student-t $q_{ij}$, $\min\mathrm{KL}(P\Vert Q)$</li>
+      <li>sizes, gaps, positions in the map mean nothing; check $Q_k$</li>
+      <li>fit every reduction inside the CV; scale first; PCA before t-SNE</li></ul></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Vocabulary of Extra 6</h2>
+  <div class="cols">
+    <dl class="gloss" style="font-size:16px;gap:5px 14px">
+      <dt>curse of dimensionality</dt><dd>distances concentrate and volume escapes to the corners as $d$ grows.</dd>
+      <dt>principal direction</dt><dd>an eigenvector $\bv_j$ of the covariance $\bS$.</dd>
+      <dt>score</dt><dd>coordinate of a point on a principal direction, $\bz_i=\bV_k^\top(\bx_i-\xbar)$.</dd>
+      <dt>explained variance ratio</dt><dd>$\lambda_j/\sum_l\lambda_l$; plotted, the scree plot.</dd>
+      <dt>SVD</dt><dd>$\bX_c=\bU\bSigma\bV^\top$; the stable way to compute PCA.</dd>
+      <dt>whitening</dt><dd>rescale the scores to unit variance: covariance $\bI$.</dd>
+      <dt>eigenface</dt><dd>a principal direction of face images, viewed as an image.</dd>
+      <dt>probabilistic PCA</dt><dd>$\bx=\bW\bz+\bmu+\boldsymbol\varepsilon$; PCA as a Gaussian latent model.</dd>
+      <dt>JL lemma</dt><dd>random projections to $O(\ln n/\varepsilon^2)$ dims keep all distances within $1\pm\varepsilon$.</dd>
+      <dt>LDA</dt><dd>supervised reduction: maximise between- over within-class scatter.</dd>
+      <dt>LSA / NMF</dt><dd>truncated SVD of counts / non-negative factorisation into parts.</dd>
+    </dl>
+    <dl class="gloss" style="font-size:16px;gap:5px 14px">
+      <dt>manifold hypothesis</dt><dd>data lie near a low-dimensional curved surface.</dd>
+      <dt>kernel PCA</dt><dd>PCA in a feature space, through the centred kernel matrix.</dd>
+      <dt>classical MDS</dt><dd>coordinates from distances via $-\frac12\bJ\bD^{(2)}\bJ$.</dd>
+      <dt>geodesic distance</dt><dd>distance along the manifold; Isomap: shortest path in a kNN graph.</dd>
+      <dt>short circuit</dt><dd>a graph edge that jumps across a fold of the manifold.</dd>
+      <dt>LLE</dt><dd>keeps the weights that rebuild each point from its neighbours.</dd>
+      <dt>perplexity</dt><dd>$2^{H(P_i)}$, t-SNE's effective number of neighbours.</dd>
+      <dt>crowding problem</dt><dd>too little room in 2-D for moderate distances; the heavy tail fixes it.</dd>
+      <dt>early exaggeration</dt><dd>multiply $P$ at the start of t-SNE so clusters form.</dd>
+      <dt>UMAP</dt><dd>fuzzy kNN graph + cross-entropy layout with negative sampling.</dd>
+      <dt>kNN preservation</dt><dd>share of $k$ nearest neighbours kept by the embedding.</dd>
+    </dl>
+  </div>
+  <p class="labline">Original papers: <a href="https://www.cs.ubc.ca/~murphyk/Teaching/CS540-Fall08/Papers/TippingBishopPPCA.pdf" target="_blank" rel="noopener">probabilistic PCA</a> · <a href="https://www.science.org/doi/10.1126/science.290.5500.2319" target="_blank" rel="noopener">Isomap</a> · <a href="https://www.jmlr.org/papers/v9/vandermaaten08a.html" target="_blank" rel="noopener">t-SNE</a> · <a href="https://arxiv.org/abs/1802.03426" target="_blank" rel="noopener">UMAP</a> · <a href="https://distill.pub/2016/misread-tsne/" target="_blank" rel="noopener">How to use t-SNE effectively (Distill)</a>.</p>
+</section>
+
+<section class="slide lab">
+  <div class="labtag">EXTRA 6</div>
+  <h2>Dimensionality reduction, from scratch to scikit-learn</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:10px">
+      <p>Build PCA, kernel PCA, MDS, Isomap and t-SNE by hand in NumPy, check them against scikit-learn, and measure what each embedding keeps.</p>
+      <ol class="todo">
+        <li>Distance concentration; PCA from scratch: two views, eigen vs SVD vs <code>PCA</code>.</li>
+        <li>Choosing $k$, standardising the wine data, whitening.</li>
+        <li>Eigendigits, eigenfaces and PCA denoising.</li>
+        <li>Johnson–Lindenstrauss on faces; LDA, LSA and NMF.</li>
+        <li>Kernel PCA on rings; classical MDS redraws a map; Isomap and LLE on the Swiss roll.</li>
+        <li>t-SNE from scratch; perplexity; what the plots hide; kNN preservation; leakage.</li>
+      </ol>
+    </div>
+    <div class="labcard">
+      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/extra/extra 06 - Dimensionality Reduction.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <dl class="gloss">
+        <dt>notebook</dt><dd><code>extra 06 - Dimensionality Reduction.ipynb</code></dd>
+        <dt>you need</dt><dd>linear algebra (eigenvectors, SVD), cross-validation and pipelines, the kernel trick (SVM chapter)</dd>
+        <dt>runs on</dt><dd>CPU, about a minute (2–3 on Colab)</dd>
+        <dt>data</dt><dd>digits, wine, rings, Swiss roll (in scikit-learn); Olivetti faces (1.4 MB download)</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section class="slide cover">
+  <div class="inner"><h1>Extra topics</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Next: Diffusion models</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+</div></div>
+<script src="../assets/figures.js?v=20260930"></script>
+<script src="../neural_networks/assets/nn-core.js?v=20260930"></script>
+<script src="assets/dimred-data.js?v=20261009"></script>
+<script src="assets/fig-dimred.js?v=20261009"></script>
+<script src="../assets/deck.js?v=20260930"></script>
+</body>
+</html>

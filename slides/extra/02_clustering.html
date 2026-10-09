@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="author" content="Imanol Granada (imanolgranada@gmail.com)">
+<title>Clustering</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="../assets/deck.css?v=20260930">
+<link rel="stylesheet" href="../neural_networks/assets/nn.css?v=20261006c">
+<script src="../assets/mathjax-config.js?v=20260930"></script>
+<script>Object.assign(MathJax.tex.macros,{bmu:'\\boldsymbol{\\mu}',bSigma:'\\boldsymbol{\\Sigma}',bD:'\\mathbf{D}',bU:'\\mathbf{U}',bff:'\\mathbf{f}',Nc:'\\mathcal{N}'});</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
+</head>
+<body data-deck="Extra 2 · Clustering" data-prev="01_gnn.html" data-next="03_autoencoders.html">
+<div id="viewport"><div id="stage">
+<section class="slide cover">
+  <div class="inner"><h1>Extra topics</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Clustering</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+
+<section class="slide">
+  <h2>Where we are</h2>
+  <svg class="fig" data-fig="cl-where" style="max-height:230px" aria-label="Three panels: labelled points with a decision boundary, the same points without labels, and the groups a clustering finds"></svg>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p class="small">Every model of the course learned from pairs $(\bx_i, y_i)$: a price, a class, the next word. The loss compared the prediction with $y$.</p>
+      <p class="small step">Most data come <b>without</b> $y$: millions of policyholders, thousands of claim descriptions, the pixels of a photo. <b>Unsupervised learning</b> looks for structure in $\bX$ alone: groups, directions, densities, outliers.</p>
+    </div>
+    <div class="stack" style="gap:10px">
+      <div class="note step"><p class="small"><b>Clustering</b>: split the points into $k$ groups so that points in the same group are similar and points in different groups are not. No label says what "right" is.</p></div>
+      <p class="small step why">Five parts: <b>A</b> what a cluster is and why the distance matters, <b>B</b> k-means, <b>C</b> Gaussian mixtures and EM, <b>D</b> hierarchical, density and spectral clustering, <b>E</b> evaluation and practice. It ends with the Extra 2 lab.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card blue"><h1><b>Part A</b><br>Clusters<br>and distances</h1><ul class="small"><li>what clustering is for</li><li>compact, connected, dense</li><li>the distance and the units decide</li></ul></div></section>
+
+<section class="slide">
+  <h2>What clustering is for</h2>
+  <div class="cards c3" style="gap:12px">
+    <div class="card app"><h3>Segmentation</h3><svg class="fig" data-fig="cl-app" data-app="seg" aria-label="Policyholders as points in three coloured groups"></svg><p>Groups of customers or policyholders with similar age, premium, claims and region: one price, offer or retention plan per group.</p></div>
+    <div class="card o app"><h3>Document topics</h3><svg class="fig" data-fig="cl-app" data-app="docs" aria-label="Claim descriptions sorted into three topic piles"></svg><p>Cluster the word vectors (or embeddings) of claim descriptions or complaints: glass, theft, water damage, without reading them all.</p></div>
+    <div class="card g app"><h3>Colour quantisation</h3><svg class="fig" data-fig="cl-app" data-app="quant" aria-label="A strip of many colours compressed to four palette colours"></svg><p>Each pixel is a point in RGB space. With $k = 16$ clusters a photo needs 4 bits per pixel instead of 24 (Part B).</p></div>
+    <div class="card y app"><h3>Faster labelling</h3><svg class="fig" data-fig="cl-app" data-app="label" aria-label="Three clusters of grey points, one labelled point in each"></svg><p>Cluster first, then label a few points per cluster (or the clusters themselves) instead of every point.</p></div>
+    <div class="card r app"><h3>Anomalies</h3><svg class="fig" data-fig="cl-app" data-app="anom" aria-label="A dense group of points and a few isolated red points"></svg><p>Points far from every cluster, or flagged as noise by a density method, deserve a look: an odd claim, a broken sensor.</p></div>
+    <div class="card app"><h3>Exploring embeddings</h3><svg class="fig" data-fig="cl-app" data-app="emb" aria-label="Images mapped to vectors and grouped"></svg><p>Images, texts or cells mapped to vectors by a network; clusters reveal the kinds of objects in a collection.</p></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>What is a cluster?</h2>
+  <svg class="fig" data-fig="cl-kinds" style="max-height:255px" aria-label="Three notions of cluster: compact groups around centres, chains of close neighbours, and dense regions separated by sparse noise"></svg>
+  <div class="cols c3">
+    <div class="stack" style="gap:4px"><h3>Compact</h3><p class="small">Points close to a centre. k-means, Gaussian mixtures, Ward linkage.</p></div>
+    <div class="stack" style="gap:4px"><h3>Connected</h3><p class="small">Points linked by a chain of close neighbours, whatever the shape. Single linkage, spectral clustering.</p></div>
+    <div class="stack" style="gap:4px"><h3>Dense</h3><p class="small">Regions of high density separated by low density; isolated points are <b>noise</b>. DBSCAN, HDBSCAN.</p></div>
+  </div>
+  <div class="idea step"><b>An algorithm = a definition of "cluster" + a search procedure.</b> No label tells us which definition is right: it depends on what the groups are for. Each definition fails where another one works (Part E puts them side by side).</div>
+</section>
+
+<section class="slide">
+  <h2>The distance decides, and so do the units</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="cl-scale" data-auto="u=keur :: the same table with the premium in k€: now the age dominates the distance, and k-means finds the two age groups | u=std :: both columns standardised: they count equally, and the age groups appear again | u=eur :: back to euros: the premium (spread 1,200) swamps the age (spread 50)">
+      <svg class="fig" aria-label="300 policyholders by age and premium, coloured by the two clusters k-means finds under three choices of units"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-u="eur" aria-pressed="true">premium in €</button><button type="button" data-u="keur" aria-pressed="false">premium in k€</button><button type="button" data-u="std" aria-pressed="false">standardised</button></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">Most methods compare points with the Euclidean distance, which adds the squared differences of the features <b>in their own units</b>:</p>
+      <div class="eq s">$$\norm{\bx - \bx'} = \sqrt{\textstyle\sum_f (x_f - x'_f)^2}$$</div>
+      <p class="small">300 policyholders: young (about 27) and seniors (about 60), with premiums from 300 to 1,500 € in both groups. k-means with $k = 2$ (Part B):</p>
+      <table class="t xs"><tr><th>units</th><th>ARI with the age groups</th></tr><tr><td>age, premium in €</td><td>0.00: it cuts the premium</td></tr><tr><td>age, premium in k€</td><td>1.00</td></tr><tr><td>standardised</td><td>1.00</td></tr></table>
+      <p class="small step">Policyholder a (25 y, 800 €): in euros b (62 y, 820 €) is at 42.1 and c (26 y, 1,100 €) at 300.0, so the senior is the "neighbour". Standardised: 2.19 and 0.88.</p>
+      <p class="small step why">Standardise by default (each column minus its mean, over its standard deviation), or weight features by what matters. It is a choice: standardising also gives a pure-noise column full weight.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card green"><h1><b>Part B</b><br>k-means</h1><ul class="small"><li>the objective, Lloyd with numbers</li><li>why it converges; Voronoi cells</li><li>bad starts and k-means++</li><li>choosing $k$: elbow, silhouette</li><li>assumptions; mini-batch; colours</li></ul></div></section>
+
+<section class="slide">
+  <h2>The k-means objective</h2>
+  <div class="cols c46">
+    <svg class="fig" data-fig="cl-wcss" aria-label="Six points in two clusters with their centroids; each point's squared distance to its centroid is written next to it, and they add up to J = 4"></svg>
+    <div class="stack" style="gap:7px">
+      <p class="small">Find $k$ centroids $\bmu_j$ and a cluster $c_i$ for every point that minimise the <b>within-cluster sum of squares</b>:</p>
+      <div class="bluebox" style="font-size:20px">$$J=\sum_{i=1}^{n}\norm{\bx_i-\bmu_{c_i}}^2$$</div>
+      <p class="small">Finding the global minimum is NP-hard. Two sub-problems are easy:</p>
+      <p class="small step"><b>1 · Centroids fixed:</b> each point goes to its <b>nearest</b> centroid. $J$ is a sum of one term per point, and the term of point $i$ depends only on $c_i$.</p>
+      <p class="small step"><b>2 · Clusters fixed:</b> the best centroid is the <b>mean</b> $\bar\bx_j$ of the cluster. Add and subtract $\bar\bx_j$; the cross term vanishes because deviations from a mean sum to zero:</p>
+      <div class="eq xs step">$$\sum_{i\in C_j}\norm{\bx_i-\bmu}^2=\sum_{i\in C_j}\norm{\bx_i-\bar\bx_j}^2+n_j\norm{\bar\bx_j-\bmu}^2$$</div>
+      <p class="small step why">The first term does not depend on $\bmu$; the second is zero only at $\bmu=\bar\bx_j$. Hence the name: <b>k means</b>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Lloyd's algorithm with numbers</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="cl-lloyd6" data-auto="s=1 :: assign: every point goes to the nearest centroid. Both start on the left, so μ₂ gets the whole right group | s=2 :: update: each centroid moves to the mean of its points | s=3 :: assign: p2 is now closer to μ₁ (1.25 against 15.25) | s=4 :: update: (1.333, 1.333) and (5.333, 5) | s=5 :: assign: nothing changes. Stop: a fixed point">
+      <svg class="fig" aria-label="Six points, two centroids and their Voronoi cells over the iterations of Lloyd's algorithm, with the squared distances and J"></svg>
+      <div class="ctl"><label for="ll-s">step</label><input type="range" id="ll-s" data-k="s" min="0" max="5" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <div class="note"><p class="small"><b>Lloyd:</b> start from $k$ centroids; repeat <b>assign</b> (fact 1) and <b>update</b> (fact 2) until the assignment stops changing.</p></div>
+      <div class="panels" style="min-height:178px">
+        <div data-i="0"><p class="small">Six points, $k=2$, a poor start: $\bmu_1=(1,1)$, $\bmu_2=(2,1)$, both on the left.</p></div>
+        <div data-i="1"><p class="small">p1, p3 → $\bmu_1$; p2, p4, p5, p6 → $\bmu_2$.</p><p class="small">$J = 0 + 0 + 1 + 18 + 32 + 34 = 85$</p></div>
+        <div data-i="2"><p class="small">$\bmu_1=(1, 1.5)$, $\bmu_2=(4.5, 4)$, the means of their points.</p><p class="small">$J = 85 \to 23.5$</p></div>
+        <div data-i="3"><p class="small">p2 $= (2, 1)$: squared distance $1.25$ to $\bmu_1$, $15.25$ to $\bmu_2$. It changes cluster.</p><p class="small">$J = 23.5 \to 9.5$</p></div>
+        <div data-i="4"><p class="small">$\bmu_1=(1.333, 1.333)$, $\bmu_2=(5.333, 5)$.</p><p class="small">$J = 9.5 \to 4$</p></div>
+        <div data-i="5"><p class="small">No point changes cluster: stop. $\ 85 \to 23.5 \to 9.5 \to 4$.</p></div>
+      </div>
+      <p class="small step"><b>Why it stops.</b> Each step minimises $J$ over one block with the other fixed, so $J$ never increases. There are at most $k^n$ assignments and none can repeat while $J$ strictly falls: it stops after finitely many steps.</p>
+      <p class="small step why">It stops at a <b>fixed point</b>: a local minimum, not necessarily the global one. Cost $O(nkd)$ per iteration.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Voronoi cells, and starts that go wrong</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="cl-voronoi" data-auto="it=0 :: four random data points as centroids; the plane is cut into their Voronoi cells | it=1 :: one update: each centroid moves to the mean of its cell, and the cells change | it=3 :: stuck after three updates: two centroids share one blob while another covers two. J = 414.5, a local minimum | init=pp;it=0 :: a k-means++ start: the centroids are spread out | init=pp;it=2 :: J = 183.6, the best solution, after two updates">
+      <svg class="fig" aria-label="The four-blob dataset with the Voronoi cells of the current centroids and their trails, for a random start and a k-means++ start"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-init="bad" aria-pressed="true">random start</button><button type="button" data-init="pp" aria-pressed="false">k-means++ start</button></span><label for="vo-i">iteration</label><input type="range" id="vo-i" data-k="it" min="0" max="3" step="1" value="0"><span class="v" data-v="it"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">The <b>Voronoi cell</b> of a centroid is the set of points of the plane closer to it than to any other. Between two centroids the border is the perpendicular bisector; the cells are <b>convex</b> polygons.</p>
+      <p class="small">k-means can only return convex cells. That is its strength (simple, fast, easy to read) and its main limit.</p>
+      <p class="small step"><b>Local minima.</b> If two centroids start in the same blob, no single step can move one of them across: assign and update both keep $J$ from rising, and $J$ would have to rise first.</p>
+      <p class="small step">In the lab, on 9 blobs, Lloyd from 9 random points reaches the best $J$ in only <b>31.5 %</b> of 200 runs.</p>
+      <p class="small step why">Fix: several runs, keep the lowest $J$ (<code>n_init</code>), and better starts: next slide.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>k-means++: spread out the starts</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="cl-kpp" data-auto="s=1 :: centre 1: a data point chosen uniformly at random | s=2 :: point colour = probability of being the next centre, proportional to D(x)²: far points are much more likely | s=4 :: four centres, in four different blobs | s=9 :: nine centres, one per blob; Lloyd then reaches the best J = 217.4">
+      <svg class="fig" aria-label="The nine-blob dataset; the k-means++ centres drawn so far and the probability of each point to be drawn next"></svg>
+      <div class="ctl"><label for="kp-s">centres</label><input type="range" id="kp-s" data-k="s" min="0" max="9" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">Arthur and Vassilvitskii (2007):</p>
+      <ol class="small" style="gap:2px"><li>first centre: a data point at random;</li><li>$D(\bx)$ = distance to the nearest centre chosen so far;</li><li>next centre: point $\bx$ with probability</li></ol>
+      <div class="eq s">$$P(\bx)=\frac{D(\bx)^2}{\sum_{\bx'}D(\bx')^2}$$</div>
+      <p class="small">until $k$ centres, then Lloyd. Expected start $J \le 8(\ln k+2)\,J_{\text{opt}}$.</p>
+      <svg class="fig step" data-fig="cl-kpp-hist" style="max-height:170px" aria-label="Where 200 runs of Lloyd end, as final J over the best J, for random starts and k-means++ starts"></svg>
+      <p class="small step why">Lab, 9 blobs, 200 runs each: best $J$ in 57.0 % of the runs (random starts: 31.5 %); the start alone is 3.1 times the best $J$ (random: 6.6). With <code>n_init=10</code>: 99.98 %.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Choosing $k$: the elbow and the silhouette</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="cl-choosek" data-auto="k=2 :: k = 2: two big groups; J = 979 | k=3 :: k = 3: J = 434 | k=4 :: k = 4: the four blobs. The elbow of J and the peak of the silhouette (0.680) | k=6 :: k = 6: blobs are split; J barely moves and the silhouette drops to 0.491">
+      <svg class="fig" aria-label="The four-blob data clustered with k clusters, beside the curves of J and of the mean silhouette against k"></svg>
+      <div class="ctl"><label for="ck-k">k</label><input type="range" id="ck-k" data-k="k" min="1" max="8" step="1" value="1"><span class="v" data-v="k"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">$J$ cannot choose $k$: the best $J$ always decreases with $k$, down to $J=0$ when every point is its own cluster.</p>
+      <p class="small"><b>The elbow:</b> plot the best $J$ against $k$ and take the $k$ after which it flattens.</p>
+      <p class="small step"><b>The silhouette</b> (Rousseeuw, 1987) scores each point between $-1$ and $1$; the mean over all points scores the clustering (next slide). Take the $k$ with the highest mean.</p>
+      <p class="small step">On the lab's four blobs both agree: $J$ = 979, 434, <b>184</b>, 164 for $k$ = 2…5, silhouette 0.560, 0.610, <b>0.680</b>, 0.572.</p>
+      <p class="small step why">On real data the elbow is often vague, and both criteria favour round clusters. Use them with stability (Part E) and with what the clusters are for.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The silhouette with numbers</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="cl-sil" data-auto="s=1 :: a(p2): mean distance to its own cluster mates, (1 + 1.414) / 2 = 1.207 | s=2 :: b(p2): mean distance to the nearest other cluster, (4.243 + 5.657 + 5.831) / 3 = 5.243 | s=3 :: s(p2) = (5.243 − 1.207) / 5.243 = 0.770; the six values average 0.746">
+      <svg class="fig" aria-label="The six points in two clusters; distances from p2 to its own cluster and to the other cluster, and the silhouette values of all six points"></svg>
+      <div class="ctl"><label for="si-s">step</label><input type="range" id="si-s" data-k="s" min="0" max="3" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">For point $i$ in cluster $C$:</p>
+      <p class="small">$a(i)$ = mean distance to the <b>other points of $C$</b>;</p>
+      <p class="small">$b(i)$ = the smallest, over the other clusters $C'$, of the mean distance to the points of $C'$;</p>
+      <div class="bluebox" style="font-size:20px">$$s(i)=\frac{b(i)-a(i)}{\max\big(a(i),\,b(i)\big)}$$</div>
+      <p class="small step">$s\approx1$: deep inside its cluster. $s\approx0$: on a border. $s\lt0$: probably in the wrong cluster. $s=0$ by convention for a point alone in its cluster.</p>
+      <p class="small step why">It needs all pairwise distances, $O(n^2d)$: on large data, compute it on a sample. The lab's version matches <code>silhouette_samples</code> exactly.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>What k-means assumes</h2>
+  <svg class="fig" data-fig="cl-fail" style="max-height:290px" aria-label="k-means with its Voronoi cells on four toy datasets: stretched blobs, blobs of different spreads, two moons and two circles"></svg>
+  <div class="cols">
+    <div class="stack" style="gap:7px">
+      <p class="small">Every cluster is a convex cell, and the border between two clusters lies <b>halfway</b> between their centroids, whatever the spreads. k-means assumes clusters that are <b>convex</b>, <b>round</b> (the same spread in every direction) and of <b>similar spread</b>.</p>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small step">When that fails it still returns $k$ clusters, just the wrong ones (ARI in each panel, 1 = perfect). Fixes: full covariances (Part C), density or graph methods (Part D), or a better representation of the data first.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>k-means at scale: mini-batches and colour quantisation</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="cl-quant" data-auto="q=1 :: k = 2: a poster | q=3 :: k = 8 colours: 3 bits per pixel | q=4 :: k = 16: hard to tell from the original, 6 times smaller | q=5 :: k = 64: RMSE 6.2 grey levels out of 255">
+      <svg class="fig" aria-label="The photo china.jpg and its versions with k colours chosen by k-means, with the palette"></svg>
+      <div class="ctl"><label for="qu-q">colours</label><input type="range" id="qu-q" data-k="q" min="0" max="5" step="1" value="0"><span class="v" data-v="q"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small"><b>Colour quantisation.</b> Each pixel is a point in RGB space. k-means on the pixels, then every pixel is replaced by its centroid: $\log_2 k$ bits per pixel instead of 24, plus a palette of $k$ colours.</p>
+      <p class="small step"><b>Mini-batch k-means</b> (Sculley, 2010). One Lloyd pass reads all $n$ points. Instead, take a random batch, assign it, and move each centroid towards its batch points with its own learning rate $1/N_j$:</p>
+      <div class="eq s step">$$N_j\leftarrow N_j+1,\qquad \bmu_j\leftarrow\bmu_j+\tfrac{1}{N_j}(\bx-\bmu_j)$$</div>
+      <p class="small step">So $\bmu_j$ is the running mean of every point it ever received. Lab, 200,000 points in 10-D: 100 batches of 1,024 points (half a pass) end 0.02 % above the $J$ of full Lloyd.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card purple"><h1><b>Part C</b><br>Gaussian mixtures<br>and EM</h1><ul class="small"><li>soft clusters, a generative story</li><li>EM step by step</li><li>why the likelihood never drops</li><li>k-means as a limit of EM</li><li>covariance types, BIC</li></ul></div></section>
+
+<section class="slide">
+  <h2>Soft clusters: a generative story</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="cl-gmm1d" data-auto="x=0.5 :: at x = 0.5 almost everything comes from component 1: γ = (0.993, 0.007) | x=1.5 :: at x = 1.5 the two weighted densities are 0.0777 and 0.0344: γ = (0.693, 0.307) | x=2 :: at x = 2 component 2 takes over: γ₁ = 0.262 | x=2.5 :: at x = 2.5: γ₁ = 0.060">
+      <svg class="fig" aria-label="A one-dimensional mixture of two Gaussians: the weighted component densities, their sum, and the responsibilities at a chosen point"></svg>
+      <div class="ctl"><label for="g1-x">x</label><input type="range" id="g1-x" data-k="x" min="-2.5" max="5.5" step="0.1" value="-1"><span class="v" data-v="x"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small"><b>The story:</b> pick a component $j$ with probability $\pi_j$, then draw $\bx\sim\Nc(\bmu_j,\bSigma_j)$. The density of a point:</p>
+      <div class="eq s">$$p(\bx)=\sum_{j=1}^{k}\pi_j\,\Nc(\bx\mid\bmu_j,\bSigma_j)$$</div>
+      <p class="small step">The cluster of a point is the hidden component that produced it. Bayes' rule gives its <b>responsibility</b>:</p>
+      <div class="bluebox step" style="font-size:19px">$$\gamma_{ij}=\frac{\pi_j\,\Nc(\bx_i\mid\bmu_j,\bSigma_j)}{\sum_l\pi_l\,\Nc(\bx_i\mid\bmu_l,\bSigma_l)}$$</div>
+      <p class="small step">A <b>soft</b> clustering: $\gamma_{i1}=0.693$ says "probably 1, maybe 2". Here $\pi=(0.6,0.4)$, $\mu=(0,3)$, $\sigma=(1,0.8)$.</p>
+      <p class="small step why">The log-likelihood $\ell=\sum_i\log\sum_j\pi_j\Nc(\bx_i\mid\bmu_j,\bSigma_j)$ is a log of a sum: no closed-form maximum.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>EM: expectation, then maximisation</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="cl-em" data-auto="it=1 :: one EM iteration from three random means with wide round covariances | it=5 :: five iterations: orange has found the tilted cluster; ℓ = −1037.8 | it=15 :: a plateau: blue and green both sit on the two right-hand clusters | it=34 :: they separate: ℓ jumps | it=43 :: converged after 43 iterations: ℓ = −984.5, π = (0.325, 0.507, 0.168)">
+      <svg class="fig" aria-label="EM on 300 points from three Gaussians: points coloured by their responsibilities, the 2-sigma ellipses of the components, and the log-likelihood curve"></svg>
+      <div class="ctl"><label for="em-i">iteration</label><input type="range" id="em-i" data-k="it" min="0" max="43" step="1" value="0"><span class="v" data-v="it"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small"><b>E-step:</b> the responsibilities $\gamma_{ij}$ with the current parameters (previous slide).</p>
+      <p class="small"><b>M-step:</b> with $N_j=\sum_i\gamma_{ij}$, weighted versions of the usual estimates:</p>
+      <div class="eq xs">$$\pi_j=\frac{N_j}{n},\qquad \bmu_j=\frac{1}{N_j}\sum_i\gamma_{ij}\,\bx_i$$</div>
+      <div class="eq xs">$$\bSigma_j=\frac{1}{N_j}\sum_i\gamma_{ij}\,(\bx_i-\bmu_j)(\bx_i-\bmu_j)^\top$$</div>
+      <p class="small step">They maximise $\sum_{i,j}\gamma_{ij}[\log\pi_j+\log\Nc(\bx_i\mid\bmu_j,\bSigma_j)]$: set the gradient to zero (a Lagrange multiplier for $\sum_j\pi_j=1$).</p>
+      <p class="small step why">Lab: 300 points from three Gaussians (weights 0.5, 0.33, 0.17). Point colour = mix of the component colours by $\gamma$. scikit-learn's <code>GaussianMixture</code> from the same start gives the same log-likelihood, $-3.2818$ per point.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Why the likelihood never decreases</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:7px">
+      <p class="small">For any probabilities $q_{ij}$ over the components of point $i$, Jensen's inequality ($\log$ is concave):</p>
+      <div class="eq xs">$$\log p(\bx_i)=\log\sum_jq_{ij}\frac{\pi_j\Nc_{ij}}{q_{ij}}\ \ge\ \sum_jq_{ij}\log\frac{\pi_j\Nc_{ij}}{q_{ij}}$$</div>
+      <p class="small">Summed over $i$: $\ell(\theta)\ge B(q,\theta)$, a lower bound, with equality when $q_{ij}=\gamma_{ij}$.</p>
+      <p class="small step"><b>E-step:</b> $q=\gamma(\theta_{\text{old}})$, so the bound touches: $B(q,\theta_{\text{old}})=\ell(\theta_{\text{old}})$.</p>
+      <p class="small step"><b>M-step:</b> maximise the bound, easy because it has no log of a sum.</p>
+      <div class="bluebox step" style="font-size:17px">$$\ell(\theta_{\text{new}})\ge B(q,\theta_{\text{new}})\ge B(q,\theta_{\text{old}})=\ell(\theta_{\text{old}})\ \blacksquare$$</div>
+      <p class="small step why">So EM climbs, to a <b>local</b> maximum. Lab: 6 of 8 random starts reach $-984.54$, two stop at $-1032.66$ and $-1087.32$. Use <code>n_init</code> or a k-means start.</p>
+    </div>
+    <div class="widget" data-fig="cl-elbo" data-auto="s=1 :: the bound B(q, μ) for q = γ(μ = 2.6) touches ℓ at the current μ | s=2 :: M-step: jump to the top of the bound, μ = 0.796. ℓ rose from −31.11 to −18.55 | s=3 :: a new E-step: a new bound touching at 0.796 | s=4 :: its top: μ = 0.195, ℓ = −17.54 | s=5 :: two more rounds: μ = 0.133, the maximum of ℓ">
+      <svg class="fig" aria-label="The log-likelihood as a function of one mean, with the EM lower bounds that touch it and the steps of EM climbing it"></svg>
+      <div class="ctl"><label for="eb-s">step</label><input type="range" id="eb-s" data-k="s" min="0" max="5" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>k-means is the hard limit of EM</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="cl-hard" data-auto="sg=0 :: σ = 3: every point is shared equally (0.250) and all the centres collapse to the middle | sg=1 :: σ = 1.5: mean max responsibility 0.855; the points between blobs still pull the centres together | sg=3 :: σ = 0.5: every γ is 0 or 1 to three decimals; the centres are the k-means centroids">
+      <svg class="fig" aria-label="EM with equal round covariances of size sigma on the four blobs: points coloured by their responsibilities, centres, and the k-means centroids for reference"></svg>
+      <div class="ctl"><label for="hd-s">σ</label><input type="range" id="hd-s" data-k="sg" min="0" max="5" step="1" value="0"><span class="v" data-v="sg"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">Fix $\pi_j=1/k$ and $\bSigma_j=\sigma^2\mathbf I$ for every component. The responsibilities become a softmax of minus the squared distances:</p>
+      <div class="eq s">$$\gamma_{ij}=\frac{e^{-\norm{\bx_i-\bmu_j}^2/2\sigma^2}}{\sum_le^{-\norm{\bx_i-\bmu_l}^2/2\sigma^2}}$$</div>
+      <p class="small step">As $\sigma\to0$ the softmax becomes an arg max: $\gamma_{ij}\to1$ for the nearest centre. The E-step is the k-means assignment, the M-step for the means is the k-means update.</p>
+      <div class="idea step"><b>k-means = EM for equal, round, infinitely narrow Gaussians.</b> That is why it wants round clusters of similar spread, and why a GMM with free $\bSigma_j$ can do better.</div>
+      <p class="small step why">Lab: mean max responsibility 0.250, 0.855, 0.982, 1.000, 1.000, 1.000 for $\sigma$ = 3, 1.5, 1, 0.5, 0.2, 0.05; at 0.5 the centres agree with k-means to 0.002.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Covariance types, and choosing $k$ with BIC</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="cl-bic" data-auto="ct=spherical :: spherical: circles of different sizes cannot follow the tilted clusters | ct=diag :: diag: ellipses, but only along the axes | ct=tied :: tied: one shape shared by all components | ct=full :: full: one ellipse per component. Lowest BIC of all, 2066, at k = 3">
+      <svg class="fig" aria-label="Gaussian mixtures with three components of each covariance type on the lab data, and BIC against k for the four types"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-ct="spherical" aria-pressed="false">spherical</button><button type="button" data-ct="diag" aria-pressed="false">diag</button><button type="button" data-ct="tied" aria-pressed="false">tied</button><button type="button" data-ct="full" aria-pressed="true">full</button></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">A full $\bSigma_j$ has $d(d+1)/2$ numbers: 2,080 in 64 dimensions. Cheaper options, and the free parameters for $k$ components:</p>
+      <table class="t xs"><tr><th>type</th><th>covariance</th><th>$p$ ($k=3$, $d=2$)</th></tr><tr><td>spherical</td><td>$\sigma_j^2\mathbf I$</td><td>11</td></tr><tr><td>diag</td><td>diagonal $\bSigma_j$</td><td>14</td></tr><tr><td>tied</td><td>one shared $\bSigma$</td><td>11</td></tr><tr><td>full</td><td>any $\bSigma_j$</td><td>17</td></tr></table>
+      <p class="small step">The likelihood always grows with $k$. Penalise the parameters, lower is better:</p>
+      <div class="eq s step">$$\text{BIC}=-2\ell+p\ln n,\qquad \text{AIC}=-2\ell+2p$$</div>
+      <p class="small step why">Lab: full covariances with $k=3$ win (BIC 2066). The restricted types need 5 or 6 components to fake the tilted ellipses.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card coral"><h1><b>Part D</b><br>Hierarchy, density<br>and graphs</h1><ul class="small"><li>linkages and dendrograms</li><li>the chaining effect</li><li>DBSCAN and HDBSCAN</li><li>spectral clustering and the Fiedler vector</li></ul></div></section>
+
+<section class="slide">
+  <h2>Agglomerative clustering: four linkages</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="cl-link1d" data-auto="s=2 :: single linkage: 3 and 4 merge first (distance 1), then 0 joins at 3 | s=5 :: single adds one point at a time: 8, 14, 21. The chaining effect | m=complete :: complete linkage: {0, 3, 4} and {8, 14, 21} | m=average :: average linkage: {0, 3, 4, 8} and {14, 21} | m=ward :: Ward: merge costs ΔJ = 0.5, 8.17, 18, 66.67, 216">
+      <svg class="fig" aria-label="Six points on a line at 0, 3, 4, 8, 14 and 21, and the dendrogram built above them by the chosen linkage"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-m="single" aria-pressed="true">single</button><button type="button" data-m="complete" aria-pressed="false">complete</button><button type="button" data-m="average" aria-pressed="false">average</button><button type="button" data-m="ward" aria-pressed="false">Ward</button></span><label for="l1-s">merges</label><input type="range" id="l1-s" data-k="s" min="0" max="5" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">Start with $n$ singletons; merge the two <b>closest clusters</b>; repeat until one is left. The <b>linkage</b> is the distance between two clusters $A$, $B$:</p>
+      <table class="t xs"><tr><th>linkage</th><th>distance</th></tr>
+        <tr><td>single</td><td>$\min_{a,b}d(a,b)$, the closest pair</td></tr>
+        <tr><td>complete</td><td>$\max_{a,b}d(a,b)$, the farthest pair</td></tr>
+        <tr><td>average</td><td>the mean of all $d(a,b)$</td></tr>
+        <tr><td>Ward</td><td>$\Delta J=\frac{n_An_B}{n_A+n_B}\norm{\bmu_A-\bmu_B}^2$</td></tr></table>
+      <p class="small step">Ward merges the pair that increases $J$ the least: a greedy k-means.</p>
+      <p class="small step why">The same six numbers, three different two-cluster answers. The tree is built once; every $k$ comes from it. Cost: all pairwise distances, $O(n^2)$ memory.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The dendrogram, and where to cut it</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="cl-dendro" data-auto="h=2 :: cut at h = 2: many small clusters | h=6 :: cut at h = 6, inside the big gap: three clusters, the three blobs | h=14 :: cut at h = 14: two clusters">
+      <svg class="fig" aria-label="The Ward dendrogram of 30 points with a horizontal cut, and the points coloured by the clusters below the cut"></svg>
+      <div class="ctl"><label for="de-h">cut height</label><input type="range" id="de-h" data-k="h" min="0.5" max="15.5" step="0.5" value="10"><span class="v" data-v="h"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">Each merge is drawn at its height. Cutting the tree at height $h$ keeps the clusters that exist below $h$: one run gives every $k$.</p>
+      <p class="small step">A <b>long vertical gap</b> means clusters that stay apart over a wide range of scales: a natural place to cut. Here the last merges are at 5.37, then 13.72 and 14.65.</p>
+      <p class="small step">Lab: cutting at $h=6$ gives three clusters, the same answer as <code>AgglomerativeClustering(n_clusters=3)</code> (ARI 1), and ARI 0.898 with the three generating blobs: two or three points in the overlap change side.</p>
+      <p class="small step why">scipy's Ward heights are $\sqrt{2\Delta J}$; the lab checks it on the six points of the previous slide.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Single linkage chains; Ward does not</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="cl-chain" data-auto="m=single :: single linkage walks along the bridge: one cluster of 214 points and one lonely point. On the moons it is perfect | m=complete :: complete linkage cuts the bridge but also cuts across the moons | m=ward :: Ward: the two blobs (ARI 1.00), but not the moons (0.63)">
+      <svg class="fig" aria-label="Two datasets, two blobs joined by a bridge and two moons, each clustered into two groups with the chosen linkage"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-m="single" aria-pressed="false">single</button><button type="button" data-m="complete" aria-pressed="false">complete</button><button type="button" data-m="average" aria-pressed="false">average</button><button type="button" data-m="ward" aria-pressed="true">Ward</button></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small"><b>Single linkage</b> merges two clusters as soon as <b>one pair</b> of their points is close. A chain of close points glues everything together: the <b>chaining effect</b>.</p>
+      <table class="t xs"><tr><th>ARI (lab)</th><th>single</th><th>complete</th><th>average</th><th>Ward</th></tr><tr><td>bridge</td><td>0.00</td><td>1.00</td><td>0.87</td><td>1.00</td></tr><tr><td>moons</td><td>1.00</td><td>0.35</td><td>0.75</td><td>0.63</td></tr></table>
+      <p class="small step">The same property follows each crescent: single linkage is good at <b>shapes</b> and bad at <b>noise</b>. Ward is the safe default for compact clusters.</p>
+      <p class="small step why">Agglomerative clustering accepts any distance matrix (Ward needs Euclidean): useful for mixed data (Part E).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>DBSCAN: core, border and noise</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="cl-dbscan" data-auto="eps=0.1 :: ε = 0.10: few core points; 14 fragments and 48 noise points | eps=0.28 :: ε = 0.28, past the knee: the two moons, and the 10 isolated points are noise | eps=0.42 :: ε = 0.42: the moons merge into one cluster">
+      <svg class="fig" aria-label="DBSCAN on two small moons with isolated points: core points, border points, noise and the epsilon discs, beside the sorted k-distance curve"></svg>
+      <div class="ctl"><label for="db-e">ε</label><input type="range" id="db-e" data-k="eps" min="0.04" max="0.5" step="0.02" value="0.2"><span class="v" data-v="eps"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">Ester et al. (1996). Two parameters, a radius $\varepsilon$ and <code>min_samples</code> (4 here). With $N_\varepsilon(\bx)$ the points within $\varepsilon$ of $\bx$, itself included:</p>
+      <ul class="small" style="gap:2px"><li><b>core</b>: $|N_\varepsilon(\bx)|\ge$ <code>min_samples</code></li><li><b>border</b>: not core, within $\varepsilon$ of a core point</li><li><b>noise</b>: neither (label $-1$)</li></ul>
+      <p class="small step">Clusters = core points chained within $\varepsilon$, plus their border points: a breadth-first search. Any shape, any number of clusters, no $k$.</p>
+      <p class="small step"><b>Choosing $\varepsilon$:</b> sort every point's distance to its $(\text{min\_samples}-1)$-th neighbour and take the <b>knee</b> of the curve.</p>
+      <p class="small step why">Lab: on 330 points (moons + 30 uniform), $\varepsilon=0.15$, <code>min_samples</code> 5: 299 core, 9 border, 22 noise points, identical to scikit-learn's <code>DBSCAN</code>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>HDBSCAN: one density for each cluster</h2>
+  <svg class="fig" data-fig="cl-hdb" style="max-height:275px" aria-label="Two tight clusters and one wide cluster: DBSCAN with a small epsilon, DBSCAN with a large epsilon, and HDBSCAN"></svg>
+  <div class="cols">
+    <div class="stack" style="gap:6px">
+      <p class="small">One $\varepsilon$ is one density threshold for the whole dataset. Small: the wide cluster dissolves into noise. Large: the tight clusters merge.</p>
+      <p class="small step"><b>HDBSCAN</b> (Campello et al., 2013) runs DBSCAN for <b>every</b> $\varepsilon$. Core distance $\text{core}(\bx)$ = distance to the <code>min_samples</code>-th neighbour; mutual reachability $d_{\text{mr}}(a,b)=\max(\text{core}(a),\text{core}(b),d(a,b))$.</p>
+    </div>
+    <div class="stack" style="gap:6px">
+      <p class="small step">Single linkage on $d_{\text{mr}}$ gives a tree whose cut at $\varepsilon$ is DBSCAN. A split counts only if both sides have <code>min_cluster_size</code> points; the clusters that persist longest are kept, each at its own density.</p>
+      <p class="small step why">Lab: the best single $\varepsilon$ (chosen with the labels!) reaches ARI 0.762; HDBSCAN, with only <code>min_cluster_size=15</code>, 0.943. In scikit-learn since 1.3.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Spectral clustering: cluster the graph</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="cl-spectral" data-auto="s=1 :: k-means on the coordinates cuts straight across the moons: ARI 0.256 | s=2 :: build a graph: each point linked to its 8 nearest neighbours. Only 1 of the 915 edges joins the two moons | s=3 :: the Fiedler vector of the graph Laplacian: one number per point, smooth along the edges | s=4 :: sorted, it is a clean step: negative on one moon, positive on the other | s=5 :: its sign gives the two clusters: ARI 1">
+      <svg class="fig" aria-label="Two noisy moons: k-means, the 8-nearest-neighbour graph, the Fiedler vector as colours, the sorted Fiedler vector and the clusters given by its sign"></svg>
+      <div class="ctl"><label for="sp-s">step</label><input type="range" id="sp-s" data-k="s" min="0" max="5" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <ol class="small" style="gap:4px"><li><b>Similarity graph</b>: $m$ nearest neighbours (symmetrised), or weights $A_{ij}=e^{-\norm{\bx_i-\bx_j}^2/2\sigma^2}$.</li><li><b>Laplacian</b> $\bL=\bD-\bA$; its $k$ eigenvectors with the smallest eigenvalues, as columns of $\bU$ ($n\times k$).</li><li><b>k-means</b> on the rows of $\bU$.</li></ol>
+      <p class="small step">From Extra 1: $\bff^\top\bL\bff=\sum_{(i,j)\in E}A_{ij}(f_i-f_j)^2$ is small for signals that are smooth over the graph. The <b>Fiedler vector</b> split the karate club; here it splits the moons.</p>
+      <p class="small step">A crescent is not compact, but it is well <b>connected</b> through its neighbours, and that is what the graph sees.</p>
+      <p class="small step why">Lab: $\lambda_1=0.0080$, then a gap to $\lambda_2=0.0407$.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Why the eigenvectors find the clusters</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:7px">
+      <p class="small"><b>$k$ components ⇒ eigenvalue 0, $k$ times.</b> $\bff^\top\bL\bff=0$ forces $f_i=f_j$ on every edge, so $\bff$ is constant on each connected component. The eigenvectors of 0 are combinations of the $k$ <b>indicator vectors</b> of the components.</p>
+      <p class="small step">In the embedding (rows of $\bU$), all points of a component land on <b>one spot</b>: k-means cannot fail.</p>
+      <p class="small step"><b>Almost</b> disconnected (a few weak edges): $k$ eigenvalues near 0, then a <b>gap</b>; the eigenvectors are almost piecewise constant. The <b>eigengap</b> hints at $k$.</p>
+      <p class="small step">Two clusters: the Fiedler vector is the relaxed solution of the <b>minimum cut</b> (few edges across, no tiny pieces cut off).</p>
+      <p class="small step why">Ng, Jordan and Weiss (2002) use $\bL_{\text{sym}}=\bI-\bD^{-1/2}\bA\bD^{-1/2}$ and rows of length 1. Scales to tens of thousands of points with a sparse graph.</p>
+    </div>
+    <svg class="fig" data-fig="cl-eigs" aria-label="Left: the smallest Laplacian eigenvalues of the 200-moon graph with a gap after two. Right: the spectral embedding of the 500-point moons, where each moon collapses to one spot"></svg>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card"><h1><b>Part E</b><br>Evaluation<br>and practice</h1><ul class="small"><li>internal indices; stability</li><li>ARI, NMI, matched accuracy</li><li>no free lunch</li><li>digits; t-SNE is for looking</li><li>mixed data; what to do when…</li></ul></div></section>
+
+<section class="slide">
+  <h2>Internal indices, and stability</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:8px">
+      <svg class="fig" data-fig="cl-internal" style="max-height:268px" aria-label="The moons split by k-means and the true moons, with their silhouette, Davies-Bouldin and Calinski-Harabasz scores"></svg>
+      <p class="small"><b>Davies–Bouldin</b> (low is good): each cluster against its most similar one, $\frac1k\sum_j\max_{l\ne j}\frac{s_j+s_l}{\norm{\bmu_j-\bmu_l}}$. <b>Calinski–Harabasz</b> (high): between- over within-cluster dispersion, an $F$ statistic.</p>
+      <p class="small step">All three prefer k-means' <b>wrong</b> cut of the moons to the true moons: they measure compactness. They compare clusterings of the same kind, not definitions of "cluster".</p>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small step"><b>Stability:</b> a real structure comes back when the data change a little. Cluster two random 80 % subsamples, compare them on the shared points with ARI, repeat.</p>
+      <svg class="fig step" data-fig="cl-stab" style="max-height:215px" aria-label="Mean ARI between subsamples against k for k-means on the four blobs, highest at k = 4"></svg>
+      <p class="small step why">Lab, four blobs, 20 pairs per $k$: $k=4$ is the most stable (0.981); $k=5$ splits a blob in a different place each time (0.851). Stable does not mean right: k-means on the moons is stable and wrong.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>External indices: when labels exist</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="cl-ext" data-auto="p=renamed :: the same three groups with other names: raw accuracy 0, everything else 1 | p=one :: one point in the wrong group: ARI 0.737 | p=merged :: two groups merged: ARI 0.522 | p=split :: one group split in two: ARI 0.836 | p=random :: random labels: matched accuracy still 0.67, ARI 0.165">
+      <svg class="fig" aria-label="Twelve points in three true groups coloured by a predicted clustering, the contingency table, and four agreement scores"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-p="renamed" aria-pressed="true">renamed</button><button type="button" data-p="one" aria-pressed="false">1 wrong</button><button type="button" data-p="merged" aria-pressed="false">merged</button><button type="button" data-p="split" aria-pressed="false">split</button><button type="button" data-p="random" aria-pressed="false">random</button></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">Cluster numbers are arbitrary names: plain accuracy is meaningless.</p>
+      <p class="small"><b>Matched accuracy:</b> from the contingency table $n_{ab}$, find the best one-to-one matching of clusters to classes (<b>Hungarian algorithm</b>, <code>linear_sum_assignment</code>), then count.</p>
+      <p class="small step"><b>ARI</b>: over all $\binom n2$ pairs, the fraction on which both labellings agree (together / apart), corrected for chance: 1 = identical, about 0 = random (lab: 0.0001 over 200 random labellings of 1,000 points).</p>
+      <p class="small step"><b>NMI</b>: mutual information over the mean entropy; 1 = identical, 0 = independent. Not chance-corrected.</p>
+      <p class="small step why">ARI is the honest default. The lab computes all three from scratch and matches scikit-learn.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>No free lunch: every algorithm on every dataset</h2>
+  <svg class="fig" data-fig="cl-grid" style="max-height:470px" aria-label="Seven clustering algorithms applied to six toy datasets, with the adjusted Rand index in each panel"></svg>
+  <p class="small step" style="font-size:17px">No column wins every row. Shapes: single linkage, density, spectral. Ellipses: GMM. Blobs: k-means, Ward. On uniform noise, a fixed $k$ always returns $k$ convincing clusters; DBSCAN and HDBSCAN say "one".</p>
+</section>
+
+<section class="slide">
+  <h2>A real dataset: handwritten digits</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="cl-digits" data-auto="view=km :: colour = k-means cluster on the raw pixels; the centroids are average digits | view=noise :: a warning: t-SNE of 500 points from ONE Gaussian (perplexity 2). HDBSCAN on the map finds 17 clusters | view=truth :: back to the true digits">
+      <svg class="fig" aria-label="The t-SNE map of 1,797 digit images coloured by true digit or by k-means cluster, and the ten k-means centroids drawn as 8 by 8 images"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-view="truth" aria-pressed="true">true digits</button><button type="button" data-view="km" aria-pressed="false">k-means clusters</button><button type="button" data-view="noise" aria-pressed="false">t-SNE of noise</button></span></div>
+    </div>
+    <div class="stack" style="gap:6px">
+      <p class="small"><code>load_digits</code>: 1,797 images, $8\times8$ pixels, $d=64$. Labels used only to score (lab):</p>
+      <table class="t xs"><tr><th>method</th><th>ARI</th><th>NMI</th><th>acc.</th></tr>
+        <tr><td>k-means, pixels</td><td>0.666</td><td>0.742</td><td>0.792</td></tr>
+        <tr><td>k-means, PCA 30</td><td>0.666</td><td>0.740</td><td>0.792</td></tr>
+        <tr><td>GMM full, PCA 30</td><td><b>0.836</b></td><td>0.864</td><td>0.920</td></tr>
+        <tr><td>Ward, pixels</td><td>0.794</td><td>0.868</td><td>0.840</td></tr>
+        <tr><td>spectral, 10-NN</td><td>0.756</td><td>0.854</td><td>0.808</td></tr>
+        <tr><td>HDBSCAN (51 % noise)</td><td>0.206</td><td>0.572</td><td>0.546</td></tr>
+        <tr><td>k-means on t-SNE</td><td>0.883</td><td>0.908</td><td>0.941</td></tr></table>
+      <p class="small step"><b>t-SNE</b> keeps each point's neighbours, not distances, sizes or densities, and it can draw clusters in pure noise. Use it (and UMAP) to <b>look</b>; check any cluster found on it in the original space.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Mixed data: the Gower distance</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:7px">
+      <p class="small">Numbers and categories in one table: average one dissimilarity per feature, each in $[0,1]$:</p>
+      <div class="eq xs">$$d_{\text{Gower}}=\frac1p\sum_f\delta_f,\quad \delta_f=\begin{cases}|x_f-x'_f|/R_f&\text{numeric, range }R_f\\ \mathbb 1[x_f\ne x'_f]&\text{categorical}\end{cases}$$</div>
+      <p class="small step"><b>k-medoids</b>: k-means whose centres must be data points, so it works with any distance. Assign to the nearest medoid; make the medoid the member with the smallest total distance to its cluster.</p>
+      <p class="small step">Lab, 300 synthetic policyholders, 3 hidden segments: Gower + k-medoids ARI 0.735; one-hot + standardised + k-means 0.839; numbers only 0.605. Gower gives a category mismatch the weight of a whole numeric range: <b>the weights are a choice</b>.</p>
+      <p class="small step why">Also: k-modes (categories), k-prototypes (both). Explain clusters with <b>profiles</b> and typical members.</p>
+    </div>
+    <div class="stack" style="gap:8px">
+      <svg class="fig" data-fig="cl-gower" style="max-height:200px" aria-label="Two policyholders compared feature by feature: the five Gower dissimilarities and their mean, 0.477"></svg>
+      <table class="t xs step"><tr><th>cluster</th><th>size</th><th>age</th><th>premium</th><th>claims</th><th>region</th><th>vehicle</th></tr>
+        <tr><td>0</td><td>94</td><td>62.5</td><td>523 €</td><td>0.30</td><td>rural 84 %</td><td>car 94 %</td></tr>
+        <tr><td>1</td><td>96</td><td>24.6</td><td>1,078 €</td><td>1.15</td><td>urban 88 %</td><td>motorbike 67 %</td></tr>
+        <tr><td>2</td><td>110</td><td>40.5</td><td>740 €</td><td>0.44</td><td>suburban 80 %</td><td>van 78 %</td></tr></table>
+      <p class="small step why">The medoids are real policyholders: 67 years, rural, car, 528 €; 23, urban, motorbike, 1,031 €; 41, suburban, van, 716 €.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>A practical guide: what to do when…</h2>
+  <table class="t xs">
+    <tr><th style="width:31%">situation</th><th>what to do</th></tr>
+    <tr><td>first try on numeric data</td><td>standardise; PCA if $d$ is large; k-means++ with <code>n_init=10</code>; elbow, silhouette and stability for $k$.</td></tr>
+    <tr><td>features in different units</td><td>standardise, or weight by domain knowledge; check that one feature does not decide everything.</td></tr>
+    <tr><td>elongated or unequal clusters</td><td>Gaussian mixture with full (or diag) covariances; $k$ and the type by BIC.</td></tr>
+    <tr><td>arbitrary shapes, outliers, unknown $k$</td><td>HDBSCAN (or DBSCAN with the k-distance plot); spectral clustering for moderate $n$.</td></tr>
+    <tr><td>you want a hierarchy, small $n$</td><td>agglomerative, Ward or average linkage; read the dendrogram for the gaps.</td></tr>
+    <tr><td>numbers and categories</td><td>Gower distance + k-medoids, average linkage or HDBSCAN; k-prototypes.</td></tr>
+    <tr><td>millions of points</td><td>mini-batch k-means; or cluster a sample and assign the rest to the nearest centroid.</td></tr>
+    <tr><td>text, images, high dimension</td><td>embed or reduce first (PCA, a network's embeddings), then cluster. t-SNE / UMAP only to look.</td></tr>
+    <tr><td>some labels exist</td><td>score with ARI / NMI on them; consider semi-supervised learning instead.</td></tr>
+    <tr><td>someone must use the clusters</td><td>profiles, typical members (medoids), a shallow tree that predicts the cluster; stability before stories.</td></tr>
+  </table>
+</section>
+
+<section class="slide">
+  <h2>The topic in one slide</h2>
+  <div class="cards c3" style="gap:12px">
+    <div class="card"><h3>A · Clusters</h3><ul>
+      <li>compact, connected or dense: a definition + a search</li>
+      <li>the distance and the units decide (ARI 0.00 in €, 1.00 standardised)</li></ul></div>
+    <div class="card g"><h3>B · k-means</h3><ul>
+      <li>$J=\sum_i\norm{\bx_i-\bmu_{c_i}}^2$; assign, update; $J$ never rises</li>
+      <li>convex Voronoi cells; local minima; k-means++ $\propto D^2$</li>
+      <li>elbow, silhouette $\frac{b-a}{\max(a,b)}$; mini-batch</li></ul></div>
+    <div class="card y"><h3>C · Mixtures</h3><ul>
+      <li>$p(\bx)=\sum_j\pi_j\Nc(\bx\mid\bmu_j,\bSigma_j)$, soft $\gamma_{ij}$</li>
+      <li>EM: $\ell$ never drops (Jensen); local maxima</li>
+      <li>k-means = $\sigma\to0$; BIC $=-2\ell+p\ln n$</li></ul></div>
+    <div class="card o"><h3>D · Hierarchy, density, graphs</h3><ul>
+      <li>single, complete, average, Ward; dendrogram cuts</li>
+      <li>DBSCAN: core, border, noise; HDBSCAN: all $\varepsilon$</li>
+      <li>spectral: Laplacian eigenvectors, then k-means</li></ul></div>
+    <div class="card r"><h3>E · Evaluation and practice</h3><ul>
+      <li>internal indices favour round clusters</li>
+      <li>ARI, NMI, Hungarian accuracy; stability</li>
+      <li>no free lunch; t-SNE to look; Gower for mixed data</li></ul></div>
+    <div class="card"><h3>The rule</h3><ul>
+      <li>a clustering always answers: check it is real</li>
+      <li>try two definitions of "cluster"</li>
+      <li>profile the clusters before you name them</li></ul></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Vocabulary of Extra 2</h2>
+  <div class="cols">
+    <dl class="gloss" style="font-size:16px;gap:5px 14px">
+      <dt>clustering</dt><dd>grouping unlabelled points; hard ($c_i$) or soft ($\gamma_{ij}$).</dd>
+      <dt>centroid, WCSS</dt><dd>cluster mean; $J=\sum_i\norm{\bx_i-\bmu_{c_i}}^2$ (<code>inertia_</code>).</dd>
+      <dt>Lloyd's algorithm</dt><dd>alternate nearest-centroid assignment and mean update.</dd>
+      <dt>Voronoi cell</dt><dd>the region closer to one centroid than to any other.</dd>
+      <dt>k-means++</dt><dd>seeding with probability $\propto D(\bx)^2$.</dd>
+      <dt>silhouette</dt><dd>$(b-a)/\max(a,b)$: own cluster vs nearest other.</dd>
+      <dt>mini-batch k-means</dt><dd>centroid updates from small random batches, step $1/N_j$.</dd>
+      <dt>GMM, responsibility</dt><dd>mixture of Gaussians; $\gamma_{ij}=P(j\mid\bx_i)$.</dd>
+      <dt>EM</dt><dd>E: responsibilities; M: weighted estimates. $\ell$ never drops.</dd>
+      <dt>BIC / AIC</dt><dd>$-2\ell+p\ln n$ / $-2\ell+2p$: penalised fit.</dd>
+      <dt>k-medoids, Gower</dt><dd>centres are data points; a distance for mixed types.</dd>
+    </dl>
+    <dl class="gloss" style="font-size:16px;gap:5px 14px">
+      <dt>linkage</dt><dd>distance between clusters: single, complete, average, Ward.</dd>
+      <dt>dendrogram</dt><dd>the merge tree; cut it at a height to get clusters.</dd>
+      <dt>chaining effect</dt><dd>single linkage joining groups through a chain of points.</dd>
+      <dt>core / border / noise</dt><dd>DBSCAN's three kinds of point.</dd>
+      <dt>k-distance plot</dt><dd>sorted distances to the $m$-th neighbour; its knee gives $\varepsilon$.</dd>
+      <dt>HDBSCAN</dt><dd>DBSCAN over all $\varepsilon$; keeps the persistent clusters.</dd>
+      <dt>spectral embedding</dt><dd>rows of the first $k$ Laplacian eigenvectors.</dd>
+      <dt>eigengap</dt><dd>a jump after $\lambda_k$: a hint for $k$.</dd>
+      <dt>ARI</dt><dd>pair agreement corrected for chance; 0 = random.</dd>
+      <dt>NMI</dt><dd>normalised mutual information between two labellings.</dd>
+      <dt>Hungarian matching</dt><dd>best one-to-one map of clusters to classes.</dd>
+    </dl>
+  </div>
+  <p class="labline">Further reading: <a href="https://dl.acm.org/doi/10.5555/1283383.1283494" target="_blank" rel="noopener">k-means++</a> · <a href="https://dl.acm.org/doi/10.5555/3001460.3001507" target="_blank" rel="noopener">DBSCAN</a> · <a href="https://hdbscan.readthedocs.io/en/latest/how_hdbscan_works.html" target="_blank" rel="noopener">How HDBSCAN works</a> · <a href="https://arxiv.org/abs/0711.0189" target="_blank" rel="noopener">A tutorial on spectral clustering</a> · <a href="https://scikit-learn.org/stable/modules/clustering.html" target="_blank" rel="noopener">scikit-learn clustering guide</a>.</p>
+</section>
+
+<section class="slide lab">
+  <div class="labtag">EXTRA 2</div>
+  <h2>Clustering, from scratch to scikit-learn</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:9px">
+      <p>Build the main algorithms by hand in NumPy, check each one against scikit-learn, and see where each one breaks.</p>
+      <ol class="todo">
+        <li>Units and distances; k-means (Lloyd) and k-means++ from scratch; local minima on 9 blobs.</li>
+        <li>The silhouette from scratch; elbow; what k-means assumes; mini-batch; colour quantisation.</li>
+        <li>EM for a Gaussian mixture from scratch: the likelihood never drops; k-means as a limit; BIC.</li>
+        <li>Linkages and dendrograms; DBSCAN from scratch; HDBSCAN on varying densities.</li>
+        <li>Spectral clustering from scratch: the Fiedler vector splits the moons.</li>
+        <li>ARI, NMI and Hungarian accuracy from scratch; stability; 7 algorithms × 6 datasets.</li>
+        <li>Digits (PCA, t-SNE); Gower distance and k-medoids on a mixed policyholder table.</li>
+      </ol>
+    </div>
+    <div class="labcard">
+      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/extra/extra 02 - Clustering.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <dl class="gloss">
+        <dt>notebook</dt><dd><code>extra 02 - Clustering.ipynb</code></dd>
+        <dt>you need</dt><dd>NumPy, distances, PCA; the graph Laplacian of Extra 1 for spectral clustering</dd>
+        <dt>runs on</dt><dd>CPU, about a minute; NumPy and scikit-learn only</dd>
+        <dt>data</dt><dd>generated or bundled with scikit-learn (toy sets, <code>load_digits</code>, <code>china.jpg</code>): no download</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section class="slide cover">
+  <div class="inner"><h1>Extra topics</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Next: Autoencoders and variational autoencoders</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+</div></div>
+<script src="../assets/figures.js?v=20260930"></script>
+<script src="../neural_networks/assets/nn-core.js?v=20260930"></script>
+<script src="assets/clustering-data.js?v=20261008"></script>
+<script src="assets/fig-clustering.js?v=20261008"></script>
+<script src="../assets/deck.js?v=20260930"></script>
+</body>
+</html>

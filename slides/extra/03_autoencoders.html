@@ -1,0 +1,606 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="author" content="Imanol Granada (imanolgranada@gmail.com)">
+<title>Autoencoders and VAEs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="../assets/deck.css?v=20260930">
+<link rel="stylesheet" href="../neural_networks/assets/nn.css?v=20261006c">
+<script src="../assets/mathjax-config.js?v=20260930"></script>
+<script>Object.assign(MathJax.tex.macros,{bw:'\\mathbf{w}',bmu:'\\boldsymbol{\\mu}',bsig:'\\boldsymbol{\\sigma}',beps:'\\boldsymbol{\\epsilon}',bC:'\\mathbf{C}',bU:'\\mathbf{U}',hx:'\\hat{\\mathbf{x}}',KL:'\\mathrm{KL}',Nc:'\\mathcal{N}',Lc:'\\mathcal{L}',We:'\\mathbf{W}_e',Wd:'\\mathbf{W}_d'});</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
+</head>
+<body data-deck="Extra 3 · Autoencoders and VAEs" data-prev="02_clustering.html" data-next="04_gans.html">
+<div id="viewport"><div id="stage">
+<section class="slide cover">
+  <div class="inner"><h1>Extra topics</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Autoencoders and variational autoencoders</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+
+<section class="slide">
+  <h2>Where we are</h2>
+  <svg class="fig" data-fig="ae-where" style="max-height:215px" aria-label="Three settings: supervised learning maps an image to a label; an autoencoder maps an image through a small code back to the image; a generative model maps a random code to a new image"></svg>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p class="small">The whole course trained networks on pairs $(\bx, y)$. Most data has no labels. An <b>autoencoder</b> uses the input as its own target: squeeze $\bx$ into a short code $\bz$, rebuild it, and learn from the reconstruction error.</p>
+      <p class="small step">To rebuild 784 pixels from a few numbers, the code must keep what matters. That code compresses, denoises, feeds clustering and search, and flags inputs that cannot be rebuilt (anomalies).</p>
+    </div>
+    <div class="stack" style="gap:10px">
+      <div class="note step"><p class="small"><b>Variational autoencoder (VAE)</b>: an autoencoder whose code is a random variable with a known prior $\Nc(\mathbf 0,\bI)$, trained on a lower bound of the log-likelihood. It can <b>generate</b> new data.</p></div>
+      <p class="small step why">Four parts: <b>A</b> autoencoders and PCA, <b>B</b> variants and uses, <b>C</b> the VAE (KL, ELBO, reparameterisation), <b>D</b> β, failures and practice. It ends with the Extra 3 lab.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card blue"><h1><b>Part A</b><br>Autoencoders<br>and PCA</h1><ul class="small"><li>encoder, bottleneck, decoder</li><li>the loss is a likelihood</li><li>the identity trap</li><li>PCA, with numbers</li><li>linear AE = PCA; non-linear is better</li></ul></div></section>
+
+<section class="slide">
+  <h2>The autoencoder: squeeze, then rebuild</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ae-arch" data-auto="k=0 :: k = 2: 392 times fewer numbers, a blurry but recognisable 0 | k=2 :: k = 8: sharper; test MSE 0.0211 against 0.0374 for PCA | k=4 :: k = 32: almost the original | k=5 :: k = 1568, more than 784: the network may simply copy its input">
+      <svg class="fig" aria-label="An MLP autoencoder 784, 256, 64, k, 64, 256, 784 with a test digit and its reconstruction for the chosen code size"></svg>
+      <div class="ctl"><label for="ar-k">code size</label><input type="range" id="ar-k" data-k="k" min="0" max="5" step="1" value="1"><span class="v" data-v="k"></span></div>
+    </div>
+    <div class="stack" style="gap:9px">
+      <p class="small"><b>Encoder</b> $\bz=f_\phi(\bx)\in\R^k$, <b>decoder</b> $\hx=g_\theta(\bz)\in\R^D$, trained together so that $\hx\approx\bx$. No labels: the input is the target.</p>
+      <div class="bluebox" style="font-size:20px">$$\min_{\phi,\theta}\ \frac1n\sum_{i=1}^n \ell\big(\bx_i,\ g_\theta(f_\phi(\bx_i))\big)$$</div>
+      <p class="small step"><b>Undercomplete</b>, $k\lt D$: the code is a <b>bottleneck</b>. To rebuild 784 pixels from 8 numbers it must keep which digit, the slant, the stroke width, and drop the rest.</p>
+      <p class="small step"><b>Overcomplete</b>, $k\ge D$: nothing forces compression; the network can learn to copy. Two slides ahead.</p>
+      <p class="small step why">Lab: MNIST (60,000 training digits), an MLP 784 → 256 → 64 → $k$ and back, sigmoid output, squared error. 435,858 weights for $k=2$.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The reconstruction loss is a likelihood</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:7px">
+      <p class="small">As everywhere in the course, a loss is a negative log-likelihood. Read $\hx$ as the parameters of $p_\theta(\bx\mid\bz)$:</p>
+      <p class="small"><b>Gaussian</b> pixels, $\Nc(\bx;\hx,\sigma^2\bI)$:</p>
+      <div class="eq xs">$$-\log p=\frac{\lVert\bx-\hx\rVert^2}{2\sigma^2}+\frac D2\log(2\pi\sigma^2)\ \Rightarrow\ \text{squared error}$$</div>
+      <p class="small"><b>Bernoulli</b> pixels, black with probability $\hat x_j$:</p>
+      <div class="eq xs">$$-\log p=-\sum_j\big[x_j\log\hat x_j+(1-x_j)\log(1-\hat x_j)\big]\ \Rightarrow\ \text{BCE}$$</div>
+      <p class="small step">MSE assumes Gaussian noise of one size on every pixel; BCE assumes black-or-white pixels and punishes a confident wrong pixel far harder.</p>
+      <p class="small step why">Lab, one digit: $-\log\Nc=-719.18$ = the formula, $-\log\mathrm{Bern}=102.12$ = the BCE. With grey targets the BCE is minimal at $\hx=\bx$ but not 0 (40.97 nats for a test digit).</p>
+    </div>
+    <div class="widget" data-fig="ae-loss" data-auto="t=1 :: a black pixel (x = 1): predicting 0.02 costs 0.96 in squared error, 3.91 in BCE | t=0.3 :: a grey pixel: both minimal at 0.3; the BCE minimum is the entropy 0.611, not 0">
+      <svg class="fig" aria-label="Squared error and binary cross-entropy of one pixel as functions of the prediction, for a chosen target"></svg>
+      <div class="ctl"><label for="lo-t">target</label><input type="range" id="lo-t" data-k="t" min="0" max="1" step="0.05" value="0.7"><span class="v" data-v="t"></span></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Overcomplete codes: the identity trap</h2>
+  <svg class="fig" data-fig="ae-identity" style="max-height:250px" aria-label="Left: a network with twice as many code units as inputs that copies any input exactly. Right: the 1024-dimensional code of one digit, dense versus sparse"></svg>
+  <div class="cols">
+    <div class="stack" style="gap:8px">
+      <p class="small">With $k=2D$ and a ReLU, $\bz=(\mathrm{ReLU}(\bx),\mathrm{ReLU}(-\bx))$ and $\hx=\mathrm{ReLU}(\bx)-\mathrm{ReLU}(-\bx)=\bx$: zero error on every input, digits or noise. A perfect loss, nothing learned. The lab builds it: max error 0.</p>
+      <p class="small step">A trained 784 → 1024 → 784 network: test MSE 0.0153, but 912 of its 1024 units fire for every digit. A dense copy, not a summary.</p>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small step"><b>Sparse autoencoder</b>: add $\lambda\lVert\bz\rVert_1$, or $\sum_j\KL(\rho\,\|\,\hat\rho_j)$ with a small target firing rate $\rho$. With $\lambda=3\cdot10^{-4}$: 49 active units (4.8 %), MSE 0.0231. Units become reusable parts: strokes, loops.</p>
+      <p class="small step why">Other ways to rule out the identity: a bottleneck ($k\lt D$), noise on the input (denoising, Part B), a penalty on the encoder's derivatives (contractive autoencoder).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>PCA: the linear autoencoder, with numbers</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ae-pca2d" data-auto="th=0 :: horizontal: keeps variance 3, error 3 | th=90 :: vertical: also 3 and 3 | th=45 :: 45°, the first principal component: variance 5 = λ₁, error 1 = λ₂ | th=135 :: 135°, the second component: variance 1, error 5">
+      <svg class="fig" aria-label="Six points, a line through their mean at a chosen angle, the projections and their errors, and bars for the variance kept and the error"></svg>
+      <div class="ctl"><label for="pc-th">direction</label><input type="range" id="pc-th" data-k="th" min="0" max="180" step="5" value="20"><span class="v" data-v="th"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">Encode with a unit vector $\bw$: $z=(\bx-\bmu)^\top\bw$; decode $\hx=\bmu+z\,\bw$. By Pythagoras, averaged over the data:</p>
+      <div class="eq xs">$$\underbrace{\tfrac1n\textstyle\sum_i\lVert\bx_i-\hx_i\rVert^2}_{\text{error}}=\underbrace{\operatorname{tr}\bC}_{\text{total}}-\underbrace{\bw^\top\bC\bw}_{\text{variance kept}},\quad \bC=\tfrac1n\bX_c^\top\bX_c$$</div>
+      <p class="small step">Maximise $\bw^\top\bC\bw$ with $\lVert\bw\rVert=1$: the Lagrangian gives $\bC\bw=\lambda\bw$. An <b>eigenvector</b>, and it keeps $\lambda$ of the variance.</p>
+      <p class="small step">Here $\bmu=(3,4)$, $\bC=\begin{pmatrix}3&2\\2&3\end{pmatrix}$, $\lambda=5$ and $1$, $\bv_1=(1,1)/\sqrt2$. One number per point keeps $5/6=83\,\%$; the error is $\lambda_2=1$.</p>
+      <p class="small step why">With $k$ components: the top-$k$ eigenvectors $\bV_k$, codes $\bz=\bV_k^\top(\bx-\bmu)$, error $=\sum_{j\gt k}\lambda_j$.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>PCA on MNIST, with the SVD</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ae-evr" data-auto="k=0 :: k = 1: one number per image, a blob | k=4 :: k = 16: 59 % of the variance, the digit appears | k=7 :: k = 128: almost there | k=9 :: k = 784: exact">
+      <svg class="fig" aria-label="Cumulative explained variance of MNIST against the number of components, a digit and its PCA reconstruction, and the first eight principal components"></svg>
+      <div class="ctl"><label for="ev-k">components</label><input type="range" id="ev-k" data-k="k" min="0" max="9" step="1" value="2"><span class="v" data-v="k"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">SVD of the centred data, $\bX_c=\bU\,\mathrm{diag}(s_j)\,\bV^\top$:</p>
+      <div class="eq s">$$\bC=\tfrac1n\bX_c^\top\bX_c=\bV\,\mathrm{diag}\big(s_j^2/n\big)\,\bV^\top$$</div>
+      <p class="small">The right singular vectors are the principal components, $\lambda_j=s_j^2/n$. Codes $\bZ=\bX_c\bV_k$, reconstructions $\mathbf 1\bmu^\top+\bZ\bV_k^\top$.</p>
+      <p class="small step">MNIST: 2 components keep 16.8 % of the variance, 16 keep 59.4 %; 90 % needs 87 of the 784.</p>
+      <p class="small step">Lab: with $k=16$ the training error is 21.3976 per image, exactly the sum of the discarded eigenvalues; scikit-learn finds the same components.</p>
+      <p class="small step why">The components are global patterns of + and − pixels: a digit is the mean image plus a weighted sum of them.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The linear autoencoder finds the PCA subspace</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:8px">
+      <p class="small">No activations, no biases, centred data: $\hx=\bx\We\Wd$ with $\We\in\R^{D\times k}$, $\Wd\in\R^{k\times D}$.</p>
+      <div class="note"><p class="small"><b>Result</b> (Bourlard &amp; Kamp 1988; Baldi &amp; Hornik 1989): at the minimum, $\We\Wd$ is the orthogonal projection on the top-$k$ principal components. Every other critical point is a saddle.</p></div>
+      <p class="small step"><b>Why.</b> For a fixed decoder, the best encoder projects on its row space (least squares). The loss is then the distance to a $k$-dimensional subspace, minimised by the PCs.</p>
+      <p class="small step"><b>Not unique:</b> $(\We\mathbf A,\ \mathbf A^{-1}\Wd)$ gives the same product. The AE finds the subspace, not the PCs: its directions are not orthogonal, not unit, not sorted.</p>
+      <p class="small step why">Lab, $k=16$, Adam, 10 epochs, 7 s: largest principal angle 0.56°, loss 0.0004 above the optimum 21.3976. Yet each decoder direction matches its closest PC with |cos| 0.39 to 0.64 only.</p>
+    </div>
+    <svg class="fig" data-fig="ae-linear" aria-label="Principal angles between the linear autoencoder and the PCA subspace over ten epochs, falling below one degree, and eight decoder directions"></svg>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Non-linear beats linear at the same code size</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ae-recon" data-auto="k=2 :: k = 2: PCA gives blobs, the autoencoder a recognisable digit | k=8 :: k = 8: the autoencoder matches PCA with 24 components | k=32 :: k = 32: both are good">
+      <svg class="fig" aria-label="Six test digits, their PCA reconstructions and their autoencoder reconstructions with the same code size"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-k="2" aria-pressed="true">k = 2</button><button type="button" data-k="4" aria-pressed="false">4</button><button type="button" data-k="8" aria-pressed="false">8</button><button type="button" data-k="16" aria-pressed="false">16</button><button type="button" data-k="32" aria-pressed="false">32</button></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">PCA fits a flat subspace. Digits lie near a curved, low-dimensional surface (the <b>manifold hypothesis</b>): a thicker or more slanted 1 is not a straight line in pixel space.</p>
+      <table class="t xs">
+        <tr><th>$k$</th><th>PCA</th><th>AE</th><th>PCA needs</th></tr>
+        <tr><td>2</td><td>0.0557</td><td>0.0392</td><td>8</td></tr>
+        <tr><td>4</td><td>0.0479</td><td>0.0301</td><td>13</td></tr>
+        <tr><td>8</td><td>0.0374</td><td>0.0211</td><td>24</td></tr>
+        <tr><td>16</td><td>0.0269</td><td>0.0150</td><td>38</td></tr>
+        <tr><td>32</td><td>0.0168</td><td>0.0136</td><td>42</td></tr>
+      </table>
+      <p class="small why">Test MSE per pixel; last column: PCA components needed to do as well. The AEs train 6 epochs (12 for $k=2$); at $k=32$ longer training would widen the gap.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>A 2-D code: PCA vs autoencoder</h2>
+  <svg class="fig" data-fig="ae-codes2" style="max-height:330px" aria-label="Two scatter plots of the 2-D codes of 2000 test digits coloured by digit: PCA mixes the classes, the autoencoder separates most of them"></svg>
+  <div class="cols">
+    <p class="small">Colour = the true digit, which training never saw. PCA's two directions mix all digits; the autoencoder separates most of them. 15-nearest-neighbour accuracy from the code: PCA 45.0 %, AE 73.8 %.</p>
+    <p class="small step">Codes like these feed clustering (Extra 2) and similarity search. But look at the AE's scale and shape: clusters spread over tens of units, with empty space between. Part C shows why that matters.</p>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card green"><h1><b>Part B</b><br>Variants<br>and uses</h1><ul class="small"><li>going back up: transposed convolutions</li><li>denoising autoencoders</li><li>what autoencoders are used for</li></ul></div></section>
+
+<section class="slide">
+  <h2>Going back up: the transposed convolution</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ae-convT" data-auto="s=1 :: pixel 1 paints a 3 × 3 block of 1s | s=2 :: pixel 2, two to the right: one column overlaps and adds | s=3 :: pixel 3, two rows down | s=4 :: pixel 4: the centre gets all four copies, 1 + 2 + 3 + 4 = 10 | s=5 :: pixels covered once, twice or four times: a checkerboard">
+      <svg class="fig" aria-label="A 2 by 2 input upsampled to 5 by 5 by a transposed convolution with a 3 by 3 kernel of ones and stride 2, one input pixel at a time"></svg>
+      <div class="ctl"><label for="ct-s">step</label><input type="range" id="ct-s" data-k="s" min="0" max="5" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">A conv encoder halves the resolution with strided convolutions, $28\to14\to7$. The decoder must go back up.</p>
+      <p class="small"><b>Transposed convolution</b>: every input pixel paints a copy of the kernel, scaled by its value, moving $s$ pixels at a time; overlaps add.</p>
+      <div class="eq xs">$$\text{size}=(i-1)s-2p+k+\text{out\_pad}:\ (7-1)\cdot2-2+3+1=14$$</div>
+      <p class="small step">Why "transposed": a convolution is $\by=\mathbf K\bx$; this computes $\mathbf K^\top\by$, which is also how backprop computes a convolution's gradient. Lab: $\langle\mathrm{conv}(u),x\rangle=\langle u,\mathrm{conv}^\top(x)\rangle=5.0067$.</p>
+      <p class="small step why">Uneven overlap (×1, ×2, ×4) leaves checkerboard artefacts in generated images. Fix: upsample (nearest or bilinear), then an ordinary convolution.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Denoising autoencoder</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ae-denoise" data-auto="r=noisy :: Gaussian noise, σ = 0.5: MSE 0.116 to the clean digit | r=ae :: the plain AE, trained on clean digits, does not clean: 0.111 | r=dae :: the denoising AE: 0.015, almost the clean digits">
+      <svg class="fig" aria-label="Clean test digits, their noisy versions, the outputs of a plain and of a denoising autoencoder, and the error against the noise level"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-r="noisy" aria-pressed="true">noisy input</button><button type="button" data-r="ae" aria-pressed="false">plain AE</button><button type="button" data-r="dae" aria-pressed="false">denoising AE</button></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <div class="eq xs">$$\tilde\bx=\mathrm{clip}(\bx+\sigma\boldsymbol\varepsilon,0,1),\qquad\min\ \big\lVert g_\theta(f_\phi(\tilde\bx))-\bx\big\rVert^2$$</div>
+      <p class="small">Noisy input, <b>clean</b> target (Vincent et al., 2008). Copying is now useless, so even a large code must learn what digits look like. With MSE the best output is $\E[\bx\mid\tilde\bx]$.</p>
+      <p class="small step">Lab: two identical conv autoencoders (code 32, 4 epochs). On noisy digits, $\sigma=0.5$: input 0.116, plain AE 0.111, denoising AE 0.015.</p>
+      <p class="small step why">The plain AE never saw noise: at $\sigma=0.2$ its output (0.056) is worse than the noisy input itself (0.021). Hiding pixels instead of adding noise is the idea behind BERT and masked image models.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>What autoencoders are used for</h2>
+  <div class="cards c3" style="gap:12px">
+    <div class="card app"><h3>Denoising</h3><svg class="fig" data-fig="ae-app" data-app="denoise" aria-label="A noisy digit cleaned by a denoising autoencoder"></svg><p>train on corrupted inputs: images, audio, sensors. Masked pre-training is its descendant.</p></div>
+    <div class="card o app"><h3>Compression</h3><svg class="fig" data-fig="ae-app" data-app="compress" aria-label="A digit squeezed into 8 numbers and rebuilt"></svg><p>the code is a short description. Learned image codecs = autoencoder + entropy coding of $\bz$.</p></div>
+    <div class="card g app"><h3>Pre-training</h3><svg class="fig" data-fig="ae-app" data-app="pretrain" aria-label="An encoder trained as an autoencoder, then reused under a classifier"></svg><p>learn the encoder without labels, then a small classifier on $\bz$. Masked autoencoders (MAE) pre-train vision transformers.</p></div>
+    <div class="card r app"><h3>Anomaly detection</h3><svg class="fig" data-fig="ae-app" data-app="anomaly" aria-label="Histograms of reconstruction error for normal data and for anomalies, with a threshold"></svg><p>train on normal data only; a large reconstruction error flags the rest: defects, fraud. <b>Extra 5</b>.</p></div>
+    <div class="card y app"><h3>Search and clustering</h3><svg class="fig" data-fig="ae-app" data-app="search" aria-label="A query code and its nearest neighbours among other codes"></svg><p>nearest neighbours and clusters in code space: similar images, near-duplicates. <b>Extra 2</b>.</p></div>
+    <div class="card app"><h3>Generation</h3><svg class="fig" data-fig="ae-app" data-app="generate" aria-label="Digits decoded from random codes"></svg><p>decode new codes. Needs a density over $\bz$: the VAE (Part C) and, sharper, GANs (<b>Extra 4</b>).</p></div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card purple"><h1><b>Part C</b><br>The variational<br>autoencoder</h1><ul class="small"><li>why an AE cannot generate</li><li>latent variables and the KL divergence</li><li>the ELBO, with numbers</li><li>the reparameterisation trick</li><li>what the KL does to the codes</li></ul></div></section>
+
+<section class="slide">
+  <h2>An autoencoder cannot generate</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ae-holes" data-auto="s=1 :: 12 random codes, uniform in the box around the training codes | s=2 :: decoded: digit-like, but 0s, 1s and 8s are over-represented and 5s almost absent | s=3 :: 16-D autoencoder: z ~ N(0, I) decodes to smudges">
+      <svg class="fig" aria-label="The 2-D codes of the autoencoder with random codes in their bounding box, the decoded random codes, and samples from a 16-D autoencoder"></svg>
+      <div class="ctl"><label for="ho-s">step</label><input type="range" id="ho-s" data-k="s" min="0" max="3" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">To generate, sample a code and decode it. With a plain autoencoder:</p>
+      <ul class="small" style="gap:3px"><li><b>no density</b>: training never says which codes are likely;</li><li><b>holes</b>: 50 % of the box around the 2-D codes holds no training code;</li><li><b>no scale</b>: the 16-D codes have means from −12.2 to 4.5.</li></ul>
+      <p class="small step">2-D: the decoder fills the box with digit-like images (the referee is confident on 83 %), in the wrong proportions: 21 % zeros, 1 % fives (test set: 10 % and 9 %).</p>
+      <p class="small step">16-D: $\bz\sim\Nc(\mathbf 0,\bI)$ gives smudges, 2 % confident. A Gaussian fitted to the codes after training: 37 %. The VAE puts the density into training.</p>
+      <p class="small why">Referee: an MNIST classifier, 97.3 % accurate, confident (&gt; 0.9) on 90.8 % of real test digits.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>A latent-variable model</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:8px">
+      <p class="small">Assume each image is made in two steps:</p>
+      <div class="eq xs">$$\bz\sim p(\bz)=\Nc(\mathbf 0,\bI),\qquad \bx\sim p_\theta(\bx\mid\bz)=\textstyle\prod_j\mathrm{Bern}\big(x_j;\hat x_j(\bz)\big)$$</div>
+      <p class="small">Sampling is trivial. Learning needs the likelihood:</p>
+      <div class="bluebox" style="font-size:20px">$$p_\theta(\bx)=\int p_\theta(\bx\mid\bz)\,p(\bz)\,d\bz$$</div>
+      <p class="small step">No closed form with a network decoder. Random codes from the prior almost never explain a given digit; the useful ones come from the <b>posterior</b> $p_\theta(\bz\mid\bx)=p_\theta(\bx\mid\bz)p(\bz)/p_\theta(\bx)$, which needs $p_\theta(\bx)$ again.</p>
+      <p class="small step"><b>VAE</b> (Kingma &amp; Welling 2014; Rezende et al. 2014): an encoder outputs an approximate posterior $q_\phi(\bz\mid\bx)=\Nc\big(\bmu_\phi(\bx),\mathrm{diag}\,\bsig^2_\phi(\bx)\big)$, and we maximise a lower bound on $\log p_\theta(\bx)$.</p>
+    </div>
+    <svg class="fig" data-fig="ae-lvm" aria-label="The graphical model z to x, and the decoder's images along one coordinate of z under the prior"></svg>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The KL divergence</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:9px">
+      <div class="bluebox" style="font-size:20px">$$\KL(q\,\|\,p)=\E_{\bz\sim q}\Big[\log\frac{q(\bz)}{p(\bz)}\Big]=\int q(\bz)\log\frac{q(\bz)}{p(\bz)}\,d\bz$$</div>
+      <p class="small"><b>Always ≥ 0, and 0 only when $q=p$</b> (Gibbs). Jensen: log is concave, so $\E[\log Y]\le\log\E[Y]$ (figure). With $Y=p/q$:</p>
+      <div class="eq s">$$-\KL(q\,\|\,p)=\E_q\Big[\log\frac pq\Big]\le\log\E_q\Big[\frac pq\Big]=\log\int p=0$$</div>
+      <p class="small step"><b>Not symmetric</b>: $\KL(\Nc(1,0.5^2)\,\|\,\Nc(0,1))=0.818$ but $\KL(\Nc(0,1)\,\|\,\Nc(1,0.5^2))=2.807$ nats. Not a distance.</p>
+      <p class="small step">You have used it: cross-entropy = entropy + KL, so training a classifier with cross-entropy minimises $\KL(\text{data}\,\|\,\text{model})$.</p>
+    </div>
+    <svg class="fig" data-fig="ae-jensen" aria-label="The concave log curve: the log of the average of 0.5 and 5 is above the average of their logs"></svg>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The ELBO, two ways</h2>
+  <div class="stack" style="gap:8px">
+    <p class="small"><b>1 · Jensen.</b> Multiply and divide by $q$ inside the integral, then use that log is concave:</p>
+    <div class="eq s">$$\log p_\theta(\bx)=\log\E_{q_\phi(\bz\mid\bx)}\Big[\frac{p_\theta(\bx\mid\bz)\,p(\bz)}{q_\phi(\bz\mid\bx)}\Big]\ \ge\ \E_{q_\phi(\bz\mid\bx)}\Big[\log\frac{p_\theta(\bx\mid\bz)\,p(\bz)}{q_\phi(\bz\mid\bx)}\Big]=:\Lc(\bx)$$</div>
+    <p class="small step"><b>2 · The exact gap.</b> For every $\bz$, $p_\theta(\bx)=p_\theta(\bx\mid\bz)p(\bz)/p_\theta(\bz\mid\bx)$. Take logs, multiply and divide by $q$, average over $q$:</p>
+    <div class="eq s step">$$\log p_\theta(\bx)=\Lc(\bx)+\KL\big(q_\phi(\bz\mid\bx)\,\|\,p_\theta(\bz\mid\bx)\big)\qquad\text{the gap is the KL to the true posterior}$$</div>
+    <p class="small step"><b>3 · Two terms.</b> Split the log of the ratio into $\log p_\theta(\bx\mid\bz)-\log\big(q_\phi(\bz\mid\bx)/p(\bz)\big)$:</p>
+    <div class="bluebox step" style="font-size:21px;align-self:center">$$\Lc(\bx)=\underbrace{\E_{q_\phi(\bz\mid\bx)}\big[\log p_\theta(\bx\mid\bz)\big]}_{-\text{ reconstruction error}}-\underbrace{\KL\big(q_\phi(\bz\mid\bx)\,\|\,p(\bz)\big)}_{\text{stay near the prior}}$$</div>
+    <p class="small step why">Maximising $\Lc$ over $\phi$ brings $q$ closer to the true posterior (smaller gap); over $\theta$ it raises the likelihood. The VAE loss is $-\Lc$: the BCE of a decoded <em>random</em> code plus a KL penalty.</p>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The ELBO with numbers</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ae-elbo" data-auto="s=1 :: the reconstruction term: log p(x|z) averaged over q | s=2 :: minus the KL to the prior: the ELBO | s=3 :: the gap: KL from q to the true posterior | s=4 :: the true posterior on the grid, and q | d=2 :: a 5: the true posterior sits elsewhere (×); q holds 0.5 % of its mass; gap 8.64 nats">
+      <svg class="fig" aria-label="For one test digit of the 2-D VAE: the true posterior and q, and log p(x), the reconstruction term, the KL, the ELBO and the gap"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-d="0" aria-pressed="true">a 0</button><button type="button" data-d="1" aria-pressed="false">a 1</button><button type="button" data-d="2" aria-pressed="false">a 5</button></span><label for="el-s">step</label><input type="range" id="el-s" data-k="s" min="0" max="4" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:9px">
+      <p class="small">The lab's 2-D VAE (15 epochs). With two dimensions $\log p_\theta(\bx)$ can be computed exactly: decode a 181 × 181 grid of codes and add up $p_\theta(\bx\mid\bz)\,p(\bz)\,\Delta z^2$.</p>
+      <p class="small step">Test "0": $\log p(\bx)=-136.23$; ELBO $=-130.11-6.61=-136.71$; gap $=\log p(\bx)-\text{ELBO}=0.48$ nats ($\KL(q\,\|\,p(\bz\mid\bx))$ computed directly on the grid: 0.47; the ELBO is a Monte-Carlo estimate).</p>
+      <p class="small step">Test "5": gap 8.64 nats. Its true posterior lies elsewhere (×): only 0.5 % of its mass is within 3 standard deviations of $q$. The encoder bet on the wrong reading of an ambiguous digit, and importance sampling with $q$ misses it too: −283.84 instead of −279.07.</p>
+      <p class="small step why">Whole test set: ELBO −146.0 nats per digit = 0.269 bits per pixel with 2 dimensions, −108.5 = 0.200 bits per pixel with 16.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>KL between Gaussians, in closed form</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:7px">
+      <p class="small">One dimension, $q=\Nc(\mu,\sigma^2)$, $p=\Nc(0,1)$:</p>
+      <div class="eq s">$$\log q(z)-\log p(z)=-\log\sigma-\frac{(z-\mu)^2}{2\sigma^2}+\frac{z^2}{2}$$</div>
+      <p class="small">Average over $q$, with $\E_q[(z-\mu)^2]=\sigma^2$ and $\E_q[z^2]=\mu^2+\sigma^2$:</p>
+      <div class="bluebox" style="font-size:21px">$$\KL=\tfrac12\big(\mu^2+\sigma^2-1-\log\sigma^2\big)$$</div>
+      <p class="small step">A diagonal $q$ in $k$ dimensions: the log-densities add, so do the KLs, $\ \KL=\frac12\sum_j\big(\mu_j^2+\sigma_j^2-1-\log\sigma_j^2\big)$.</p>
+      <p class="small step why">$\mu^2$ pulls the code to the origin; $\sigma^2-1-\log\sigma^2$ punishes posteriors that are too narrow or too wide. Lab: equal to numerical integration to $10^{-6}$, and to a 20,000-sample Monte Carlo estimate within 0.35 %.</p>
+    </div>
+    <div class="widget" data-fig="ae-kl" data-auto="mu=0;sg=1 :: q = p: KL = 0 | mu=1;sg=0.5 :: μ = 1, σ = 0.5: 0.818 nats, the lab's example | mu=0;sg=0.2 :: too narrow: −log σ² dominates, 1.129 nats | mu=2;sg=1 :: shifted by 2: μ²/2 = 2 nats">
+      <svg class="fig" aria-label="The prior N(0,1) and a Gaussian q with chosen mean and standard deviation, with the KL divergence in both directions"></svg>
+      <div class="ctl"><label for="kl-mu">μ</label><input type="range" id="kl-mu" data-k="mu" min="-3" max="3" step="0.1" value="-1"><span class="v" data-v="mu"></span><label for="kl-sg">σ</label><input type="range" id="kl-sg" data-k="sg" min="0.1" max="2.5" step="0.05" value="1.6"><span class="v" data-v="sg"></span></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The reparameterisation trick</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ae-reparam" data-auto="s=1 :: the loss needs a gradient through the random draw: there is none | s=2 :: rewrite: z = μ + σε, with ε drawn outside the network | s=3 :: z is now a plain function of μ and σ: backpropagation flows | s=4 :: with numbers">
+      <svg class="fig" aria-label="The computation graph of a VAE: first with a sampling node that blocks gradients, then with z equal to mu plus sigma times epsilon, so that gradients reach the encoder"></svg>
+      <div class="ctl"><label for="rp-s">step</label><input type="range" id="rp-s" data-k="s" min="0" max="4" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:9px">
+      <p class="small">The reconstruction term averages over $\bz\sim q_\phi$, and we need its gradient with respect to $\phi$. Backpropagation cannot go through "draw a sample".</p>
+      <div class="bluebox" style="font-size:20px">$$\bz=\bmu_\phi(\bx)+\bsig_\phi(\bx)\odot\beps,\qquad\beps\sim\Nc(\mathbf 0,\bI)$$</div>
+      <p class="small step">Now $\E_{q_\phi}[h(\bz)]=\E_{\beps}\big[h(\bmu_\phi+\bsig_\phi\odot\beps)\big]$: the gradient moves inside the average and flows through $\bmu$ and $\bsig$; $\beps$ is just an input.</p>
+      <p class="small step">One sample per image per step is enough. The encoder outputs $\log\bsig^2$: any real number is valid and $\bsig=e^{\frac12\log\bsig^2}\gt0$.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The alternative: the score-function estimator</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ae-score" data-auto="n=0 :: one sample each: score-function estimates spread five times wider | n=3 :: 10 samples: both narrow by √10, the ratio stays | n=6 :: 100 samples">
+      <svg class="fig" aria-label="Histograms of 400 gradient estimates from the reparameterisation and from the score function, for a chosen number of samples"></svg>
+      <div class="ctl"><label for="sc-n">samples</label><input type="range" id="sc-n" data-k="n" min="0" max="6" step="1" value="1"><span class="v" data-v="n"></span></div>
+    </div>
+    <div class="stack" style="gap:9px">
+      <p class="small">A general estimator that needs only $\log q$: since $\nabla q=q\,\nabla\log q$,</p>
+      <div class="eq s">$$\nabla_\mu\E_{q_\mu}[h(z)]=\E_{q_\mu}\big[h(z)\,\nabla_\mu\log q_\mu(z)\big]$$</div>
+      <p class="small">the <b>score function</b> (REINFORCE). It works for discrete $z$ too, but it uses only the value of $h$, not its slope.</p>
+      <p class="small step">Test: $h(z)=z^2$, $q=\Nc(\mu,1)$, $\mu=1$, true gradient $2\mu=2$. Per sample, the reparameterised estimate $2(\mu+\epsilon)$ has variance 4; the score-function one, $z^2(z-\mu)$, has variance 30.</p>
+      <p class="small step why">In a VAE, $h$ is a 784-pixel log-likelihood and the gap is far larger. Score functions need baselines and many samples: reinforcement learning, discrete latent variables.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The VAE in PyTorch</h2>
+  <div class="cols c64">
+<pre class="code s">class VAE(nn.Module):
+    def __init__(self, k):
+        super().__init__()
+        self.body = mlp([784, 256, 64])
+        self.mu = nn.Linear(64, k)
+        self.logvar = nn.Linear(64, k)     <span class="c"># log σ²: any real</span>
+        self.dec = mlp([k, 64, 256, 784])  <span class="c"># logits</span>
+
+    def forward(self, x):
+        h = F.relu(self.body(x))
+        mu, logvar = self.mu(h), self.logvar(h)
+        eps = torch.randn_like(mu)
+        z = mu + torch.exp(0.5 * logvar) * eps
+        return self.dec(z), mu, logvar
+
+def vae_loss(model, x, beta=1.0):
+    x = torch.bernoulli(x)                 <span class="c"># binarise</span>
+    logits, mu, logvar = model(x)
+    rec = F.binary_cross_entropy_with_logits(
+        logits, x, reduction="none").sum(1)    <span class="c"># pixels</span>
+    kl = 0.5 * (mu**2 + logvar.exp() - 1 - logvar).sum(1)
+    return (rec + beta * kl).mean()        <span class="c"># batch</span></pre>
+    <div class="stack" style="gap:9px">
+      <p class="small"><b>Sum, then average</b>: sum over the 784 pixels and the $k$ dimensions, average over the batch. Other bookkeeping changes β (Part D).</p>
+      <p class="small"><b>Bernoulli needs 0/1 pixels</b>: dynamic binarisation, a fresh random black-and-white version of each digit every time. Then $-\Lc$ is an honest bound, in nats.</p>
+      <p class="small"><b>Logits</b> and <code>..._with_logits</code>: stable for pixels near 0 and 1.</p>
+      <p class="small"><b>After training</b>: $\bmu(\bx)$ is the code of $\bx$; to generate, decode $\bz\sim\Nc(\mathbf 0,\bI)$.</p>
+      <p class="small why">Lab: the 2-D VAE trains in 22 s, the 16-D one in 14 s, on a CPU.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>What the KL does to the code space</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ae-latent" data-auto="m=ae :: the autoencoder: codes anywhere, random codes from the box | m=vae :: the VAE: codes centred with spread about 1; samples from the prior">
+      <svg class="fig" aria-label="2-D codes of test digits and decoded random codes, for the autoencoder and for the VAE"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-m="ae" aria-pressed="true">autoencoder</button><button type="button" data-m="vae" aria-pressed="false">VAE</button></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">Summed over the data, the KL pulls every $q(\bz\mid\bx)$ towards $\Nc(\mathbf 0,\bI)$ and stops posteriors from shrinking to points. The reconstruction term keeps different digits apart.</p>
+      <p class="small">The compromise: overlapping posteriors that fill the prior's region, without holes. Prior samples land where the decoder was trained.</p>
+      <p class="small step">Lab, 2-D codes: VAE mean (−0.11, 0.04), std (1.16, 1.06); AE mean (−0.77, −2.80), std (3.76, 3.52). Sample classes closer to the test set (total variation 0.16 vs 0.25). Same 15-NN accuracy: 74.2 % vs 73.8 %.</p>
+      <p class="small step why">Two dimensions are too few for sharp digits: the referee is confident on 60 % of 2-D VAE samples. In 16-D: VAE 45 %, AE with $\Nc(\mathbf 0,\bI)$ 2 %.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Walking in the VAE code space</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ae-walk" data-auto="i=7;j=7 :: the origin of the code space | i=1;j=7 :: left along z₁ | i=13;j=7 :: right along z₁ | i=7;j=13 :: up along z₂ | i=7;j=1 :: down along z₂">
+      <svg class="fig" aria-label="The 2-D VAE decoder on a 15 by 15 grid of prior quantiles, with one cell selected, its decoded digit and its position among the codes"></svg>
+      <div class="ctl"><label for="wk-i">z₁</label><input type="range" id="wk-i" data-k="i" min="0" max="14" step="1" value="3"><span class="v" data-v="i"></span><label for="wk-j">z₂</label><input type="range" id="wk-j" data-k="j" min="0" max="14" step="1" value="10"><span class="v" data-v="j"></span></div>
+    </div>
+    <div class="stack" style="gap:9px">
+      <p class="small">Decode a regular grid of codes $\bz=\Phi^{-1}(u)$ for evenly spaced $u$: every cell has the same prior mass.</p>
+      <p class="small step">During training every code is decoded with noise around $\bmu(\bx)$, so nearby codes must give similar images: the decoder is smooth, and digits morph into each other.</p>
+      <p class="small step">Nobody told the model what a digit is: it found its own coordinates. Labels only colour the plot.</p>
+      <p class="small step why">With $\beta\gt1$ the axes tend to become <b>disentangled</b>: one factor of variation per coordinate (Part D).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Interpolation: pixels, AE, VAE</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ae-interp" data-auto="m=pix;t=5 :: pixel cross-fade: two digits on top of each other | m=ae;t=5 :: straight line between the AE codes | m=vae;t=5 :: straight line between the VAE codes: one digit morphs into the other">
+      <svg class="fig" aria-label="Interpolations from a 0 to a 7: cross-fade in pixels, a line in the autoencoder code, a line in the VAE code, with the referee's confidence along each path"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-m="pix" aria-pressed="true">pixels</button><button type="button" data-m="ae" aria-pressed="false">AE</button><button type="button" data-m="vae" aria-pressed="false">VAE</button></span><label for="ip-t">t</label><input type="range" id="ip-t" data-k="t" min="0" max="9" step="1" value="2"><span class="v" data-v="t"></span></div>
+    </div>
+    <div class="stack" style="gap:9px">
+      <p class="small">Walk along the straight line between two codes and decode. If the codes filled a convex region, every point would be a plausible digit.</p>
+      <p class="small step">A cross-fade in pixels leaves the data at once: half a 0 on top of half a 7. In this example the AE's middle images are ambiguous (lowest referee confidence 0.52), the VAE's morph (0.89).</p>
+      <p class="small step why">Over 790 pairs of test digits the lowest confidence along the path averages 0.54 (pixels), 0.59 (AE), 0.58 (VAE): the VAE's real gain is sampling, not always interpolation.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card coral"><h1><b>Part D</b><br>β, failures<br>and practice</h1><ul class="small"><li>rate versus distortion</li><li>posterior collapse</li><li>why samples are blurry</li><li>conditional VAE</li><li>VQ-VAE, latent diffusion; a checklist</li></ul></div></section>
+
+<section class="slide">
+  <h2>β-VAE: rate versus distortion</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ae-beta" data-auto="b=0.1 :: β = 0.1: sharp reconstructions, a high rate, poor samples | b=1.0 :: β = 1: the ELBO, the best bound | b=4.0 :: β = 4: low rate, 6 active dimensions, blurry but tidy samples | b=bug :: β = 784 by accident: KL 0, no information in the code">
+      <svg class="fig" aria-label="Rate against distortion for three values of beta and the bug, with decoded samples, numbers and the KL of every latent dimension"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-b="0.1" aria-pressed="false">β = 0.1</button><button type="button" data-b="1.0" aria-pressed="true">β = 1</button><button type="button" data-b="4.0" aria-pressed="false">β = 4</button><button type="button" data-b="bug" aria-pressed="false">bug</button></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <div class="eq xs">$$\text{loss}=\underbrace{\E_q\big[-\log p_\theta(\bx\mid\bz)\big]}_{\text{distortion }D}+\beta\,\underbrace{\KL\big(q_\phi(\bz\mid\bx)\,\|\,p(\bz)\big)}_{\text{rate }R}$$</div>
+      <p class="small">Rate: the nats the code carries about $\bx$. $\beta=1$ is the ELBO, the only β that maximises the bound on the likelihood (Higgins et al., 2017).</p>
+      <p class="small step">β = 0.1: $D=73.0$, $R=48.6$, all 16 dimensions active, poor samples (17 % confident): codes spread out like an AE's.</p>
+      <p class="small step">β = 4: $D=119.3$, $R=7.4$, 6 active dimensions: blurrier reconstructions, tidier samples (56 %).</p>
+      <p class="small step why">Active dimension: $\mathrm{Var}_{\bx}[\mu_j(\bx)]\gt0.01$. A dimension with KL 0 carries nothing: $q(z_j\mid\bx)=p(z_j)$ for every $\bx$.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Posterior collapse</h2>
+  <svg class="fig" data-fig="ae-collapse" style="max-height:250px" aria-label="Training curves of the KL term for three betas and the bug, and identical reconstructions produced by the collapsed model"></svg>
+  <div class="cols">
+    <div class="stack" style="gap:8px">
+      <p class="small">If the KL is too expensive, the cheapest solution is $q_\phi(\bz\mid\bx)=p(\bz)$ for every input: KL = 0, the code says nothing, the decoder outputs one average image.</p>
+      <p class="small step">It also happens with strong decoders (an autoregressive decoder can model the pixels without $\bz$). Remedies: <b>KL warm-up</b> (β from 0 to 1 over the first epochs), free bits (a minimum KL per dimension), a weaker decoder.</p>
+    </div>
+    <div class="warnbox step"><p class="small"><b>The bug.</b> <code>F.binary_cross_entropy(x_hat, x)</code> averages over the 784 pixels. With the KL summed over the dimensions, the loss is $\frac1{784}(D+784\,R)$: β = 784. Lab: KL 0.000 nats, 0 active dimensions, the same output for every input.</p></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Why VAE samples are blurry</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="ae-blurry" aria-label="Decoder means, pixels drawn from them, and the average of two digits"></svg>
+    <div class="stack" style="gap:9px">
+      <p class="small">The decoder outputs a <b>mean</b>: the Bernoulli probabilities, or the Gaussian mean. Drawing the pixels gives salt and pepper, because they are independent given $\bz$.</p>
+      <p class="small">When a code fits several images, the likelihood is maximised by their <b>average</b>: under MSE the best single guess for "a 0 or a 7, one half each" is the cross-fade.</p>
+      <p class="small step">The KL adds noise to the codes, so neighbouring codes share their images: more averaging. A larger β blurs more (lab: reconstruction 119.3 nats at β = 4, 90.3 at β = 1).</p>
+      <p class="small step why">Fixes: richer likelihoods (autoregressive decoders), perceptual and adversarial losses (GANs, Extra 4), discrete codes (VQ-VAE), diffusion in the latent space.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>A conditional VAE</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ae-cvae" data-auto="y=3 :: label 3: five styles of 3 | y=7 :: label 7, the same five codes: the same five styles">
+      <svg class="fig" aria-label="Digits generated by a conditional VAE: rows share a code, columns share a label"></svg>
+      <div class="ctl"><label for="cv-y">label</label><input type="range" id="cv-y" data-k="y" min="0" max="9" step="1" value="0"><span class="v" data-v="y"></span></div>
+    </div>
+    <div class="stack" style="gap:9px">
+      <div class="eq xs">$$\Lc(\bx,y)=\E_{q_\phi(\bz\mid\bx,y)}\big[\log p_\theta(\bx\mid\bz,y)\big]-\KL\big(q_\phi(\bz\mid\bx,y)\,\|\,p(\bz)\big)$$</div>
+      <p class="small">In code: append the one-hot label to the encoder input and to the decoder input (Sohn et al., 2015).</p>
+      <p class="small step">The label says which digit, so the code is free to describe the <b>style</b>: slant, width, thickness. To draw a 7, sample $\bz\sim\Nc(\mathbf 0,\bI)$ and decode it with $y=7$.</p>
+      <p class="small step why">Lab, $k=2$, 10 epochs: ELBO −132.6 nats against −146.0 without labels; the referee recognises the requested digit in 99.8 % of 1000 samples.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Where the field went: VQ-VAE and latent diffusion</h2>
+  <svg class="fig" data-fig="ae-vqldm" style="max-height:250px" aria-label="Two pipelines: VQ-VAE with a grid of discrete code indices, and latent diffusion with a VAE that compresses images 48 times and a diffusion model in the latent space"></svg>
+  <div class="cols">
+    <p class="small"><b>VQ-VAE</b>: replace the Gaussian code by the nearest of $K$ learned codebook vectors (the gradient is copied straight through the rounding). The prior is learned afterwards, by an autoregressive model or a transformer over the grid of indices: sharp samples, and the image tokenisers of DALL·E and VQGAN.</p>
+    <p class="small step"><b>Latent diffusion</b>: a VAE with a tiny KL weight compresses images 8× per side; a diffusion model generates in that latent space; the decoder paints the pixels. The autoencoder survived as the compressor, and generation moved to a stronger prior over its codes.</p>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Practice: a checklist</h2>
+  <table class="t xs">
+    <tr><th style="width:22%">question</th><th>what to do</th></tr>
+    <tr><td>latent size</td><td>grow $k$ until the validation reconstruction stops improving. In a VAE, extra dimensions stay at KL ≈ 0: count the active ones (lab: 10 of 16 at β = 1).</td></tr>
+    <tr><td>which likelihood</td><td>binary or near-binary data: Bernoulli and BCE; real values: Gaussian and MSE (with a fixed or learned σ). The choice fixes what β means.</td></tr>
+    <tr><td>loss bookkeeping</td><td>sum over pixels and latent dimensions, average over the batch. Averaging over pixels silently sets β = 784: collapse.</td></tr>
+    <tr><td>KL collapses early</td><td>KL warm-up: β from 0 to 1 over the first epochs; free bits; a weaker decoder.</td></tr>
+    <tr><td>the variance</td><td>output $\log\sigma^2$, never $\sigma$ itself; clamp it if it explodes.</td></tr>
+    <tr><td>evaluation</td><td>held-out reconstruction error; ELBO in nats and in bits per dimension, $-\Lc/(D\ln2)$ (lab: 0.200); importance-sampled $\log p(\bx)$; samples, by eye or with a classifier; active dimensions.</td></tr>
+    <tr><td>what to monitor</td><td>both terms, not their sum: KL near 0 = collapse; a huge KL with poor samples = β too small.</td></tr>
+    <tr><td>generating</td><td>sample from the prior and show the decoder mean. Never feed random codes to a plain autoencoder.</td></tr>
+  </table>
+</section>
+
+<section class="slide">
+  <h2>The topic in one slide</h2>
+  <div class="cards c2" style="gap:12px">
+    <div class="card"><h3>A · Autoencoders and PCA</h3><ul>
+      <li>$\bz=f_\phi(\bx)$, $\hx=g_\theta(\bz)$; loss $=-\log p_\theta(\bx\mid\bz)$: MSE ↔ Gaussian, BCE ↔ Bernoulli</li>
+      <li>PCA: top-$k$ eigenvectors of $\bC$ (SVD); error $=\sum_{j\gt k}\lambda_j$</li>
+      <li>linear AE → the PCA subspace; non-linear AE: lower error, better codes</li></ul></div>
+    <div class="card g"><h3>B · Variants and uses</h3><ul>
+      <li>overcomplete codes can copy: add sparsity or noise</li>
+      <li>denoising: noisy input, clean target; transposed convolutions to upsample</li>
+      <li>denoising, compression, pre-training, anomalies (Extra 5), embeddings (Extra 2)</li></ul></div>
+    <div class="card y"><h3>C · The VAE</h3><ul>
+      <li>$p(\bz)=\Nc(\mathbf 0,\bI)$, $p_\theta(\bx\mid\bz)$, $q_\phi(\bz\mid\bx)=\Nc(\bmu,\mathrm{diag}\,\bsig^2)$</li>
+      <li>$\log p(\bx)=\Lc+\KL(q\,\|\,p(\bz\mid\bx))$; $\Lc=\E_q\log p(\bx\mid\bz)-\KL(q\,\|\,p(\bz))$</li>
+      <li>KL $=\frac12\sum(\mu^2+\sigma^2-1-\log\sigma^2)$; $\bz=\bmu+\bsig\odot\beps$</li></ul></div>
+    <div class="card o"><h3>D · β, failures and practice</h3><ul>
+      <li>β trades rate for distortion; only β = 1 is the ELBO</li>
+      <li>collapse: KL → 0 (the β = 784 bug); blurry = the mean of a likelihood</li>
+      <li>CVAE: condition on $y$; today: VQ-VAE, latent diffusion</li></ul></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Vocabulary of Extra 3</h2>
+  <div class="cols">
+    <dl class="gloss" style="font-size:16px;gap:4px 14px">
+      <dt>autoencoder</dt><dd>encoder + decoder trained to rebuild the input.</dd>
+      <dt>code, latent, bottleneck</dt><dd>$\bz$, the short vector in the middle; $k$ its size.</dd>
+      <dt>under- / overcomplete</dt><dd>$k\lt D$: must compress / $k\ge D$: can copy.</dd>
+      <dt>principal component</dt><dd>an eigenvector of the covariance $\bC$.</dd>
+      <dt>explained variance</dt><dd>$\lambda_j/\sum_i\lambda_i$, the share kept by component $j$.</dd>
+      <dt>SVD</dt><dd>$\bX_c=\bU\,\mathrm{diag}(s)\,\bV^\top$; $\bV$ = the components.</dd>
+      <dt>manifold hypothesis</dt><dd>data lie near a curved low-dimensional surface.</dd>
+      <dt>sparse autoencoder</dt><dd>a penalty makes few code units active.</dd>
+      <dt>denoising autoencoder</dt><dd>noisy input, clean target.</dd>
+      <dt>transposed convolution</dt><dd>upsampling layer, the transpose of a convolution.</dd>
+      <dt>generative model</dt><dd>a model we can sample new data from.</dd>
+    </dl>
+    <dl class="gloss" style="font-size:16px;gap:4px 14px">
+      <dt>prior, posterior</dt><dd>$p(\bz)$; $p(\bz\mid\bx)$, the codes that explain $\bx$.</dd>
+      <dt>KL divergence</dt><dd>$\E_q[\log q-\log p]\ge0$, not symmetric.</dd>
+      <dt>ELBO</dt><dd>$\Lc\le\log p(\bx)$; gap $=\KL(q\,\|\,p(\bz\mid\bx))$.</dd>
+      <dt>reparameterisation</dt><dd>$\bz=\bmu+\bsig\odot\beps$: gradients through sampling.</dd>
+      <dt>score function</dt><dd>$\E[h\nabla\log q]$: general, high variance.</dd>
+      <dt>β-VAE</dt><dd>the KL weighted by β.</dd>
+      <dt>rate, distortion</dt><dd>KL term and reconstruction term.</dd>
+      <dt>posterior collapse</dt><dd>$q(\bz\mid\bx)=p(\bz)$: the code is ignored.</dd>
+      <dt>active dimension</dt><dd>$\mathrm{Var}_\bx[\mu_j(\bx)]\gt0.01$.</dd>
+      <dt>conditional VAE</dt><dd>encoder and decoder also see the label.</dd>
+      <dt>VQ-VAE</dt><dd>discrete codes from a learned codebook.</dd>
+    </dl>
+  </div>
+  <p class="labline">Original papers: <a href="https://arxiv.org/abs/1312.6114" target="_blank" rel="noopener">VAE (Kingma &amp; Welling)</a> · <a href="https://arxiv.org/abs/1401.4082" target="_blank" rel="noopener">Rezende et al.</a> · <a href="https://www.cs.toronto.edu/~larocheh/publications/icml-2008-denoising-autoencoders.pdf" target="_blank" rel="noopener">denoising AE</a> · <a href="https://openreview.net/forum?id=Sy2fzU9gl" target="_blank" rel="noopener">β-VAE</a> · <a href="https://arxiv.org/abs/1711.00937" target="_blank" rel="noopener">VQ-VAE</a> · <a href="https://arxiv.org/abs/1906.02691" target="_blank" rel="noopener">An introduction to VAEs (tutorial)</a>.</p>
+</section>
+
+<section class="slide lab">
+  <div class="labtag">EXTRA 3</div>
+  <h2>Autoencoders and VAEs, from PCA to a conditional VAE</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:10px">
+      <p>Build every model of this deck from scratch in PyTorch on MNIST, and check the maths with numbers.</p>
+      <ol class="todo">
+        <li>MSE and BCE as likelihoods; PCA with the SVD, checked against scikit-learn.</li>
+        <li>A linear autoencoder converges to the PCA subspace (principal angles).</li>
+        <li>Non-linear autoencoders: a 2-D code, latent size vs PCA, overcomplete and sparse codes.</li>
+        <li>Transposed convolutions; a convolutional denoising autoencoder.</li>
+        <li>Why an autoencoder cannot generate; a VAE whose ELBO is checked against the exact $\log p(\bx)$.</li>
+        <li>The VAE's code space, samples, interpolation; β-VAE, posterior collapse, a conditional VAE.</li>
+      </ol>
+    </div>
+    <div class="labcard">
+      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/extra/extra 03 - Autoencoders and VAEs.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <dl class="gloss">
+        <dt>notebook</dt><dd><code>extra 03 - Autoencoders and VAEs.ipynb</code></dd>
+        <dt>you need</dt><dd>MLPs, CNNs and the PyTorch training loop (Neural networks 1–4); cross-entropy as maximum likelihood</dd>
+        <dt>runs on</dt><dd>CPU, about 3 minutes; no GPU needed</dd>
+        <dt>data</dt><dd>MNIST, downloaded by torchvision (about 11 MB)</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section class="slide cover">
+  <div class="inner"><h1>Extra topics</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Next: Generative adversarial networks</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+</div></div>
+<script src="../assets/figures.js?v=20260930"></script>
+<script src="../neural_networks/assets/nn-core.js?v=20260930"></script>
+<script src="assets/autoencoders-data.js?v=20261009"></script>
+<script src="assets/fig-autoencoders.js?v=20261009"></script>
+<script src="../assets/deck.js?v=20260930"></script>
+</body>
+</html>

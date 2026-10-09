@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="author" content="Imanol Granada (imanolgranada@gmail.com)">
+<title>Self-Supervised Learning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="../assets/deck.css?v=20260930">
+<link rel="stylesheet" href="../neural_networks/assets/nn.css?v=20261006c">
+<script src="../assets/mathjax-config.js?v=20260930"></script>
+<script>Object.assign(MathJax.tex.macros,{hz:'\\hat{\\mathbf{z}}',cT:'\\mathcal{T}',cL:'\\mathcal{L}',sg:'\\operatorname{sg}',tx:'\\tilde{x}'});</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
+</head>
+<body data-deck="Extra 8 · Self-supervised and contrastive learning" data-prev="07_diffusion.html" data-next="09_explainability.html">
+<div id="viewport"><div id="stage">
+<section class="slide cover">
+  <div class="inner"><h1>Extra topics</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Self-supervised and contrastive learning</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+
+<section class="slide">
+  <h2>Where we are</h2>
+  <svg class="fig" data-fig="ssl-where" style="max-height:200px" aria-label="Four self-supervised objectives of the course: word2vec predicts the neighbours, BERT the masked token, GPT the next token, the autoencoder its own input; and the new one: two views of an image must match"></svg>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p class="small">Every model of the course learned from labels: a price, a class, a box. Labels cost money and expert time; raw data piles up for free. Most of the photos, documents and recordings an organisation owns have <b>no label at all</b>.</p>
+      <p class="small step">Yet the course already trained networks without labels: word2vec, BERT, GPT and the autoencoder hide part of the data and predict it from the rest. The targets come from the data itself.</p>
+    </div>
+    <div class="stack" style="gap:10px">
+      <div class="note step"><p class="small"><b>Self-supervised learning (SSL)</b>: pretrain a network on unlabelled data with a task whose targets are computed from the data, then use a few labels to read the answer out of its features.</p></div>
+      <p class="small step why">Four parts: <b>A</b> learning without labels, <b>B</b> contrastive learning (SimCLR and the InfoNCE loss, with numbers), <b>C</b> methods without negatives and collapse, <b>D</b> masked modelling, CLIP and practice. It ends with the Extra 8 lab.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card blue"><h1><b>Part A</b><br>Learning<br>without labels</h1><ul class="small"><li>labels are expensive, data cheap</li><li>pretrain, then probe or fine-tune</li><li>self-supervision in the course</li><li>pretext tasks for images</li></ul></div></section>
+
+<section class="slide">
+  <h2>Labels are expensive, data are cheap</h2>
+  <svg class="fig" data-fig="ssl-protocol" style="max-height:230px" aria-label="The protocol: a large unlabelled pool pretrains the encoder; then a few labelled examples train a linear probe on frozen features, or fine-tune the whole network"></svg>
+  <div class="cols c3">
+    <div class="stack" style="gap:5px"><h3>1 · Pretrain</h3><p class="small">On all the unlabelled data, with a self-supervised loss. The expensive step, done once.</p></div>
+    <div class="stack" style="gap:5px"><h3>2 · Probe or fine-tune</h3><p class="small"><b>Linear probe</b>: freeze $f$, fit a logistic regression on $\bh=f(x)$. <b>Fine-tune</b>: train everything, starting from $f$.</p></div>
+    <div class="stack" style="gap:5px"><h3>3 · Compare</h3><p class="small">Against the same network trained from scratch on the same few labels, for several label budgets.</p></div>
+  </div>
+  <p class="small step"><b>Example.</b> A car insurer stores millions of claim photos; a few thousand are labelled by an expert with the damaged part and the severity. Pretrain on all the photos, then train the damage classifier on the labelled ones. With 1 % of the ImageNet labels, SimCLR fine-tuning reached 48.3 % top-1, against 25.4 % for supervised training on the same labels (Chen et al., 2020).</p>
+</section>
+
+<section class="slide">
+  <h2>You have already seen self-supervision</h2>
+  <div class="cards c4" style="gap:12px">
+    <div class="card"><h3>word2vec</h3><p><b>input</b> a word<br><b>target</b> its neighbours in the text</p><p class="why">Words used in the same contexts get close vectors: the embeddings of the RAG chapter's ancestors.</p></div>
+    <div class="card o"><h3>BERT</h3><p><b>input</b> a sentence, 15 % of the tokens masked<br><b>target</b> the masked tokens</p><p class="why">The encoder learns bidirectional context; fine-tuned for classification.</p></div>
+    <div class="card g"><h3>GPT</h3><p><b>input</b> the first $t$ tokens<br><b>target</b> token $t+1$</p><p class="why">Every position of every text is a training example: trillions of free labels.</p></div>
+    <div class="card y"><h3>Autoencoder</h3><p><b>input</b> an image<br><b>target</b> the same image, through a bottleneck</p><p class="why">Extra 3: the code keeps what is needed to rebuild the input.</p></div>
+  </div>
+  <div class="cols">
+    <div class="idea step"><b>The common recipe:</b> hide or corrupt part of the data and predict it from the rest. The task is a means; the features learned on the way are the goal.</div>
+    <p class="small step">Text was easy: tokens are discrete, so "predict the missing one" is a softmax over the vocabulary. Pixels are continuous and redundant, and predicting them exactly wastes capacity on details. Images needed other ideas: <b>pretext tasks</b>, then <b>contrastive</b> learning, then masked modelling done right (MAE).</p>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Pretext tasks for images</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ssl-pretext" data-auto="p=rot :: rotation: predict which of 4 rotations was applied, a 4-way classification | p=jig :: jigsaw: predict the permutation of shuffled tiles | p=col :: colourisation: predict the colour channels from the grey image | p=inp :: inpainting: predict the hidden region from its surroundings">
+      <svg class="fig" aria-label="One MNIST digit turned into four pretext tasks: rotations, shuffled tiles, colourisation and a masked centre"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-p="rot" aria-pressed="true">rotation</button><button type="button" data-p="jig" aria-pressed="false">jigsaw</button><button type="button" data-p="col" aria-pressed="false">colour</button><button type="button" data-p="inp" aria-pressed="false">inpainting</button></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">Transform the image in a known way, ask the network to undo or name the transformation. The label is free.</p>
+      <ul class="small" style="gap:3px"><li><b>Rotation</b> (Gidaris et al., 2018): 0°, 90°, 180°, 270°.</li><li><b>Jigsaw</b> (Noroozi and Favaro, 2016): 3 × 3 tiles, a fixed set of permutations.</li><li><b>Colourisation</b> (Zhang et al., 2016): grey in, colour out.</li><li><b>Inpainting</b> (Pathak et al., 2016): context encoders.</li></ul>
+      <p class="small step"><b>Why they are limited.</b> The features specialise in the pretext: the last layers know about rotations, not objects. And networks find <b>shortcuts</b>: predicting the position of patches, a network learned the chromatic aberration of camera lenses instead of shapes (Doersch et al., 2015).</p>
+      <p class="small step why">Linear probes on these features stayed far below supervised features. Contrastive learning (2020) closed most of the gap.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card green"><h1><b>Part B</b><br>Contrastive<br>learning</h1><ul class="small"><li>two views of one image</li><li>the InfoNCE loss, with numbers</li><li>temperature, pull and push</li><li>alignment and uniformity</li><li>augmentations, head, batch size</li></ul></div></section>
+
+<section class="slide">
+  <h2>Two views of the same image</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ssl-aug" data-auto="s=1 :: random resized crop and rotation: a different crop and angle for each view | s=2 :: brightness and contrast jitter: the grey version of colour jitter | s=3 :: random erasing: a missing patch, sometimes | s=4 :: the two views of the same digit: a positive pair">
+      <svg class="fig" aria-label="A digit and two random views of it, built in three augmentation stages: crop and rotation, brightness and contrast, erasing"></svg>
+      <div class="ctl"><label for="au-s">stage</label><input type="range" id="au-s" data-k="s" min="0" max="4" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">Sample two augmentations $t,t'\sim\cT$ and apply them to the same image: two <b>views</b> $\tx=t(x)$, $\tx'=t'(x)$.</p>
+      <div class="note"><p class="small"><b>Contrastive learning</b>: views of the same image (<b>positives</b>) must get similar embeddings; views of different images (<b>negatives</b>) must not.</p></div>
+      <p class="small step">No label anywhere: "same image" is known by construction. The other images of the batch are the negatives.</p>
+      <p class="small step">A person reads the same digit in both views. That is what we ask of the encoder: the same vector whatever the crop, angle, contrast or missing patch.</p>
+      <p class="small step why">The pipeline is the lab's: crop 50–100 % of the area, ±15°, jitter with probability 0.8, erasing with probability 0.25. One batched affine warp: a few milliseconds for 256 digits.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>SimCLR in one picture</h2>
+  <svg class="fig" data-fig="ssl-arch" style="max-height:278px" aria-label="SimCLR: an image gives two views; a shared encoder f maps each to a representation h; a shared projection head g maps h to z; the loss makes the two z agree"></svg>
+  <div class="cols c3">
+    <p class="small"><b>Encoder $f$</b>: any network; ResNet-50 in the paper, a 3-layer CNN in the lab. Its output $\bh$ is the representation we keep.</p>
+    <p class="small"><b>Projection head $g$</b>: a small MLP, $\bz=g(\bh)$. Only the loss sees $\bz$; the head is thrown away after pretraining.</p>
+    <p class="small"><b>Loss</b>: on the cosine similarities of the $\bz$ of all $2N$ views of a batch. Both branches share the same weights.</p>
+  </div>
+  <p class="small step why">SimCLR: Chen, Kornblith, Norouzi and Hinton (2020). A simple framework: no memory bank, no special architecture; just augmentations, a head, a large batch and the NT-Xent loss. ResNet-50: 69.3 % ImageNet top-1 with a linear probe.</p>
+</section>
+
+<section class="slide">
+  <h2>The similarity matrix of a batch</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ssl-sim" data-auto="s=1 :: positives: 1a with 1b, 2a with 2b, … two diagonals off the main one | s=2 :: divide by τ and take a softmax along each row | s=3 :: the loss of each row is −log of the probability of its positive; L is their mean">
+      <svg class="fig" aria-label="The 8 by 8 matrix of cosine similarities of 4 images with 2 views each; positives outlined; then the softmax of each row and the loss of each row"></svg>
+      <div class="ctl"><label for="si-s">step</label><input type="range" id="si-s" data-k="s" min="0" max="3" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">A toy batch: $N=4$ images, two views each, 3-D projections. Views ordered $1a,\dots,4a,1b,\dots,4b$.</p>
+      <p class="small">Cosine similarity of every pair:</p>
+      <div class="eq s">$$s_{ij}=\frac{\bz_i^\top\bz_j}{\norm{\bz_i}\,\norm{\bz_j}}\in[-1,1]$$</div>
+      <p class="small step">View $i$ has one positive $p(i)$ and $2N-2=6$ negatives. Image 4 resembles image 1 ($s_{1a,4a}=0.83$): a <b>hard negative</b>.</p>
+      <p class="small step">Each row becomes a classification: <em>which of the other 7 views is my partner?</em> Row 1a gives its partner 1b only 0.318, because 4a takes 0.241.</p>
+      <p class="small step">The mean loss is 1.284, below chance ($\log 7=1.946$) but far from 0. Training moves the $\bz$ to push every positive's probability towards 1.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The InfoNCE loss is a cross-entropy over the batch</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:8px">
+      <div class="bluebox" style="font-size:20px">$$\ell_i=-\log\frac{\exp(s_{i,p(i)}/\tau)}{\sum_{k\ne i}\exp(s_{ik}/\tau)},\qquad \cL=\frac{1}{2N}\sum_{i=1}^{2N}\ell_i$$</div>
+      <p class="small">Called <b>NT-Xent</b> in SimCLR (normalised temperature-scaled cross-entropy); a form of <b>InfoNCE</b> (van den Oord et al., 2018).</p>
+      <p class="small step">Row $i$ of $\mathbf S/\tau$, diagonal removed, is the logit vector of a $(2N-1)$-way classifier whose correct class is $p(i)$. So $\ell_i$ <b>is</b> a softmax cross-entropy, and the code is one line:</p>
+<pre class="code s step">z = F.normalize(torch.cat([z1, z2]), dim=1)
+logits = z @ z.T / tau             <span class="c"># all s_ij / τ</span>
+logits.fill_diagonal_(-float("inf"))  <span class="c"># k ≠ i</span>
+targets = torch.cat([torch.arange(N, 2 * N),
+                     torch.arange(N)])  <span class="c"># p(i)</span>
+loss = F.cross_entropy(logits, targets)</pre>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small step"><b>Gradient.</b> With $P_{ik}=\mathrm{softmax}_k(s_{ik}/\tau)$:</p>
+      <div class="eq s step">$$\frac{\partial\ell_i}{\partial s_{ik}}=\frac{1}{\tau}\big(P_{ik}-[k=p(i)]\big)$$</div>
+      <p class="small step why">Proof: $\ell_i=-s_{i,p(i)}/\tau+\log\sum_{k\ne i}e^{s_{ik}/\tau}$; the log-sum-exp has derivative $P_{ik}/\tau$. The softmax cross-entropy gradient of the course.</p>
+      <p class="small step">The positive is pulled with weight $(1-P_{i,p(i)})/\tau$; each negative is pushed with weight $P_{ik}/\tau$. The negatives that already look like the anchor are pushed hardest.</p>
+      <p class="small step"><b>Mutual information.</b> $\cL$ bounds the information shared by the two views: $I(\tx;\tx')\ge\log(2N-1)-\cL$. More negatives allow a tighter bound: one reason for large batches.</p>
+      <p class="labline step">Lab §2: the loop, the cross-entropy and autograd give the same 1.2836 and the same gradient.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The temperature $\tau$</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ssl-tau" data-auto="t=2 :: τ = 2: almost uniform; the positive barely stands out | t=0.5 :: τ = 0.5, the lab's value | t=0.1 :: τ = 0.1: the softmax focuses on the positive and the hardest negative | t=0.05 :: τ = 0.05: nearly a hard maximum">
+      <svg class="fig" aria-label="Bar chart of the softmax probabilities of the 7 candidates of view 1a, as a function of the temperature"></svg>
+      <div class="ctl"><label for="ta-t">τ</label><input type="range" id="ta-t" data-k="t" min="0.05" max="2" step="0.05" value="1"><span class="v" data-v="t"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">$\tau$ scales every gap between similarities before the softmax. The push on two negatives is in the ratio</p>
+      <div class="eq s">$$\frac{P_{ik}}{P_{ik'}}=e^{(s_{ik}-s_{ik'})/\tau}$$</div>
+      <p class="small step"><b>Small $\tau$</b>: the loss looks only at the hardest negatives. Sharp features, but unstable, and it also pushes away <b>false negatives</b> (another image of the same class).</p>
+      <p class="small step"><b>Large $\tau$</b>: every negative is pushed about equally; the loss cannot go far below $\log(2N-1)$ and learns slowly.</p>
+      <p class="small step why">Typical values: 0.1 in SimCLR with batches of 4,096, 0.07 in MoCo, 0.5 for small batches (the lab). CLIP learns $\tau$ as a parameter.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Pull and push on the hypersphere</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ssl-circle" data-auto="k=5 :: after 5 steps: each view runs towards its partner | k=20 :: after 20 steps: the pairs have almost met and start to repel each other | k=200 :: after 200 steps: aligned pairs, spread evenly around the circle">
+      <svg class="fig" aria-label="Twelve 2-D unit vectors, 6 images with 2 views each, moved by gradient descent on the NT-Xent loss; arrows show the gradient step; a loss curve and the alignment and uniformity values"></svg>
+      <div class="ctl"><label for="ci-k">step</label><input type="range" id="ci-k" data-k="k" min="0" max="200" step="1" value="0"><span class="v" data-v="k"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">Because the $\bz$ are normalised, they live on the <b>unit hypersphere</b>. Here a toy in 2-D: 6 images × 2 views, each view a free point on the circle, gradient descent on NT-Xent with $\tau=0.5$.</p>
+      <p class="small step">First the pull dominates: each view runs towards its partner (dashed lines shrink).</p>
+      <p class="small step">Then the push: the pairs spread out, here 60° apart, the most uniform arrangement of 6 points on a circle.</p>
+      <p class="small step">A real encoder cannot place every view freely: it must map <b>similar images</b> to nearby points. Spreading the images while keeping views together forces it to group images by content.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Alignment and uniformity</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:8px">
+      <p class="small">Wang and Isola (2020): on the normalised projections $\hz=\bz/\norm{\bz}$,</p>
+      <div class="eq s">$$\cL_{\text{align}}=\E\,\norm{\hz-\hz^+}^2\qquad\cL_{\text{unif}}=\log\E\,e^{-2\norm{\hz_x-\hz_y}^2}$$</div>
+      <p class="small"><b>Alignment</b> (lower is better): positives together; $\norm{\hz-\hz^+}^2=2-2s$. <b>Uniformity</b> (more negative is better): images spread over the sphere; all at one point gives 0.</p>
+      <p class="small step">The two terms of the loss map onto them: $\ell_i=\underbrace{-s_{i,p(i)}/\tau}_{\text{alignment}}+\underbrace{\log\textstyle\sum_{k\ne i}e^{s_{ik}/\tau}}_{\text{uniformity}}$. With infinitely many negatives the second term becomes exactly a uniformity loss.</p>
+      <p class="small step"><b>Both are needed.</b> Alignment alone is solved by mapping everything to one point; uniformity alone by ignoring the image. Good representations score well on both.</p>
+    </div>
+    <div class="stack" style="gap:6px">
+      <svg class="fig step" data-fig="ssl-geo" aria-label="Alignment against uniformity for the lab's encoders: random, SimCLR, SimSiam and the collapsed model"></svg>
+      <p class="why" style="font-size:15px">Lab §7–8, 2,000 test digits with two views each. Random network: alignment 0.002 but uniformity −0.005, every digit in nearly one direction. SimCLR: 0.172 and −2.968. Without stop-gradient: 0.004 and −0.018, collapsed.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The augmentations decide what is learned</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:8px">
+      <p class="small">The loss asks $f$ to be <b>invariant</b> to whatever $t$ changes, and nothing else. Choosing $\cT$ is choosing what the representation ignores.</p>
+      <p class="small step"><b>SimCLR's finding</b>: of all pairs of augmentations, random crop + colour distortion matters most. With crops alone, two crops of a photo share their colour histogram: the network matches histograms, a shortcut, and never looks at shapes.</p>
+      <p class="small step"><b>Lab ablation</b> (300 steps each): without crop and rotation the 10-label probe falls from 89.0 % to 83.2 % (kNN: 95.0 → 93.1 %), while the pretext task gets <b>easier</b>: contrastive accuracy 0.94 instead of 0.46. Crop + rotation alone: 89.6 %.</p>
+      <p class="small step why">The flip side: an invariance you build in is information you lose. Colour jitter is wrong if colour is the label (ripe fruit, rust on a car); rotation is wrong if orientation matters (a 6 and a 9).</p>
+    </div>
+    <svg class="fig step" data-fig="ssl-abl" aria-label="Bar charts of the lab ablation: kNN accuracy and 10-label linear probe for the full augmentation set, without crop and rotation, and with crop and rotation only"></svg>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The projection head: probe $\bh$, not $\bz$</h2>
+  <div class="cols c46">
+    <svg class="fig" data-fig="ssl-head" aria-label="Linear probe and kNN accuracy with all labels on raw pixels, the random encoder, SimCLR z and SimCLR h"></svg>
+    <div class="stack" style="gap:8px">
+      <p class="small">The loss makes $\bz$ invariant to the augmentations, so $g$ learns to <b>throw away</b> whatever distinguishes two views: position, size, stroke darkness. Some of that may be useful later.</p>
+      <p class="small step">The layer before the head, $\bh$, keeps more. In SimCLR, a non-linear head with the probe on $\bh$ beats no head by more than 10 points on ImageNet.</p>
+      <p class="small step">Lab, all 60,000 labels: linear probe 98.1 % on $\bh$ against 97.3 % on $\bz$; raw pixels 92.1 %, the random encoder 90.5 %.</p>
+      <p class="small step why">Keep the head small and discard it. Later methods (BYOL, SimSiam, DINO) keep the same structure: encoder, head, loss on the head.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Batch size and negatives</h2>
+  <div class="cols c46">
+    <svg class="fig" data-fig="ssl-moco" aria-label="Left: in SimCLR the negatives are the other views of the batch. Right: in MoCo the keys come from a momentum encoder and wait in a queue of 65,536 negatives"></svg>
+    <div class="stack" style="gap:8px">
+      <p class="small">More negatives: a better estimate of the denominator, more hard negatives, a tighter bound $\log(2N-1)-\cL$. SimCLR trains with $N=4{,}096$ images (8,190 negatives per view) on 128 TPU cores, with the LARS optimiser.</p>
+      <p class="small step"><b>MoCo</b> (He et al., 2020) decouples the negatives from the batch: the keys of past batches wait in a <b>queue</b> of 65,536. They come from a <b>momentum encoder</b>, a slow moving average of the query encoder, $\theta_k\leftarrow0.999\,\theta_k+0.001\,\theta_q$, so old keys stay comparable.</p>
+      <p class="small step">With a queue, a batch of 256 on 8 GPUs is enough. The momentum encoder reappears in BYOL and DINO.</p>
+      <p class="small step why">The lab uses $N=256$ (510 negatives per view) on a CPU: enough for digits.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card purple"><h1><b>Part C</b><br>Without<br>negatives</h1><ul class="small"><li>collapse: complete, dimensional</li><li>BYOL and SimSiam</li><li>Barlow Twins and VICReg</li></ul></div></section>
+
+<section class="slide">
+  <h2>Collapse</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ssl-collapse" data-auto="w=nosg :: no negatives, no stop-gradient: the spread of the embeddings falls to 0 | w=siam :: the same model with a stop-gradient (SimSiam): the spread stays | w=spec :: the spectrum: how many directions of R⁶⁴ the embeddings use">
+      <svg class="fig" aria-label="Standard deviation of the normalised projections during training, for SimCLR, SimSiam and SimSiam without stop-gradient; and the singular value spectra of the three embeddings"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-w="all" aria-pressed="true">all runs</button><button type="button" data-w="nosg" aria-pressed="false">no stop-grad</button><button type="button" data-w="siam" aria-pressed="false">SimSiam</button><button type="button" data-w="spec" aria-pressed="false">spectrum</button></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">Keep only the positives: minimise $-\cos(\bz,\bz^+)$. A <b>constant</b> encoder, $f(x)=\mathbf c$ for every image, gets $\cos=1$ for every pair: the global minimum, and useless.</p>
+      <p class="small"><b>Complete collapse</b>: every image at one point. <b>Dimensional collapse</b>: the embeddings use only a few directions of the space.</p>
+      <p class="small step">Measure: the standard deviation of $\hz$ over a batch, averaged over the dimensions. Spread over the sphere of $\R^{64}$: about $1/\sqrt{64}=0.125$. Collapsed: 0.</p>
+      <p class="small step">Lab §8, 300 steps each: without the stop-gradient the spread falls from 0.079 to 0.008 and the loss reaches −0.9975, its best value; with it (SimSiam) the spread stays at 0.103 and kNN reaches 81.0 %.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>BYOL and SimSiam: a predictor and a stop-gradient</h2>
+  <div class="cols c46">
+    <svg class="fig" data-fig="ssl-siam" aria-label="SimSiam: two views through the same encoder and projector; one branch adds a predictor; the other branch is a target with a stop-gradient; the loss is the negative cosine between prediction and target"></svg>
+    <div class="stack" style="gap:7px">
+      <p class="small"><b>SimSiam</b> (Chen and He, 2021): no negatives, no large batch. One branch adds a small <b>predictor</b> $q$; the other is a <b>target</b> that gets no gradient:</p>
+      <div class="eq xs">$$\cL=\tfrac12D\big(\bp_1,\sg(\bz_2)\big)+\tfrac12D\big(\bp_2,\sg(\bz_1)\big),\quad D(\bp,\bz)=-\frac{\bp^\top\bz}{\norm{\bp}\norm{\bz}}$$</div>
+      <p class="small step"><b>BYOL</b> (Grill et al., 2020), earlier: the target branch is a separate network, an exponential moving average of the online one ($\xi\leftarrow0.996\,\xi+0.004\,\theta$). 74.3 % ImageNet linear probe with a ResNet-50, without a single negative.</p>
+      <p class="small step"><b>Why no collapse?</b> Subtle: the constant solution is still a minimum of $\cL$. The stop-gradient changes the <b>dynamics</b>: training alternates, like $k$-means or EM, between fitting $q$ to the current targets and moving the targets. Remove the stop-gradient and it collapses (the paper: kNN accuracy 0.1 %).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Barlow Twins and VICReg: decorrelate the dimensions</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ssl-vic" data-auto="c=full :: complete collapse: zero variance, the variance term is at its maximum | c=dim :: dimensional collapse: two dimensions that say the same thing, a large covariance | c=ok :: healthy: unit variance, uncorrelated dimensions">
+      <svg class="fig" aria-label="Three clouds of 2-D embeddings: collapsed to a point, collapsed to a line, and spread; with their variance and covariance penalties"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-c="full" aria-pressed="false">point</button><button type="button" data-c="dim" aria-pressed="false">line</button><button type="button" data-c="ok" aria-pressed="true">spread</button></span></div>
+    </div>
+    <div class="stack" style="gap:6px">
+      <p class="small">Instead of negatives, regularise the <b>statistics of the batch</b>, dimension by dimension.</p>
+      <p class="small"><b>Barlow Twins</b> (Zbontar et al., 2021): the cross-correlation matrix $\mathcal C$ of the two branches' standardised $\bz$ should be the identity:</p>
+      <div class="eq xs">$$\cL_{BT}=\sum_j(1-\mathcal C_{jj})^2+\lambda\sum_j\sum_{k\ne j}\mathcal C_{jk}^2$$</div>
+      <p class="small step"><b>VICReg</b> (Bardes, Ponce and LeCun, 2022), three named terms on a batch $\mathbf Z$:</p>
+      <ul class="small step" style="gap:2px"><li><b>variance</b>: $\frac1d\sum_j\max(0,1-\mathrm{std}(z_j))$, against collapse</li><li><b>invariance</b>: the mean squared distance of positives</li><li><b>covariance</b>: $\frac1d\sum_{j\ne k}C_{jk}^2$, against redundant dimensions</li></ul>
+      <p class="small step why">Weights 25, 25, 1. No negatives, no stop-gradient, no momentum encoder: the anti-collapse term is explicit.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card coral"><h1><b>Part D</b><br>Masked modelling,<br>CLIP, practice</h1><ul class="small"><li>MAE: BERT for images</li><li>DINO</li><li>CLIP and zero-shot</li><li>linear probe, kNN, few-label curves</li><li>when SSL pays off</li></ul></div></section>
+
+<section class="slide">
+  <h2>Masked autoencoders: BERT for images</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ssl-mae" data-auto="r=15 :: BERT masks 15 % of the tokens | r=50 :: half the patches hidden: still easy to guess by interpolation | r=75 :: MAE masks 75 %: the encoder sees only a quarter of the patches | r=90 :: 90 %: too little left to reconstruct">
+      <svg class="fig" aria-label="A digit cut into 49 patches of 4 by 4 pixels; a fraction of the patches is masked; the encoder receives only the visible ones and the decoder must predict the masked ones"></svg>
+      <div class="ctl"><label for="ma-r">mask %</label><input type="range" id="ma-r" data-k="r" min="0" max="95" step="5" value="0"><span class="v" data-v="r"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small"><b>MAE</b> (He et al., 2022): cut the image into patches (ViT tokens), mask a random <b>75 %</b>, reconstruct their pixels.</p>
+      <ul class="small" style="gap:3px"><li>the <b>encoder</b> (a ViT) runs on the visible patches only: 4 times fewer tokens, training 3 times faster or more</li><li>a light <b>decoder</b> gets the encoded patches plus mask tokens and predicts the pixels</li><li>loss: mean squared error <b>on the masked patches only</b></li></ul>
+      <p class="small step"><b>Why 75 % and not BERT's 15 %?</b> Images are redundant: a missing patch can be filled from its neighbours by interpolation. Only a high ratio forces the network to understand the object.</p>
+      <p class="small step why">Results: excellent after fine-tuning (ViT-H: 87.8 % on ImageNet), weaker with a linear probe than contrastive features. The decoder is thrown away, like the projection head.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>DINO: a student imitates a teacher</h2>
+  <div class="cols c46">
+    <svg class="fig" data-fig="ssl-dino" aria-label="DINO: global and local crops; the student network sees all crops, the teacher, a moving average of the student, sees only the global crops; the student's softmax output must match the teacher's centred and sharpened output"></svg>
+    <div class="stack" style="gap:8px">
+      <p class="small"><b>DINO</b> (Caron et al., 2021): self-<b>di</b>stillation with <b>no</b> labels. A student and a teacher with the same architecture output a softmax over $K$ "prototype" classes; the student must match the teacher (cross-entropy).</p>
+      <p class="small step"><b>Teacher</b> = moving average of the student (as BYOL). <b>Multi-crop</b>: the teacher sees 2 large crops, the student also several small ones: "predict the global view from a local one".</p>
+      <p class="small step"><b>Against collapse</b>: the teacher's outputs are <b>centred</b> (a running mean is subtracted, so no class dominates) and <b>sharpened</b> (a low temperature, so the output is not uniform).</p>
+      <p class="small step">With ViTs, the attention maps segment the objects without ever seeing a mask. DINOv2 (2023), trained on 142 million curated images, gives general-purpose features used frozen.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>CLIP: contrastive learning across modalities</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ssl-clip" data-auto="m=train :: training: N images and their N captions; the matching pairs are the diagonal | m=zero :: zero-shot: embed one prompt per class, pick the most similar to the image">
+      <svg class="fig" aria-label="Schematic: image embeddings against text embeddings form an N by N similarity matrix with the matching pairs on the diagonal; zero-shot classification compares a new image with one text prompt per class"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-m="train" aria-pressed="true">training</button><button type="button" data-m="zero" aria-pressed="false">zero-shot</button></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small"><b>CLIP</b> (Radford et al., 2021): an image encoder and a text encoder, trained on 400 million image–caption pairs from the web. The positives are the true pairs; the other captions of the batch are the negatives.</p>
+      <p class="small">Loss: InfoNCE on the $N\times N$ matrix, along the rows (image → text) and the columns (text → image); a learned temperature; batches of 32,768.</p>
+      <p class="small step"><b>Zero-shot classification</b>: write one prompt per class, "a photo of a {class}", embed them, and pick the class whose prompt is most similar to the image. No training example of the task: 76.2 % on ImageNet.</p>
+      <p class="small step">The same shared embedding space powers <b>text-to-image search</b>: the RAG retrieval of chapter 6, with images as documents. Insurance: "rear bumper dent" retrieves the matching claim photos.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Evaluating a representation: the few-label curve</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ssl-few" data-auto="s=1 :: baselines: logistic regression on raw pixels and on the untrained network | s=2 :: the network trained from scratch on the same labels | s=3 :: SimCLR features with a linear probe and with kNN | s=4 :: fine-tuning the SimCLR encoder">
+      <svg class="fig" aria-label="Test accuracy against the number of labels per class (10, 100, 1000) for six methods of the lab"></svg>
+      <div class="ctl"><label for="fe-s">curves</label><input type="range" id="fe-s" data-k="s" min="0" max="4" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:6px">
+      <p class="small"><b>Linear probe</b>: logistic regression on frozen $\bh$: are the classes linearly separable? <b>kNN</b>: cosine neighbours on centred, normalised $\bh$, no training: do neighbours share the class? <b>Fine-tuning</b>: train everything from $f$. <b>Transfer</b>: the same on another dataset.</p>
+      <p class="small step">The lab, MNIST, $m$ labels per class, test on 10,000 digits: with 10 labels per class the probe on SimCLR features gets <b>92.5 %</b>, the CNN trained from scratch 88.0 %, logistic regression on pixels 73.2 %. With 1,000 per class: 97.8 % against 96.5 %.</p>
+      <p class="small step why">The gain is largest where labels are scarce and shrinks as they grow: self-supervision substitutes for labels, it does not add information that many labels would not give.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>What the encoder learned without labels</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="ssl-tsne" data-auto="e=rand :: the untrained network: some digits already group, most overlap | e=ssl :: after SimCLR: ten clusters, one per digit, found without a single label">
+      <svg class="fig" aria-label="t-SNE maps of 1,000 test digits, coloured by digit, for the random encoder and for the SimCLR encoder"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-e="rand" aria-pressed="true">random encoder</button><button type="button" data-e="ssl" aria-pressed="false">SimCLR</button></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">t-SNE of $\bh$ for test digits, coloured by the true digit, which the encoder never saw.</p>
+      <p class="small step">Random weights: only the 1s form an island. After 1,200 steps of SimCLR, ten clusters. A linear probe on these 64 numbers reaches 98.1 % with all labels.</p>
+      <p class="small step">Nobody told the network that there are ten classes. They emerge because two views of a "4" must be close while different images must spread: the easiest way to satisfy both is to group the images by shape.</p>
+      <p class="small step why">The contacts follow the shapes: 4 touches 9, 3 touches 5.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>When self-supervision pays off</h2>
+  <table class="t xs">
+    <tr><th style="width:31%">situation</th><th>what to do</th></tr>
+    <tr><td>many unlabelled in-domain images, few labels</td><td>the sweet spot: pretrain on your own data (SimCLR, MoCo, DINO, MAE), then probe or fine-tune. Claim photos of damaged cars, X-rays, satellite tiles.</td></tr>
+    <tr><td>general images, little compute</td><td>do not pretrain yourself: start from a public foundation model (DINOv2, CLIP) and train a linear probe on frozen features.</td></tr>
+    <tr><td>your domain differs from web photos</td><td>continue the pretraining on your unlabelled data, starting from the public model, before fine-tuning.</td></tr>
+    <tr><td>categories that change often</td><td>CLIP-style zero-shot with prompts, or kNN on frozen features: a new class needs a few examples, no retraining.</td></tr>
+    <tr><td>choosing augmentations</td><td>list what must not change the answer (lighting, framing, background) and what must (colour of rust, orientation). Augment only the first.</td></tr>
+    <tr><td>checking for collapse</td><td>track the std of the normalised embeddings and the kNN accuracy of a small labelled monitor set during pretraining.</td></tr>
+    <tr><td>many labels already</td><td>supervised training is hard to beat; SSL pretraining still helps robustness and transfer.</td></tr>
+  </table>
+  <p class="small step why">Libraries: <code>lightly</code> and <code>solo-learn</code> (SimCLR, MoCo, BYOL, SimSiam, VICReg, DINO in PyTorch); <code>open_clip</code> and the <code>timm</code> / Hugging Face hubs for pretrained weights. The lab builds everything from scratch.</p>
+</section>
+
+<section class="slide">
+  <h2>The topic in one slide</h2>
+  <div class="cards c2" style="gap:12px">
+    <div class="card"><h3>A · Learning without labels</h3><ul>
+      <li>pretext task: targets computed from the data</li>
+      <li>pretrain on unlabelled data; linear probe, kNN or fine-tune with few labels</li>
+      <li>word2vec, BERT, GPT, autoencoders are self-supervised</li></ul></div>
+    <div class="card g"><h3>B · Contrastive learning</h3><ul>
+      <li>positives: two views $t(x)$, $t'(x)$; negatives: the batch</li>
+      <li>$\ell_i=-\log\frac{e^{s_{i,p(i)}/\tau}}{\sum_{k\ne i}e^{s_{ik}/\tau}}$: cross-entropy over $2N-1$ candidates</li>
+      <li>$\tau$ weights hard negatives; alignment + uniformity; probe $\bh$, not $\bz$</li></ul></div>
+    <div class="card y"><h3>C · Without negatives</h3><ul>
+      <li>positives only $\Rightarrow$ collapse (complete or dimensional)</li>
+      <li>BYOL, SimSiam: predictor + stop-gradient (or moving-average target)</li>
+      <li>Barlow Twins, VICReg: variance, invariance, covariance</li></ul></div>
+    <div class="card o"><h3>D · Masks, CLIP, practice</h3><ul>
+      <li>MAE: mask 75 % of patches, reconstruct pixels; DINO: self-distillation</li>
+      <li>CLIP: image–text InfoNCE, zero-shot by prompts, text-to-image search</li>
+      <li>gains largest with few labels and much in-domain data</li></ul></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Vocabulary of Extra 8</h2>
+  <div class="cols">
+    <dl class="gloss" style="font-size:16px;gap:5px 14px">
+      <dt>self-supervised</dt><dd>trained with targets computed from the data itself.</dd>
+      <dt>pretext task</dt><dd>the made-up task used to pretrain (rotation, masking…).</dd>
+      <dt>view</dt><dd>a random augmentation $t(x)$ of an image.</dd>
+      <dt>positive / negative</dt><dd>a view of the same image / of another image.</dd>
+      <dt>InfoNCE, NT-Xent</dt><dd>softmax cross-entropy that picks the positive among the batch.</dd>
+      <dt>temperature $\tau$</dt><dd>divides the similarities; small = focus on hard negatives.</dd>
+      <dt>projection head</dt><dd>MLP $g$ between $\bh$ and the loss, thrown away after.</dd>
+      <dt>linear probe</dt><dd>logistic regression on frozen features.</dd>
+      <dt>kNN accuracy</dt><dd>class vote of the nearest training features.</dd>
+      <dt>fine-tuning</dt><dd>training the whole pretrained network on labels.</dd>
+      <dt>alignment / uniformity</dt><dd>positives close / images spread on the sphere.</dd>
+    </dl>
+    <dl class="gloss" style="font-size:16px;gap:5px 14px">
+      <dt>collapse</dt><dd>all images map to one point (complete) or a subspace (dimensional).</dd>
+      <dt>momentum encoder</dt><dd>a slow moving average of the trained encoder (MoCo, BYOL, DINO).</dd>
+      <dt>stop-gradient</dt><dd>a branch treated as a constant in backpropagation.</dd>
+      <dt>predictor</dt><dd>small MLP on one branch in BYOL and SimSiam.</dd>
+      <dt>Barlow Twins, VICReg</dt><dd>decorrelate dimensions, keep variance: no negatives.</dd>
+      <dt>MAE</dt><dd>masked autoencoder: hide 75 % of patches, rebuild them.</dd>
+      <dt>DINO</dt><dd>student matches a centred, sharpened teacher.</dd>
+      <dt>CLIP</dt><dd>image–text contrastive model; zero-shot by text prompts.</dd>
+      <dt>zero-shot</dt><dd>a task solved without any training example of it.</dd>
+      <dt>foundation model</dt><dd>pretrained once at scale, adapted to many tasks.</dd>
+      <dt>few-label curve</dt><dd>accuracy against the number of labels per class.</dd>
+    </dl>
+  </div>
+  <p class="labline">Original papers: <a href="https://arxiv.org/abs/2002.05709" target="_blank" rel="noopener">SimCLR</a> · <a href="https://arxiv.org/abs/1911.05722" target="_blank" rel="noopener">MoCo</a> · <a href="https://arxiv.org/abs/2011.10566" target="_blank" rel="noopener">SimSiam</a> · <a href="https://arxiv.org/abs/2105.04906" target="_blank" rel="noopener">VICReg</a> · <a href="https://arxiv.org/abs/2111.06377" target="_blank" rel="noopener">MAE</a> · <a href="https://arxiv.org/abs/2103.00020" target="_blank" rel="noopener">CLIP</a> · <a href="https://arxiv.org/abs/2005.10242" target="_blank" rel="noopener">alignment and uniformity</a> · <a href="https://lilianweng.github.io/posts/2021-05-31-contrastive/" target="_blank" rel="noopener">a tutorial (L. Weng)</a>.</p>
+</section>
+
+<section class="slide lab">
+  <div class="labtag">EXTRA 8</div>
+  <h2>SimCLR from scratch on unlabelled digits</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:10px">
+      <p>Write the contrastive loss by hand, pretrain a CNN on 60,000 digits without their labels, and measure what 10, 100 or 1,000 labels per class can do with it.</p>
+      <ol class="todo">
+        <li>Pretext tasks; the InfoNCE loss by hand on the toy batch, checked against <code>F.cross_entropy</code> and autograd.</li>
+        <li>Batched augmentations: two views of every digit.</li>
+        <li>SimCLR pretraining: loss, contrastive accuracy, kNN monitor.</li>
+        <li>Linear probe (from scratch vs scikit-learn) and kNN; $\bh$ against $\bz$.</li>
+        <li>The few-label curve: probe, kNN, from scratch, fine-tuning.</li>
+        <li>Alignment, uniformity, t-SNE; collapse without stop-gradient; an augmentation ablation.</li>
+      </ol>
+    </div>
+    <div class="labcard">
+      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/extra/extra 08 - Self-Supervised and Contrastive Learning.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <dl class="gloss">
+        <dt>notebook</dt><dd><code>extra 08 - Self-Supervised and Contrastive Learning.ipynb</code></dd>
+        <dt>you need</dt><dd>CNNs, the PyTorch training loop, softmax and cross-entropy, embeddings and cosine similarity (Neural networks 1–6)</dd>
+        <dt>runs on</dt><dd>CPU, about 6.5 minutes with 4 threads; no GPU needed</dd>
+        <dt>data</dt><dd>MNIST (downloaded by torchvision, 12 MB)</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section class="slide cover">
+  <div class="inner"><h1>Extra topics</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Next: Explainability</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+</div></div>
+<script src="../assets/figures.js?v=20260930"></script>
+<script src="../neural_networks/assets/nn-core.js?v=20260930"></script>
+<script src="assets/ssl-data.js?v=20261009"></script>
+<script src="assets/fig-ssl.js?v=20261009"></script>
+<script src="../assets/deck.js?v=20260930"></script>
+</body>
+</html>

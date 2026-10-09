@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="author" content="Imanol Granada (imanolgranada@gmail.com)">
+<title>Uncertainty and Conformal Prediction</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="../assets/deck.css?v=20260930">
+<link rel="stylesheet" href="../neural_networks/assets/nn.css?v=20261006c">
+<script src="../assets/mathjax-config.js?v=20260930"></script>
+<script>Object.assign(MathJax.tex.macros,{hq:'\\hat q',hmu:'\\hat\\mu',hsig:'\\hat\\sigma',Dc:'\\mathcal{D}_{\\text{cal}}',ind:'\\mathbb{1}',Var:'\\operatorname{Var}'});</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
+</head>
+<body data-deck="Extra 10 · Uncertainty and conformal prediction" data-prev="09_explainability.html" data-next="11_causal.html">
+<div id="viewport"><div id="stage">
+<section class="slide cover">
+  <div class="inner"><h1>Extra topics</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Uncertainty and conformal prediction</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+
+<section class="slide">
+  <h2>Where we are</h2>
+  <svg class="fig" data-fig="cp-where" style="max-height:230px" aria-label="Three panels: a point prediction on noisy data, the same prediction with a 90% interval, and a Fashion-MNIST image with a set of two classes"></svg>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p class="small">Every model of the course returns one number per input: a price, a probability, a class. Decisions also need to know <b>how wrong</b> that number can be: the reserve, the price loading, whether to send an expert.</p>
+      <p class="small step">Models can express uncertainty: predict a distribution or quantiles, disagree with themselves (ensembles), give calibrated probabilities. Useful, but none of it comes with a guarantee.</p>
+    </div>
+    <div class="stack" style="gap:10px">
+      <div class="note step"><p class="small"><b>Conformal prediction</b>: from a held-out calibration set, turn <em>any</em> model into intervals or sets $C(x)$ with $P(Y\in C(X))\ge1-\alpha$, in finite samples, assuming only exchangeable data.</p></div>
+      <p class="small step why">Four parts: <b>A</b> uncertainty in models, <b>B</b> split conformal and its guarantee, <b>C</b> adaptive intervals and prediction sets, <b>D</b> practice: shift, time series, communication. It ends with the Extra 10 lab.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card blue"><h1><b>Part A</b><br>Uncertainty<br>in models</h1><ul class="small"><li>aleatoric and epistemic</li><li>prediction vs confidence intervals</li><li>distributions and quantiles</li><li>ensembles, MC dropout, Bayes</li><li>calibration, temperature scaling</li></ul></div></section>
+
+<section class="slide">
+  <h2>A number is not enough</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="cp-two" aria-label="Noisy data with a fitted curve; at x = 0.6 and x = 4.33 the prediction is the same, 1.32, but the 90% intervals are short and long"></svg>
+    <div class="stack" style="gap:8px">
+      <p class="small">The lab's network predicts $\hat y=1.32$ at $x=0.6$ and at $x=4.33$. The first 90% interval is $\pm0.39$ wide, the second $\pm2.07$: same prediction, five times the risk.</p>
+      <div class="card"><h3>Pricing</h3><p>the loading for risk depends on the spread, not the mean</p></div>
+      <div class="card o"><h3>Reserving</h3><p>Solvency II asks for the 99.5% quantile of the losses</p></div>
+      <div class="card g"><h3>Triage</h3><p>send an expert when the interval of a claim is wide</p></div>
+      <div class="card r"><h3>Medicine</h3><p>refer to a doctor when several diagnoses stay possible</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Two kinds of uncertainty</h2>
+  <svg class="fig" data-fig="cp-kinds" style="max-height:290px" aria-label="Left: data whose noise grows with x and the true 90% band. Right: five networks agree on the data and diverge outside it"></svg>
+  <div class="cols">
+    <div class="stack" style="gap:6px">
+      <p class="small"><b>Aleatoric</b>: the noise of $Y$ given $X$. Two identical policyholders still have different claims. More data does not reduce it. Here it grows with $x$: <b>heteroscedastic</b>.</p>
+      <p class="small why">Lab data: $Y=f(X)+\sigma(X)\varepsilon$, $\ \sigma(x)=0.1+0.25x$, so the ideal 90% interval is $f(x)\pm1.645\,\sigma(x)$.</p>
+    </div>
+    <div class="stack" style="gap:6px">
+      <p class="small"><b>Epistemic</b>: what the model does not know. Few data, unseen regions, a wrong model class. More data reduces it.</p>
+      <p class="small step why">Prediction intervals need both. Epistemic is the one that warns you when an input is unlike the training data.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Prediction interval vs confidence interval</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="cp-pici" data-auto="n=100 :: n = 100: the confidence band of the curve is wide, the prediction band wider | n=1000 :: n = 1000: the confidence band shrinks about 3 times, the prediction band does not">
+      <svg class="fig" aria-label="Degree-5 polynomial fit with its bootstrap 90% confidence band for the curve and 90% prediction band for a new observation"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-n="100" aria-pressed="true">n = 100</button><button type="button" data-n="1000" aria-pressed="false">n = 1000</button></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small"><b>Confidence interval</b> for the mean $f(x)$: where is the curve? Epistemic only; shrinks like $1/\sqrt n$.</p>
+      <p class="small"><b>Prediction interval</b> for a new $Y$: where will the next observation fall? It contains the noise too:</p>
+      <div class="bluebox" style="font-size:19px">$$\Var\big(Y_{\text{new}}-\hat f(x)\big)=\sigma^2(x)+\Var\big(\hat f(x)\big)$$</div>
+      <p class="small step">Lab, bootstrap of the fit: mean CI width $0.552\to0.182$ (ratio 3.03, $\sqrt{10}=3.16$). The PI stays $\approx2.76$ wide.</p>
+      <p class="small step">Same width everywhere: it covers 0.900 overall but <b>0.989</b> for $x\lt2.5$ and <b>0.812</b> for $x\ge2.5$. A right average, wrong almost everywhere.</p>
+      <p class="small step why">Price a portfolio with the CI of the mean; reserve one claim with the PI.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Predicting a distribution</h2>
+  <div class="cols c46">
+    <svg class="fig" data-fig="cp-hetnet" aria-label="A network with a shared trunk and two heads, the mean and the log-variance, trained with the negative log-likelihood; below, the predicted standard deviation follows the true one"></svg>
+    <div class="stack" style="gap:7px">
+      <p class="small">Two heads, $\hmu(x)$ and $\log\hsig^2(x)$, trained by maximum likelihood:</p>
+      <div class="bluebox" style="font-size:19px">$$\ell=\tfrac12\log\hsig^2(x)+\frac{\big(y-\hmu(x)\big)^2}{2\hsig^2(x)}+\text{const}$$</div>
+      <p class="small step">Constant $\hsig$: the MSE. Free $v=\hsig^2$, one point: $\ \partial\ell/\partial v=\frac1{2v}-\frac{r^2}{2v^2}=0\Rightarrow v=r^2$. The variance head learns the expected squared residual, and noisy points weigh less in the mean.</p>
+      <p class="small step">Log-variance keeps $\hsig^2\gt0$; fit the mean alone (MSE) for the first steps, or the network inflates $\hsig$ to explain its early errors.</p>
+      <p class="small step">Lab: $\hsig/\sigma$ between 0.83 and 1.19; $\hmu\pm1.645\,\hsig$ covers <b>0.896</b> (0.903 and 0.888 in the two halves).</p>
+      <p class="small step why">The catch: "±1.645 sd" holds 90% only if the noise really is Gaussian.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Quantile regression: the pinball loss</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="cp-pinball" data-auto="t=0.5 :: τ = 0.5: the absolute error, minimised by the median | t=0.9 :: τ = 0.9: under-predicting costs 9 times more, the minimum moves to the 90% quantile | t=0.1 :: τ = 0.1: the 10% quantile">
+      <svg class="fig" aria-label="Left: the pinball loss for a chosen tau. Right: its mean over a skewed sample as a function of the prediction, minimised at the sample quantile"></svg>
+      <div class="ctl"><label for="pb-t">τ</label><input type="range" id="pb-t" data-k="t" min="0.05" max="0.95" step="0.05" value="0.5"><span class="v" data-v="t"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <div class="bluebox" style="font-size:19px">$$\rho_\tau(u)=\max\big(\tau u,\ (\tau-1)u\big),\quad u=y-q$$</div>
+      <p class="small"><b>Proof</b> that the minimiser is the $\tau$-quantile. For $Y$ with CDF $F$:</p>
+      <div class="eq s">$$\frac{d}{dq}\E\,\rho_\tau(Y-q)=-\tau\big(1-F(q)\big)+(1-\tau)F(q)=F(q)-\tau$$</div>
+      <p class="small">Increasing in $q$ (convex), zero where $F(q)=\tau$. $\ \tau=0.5$: $|u|/2$, the median.</p>
+      <p class="small step">Train two outputs at $\tau=0.05$ and $0.95$: a 90% band, no Gaussian assumption.</p>
+      <p class="small step">Lab: the quantile MLP covers <b>0.881</b> on new points, gradient boosting <b>0.856</b>, the MLP 0.900 on its own training points. Estimated quantiles are noisy: no guarantee.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Epistemic: deep ensembles and MC dropout</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="cp-ens" data-auto="v=members :: five networks agree on the data and diverge where there is none | v=decomp :: the variance splits: aleatoric follows the noise, epistemic grows outside the data">
+      <svg class="fig" aria-label="Five networks' predicted means, and the aleatoric and epistemic standard deviations against x"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-v="members" aria-pressed="true">the 5 members</button><button type="button" data-v="decomp" aria-pressed="false">variance decomposition</button></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small"><b>Deep ensemble</b>: $M=5$ networks of the previous slide, 5 random seeds. The mixture's variance (law of total variance):</p>
+      <div class="bluebox" style="font-size:18px">$$\Var(Y\mid x)\approx\underbrace{\tfrac1M\textstyle\sum_m\hsig_m^2}_{\text{aleatoric}}+\underbrace{\tfrac1M\textstyle\sum_m(\hmu_m-\bar\mu)^2}_{\text{epistemic}}$$</div>
+      <p class="small"><b>MC dropout</b>: keep dropout on at prediction time; 200 passes, same split. One training run instead of $M$.</p>
+      <p class="small step">Lab: epistemic sd ≤ 0.046 inside $[0,5]$, <b>0.423</b> at $x=-1.5$, only 0.105 at $x=6.5$ where the tanh networks extrapolate alike.</p>
+      <p class="small step">MC dropout: 0.138 inside, 0.203 at $x=-1.5$. Cheaper, a weaker alarm. Both are heuristics: no guarantee.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Bayesian linear regression in one slide</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="cp-bayes" data-auto="n=0 :: the prior: every line is plausible | n=2 :: two points: the lines pass near them, wide elsewhere | n=20 :: twenty points: the line is known, the noise remains">
+      <svg class="fig" aria-label="Posterior of a straight line given n points: sampled lines, the epistemic band and the predictive band"></svg>
+      <div class="ctl"><label for="by-n">points n</label><input type="range" id="by-n" data-k="n" min="0" max="20" step="1" value="0"><span class="v" data-v="n"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">Prior $\mathbf w\sim\mathcal N(\mathbf 0,\tau^2\bI)$, noise $\varepsilon\sim\mathcal N(0,\sigma^2)$, features $\boldsymbol\phi(x)=(1,x)$. The posterior is Gaussian, in closed form:</p>
+      <div class="eq s">$$\mathbf S=\Big(\frac{\bI}{\tau^2}+\frac{\Phi^\top\Phi}{\sigma^2}\Big)^{-1},\qquad \mathbf m=\frac{\mathbf S\,\Phi^\top\by}{\sigma^2}$$</div>
+      <div class="bluebox" style="font-size:19px">$$\Var(y_*\mid x_*)=\underbrace{\sigma^2}_{\text{aleatoric}}+\underbrace{\boldsymbol\phi_*^\top\mathbf S\,\boldsymbol\phi_*}_{\text{epistemic}}$$</div>
+      <p class="small step">The epistemic term shrinks with $n$ and grows away from the data (here the points are in $[-1,0.3]$).</p>
+      <p class="small step why">Exact only for linear-Gaussian models. For networks: Laplace, variational inference, or ensembles as a practical approximation. All of it is right only if the prior and the likelihood are.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Calibration and temperature scaling</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="cp-rel" data-auto="m=raw :: T = 1: the bars sit below the diagonal, the network is over-confident | m=cal :: T = 1.59: one scalar brings the bars onto the diagonal">
+      <svg class="fig" aria-label="Reliability diagram of a Fashion-MNIST classifier before and after temperature scaling, with the number of images per confidence bin"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-m="raw" aria-pressed="true">before (T = 1)</button><button type="button" data-m="cal" aria-pressed="false">after temperature scaling</button></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">Calibrated: of the images predicted with confidence 0.8, 80% are right. 15 bins $B_b$ of the top-label confidence:</p>
+      <div class="eq s">$$\mathrm{ECE}=\sum_b\frac{|B_b|}{N}\,\big|\mathrm{acc}(B_b)-\mathrm{conf}(B_b)\big|$$</div>
+      <p class="small"><b>Temperature scaling</b>: $\hat{\mathbf p}=\mathrm{softmax}(\bz/T)$, one scalar $T$ fitted by minimising the NLL on validation data. The order of the logits is kept: same predictions, same accuracy.</p>
+      <p class="small step">Lab, MLP on Fashion-MNIST, 30 epochs: accuracy 0.890, mean confidence 0.927. $T=1.59$: ECE <b>0.0368 → 0.0155</b>, test NLL 0.352 → 0.315.</p>
+      <p class="small step why">A calibrated probability is right on average over many inputs. It still does not say which classes to keep for <em>this</em> image with a guaranteed error rate.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card green"><h1><b>Part B</b><br>Split conformal<br>prediction</h1><ul class="small"><li>exchangeability</li><li>the recipe, with 10 points</li><li>the $(n+1)$ quantile</li><li>the guarantee and its proof</li><li>what it does not promise</li></ul></div></section>
+
+<section class="slide">
+  <h2>Exchangeability: the only assumption</h2>
+  <div class="cols c46">
+    <svg class="fig" data-fig="cp-ranks" aria-label="Three draws of 10 calibration scores and one test score on a line; the test score lands at rank 3, 11 and 7"></svg>
+    <div class="stack" style="gap:9px">
+      <p class="small">$(X_1,Y_1),\dots,(X_{n+1},Y_{n+1})$ are <b>exchangeable</b> if their joint distribution does not change when we permute them. i.i.d. data are exchangeable.</p>
+      <p class="small step">Fit the model on <b>other</b> data. Then the scores $s_i=s(X_i,Y_i)$ of the $n$ calibration points and of the test point are exchangeable too: no score knows it is special.</p>
+      <p class="small step">So the test score is equally likely to land at any of the $n+1$ ranks. That single fact gives the whole guarantee.</p>
+      <div class="warnbox step"><p class="small"><b>Not exchangeable:</b> time series with drift, a test population unlike the calibration one, calibration data that the model was trained on.</p></div>
+      <p class="small step why">Nothing is assumed about the model, the noise or the dimension of $x$: the model can be a deep network, a GBM or a constant.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Split conformal, step by step</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="cp-steps" data-auto="s=1 :: 10 calibration points the model has never seen | s=2 :: their scores: the absolute residuals, ranked | s=3 :: sort them; with α = 0.1 take the k = ⌈11 × 0.9⌉ = 10th | s=4 :: the band μ̂(x) ± q̂, and the interval at x = 2">
+      <svg class="fig" aria-label="The fitted curve, 10 calibration points with their residuals, the sorted scores and the resulting band"></svg>
+      <div class="ctl"><label for="st-s">step</label><input type="range" id="st-s" data-k="s" min="0" max="4" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <ol class="small" style="gap:3px"><li>fit $\hmu$ on the training set</li><li>scores on $\Dc$: $\ s_i=|y_i-\hmu(x_i)|$</li><li>$\hq=$ the $k$-th smallest, $k=\lceil(n+1)(1-\alpha)\rceil$</li><li>$C(x)=[\hmu(x)-\hq,\ \hmu(x)+\hq]$</li></ol>
+      <div class="panels" style="min-height:250px">
+        <div data-i="0"><p class="small">The lab's network $\hmu$ (Part A), fitted on 1,000 training points. Conformal never retrains it.</p></div>
+        <div data-i="1"><p class="small">The first 10 of the 1,000 calibration points. Their $x$ are spread over $[0,5]$; their $y$ are new noise.</p></div>
+        <div data-i="2"><p class="small">Scores sorted: 0.092, 0.102, 0.274, 0.334, 0.345, 0.345, 0.501, 1.044, 1.350, <b>2.055</b>.</p><p class="small why">Rank 10 is the point at $x=4.57$, $y=0.12$, far below $\hmu=2.17$: the noisy region.</p></div>
+        <div data-i="3"><p class="small">$n=10$, $\alpha=0.1$: $k=\lceil11\times0.9\rceil=\lceil9.9\rceil=10$. $\ \hq=s_{(10)}=2.055$, the largest score.</p><p class="small why">Rank 10 of 11: covered unless the test point is the most extreme of the 11, so $P=10/11=0.909$.</p></div>
+        <div data-i="4"><p class="small">$\hmu(2)=1.332$, so $C(2)=1.332\pm2.055=[-0.722,\ 3.387]$.</p><p class="small">With all 1,000 points: $k=901$, $\hq=1.397$, coverage <b>0.901</b> on 19,000 test points.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Why $\lceil(n+1)(1-\alpha)\rceil$</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="cp-alpha" data-auto="a=10 :: α = 0.10: k = 10, the largest of the 10 scores | a=20 :: α = 0.20: k = 9, the second largest | a=30 :: α = 0.30: k = 8 | a=5 :: α = 0.05: k = 11 > 10, no finite interval with 10 points">
+      <svg class="fig" aria-label="The 10 sorted calibration scores with the k-th highlighted for the chosen alpha, and the resulting intervals for n = 10 and n = 1000"></svg>
+      <div class="ctl"><label for="al-a">α × 100</label><input type="range" id="al-a" data-k="a" min="5" max="50" step="5" value="10"><span class="v" data-v="a"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">The test point is one of $n+1$ exchangeable points, so the slot it may take is counted: $k$ of the $n+1$ ranks must be "covered".</p>
+      <div class="bluebox" style="font-size:19px">$$\hq=s_{(k)},\quad k=\big\lceil(n+1)(1-\alpha)\big\rceil$$</div>
+      <p class="small">Equivalently the empirical quantile of the scores at level $(1-\alpha)(1+\frac1n)$. If $k\gt n$, $\hq=+\infty$.</p>
+      <p class="small step">A finite interval needs $n\ge\frac1\alpha-1$: 9 points for 90%, 19 for 95%, 99 for 99%.</p>
+      <p class="small step">The plain 90% quantile of 10 scores (the 9th) covers only $9/11=0.818$. For $n=1000$ the correction is tiny ($k=901$ vs 900): use it always.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The coverage guarantee</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:10px">
+      <div class="hint b"><div class="hd">THEOREM (Vovk et al., 2005; Lei et al., 2018)</div><div class="bd"><p class="small">If the $n$ calibration points and the test point are exchangeable,</p>
+        <div class="eq s">$$1-\alpha\ \le\ P\big(Y_{n+1}\in C(X_{n+1})\big)\ \le\ 1-\alpha+\frac1{n+1}$$</div><p class="small">the upper bound when the scores have no ties.</p></div></div>
+      <p class="small step">The probability is over the calibration set <b>and</b> the test point: an average over many deployments, not a promise for each one (next slide).</p>
+      <p class="small step why">Ties (discrete scores) only make the rank non-uniform in the safe direction: the lower bound still holds.</p>
+    </div>
+    <div class="stack" style="gap:6px">
+      <p class="small"><b>Proof</b> (rank argument).</p>
+      <div class="deriv s">
+        <div class="eq">$$Y_{n+1}\in C\iff s_{n+1}\le\hq=s_{(k)}$$</div><p class="why">definition of the interval</p>
+        <div class="eq">$$\iff \mathrm{rank}(s_{n+1})\le k$$</div><p class="why">among the $n+1$ scores</p>
+        <div class="eq">$$P=\frac{k}{n+1}$$</div><p class="why">rank uniform on $1,\dots,n+1$</p>
+        <div class="eq">$$\frac{\lceil(n+1)(1-\alpha)\rceil}{n+1}\in\Big[1-\alpha,\,1-\alpha+\tfrac1{n+1}\Big)$$</div><p class="why">since $z\le\lceil z\rceil\lt z+1$</p>
+      </div>
+      <p class="small step">The form of the score never entered the proof: any score works, and Part C uses that freedom.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Coverage varies from one calibration set to another</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="cp-beta" data-auto="i=1 :: n = 20: one deployed interval can cover 80% or 99% | i=4 :: n = 200: within about ±4 points | i=6 :: n = 1000: within about ±2 points">
+      <svg class="fig" aria-label="Histogram of the coverage of one calibrated interval over simulated calibration sets, with the Beta density, for a chosen calibration size"></svg>
+      <div class="ctl"><label for="bt-i">calibration size</label><input type="range" id="bt-i" data-k="i" min="0" max="6" step="1" value="1"><span class="v" data-v="i"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">For one calibration set, the coverage on new points is $c=F_S(\hq)$. The $F_S(s_i)$ are uniform and $\hq=s_{(k)}$, so $c$ is the $k$-th of $n$ uniforms:</p>
+      <div class="bluebox" style="font-size:19px">$$c\sim\mathrm{Beta}(k,\,n+1-k),\quad \mathrm{sd}\approx\sqrt{\alpha(1-\alpha)/n}$$</div>
+      <p class="small step">Lab, 1,000 random splits: mean coverage 0.9000 for $n=200$ (theory 0.9005); sd <b>0.063</b> for $n=20$, with 16.6% of the splits below 0.85; sd <b>0.0103</b> for $n=1000$.</p>
+      <p class="small step">Small $n$ also gives wider intervals: mean width 3.12 for $n=20$, 2.79 for $n=1000$.</p>
+      <p class="small step why">Rule of thumb: 500 to 1,000 calibration points. The widget simulates the Beta in your browser.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Marginal, not conditional</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="cp-condfail" aria-label="The constant-width conformal band on heteroscedastic data, misses in red at large x, and the coverage per bin of x falling from 1.00 to 0.71"></svg>
+    <div class="stack" style="gap:9px">
+      <p class="small">The theorem is about $P(Y\in C(X))$, averaged over $X$: <b>marginal</b> coverage. We would like it at every $x$:</p>
+      <div class="eq s">$$P\big(Y\in C(X)\mid X=x\big)\ge1-\alpha\quad\text{for all }x$$</div>
+      <p class="small step">The band $\hmu\pm1.397$ covers 0.901 overall, made of <b>1.00</b> where the noise is small and <b>0.71</b> where it is large. The noisy customers get the bad intervals.</p>
+      <p class="small step">Exact conditional coverage is impossible in finite samples without assumptions (Vovk, 2012; Barber et al., 2021). The score decides how close we get.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card purple"><h1><b>Part C</b><br>Adaptive intervals<br>and prediction sets</h1><ul class="small"><li>normalised scores</li><li>conformalised quantile regression</li><li>California housing</li><li>classification: LAC and APS</li><li>set sizes, Mondrian</li></ul></div></section>
+
+<section class="slide">
+  <h2>Better scores: normalised and CQR</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="cp-adapt" data-auto="m=abs :: constant width: too wide at small x, too narrow at large x | m=norm :: normalised score: the band follows the noise, every bin near 0.9 | m=cqr :: CQR: the quantile band moved by q̂ = 0.062">
+      <svg class="fig" aria-label="Conformal bands on the heteroscedastic data with three scores, and the coverage in each bin of x"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-m="abs" aria-pressed="true">constant</button><button type="button" data-m="norm" aria-pressed="false">normalised</button><button type="button" data-m="cqr" aria-pressed="false">CQR</button></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small"><b>Normalised</b>: divide by the predicted spread,</p>
+      <div class="eq s">$$s=\frac{|y-\hmu(x)|}{\hsig(x)}\ \Rightarrow\ C(x)=\hmu(x)\pm\hq\,\hsig(x)$$</div>
+      <p class="small"><b>CQR</b> (Romano et al., 2019): how far $y$ falls outside a quantile band,</p>
+      <div class="eq s">$$s=\max\big(\hq_{\alpha/2}(x)-y,\ y-\hq_{1-\alpha/2}(x)\big)$$</div>
+      <p class="small">$C(x)=[\hq_{\alpha/2}(x)-\hq,\ \hq_{1-\alpha/2}(x)+\hq]$. Same guarantee: the proof never used the score.</p>
+      <table class="t xs step"><tr><th>lab</th><th>coverage</th><th>width</th><th>bins</th></tr>
+        <tr><td>constant</td><td>0.901</td><td>2.79</td><td>0.71–1.00</td></tr>
+        <tr><td>normalised, $\hq=1.731$</td><td>0.913</td><td>2.53</td><td>0.89–0.94</td></tr>
+        <tr><td>CQR, $\hq=+0.062$</td><td>0.907</td><td>2.46</td><td>0.86–0.95</td></tr></table>
+      <p class="small step why">Adaptive is also narrower on average. CQR is only as adaptive as its quantiles.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>A real dataset: California housing</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="cp-house" aria-label="Coverage and mean width of split conformal and CQR intervals in the five quintiles of median income"></svg>
+    <div class="stack" style="gap:9px">
+      <p class="small">20,640 districts, 8 features, target the median house value (in \$100k). 10,000 train, 5,000 calibrate, 5,640 test. Histogram gradient boosting for the mean and for the 5% and 95% quantiles.</p>
+      <p class="small step"><b>Split conformal</b>: $\pm0.704$ (±\$70k) for every district. Coverage 0.905: <b>0.939</b> in the poorest fifth, <b>0.858</b> in the richest.</p>
+      <p class="small step"><b>CQR</b>: coverage 0.911, between 0.902 and 0.927 in every quintile, and <b>narrower</b> on average: 1.367 against 1.407.</p>
+      <p class="small step">The raw quantile band, without conformal: only <b>0.784</b>.</p>
+      <p class="small step why">Same guarantee, better intervals: the modelling effort goes into the score.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Prediction sets for classification</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="cp-sets" data-auto="i=0;m=lac :: a trouser: one class, probability 1.000 | i=1 :: a T-shirt that could be a shirt: two classes | i=2 :: a coat: pullover, coat or shirt | i=3 :: misclassified as a shirt, but the set still contains the pullover | i=4 :: one class for LAC... | m=aps :: ...three for APS, which adds classes until the mass reaches q̂">
+      <svg class="fig" aria-label="A Fashion-MNIST image, its ten class probabilities, and the 95% prediction set chosen by LAC or APS"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-i="0" aria-pressed="true">1</button><button type="button" data-i="1" aria-pressed="false">2</button><button type="button" data-i="2" aria-pressed="false">3</button><button type="button" data-i="3" aria-pressed="false">4</button><button type="button" data-i="4" aria-pressed="false">5</button></span><span class="seg"><button type="button" data-m="lac" aria-pressed="true">LAC</button><button type="button" data-m="aps" aria-pressed="false">APS</button></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">Same recipe, a set $C(x)\subseteq\{1,\dots,K\}$ with $P(Y\in C(X))\ge1-\alpha$:</p>
+      <p class="small"><b>LAC</b> (threshold): $\ s=1-\hat p_y(x)$, so $C(x)=\{k:\hat p_k(x)\ge1-\hq\}$. Smallest sets on average.</p>
+      <p class="small"><b>APS</b>: sort the classes, add them until the cumulative mass reaches $\hq$. Score = the mass down to the true class, randomised:</p>
+      <div class="eq xs">$$s=\textstyle\sum_{j:\,\hat p_j\gt\hat p_y}\hat p_j+U\,\hat p_y,\quad U\sim\mathcal U(0,1)$$</div>
+      <p class="small step">Lab, 95% ($\alpha=0.05$; the top-1 is right 0.888 of the time): LAC covers <b>0.949</b>, threshold $1-\hq=0.203$; APS covers <b>0.946</b>, $\hq=0.947$.</p>
+      <p class="small step why">Without $U$, a confident correct image scores ≈ 1 and the sets explode.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Set size is uncertainty; Mondrian for each class</h2>
+  <svg class="fig" data-fig="cp-sizes" style="max-height:285px" aria-label="Distribution of the set sizes for LAC and APS, and coverage by class for LAC and class-conditional LAC"></svg>
+  <div class="cols">
+    <div class="stack" style="gap:6px">
+      <p class="small">LAC: 82% singletons, mean size 1.19. APS: mean 1.49. Large sets fall on ambiguous tops; the frequent pairs are Shirt / T-shirt (230) and Coat / Pullover (177).</p>
+      <p class="small step">LAC covers Shirt only 0.853 but Trouser 0.976: a threshold is easy to pass for easy classes. APS spreads it: 0.924 to 0.966.</p>
+    </div>
+    <div class="stack" style="gap:6px">
+      <p class="small step"><b>Mondrian</b> (class-conditional): one $\hq_c$ per class, from that class's calibration images. Exchangeable within a class, so $P(Y\in C\mid Y=c)\ge1-\alpha$ for every $c$.</p>
+      <p class="small step">Lab: the shirt threshold drops to 0.052; mean size 1.19 → 1.32. Averaged over 200 splits every class gets 0.948–0.953. Needs ≥ 19 calibration images per class at 95%.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card coral"><h1><b>Part D</b><br>In practice</h1><ul class="small"><li>when exchangeability breaks</li><li>time series: adaptive conformal</li><li>cross-conformal, jackknife+</li><li>communicating intervals</li><li>libraries</li></ul></div></section>
+
+<section class="slide">
+  <h2>When exchangeability breaks</h2>
+  <svg class="fig" data-fig="cp-shift" style="max-height:280px" aria-label="Left: coverage of three calibrated interval methods with no shift, under covariate shift and with more noise. Right: coverage and accuracy of 95% sets as pixel noise grows"></svg>
+  <div class="cols c3">
+    <div class="stack" style="gap:4px"><h3>Covariate shift</h3><p class="small">Only the mix of $x$ changes (here: the noisy end). Constant band <b>0.769</b>; normalised 0.902, CQR 0.872 survive: right at every $x$ ⇒ right for any mix.</p></div>
+    <div class="stack" style="gap:4px"><h3>Concept shift</h3><p class="small">$P(Y\mid X)$ changes: 1.5 × the noise. All three fall to 0.75–0.79. Images with pixel noise 0.4: accuracy 0.408, "95%" sets cover <b>0.474</b>.</p></div>
+    <div class="stack" style="gap:4px"><h3>What to do</h3><p class="small">Monitor coverage on fresh labels; recalibrate (cheap: no retraining). Known covariate shift: <b>weighted</b> conformal, scores reweighted by $p_{\text{test}}(x)/p_{\text{cal}}(x)$.</p></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Time series: adaptive conformal inference</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="cp-aci" data-auto="v=fixed :: calibrated once: after the drift it covers 0.675 | v=rolling :: recalibrated on the last 500 points: it recovers, with a lag | v=ACI :: ACI: α_t drops after misses and brings the coverage back to 0.9 | v=all :: the three together">
+      <svg class="fig" aria-label="Rolling coverage over time of fixed, rolling and adaptive conformal intervals on a stream whose noise doubles, and the adaptive level alpha_t"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-v="fixed" aria-pressed="true">fixed</button><button type="button" data-v="rolling" aria-pressed="false">rolling</button><button type="button" data-v="ACI" aria-pressed="false">ACI</button><button type="button" data-v="all" aria-pressed="false">all</button></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">A stream whose noise doubles between $t=1000$ and $1500$. <b>ACI</b> (Gibbs and Candès, 2021): recalibrate on a window and adapt the level, with $\mathrm{err}_t=\ind\{y_t\notin C_t\}$:</p>
+      <div class="bluebox" style="font-size:19px">$$\alpha_{t+1}=\alpha_t+\gamma\,(\alpha-\mathrm{err}_t)$$</div>
+      <p class="small">A miss widens the next intervals, a hit narrows them a little. For <b>any</b> sequence:</p>
+      <div class="eq xs">$$\Big|\frac1T\sum_t\mathrm{err}_t-\alpha\Big|\le\frac{\max(\alpha_1,1-\alpha_1)+\gamma}{\gamma\,T}$$</div>
+      <p class="small step">Lab ($\gamma=0.005$): fixed 0.743 overall, rolling 0.878, ACI <b>0.900</b>; $\alpha_t$ dipped to 0.029.</p>
+      <p class="small step why">A guarantee on the long-run miss rate, not on each interval.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Using all the data: cross-conformal and jackknife+</h2>
+  <div class="cols c46">
+    <svg class="fig" data-fig="cp-cv" aria-label="Data usage of split conformal, 5-fold cross-conformal and jackknife+"></svg>
+    <div class="stack" style="gap:9px">
+      <p class="small"><b>Split</b> conformal wastes data: the calibration points never train the model. Fine with thousands of points, costly with 200.</p>
+      <p class="small step"><b>Cross-conformal</b>: $K$ folds; each fold is scored by the model trained on the other $K-1$. Every point is used for fitting and for scoring.</p>
+      <p class="small step"><b>Jackknife+</b> (Barber et al., 2021): $n$ leave-one-out models; the interval combines $\hmu_{-i}(x)\pm|y_i-\hmu_{-i}(x_i)|$ over $i$. Guarantee $1-2\alpha$ in the worst case, about $1-\alpha$ in practice. CV+ is its $K$-fold version.</p>
+      <p class="small step why">The price is computation ($K$ or $n$ fits) and a slightly weaker guarantee. Full conformal, refitting for every candidate $y$, is exact but rarely affordable.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>A practical guide</h2>
+  <table class="t xs">
+    <tr><th style="width:30%">situation</th><th>what to do</th></tr>
+    <tr><td>any model, i.i.d. data</td><td>split conformal on a held-out set of 500 to 1,000 points; $\hq$ = the $\lceil(n+1)(1-\alpha)\rceil$-th score.</td></tr>
+    <tr><td>noise changes with $x$</td><td>normalised scores with a spread model, or CQR on two quantile models; check coverage by bins or groups.</td></tr>
+    <tr><td>few data</td><td>cross-conformal or CV+ / jackknife+; never calibrate on the training points.</td></tr>
+    <tr><td>classification</td><td>calibrate the probabilities first (temperature); LAC for small sets, APS for even coverage; Mondrian for rare or critical classes.</td></tr>
+    <tr><td>groups must each be covered</td><td>Mondrian: one $\hq$ per group, at least $1/\alpha-1$ calibration points in each.</td></tr>
+    <tr><td>time series, drift</td><td>rolling recalibration plus ACI; monitor the realised coverage.</td></tr>
+    <tr><td>communicating</td><td>"9 in 10 claims like this one cost between 900 and 6,000 €": state the level, that it holds on average over cases, and the width.</td></tr>
+    <tr><td>libraries</td><td><b>MAPIE</b> (scikit-learn API: split, CQR, jackknife+, LAC, APS, Mondrian), <b>crepes</b> (conformal regressors and predictive systems), TorchCP.</td></tr>
+  </table>
+</section>
+
+<section class="slide">
+  <h2>The topic in one slide</h2>
+  <div class="cards c2" style="gap:12px">
+    <div class="card"><h3>A · Uncertainty in models</h3><ul>
+      <li>aleatoric (noise) vs epistemic (model); PI vs CI of the mean</li>
+      <li>NLL $\frac12\log\hsig^2+\frac{(y-\hmu)^2}{2\hsig^2}$; pinball $\rho_\tau$ → the $\tau$-quantile</li>
+      <li>ensembles, MC dropout, Bayes; ECE, temperature scaling</li></ul></div>
+    <div class="card g"><h3>B · Split conformal</h3><ul>
+      <li>scores on $\Dc$; $\hq=s_{(k)}$, $k=\lceil(n+1)(1-\alpha)\rceil$</li>
+      <li>$1-\alpha\le P(Y\in C)\le1-\alpha+\frac1{n+1}$: rank argument</li>
+      <li>coverage $\sim\mathrm{Beta}(k,n+1-k)$; marginal, not conditional</li></ul></div>
+    <div class="card y"><h3>C · Adaptive intervals and sets</h3><ul>
+      <li>normalised $|y-\hmu|/\hsig$; CQR on a quantile band</li>
+      <li>LAC $1-\hat p_y$; APS: cumulative mass; set size = uncertainty</li>
+      <li>Mondrian: a guarantee per class or group</li></ul></div>
+    <div class="card o"><h3>D · Practice</h3><ul>
+      <li>shift breaks the guarantee: monitor, recalibrate, weight</li>
+      <li>ACI: $\alpha_{t+1}=\alpha_t+\gamma(\alpha-\mathrm{err}_t)$</li>
+      <li>cross-conformal, jackknife+; MAPIE, crepes</li></ul></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Vocabulary of Extra 10</h2>
+  <div class="cols">
+    <dl class="gloss" style="font-size:16px;gap:5px 14px">
+      <dt>aleatoric</dt><dd>uncertainty from the noise of $Y$ given $X$.</dd>
+      <dt>epistemic</dt><dd>uncertainty from lack of data or knowledge of the model.</dd>
+      <dt>heteroscedastic</dt><dd>noise whose size depends on $x$.</dd>
+      <dt>prediction interval</dt><dd>contains a new observation with probability $1-\alpha$.</dd>
+      <dt>confidence interval</dt><dd>contains a fixed unknown quantity, e.g. $f(x)$.</dd>
+      <dt>pinball loss</dt><dd>$\rho_\tau(u)=\max(\tau u,(\tau-1)u)$; trains a $\tau$-quantile.</dd>
+      <dt>deep ensemble</dt><dd>$M$ networks from different seeds; disagreement = epistemic.</dd>
+      <dt>MC dropout</dt><dd>dropout kept on at test time, many passes.</dd>
+      <dt>ECE</dt><dd>weighted mean gap between confidence and accuracy.</dd>
+      <dt>temperature scaling</dt><dd>softmax$(\bz/T)$, $T$ fitted on validation NLL.</dd>
+      <dt>exchangeable</dt><dd>joint law unchanged by permutations.</dd>
+    </dl>
+    <dl class="gloss" style="font-size:16px;gap:5px 14px">
+      <dt>nonconformity score</dt><dd>$s(x,y)$: how unusual $y$ is for $x$.</dd>
+      <dt>split conformal</dt><dd>scores on a calibration set, $\hq=s_{(k)}$, $C=\{y:s\le\hq\}$.</dd>
+      <dt>coverage</dt><dd>$P(Y\in C(X))$; marginal or conditional on $X$.</dd>
+      <dt>normalised score</dt><dd>$|y-\hmu(x)|/\hsig(x)$: width follows the spread.</dd>
+      <dt>CQR</dt><dd>conformalised quantile regression.</dd>
+      <dt>prediction set</dt><dd>a set of classes with guaranteed coverage.</dd>
+      <dt>LAC</dt><dd>score $1-\hat p_y$: one threshold on the probabilities.</dd>
+      <dt>APS</dt><dd>cumulative sorted probabilities, randomised.</dd>
+      <dt>Mondrian</dt><dd>conformal calibrated separately in each class or group.</dd>
+      <dt>ACI</dt><dd>adaptive conformal inference: online update of $\alpha_t$.</dd>
+      <dt>jackknife+</dt><dd>conformal with leave-one-out models, no held-out set.</dd>
+    </dl>
+  </div>
+  <p class="labline">Read more: <a href="https://arxiv.org/abs/2107.07511" target="_blank" rel="noopener">A gentle introduction to conformal prediction (Angelopoulos &amp; Bates)</a> · <a href="https://arxiv.org/abs/1905.03222" target="_blank" rel="noopener">CQR</a> · <a href="https://arxiv.org/abs/2006.02544" target="_blank" rel="noopener">APS</a> · <a href="https://arxiv.org/abs/2106.00170" target="_blank" rel="noopener">ACI</a> · <a href="https://arxiv.org/abs/1905.02928" target="_blank" rel="noopener">jackknife+</a> · <a href="https://arxiv.org/abs/1706.04599" target="_blank" rel="noopener">temperature scaling</a> · <a href="https://arxiv.org/abs/1612.01474" target="_blank" rel="noopener">deep ensembles</a>.</p>
+</section>
+
+<section class="slide lab">
+  <div class="labtag">EXTRA 10</div>
+  <h2>Uncertainty and conformal prediction, from scratch</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:10px">
+      <p>Build every interval of this deck in NumPy and PyTorch, measure its coverage, and break it.</p>
+      <ol class="todo">
+        <li>Heteroscedastic data; prediction vs confidence intervals by the bootstrap.</li>
+        <li>A Gaussian network (NLL), quantile regression (pinball), a deep ensemble and MC dropout.</li>
+        <li>Split conformal from scratch: 10 points by hand, then coverage over 1,000 splits vs the Beta law.</li>
+        <li>Conditional coverage by bins: constant band, normalised scores, CQR.</li>
+        <li>California housing: CQR vs split conformal.</li>
+        <li>Fashion-MNIST: ECE and temperature scaling, LAC, APS and Mondrian sets.</li>
+        <li>Distribution shift, corrupted images, and ACI on a drifting stream.</li>
+      </ol>
+    </div>
+    <div class="labcard">
+      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/extra/extra 10 - Uncertainty and Conformal Prediction.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <dl class="gloss">
+        <dt>notebook</dt><dd><code>extra 10 - Uncertainty and Conformal Prediction.ipynb</code></dd>
+        <dt>you need</dt><dd>regression and classification as maximum likelihood, calibration (logistic regression), ensembles, the PyTorch training loop</dd>
+        <dt>runs on</dt><dd>CPU, about 1 minute here (a few on Colab)</dd>
+        <dt>data</dt><dd>synthetic; California housing (scikit-learn, 0.4 MB); Fashion-MNIST (torchvision, 30 MB)</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section class="slide cover">
+  <div class="inner"><h1>Extra topics</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Next: Causal inference and uplift</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+</div></div>
+<script src="../assets/figures.js?v=20260930"></script>
+<script src="../neural_networks/assets/nn-core.js?v=20260930"></script>
+<script src="assets/conformal-data.js?v=20261009"></script>
+<script src="assets/fig-conformal.js?v=20261009"></script>
+<script src="../assets/deck.js?v=20260930"></script>
+</body>
+</html>

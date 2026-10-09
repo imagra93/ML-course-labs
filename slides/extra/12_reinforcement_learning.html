@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="author" content="Imanol Granada (imanolgranada@gmail.com)">
+<title>Reinforcement Learning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="../assets/deck.css?v=20260930">
+<link rel="stylesheet" href="../neural_networks/assets/nn.css?v=20261006c">
+<script src="../assets/mathjax-config.js?v=20260930"></script>
+<script>Object.assign(MathJax.tex.macros,{Sc:'\\mathcal{S}',Ac:'\\mathcal{A}',KL:'\\mathrm{KL}',clip:'\\mathrm{clip}',piref:'\\pi_{\\text{ref}}',Tc:'\\mathcal{T}'});</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
+</head>
+<body data-deck="Extra 12 · Reinforcement learning" data-prev="11_causal.html">
+<div id="viewport"><div id="stage">
+<section class="slide cover">
+  <div class="inner"><h1>Extra topics</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Reinforcement learning</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+
+<section class="slide">
+  <h2>Where we are</h2>
+  <svg class="fig" data-fig="rl-where" style="max-height:200px" aria-label="Left: supervised learning compares the model's output with a label. Right: in reinforcement learning an agent acts on an environment, which answers with a new state and a reward."></svg>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p class="small">The whole course so far was supervised: every example comes with the right answer, and the loss says how far we are from it.</p>
+      <p class="small step">Often nobody knows the right answer, only whether the outcome was good: a game won after 200 moves, a robot that did not fall, a click, a thumbs up. And the agent's own choices decide what it sees next.</p>
+    </div>
+    <div class="stack" style="gap:10px">
+      <div class="note step"><p class="small"><b>Reinforcement learning (RL)</b>: learn a policy, a rule from situations to actions, that maximises the total reward collected over time, by trial and error.</p></div>
+      <p class="small step why">Four parts: <b>A</b> the RL problem and bandits, <b>B</b> MDPs and planning (Bellman equations, value and policy iteration), <b>C</b> learning from experience (TD, SARSA, Q-learning, DQN), <b>D</b> policy gradients, PPO, RLHF and practice. It ends with the Extra 12 lab.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card blue"><h1><b>Part A</b><br>The RL problem</h1><ul class="small"><li>agent, environment, reward</li><li>not supervised learning</li><li>where RL is used</li><li>bandits: explore or exploit</li></ul></div></section>
+
+<section class="slide">
+  <h2>The agent–environment loop</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="rl-loop" data-auto="s=1 :: t = 0: in S the policy picks up; the reward is 0 and the agent lands in (1,0) | s=3 :: on the top row it turns right: still no reward | s=7 :: entering the +10 exit gives R₇ = 10 and ends the episode | s=8 :: the return discounts each reward by γᵏ: G₀ = 0.9⁶ · 10 = 5.31">
+      <svg class="fig" aria-label="The gridworld with an agent moving from the start to the +10 exit, and a table of the states, actions and rewards so far"></svg>
+      <div class="ctl"><label for="lo-s">step</label><input type="range" id="lo-s" data-k="s" min="0" max="8" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:9px">
+      <p class="small">At each step $t$ the agent observes a state $S_t$, picks an action $A_t$ with its <b>policy</b> $\pi(a\mid s)$, and the environment answers with a <b>reward</b> $R_{t+1}$ and the next state $S_{t+1}$.</p>
+      <p class="small">An <b>episode</b>: $S_0, A_0, R_1, S_1, A_1, R_2, \dots$ until a terminal state.</p>
+      <p class="small">The goal: maximise the expected <b>return</b>, the discounted sum of future rewards,</p>
+      <div class="bluebox" style="font-size:20px">$$G_t=R_{t+1}+\gamma R_{t+2}+\gamma^2R_{t+3}+\dots$$</div>
+      <p class="small step why">The gridworld of the lab: start S, exits +1 and +10, a cliff (−10) along the bottom, a slippery floor, $\gamma=0.9$. This episode follows the optimal policy and happens not to slip.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Not supervised learning</h2>
+  <table class="t xs">
+    <tr><th style="width:17%"></th><th style="width:38%">supervised learning</th><th>reinforcement learning</th></tr>
+    <tr><td><b>feedback</b></td><td>the right answer $y$ for every input</td><td>a number, the reward: how good, not what would have been right</td></tr>
+    <tr><td><b>timing</b></td><td>immediate, one per example</td><td>delayed: the move that lost the game may be 100 moves before the end (<b>credit assignment</b>)</td></tr>
+    <tr><td><b>data</b></td><td>a fixed dataset, i.i.d. examples</td><td>generated by the agent itself: change the policy and the data change</td></tr>
+    <tr><td><b>what is hard</b></td><td>generalisation</td><td><b>exploration</b> (try new things or exploit what works?), credit assignment, and generalisation</td></tr>
+    <tr><td><b>objective</b></td><td>minimise the average loss</td><td>maximise the expected return $\E[G_0]$</td></tr>
+  </table>
+  <div class="idea step"><b>When labels exist, use them.</b> Supervised learning is the special case with one step and the reward $-\text{loss}$ for the action "predict $\hat y$". RL is the tool for when you can only score outcomes, and your decisions change what happens next.</div>
+  <p class="small step why">Not unsupervised learning either: there is a signal, but it evaluates instead of instructing. The data are not given: the agent has to go and get them.</p>
+</section>
+
+<section class="slide">
+  <h2>Where RL is used</h2>
+  <div class="cards c3" style="gap:12px">
+    <div class="card app"><h3>Games</h3><svg class="fig" data-fig="rl-app" data-app="games" aria-label="A Go board with a candidate move circled"></svg><p>Atari from pixels (DQN, 2015), Go (AlphaGo beats Lee Sedol, 2016), StarCraft II, Dota 2. A simulator gives unlimited free episodes.</p></div>
+    <div class="card o app"><h3>Robotics</h3><svg class="fig" data-fig="rl-app" data-app="robot" aria-label="A two-link robot arm reaching for a block"></svg><p>Walking, grasping, in-hand manipulation. Trained in simulation with randomised physics, then transferred to the real robot (sim-to-real).</p></div>
+    <div class="card g app"><h3>Recommendation and ads</h3><svg class="fig" data-fig="rl-app" data-app="rec" aria-label="A list of four items with one highlighted and clicked"></svg><p>Each recommendation is an action, the click is the reward. Contextual bandits for news (Yahoo!, 2010), long-term engagement.</p></div>
+    <div class="card y app"><h3>Pricing and operations</h3><svg class="fig" data-fig="rl-app" data-app="price" aria-label="A demand curve with the chosen price marked"></svg><p>Dynamic pricing, inventory, ride-hailing dispatch: today's decision changes tomorrow's demand and stock.</p></div>
+    <div class="card r app"><h3>Language models</h3><svg class="fig" data-fig="rl-app" data-app="rlhf" aria-label="Two answers, A preferred to B by a person"></svg><p>RLHF: people compare answers, a reward model learns their taste, PPO tunes the model (InstructGPT, 2022). RL on checkable rewards for maths and code.</p></div>
+    <div class="card app"><h3>Control</h3><svg class="fig" data-fig="rl-app" data-app="control" aria-label="The cross-section of a tokamak plasma surrounded by control coils"></svg><p>Data-centre cooling (DeepMind and Google, 2016), the shape of the plasma in a fusion tokamak (Nature, 2022).</p></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Bandits: explore or exploit?</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:7px">
+      <p class="small">The simplest RL problem, one state: $K$ slot machines, arm $a$ pays 1 with unknown probability $\mu_a$. Lab: $K=10$, best arm $\mu^*=0.8$, second best 0.7.</p>
+      <p class="small"><b>Regret</b> after $T$ pulls: $\sum_t(\mu^*-\mu_{A_t})$, the reward lost while learning.</p>
+      <p class="small"><b>greedy</b>: always the best average $\hat\mu_a$. Can lock onto a bad arm forever.</p>
+      <p class="small"><b>ε-greedy</b>: a random arm with probability ε. It pays for exploration forever: linear regret, slope $\varepsilon\,(\mu^*-\bar\mu)=0.033$ per pull.</p>
+      <div class="bluebox" style="font-size:19px;padding:4px 14px">$$\text{UCB:}\quad A_t=\arg\max_a\ \hat\mu_a+c\sqrt{\frac{\ln t}{N_a}}$$</div>
+      <p class="small"><b>UCB</b>: optimism in the face of uncertainty, rarely tried arms get a bonus. Regret $O(\log T)$, but the constant matters.</p>
+    </div>
+    <div class="widget" data-fig="rl-regret" data-auto="a=greedy :: greedy: 38 % of the runs lock onto a worse arm, so the regret grows linearly | a=eps :: ε-greedy: 10 % random pulls forever, about 0.033 regret per pull | a=ucb :: UCB: logarithmic, but the textbook c = √2 explores too much at this horizon; c = 0.5 does well | a=ts :: Thompson sampling: 62 after 5,000 pulls, without tuning (next slide) | a=all :: 400 runs of 5,000 pulls per strategy, from the lab">
+      <svg class="fig" aria-label="Cumulative regret against the number of pulls for greedy, epsilon-greedy, two UCB variants and Thompson sampling"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-a="greedy" aria-pressed="false">greedy</button><button type="button" data-a="eps" aria-pressed="false">ε-greedy</button><button type="button" data-a="ucb" aria-pressed="false">UCB</button><button type="button" data-a="ts" aria-pressed="false">Thompson</button><button type="button" data-a="all" aria-pressed="true">all</button></span></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Thompson sampling: act on a sample of your beliefs</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="rl-thompson" data-auto="k=3 :: after 5 pulls the posteriors are wide: the samples, and so the choices, are almost random | k=5 :: after 20 pulls the clearly bad arms start to fall behind | k=7 :: after 100 pulls the search has narrowed to a few good arms | k=10 :: after 1,000 pulls the best arm (orange) has most of the pulls and a narrow posterior">
+      <svg class="fig" aria-label="Ten Beta posteriors drawn as violins, with the true means, one sample per arm and the number of pulls"></svg>
+      <div class="ctl"><label for="ts-k">pulls</label><input type="range" id="ts-k" data-k="k" min="0" max="10" step="1" value="0"><span class="v" data-v="k"></span></div>
+    </div>
+    <div class="stack" style="gap:9px">
+      <p class="small">Keep a belief about each $\mu_a$. With a uniform prior and $S_a$ successes in $N_a$ pulls, Bayes gives a Beta posterior. Then:</p>
+      <div class="bluebox" style="font-size:18px;padding:4px 14px">$$\theta_a\sim\mathrm{Beta}(1+S_a,\,1+N_a-S_a),\quad A_t=\arg\max_a\theta_a$$</div>
+      <p class="small">Each arm is pulled with the probability that it is the best, given the data. Wide posteriors give wild samples: exploration, which fades by itself as the posteriors shrink.</p>
+      <p class="small step">Lab: after 1,000 pulls the best arm has 769; the 0.6 and 0.7 arms got 116 and 37, the others 4 to 14. Regret after 5,000 pulls: 62, as good as tuned UCB, and growing like $\log t$. No strategy can beat $\log T$ (Lai and Robbins, 1985).</p>
+      <p class="small step why">Bandits are RL with one state: the action changes the reward, not the future. Contextual bandits, where arm values depend on the user's features, run recommendation, adaptive A/B tests and dynamic pricing.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card green"><h1><b>Part B</b><br>MDPs and planning</h1><ul class="small"><li>states, transitions, discount</li><li>values and the Bellman equations</li><li>policy iteration, value iteration</li><li>discount, noise and rewards</li></ul></div></section>
+
+<section class="slide">
+  <h2>Markov decision processes</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="rl-grid-mdp" aria-label="The 4 by 5 gridworld: start S, walls, exits +1 and +10, a cliff of -10 along the bottom; and a cell with an intended move of probability 0.8 and sideways slips of 0.1"></svg>
+    <div class="stack" style="gap:9px">
+      <p class="small">An <b>MDP</b> $(\Sc,\Ac,P,r,\gamma)$: states, actions, transition probabilities $P(s'\mid s,a)$, rewards $r(s,a,s')$ and a discount $\gamma$.</p>
+      <p class="small"><b>Markov property</b>: the next state depends only on the current state and action, not on the path that led there. If it does not, put more into the state (the last frames of a game, a velocity).</p>
+      <p class="small"><b>Return</b>: $G_t=\sum_{k\ge0}\gamma^kR_{t+k+1}=R_{t+1}+\gamma\,G_{t+1}$. Finite for $\gamma\lt1$; a reward 10 steps away counts $0.9^{10}=0.35$.</p>
+      <p class="small step">Gridworld of the lab: the reward is the exit's value when entering A (+1), B (+10) or the cliff (−10), and 0 otherwise. The short way to both exits runs along the cliff.</p>
+      <p class="small step why">Why discount? Bounded sums, uncertainty about the far future, a preference for sooner rewards. $\gamma$ also sets the horizon: about $1/(1-\gamma)=10$ steps.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Policies and value functions</h2>
+  <div class="cols c46">
+    <svg class="fig" data-fig="rl-backup" aria-label="Backup diagram: a state branches into actions chosen by the policy, each action into next states chosen by the environment"></svg>
+    <div class="stack" style="gap:9px">
+      <p class="small">A <b>policy</b> $\pi(a\mid s)$ gives the probability of each action in each state; a deterministic one is a map $s\mapsto a$.</p>
+      <div class="bluebox" style="font-size:19px">$$V^\pi(s)=\E_\pi[G_t\mid S_t=s],\quad Q^\pi(s,a)=\E_\pi[G_t\mid S_t=s,A_t=a]$$</div>
+      <p class="small">$V^\pi$: how good it is to be in $s$ and follow $\pi$. $Q^\pi$: how good to take $a$ first, then follow $\pi$. So $V^\pi(s)=\sum_a\pi(a\mid s)\,Q^\pi(s,a)$.</p>
+      <p class="small step">Why $Q$? With $Q$ you can act without a model: take $\arg\max_aQ(s,a)$. With $V$ you would need $P$ to look one step ahead.</p>
+      <p class="small step">An <b>optimal policy</b> $\pi^*$ is at least as good as every other policy in every state at once. In a finite MDP one exists, and it can be chosen deterministic.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The Bellman expectation equation</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:8px">
+      <div class="deriv s">
+        <div class="eq">$V^\pi(s)=\E_\pi[R_{t+1}+\gamma\,G_{t+1}\mid S_t=s]$</div><div class="why">$G_t=R_{t+1}+\gamma G_{t+1}$</div>
+        <div class="eq">$=\sum_a\pi(a\mid s)\sum_{s'}P(s'\mid s,a)\big[r+\gamma\,\E_\pi[G_{t+1}\mid S_{t+1}=s']\big]$</div><div class="why">condition on $a$, then $s'$</div>
+        <div class="eq">$=\sum_a\pi(a\mid s)\sum_{s'}P(s'\mid s,a)\big[r+\gamma\,V^\pi(s')\big]$</div><div class="why">Markov: only $s'$ matters</div>
+      </div>
+      <p class="small">The value of a state = the expected immediate reward + the discounted value of where you land.</p>
+      <p class="small step">With $P_\pi(s,s')=\sum_a\pi(a\mid s)P(s'\mid s,a)$ and $r_\pi(s)=\sum_a\pi(a\mid s)R(s,a)$ it is a linear system:</p>
+      <div class="bluebox step" style="font-size:19px">$$V^\pi=r_\pi+\gamma P_\pi V^\pi\ \Longrightarrow\ V^\pi=(\mathbf I-\gamma P_\pi)^{-1}r_\pi$$</div>
+      <p class="small step">18 equations here: solve them, or iterate $V\leftarrow r_\pi+\gamma P_\pi V$; each sweep shrinks the error by $\gamma$ (lab: 116 sweeps to $10^{-10}$).</p>
+    </div>
+    <div class="stack" style="gap:8px">
+      <svg class="fig" data-fig="rl-vgrid" data-mode="random" aria-label="The gridworld with the value of the uniform random policy in every cell"></svg>
+      <p class="small step why">Random policy, lab: the exact solve gives $V(S)=-5.911$; the average return of 5,000 simulated episodes is $-5.85\pm0.06$. Random moves next to a cliff end badly.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The Bellman optimality equation</h2>
+  <div class="cols c46">
+    <svg class="fig" data-fig="rl-vgrid" data-mode="star" aria-label="The gridworld with the optimal values and the optimal action in every cell; the cell below the +10 exit is highlighted"></svg>
+    <div class="stack" style="gap:9px">
+      <div class="bluebox" style="font-size:20px">$$V^*(s)=\max_a\sum_{s'}P(s'\mid s,a)\big[r+\gamma\,V^*(s')\big]$$</div>
+      <p class="small">$Q^*(s,a)=R(s,a)+\gamma\sum_{s'}P(s'\mid s,a)\max_{a'}Q^*(s',a')$ and $\pi^*(s)=\arg\max_aQ^*(s,a)$: knowing $Q^*$ is knowing how to act.</p>
+      <p class="small step">By hand, the yellow cell, action up: enter B with 0.8, slip left with 0.1, slip right into the border and stay with 0.1:</p>
+      <div class="eq s step">$$0.8\cdot10+0.1\cdot0.9\cdot6.354+0.1\cdot0.9\cdot9.420=9.420$$</div>
+      <p class="small step">At S: $Q^*(S,\cdot)$ = up 3.83, left 2.17, right 1.15, down −7.44. Up, the safe way round. The max makes the equation non-linear: we iterate instead of solving.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Policy iteration</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="rl-pi" data-auto="s=1 :: improvement 1: act greedily with respect to the values of 'always up' | s=2 :: improvement 2: evaluate again, act greedily again | s=3 :: improvement 3: V(S) jumps to 3.772 | s=4 :: π₄ is greedy with respect to its own values: optimal, V(S) = 3.832">
+      <svg class="fig" aria-label="The gridworld with the current policy as arrows and its values, and the value at S after each evaluation"></svg>
+      <div class="ctl"><label for="pi-s">iteration</label><input type="range" id="pi-s" data-k="s" min="0" max="4" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:9px">
+      <p class="small">Start from any policy and repeat two steps:</p>
+      <p class="small"><b>1. evaluate</b>: solve the linear system for $V^{\pi_k}$.</p>
+      <p class="small"><b>2. improve</b>: act greedily,</p>
+      <div class="eq s">$$\pi_{k+1}(s)=\arg\max_a\Big[R(s,a)+\gamma\sum_{s'}P(s'\mid s,a)V^{\pi_k}(s')\Big]$$</div>
+      <p class="small step"><b>Policy improvement theorem</b>: $V^{\pi_{k+1}}\ge V^{\pi_k}$ in every state. One greedy step then $\pi_k$ is at least as good as $\pi_k$; repeat the argument at every step.</p>
+      <p class="small step">Finitely many deterministic policies and values that never decrease: it stops, at a policy greedy with respect to its own values, which satisfies the optimality equation. Lab: 4 improvements.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Value iteration</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="rl-vi" data-auto="k=1 :: sweep 1: only the cells next to an exit know anything | k=3 :: sweep 3: values flow back about one cell per sweep; S gets its first value | k=8 :: sweep 8: the greedy policy is already optimal, the values are still 1.41 off | k=11 :: converged: V* after 80 sweeps, V*(S) = 3.83">
+      <svg class="fig" aria-label="The gridworld with the values after k sweeps of value iteration and their greedy actions, and the error against k on a log scale"></svg>
+      <div class="ctl"><label for="vi-k">sweep k</label><input type="range" id="vi-k" data-k="k" min="0" max="11" step="1" value="0"><span class="v" data-v="k"></span></div>
+    </div>
+    <div class="stack" style="gap:9px">
+      <div class="bluebox" style="font-size:18px;padding:6px 12px">$$V_{k+1}(s)=\max_a\Big[R(s,a)+\gamma\sum_{s'}P(s'\mid s,a)\,V_k(s')\Big]$$</div>
+      <p class="small">The optimality equation used as an update, from $V_0=0$. The policy is read off at the end as the greedy one.</p>
+      <p class="small step"><b>Contraction</b> in one line: $|\max_af(a)-\max_ag(a)|\le\max_a|f(a)-g(a)|$, so $\|\Tc V-\Tc U\|_\infty\le\gamma\|V-U\|_\infty$. Unique fixed point $V^*$, and $\|V_k-V^*\|_\infty\le\gamma^k\|V_0-V^*\|_\infty$.</p>
+      <p class="small step">Lab: 80 sweeps to $10^{-10}$. The greedy policy is optimal from sweep 8, when the values are still 1.41 off: <b>policies converge long before values</b>. That is why policy iteration needs so few steps.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Discount, noise and rewards change the policy</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="rl-gamma" data-auto="g=0.3;p=0;l=0 :: γ = 0.3, no slip: short-sighted, the +1 exit along the cliff | g=0.3;p=0.2;l=0 :: add a 20 % slip: still +1, but the safe way | g=0.9;p=0;l=0 :: γ = 0.9, no slip: +10 is worth the detour, along the cliff | g=0.9;p=0.2;l=0 :: γ = 0.9 with slip, the lab's setting: +10, the safe way | g=0.9;p=0.2;l=1 :: +1 per move: wandering forever is worth 10, the agent never leaves | g=0.9;p=0.2;l=-2 :: −2 per move: rush to the nearest exit, cliff or not">
+      <svg class="fig" aria-label="The gridworld solved by value iteration for the chosen discount, slip and reward per move, with the most likely path from the start"></svg>
+      <div class="ctl"><label for="ga-g">γ</label><input type="range" id="ga-g" data-k="g" min="0.05" max="0.99" step="0.01" value="0.9"><span class="v" data-v="g"></span>
+        <label for="ga-p">slip</label><input type="range" id="ga-p" data-k="p" min="0" max="0.4" step="0.05" value="0.2"><span class="v" data-v="p"></span></div>
+      <div class="ctl"><label for="ga-l">reward per move</label><input type="range" id="ga-l" data-k="l" min="-2" max="1" step="0.25" value="0"><span class="v" data-v="l"></span></div>
+    </div>
+    <div class="stack" style="gap:9px">
+      <p class="small">The optimal policy is not a property of the grid alone. Three knobs:</p>
+      <p class="small"><b>γ: near or far.</b> Without slip, +1 is worth $\gamma^2$ (3 moves) and +10 is worth $10\gamma^4$ (5 moves). Far wins when $\gamma\gt1/\sqrt{10}=0.316$; the lab's sweep finds the switch at 0.32.</p>
+      <p class="small"><b>slip: risky or safe.</b> With noise the cliff edge costs too much: 5 moves instead of 3, 7 instead of 5.</p>
+      <p class="small"><b>reward per move.</b> +1 per move makes staying worth up to $1/(1-\gamma)=10$: the agent never leaves. −2 per move: it rushes to the nearest exit.</p>
+      <div class="idea step"><b>You get what you reward</b>, not what you meant. Choosing the reward is part of the problem.</div>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card purple"><h1><b>Part C</b><br>Learning from<br>experience</h1><ul class="small"><li>Monte Carlo and TD</li><li>SARSA and Q-learning</li><li>cliff walking: safe or optimal</li><li>deep Q-networks</li></ul></div></section>
+
+<section class="slide">
+  <h2>Monte Carlo and temporal difference</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="rl-td" data-auto="s=3 :: episode 1 ends on the right: only V(E) moves, 0.5 → 0.55 | s=5 :: episode 2: the news reaches D, V(D) = 0.505 | s=8 :: end of episode 2: V(D) = 0.509, V(E) = 0.591 | s=11 :: episode 3 ends on the left: V(A) = 0.45">
+      <svg class="fig" aria-label="The random walk A to E with the current value estimates as bars, the true values dashed, and the TD update of the current step with numbers"></svg>
+      <div class="ctl"><label for="td-s">update</label><input type="range" id="td-s" data-k="s" min="0" max="11" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:9px">
+      <p class="small">No model now, only episodes: estimate $V^\pi$ from experience.</p>
+      <p class="small"><b>Monte Carlo</b>: wait for the end, move towards the actual return: $V(S_t)\leftarrow V(S_t)+\alpha\,[G_t-V(S_t)]$.</p>
+      <p class="small"><b>TD(0)</b>: after every step, move towards a one-step guess:</p>
+      <div class="bluebox" style="font-size:18px;padding:6px 12px">$$V(S_t)\leftarrow V(S_t)+\alpha\,\delta_t,\quad\delta_t=R_{t+1}+\gamma V(S_{t+1})-V(S_t)$$</div>
+      <p class="small">$\delta_t$, the <b>TD error</b>: the surprise between two successive predictions. TD <b>bootstraps</b>: it learns a guess from a guess.</p>
+      <p class="small step why">The random walk (Sutton and Barto): start at C, left or right with probability ½, reward 1 at the right end, $\gamma=1$. True values 1/6, …, 5/6. In episode 1 only $V(E)$ changes: nothing else was surprising yet.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Monte Carlo vs TD on the random walk</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="rl-rw" aria-label="RMS error of the value estimates over 100 episodes for TD with three step sizes and Monte Carlo with four"></svg>
+    <div class="stack" style="gap:9px">
+      <p class="small">100 episodes, RMS error of the 5 values, mean of 100 runs (lab). TD wins at every step size: after 25 episodes, 0.057 for the best TD against 0.140 for the best MC.</p>
+      <p class="small step"><b>Bias vs variance.</b> MC's target $G_t$ is unbiased but carries all the randomness of the rest of the episode. TD's target $R_{t+1}+\gamma V(S_{t+1})$ is biased while $V$ is wrong, but has the noise of one step only.</p>
+      <p class="small step">TD learns online, before the episode ends, and in tasks that never end. MC needs neither the Markov property nor bootstrapping, which makes it safer with function approximation.</p>
+      <p class="small step why">The curves flatten and even rise for large α: a constant step keeps chasing the last episodes. A decreasing α, e.g. $1/N(s)$, converges. In between MC and TD: $n$-step returns and TD(λ).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>SARSA and Q-learning</h2>
+  <div class="cols c46">
+    <svg class="fig" data-fig="rl-targets" aria-label="Two backup diagrams: SARSA uses the next action actually taken, Q-learning the maximum over next actions"></svg>
+    <div class="stack" style="gap:9px">
+      <p class="small">To control without a model, learn $Q(s,a)$ and act <b>ε-greedily</b>: a random action with probability ε, otherwise $\arg\max_aQ(s,a)$. After every step:</p>
+      <div class="bluebox" style="font-size:19px">$$Q(S_t,A_t)\leftarrow Q(S_t,A_t)+\alpha\big[\text{target}-Q(S_t,A_t)\big]$$</div>
+      <p class="small"><b>SARSA</b>: target $R_{t+1}+\gamma Q(S_{t+1},A_{t+1})$, with the action it will really take. It learns the value of the policy it follows, exploration included: <b>on-policy</b>.</p>
+      <p class="small"><b>Q-learning</b> (Watkins, 1989): target $R_{t+1}+\gamma\max_{a'}Q(S_{t+1},a')$. It learns the value of the greedy policy, whatever it does: <b>off-policy</b>, a sampled value iteration.</p>
+      <p class="small step why">Both converge (Q-learning to $Q^*$) if every pair keeps being tried and α decreases suitably. Off-policy also means learning from old data or from other agents: the door to replay buffers and offline RL.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Cliff walking: safe or optimal?</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="rl-cliff" data-auto="m=q :: Q-learning: the shortest path, right along the cliff | m=sarsa :: SARSA: the safe path along the top | m=both :: while exploring (ε = 0.1), the safe path collects more reward">
+      <svg class="fig" aria-label="The cliff-walking grid with the paths learned by SARSA and Q-learning, and their returns per episode during training"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-m="sarsa" aria-pressed="false">SARSA</button><button type="button" data-m="q" aria-pressed="false">Q-learning</button><button type="button" data-m="both" aria-pressed="true">both</button></span></div>
+    </div>
+    <div class="stack" style="gap:9px">
+      <p class="small">4 × 12 grid, −1 per move; the cliff costs −100 and sends you back to S. ε = 0.1, α = 0.5, 500 episodes, 50 runs (lab).</p>
+      <p class="small"><b>Q-learning</b> learns the optimal path along the edge, 13 moves, in all 50 runs. But it explores on it, and one random step means a fall: online return −49.7.</p>
+      <p class="small"><b>SARSA</b> puts its own exploration into its targets: the edge is dangerous <em>for an explorer</em>. It walks along the top (17 moves in most runs): online return −29.2.</p>
+      <p class="small step">Run greedily after training, Q-learning's path is better (−13 against −17). Which is right? If exploration goes on when it matters (a robot that keeps trying random moves), SARSA; if the policy is deployed greedily, Q-learning. With ε → 0 both reach the optimal path.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Deep Q-networks</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="rl-dqn" aria-label="DQN: the agent stores transitions in a replay buffer, samples random mini-batches, and trains the online network against targets from a periodically copied target network"></svg>
+    <div class="stack" style="gap:8px">
+      <p class="small">Too many states for a table (Atari: 84 × 84 pixels): learn $Q(s,a;\mathbf w)$ with a network, one output per action, by minimising the squared TD error. Two stabilisers:</p>
+      <p class="small"><b>experience replay</b>: store transitions and train on random mini-batches: less correlated data, every transition reused.</p>
+      <p class="small"><b>target network</b> $\mathbf w^-$: a frozen copy computes the targets, synced every few hundred steps, so the target stops moving with each update.</p>
+      <p class="small step">DQN (Mnih et al., 2015): one network and one set of hyper-parameters for 49 Atari games from pixels; at least 75 % of a professional tester's score on 29 of them.</p>
+      <p class="small step">Lab, gridworld with one-hot states: the greedy policy reaches $V(S)$ = 3.78, 3.83, 3.83 in 3 seeds (optimum 3.832). Without replay and target network: 0.56, 3.66, 3.75.</p>
+      <div class="warnbox step"><p class="small"><b>Deadly triad</b>: function approximation + bootstrapping + off-policy learning can make the values diverge. Replay and target networks are the patches; Double DQN and prioritised replay followed.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card coral"><h1><b>Part D</b><br>Policy gradients,<br>RLHF, practice</h1><ul class="small"><li>REINFORCE and the log-derivative trick</li><li>baselines, actor–critic, PPO</li><li>RLHF and reward hacking</li><li>RL in practice</li></ul></div></section>
+
+<section class="slide">
+  <h2>REINFORCE: the log-derivative trick</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:7px">
+      <p class="small">Parametrise the policy directly, $\pi_\theta(a\mid s)$ = a softmax over a network's outputs, and climb $J(\theta)=\E_{\tau\sim\pi_\theta}[R(\tau)]$:</p>
+      <div class="deriv s">
+        <div class="eq">$\nabla_\theta J=\sum_\tau R(\tau)\,\nabla_\theta p_\theta(\tau)$</div><div class="why">sum over episodes τ</div>
+        <div class="eq">$=\sum_\tau p_\theta(\tau)R(\tau)\nabla_\theta\log p_\theta(\tau)$</div><div class="why">$\nabla p=p\,\nabla\log p$</div>
+        <div class="eq">$=\E_\tau\big[R(\tau)\nabla_\theta\log p_\theta(\tau)\big]$</div><div class="why">sample it</div>
+        <div class="eq">$\nabla_\theta\log p_\theta(\tau)=\sum_t\nabla_\theta\log\pi_\theta(A_t\mid S_t)$</div><div class="why">$P(s'\mid s,a)$ has no θ</div>
+      </div>
+      <div class="bluebox step" style="font-size:18px;padding:4px 12px">$$\nabla_\theta J\approx\frac1B\sum_{\text{episodes}}\sum_tG_t\,\nabla_\theta\log\pi_\theta(A_t\mid S_t)$$</div>
+      <p class="small step why">REINFORCE (Williams, 1992). $G_t$ = reward-to-go: an action cannot change earlier rewards. In code, minimise $-\sum_tG_t\log\pi_\theta(A_t\mid S_t)$: a cross-entropy whose label is the action taken, weighted by what followed.</p>
+    </div>
+    <div class="widget" data-fig="rl-softmax" data-auto="g=pos :: G = +1: the log-probability of the sampled action goes up | g=neg :: G = −1: it goes down, and the other actions take the mass">
+      <svg class="fig" aria-label="Probabilities of three actions under a softmax policy before and after one REINFORCE step with a positive or negative return"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-g="none" aria-pressed="true">before</button><button type="button" data-g="pos" aria-pressed="false">G = +1</button><button type="button" data-g="neg" aria-pressed="false">G = −1</button></span></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Baselines and the advantage</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:8px">
+      <p class="small">Subtract any $b(s)$ that does not depend on the action: the mean is unchanged,</p>
+      <div class="eq xs">$$\E_{a\sim\pi}\big[b(s)\nabla_\theta\log\pi_\theta(a\mid s)\big]=b(s)\nabla_\theta\sum_a\pi_\theta(a\mid s)=b(s)\nabla_\theta1=0$$</div>
+      <p class="small">but the variance drops. With $b(s)\approx V(s)$ the weight is the <b>advantage</b> $A_t=G_t-V(S_t)$: better or worse than usual?</p>
+      <p class="small step">Lab, 3-armed bandit: 200,000 samples of the estimator agree with autograd, $(-0.061, 0.270, -0.209)$, with or without baseline; the variance per sample drops from 1.63 to 0.92.</p>
+      <p class="small step">CartPole written from its physics equations, policy MLP 4 → 32 → 2, 800 episodes, 5 seeds: last-100-episode length 491 with a learned baseline $V_w(s)$, 433 without, and a much narrower spread.</p>
+      <p class="small step why">About 200,000 simulated steps per run, for a task a one-line rule solves: policy gradients are sample-hungry.</p>
+    </div>
+    <div class="widget" data-fig="rl-pg" data-auto="v=plain :: without a baseline: it learns, but the seeds spread out | v=base :: with a learned baseline: all 5 seeds end near 490 | v=both :: the same gradient on average, less variance">
+      <svg class="fig" aria-label="Episode length of REINFORCE on CartPole over 800 episodes, with and without a learned baseline, mean and range of 5 seeds"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-v="plain" aria-pressed="false">without baseline</button><button type="button" data-v="base" aria-pressed="false">with baseline</button><button type="button" data-v="both" aria-pressed="true">both</button></span></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Actor–critic and PPO</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:8px">
+      <p class="small"><b>Actor–critic</b>: an actor $\pi_\theta$ and a critic $V_w$. Replace $G_t$ by the TD estimate of the advantage, $\delta_t=R_{t+1}+\gamma V_w(S_{t+1})-V_w(S_t)$: updates every step, lower variance, some bias (A2C).</p>
+      <p class="small"><b>PPO</b> (Schulman et al., 2017) reuses each batch for several epochs, without letting the policy move too far. With the ratio $r_t=\pi_\theta(A_t\mid S_t)/\pi_{\text{old}}(A_t\mid S_t)$:</p>
+      <div class="bluebox" style="font-size:17px;padding:4px 12px">$$L^{\text{CLIP}}=\E_t\Big[\min\big(r_tA_t,\ \clip(r_t,1-\epsilon,1+\epsilon)A_t\big)\Big]$$</div>
+      <p class="small step">Once the ratio leaves $[1-\epsilon,1+\epsilon]$ in the direction the advantage pushes, the objective is flat: no gradient, no incentive to go further. Usual value: ε = 0.2.</p>
+      <p class="small step why">Simple and robust, for discrete and continuous actions: the default deep-RL algorithm, and the RL step of RLHF. Its ancestor TRPO used a hard KL constraint instead of the clip.</p>
+    </div>
+    <div class="widget" data-fig="rl-ppo" data-auto="e=0.2 :: ε = 0.2: the probability ratio may move 20 % per update | e=0.1 :: smaller ε: more conservative updates | e=0.3 :: larger ε: bolder updates">
+      <svg class="fig" aria-label="The clipped PPO objective as a function of the probability ratio, for a positive and a negative advantage"></svg>
+      <div class="ctl"><label for="pp-e">ε</label><input type="range" id="pp-e" data-k="e" min="0.05" max="0.4" step="0.05" value="0.2"><span class="v" data-v="e"></span></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>RLHF: learning from preferences</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="rl-rlhf" data-auto="s=1 :: stage 1: supervised fine-tuning on answers written by people | s=2 :: stage 2: a reward model learns which of two answers people prefer | s=3 :: stage 3: PPO maximises the learned reward, on a KL leash">
+      <svg class="fig" aria-label="The three stages of RLHF: supervised fine-tuning, a reward model fitted to human comparisons, and PPO with a KL penalty"></svg>
+      <div class="ctl"><label for="rh-s">stage</label><input type="range" id="rh-s" data-k="s" min="0" max="3" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">Reinforcement learning from human feedback, the recipe of InstructGPT and ChatGPT:</p>
+      <p class="small"><b>1. SFT</b>: fine-tune on demonstrations → $\piref$.</p>
+      <p class="small"><b>2. Reward model</b>: people compare two answers; fit $\hat r$ with Bradley–Terry, $P(y_w\succ y_l)=\sigma\big(\hat r(y_w)-\hat r(y_l)\big)$.</p>
+      <p class="small"><b>3. RL</b>: PPO on</p>
+      <div class="bluebox" style="font-size:18px;padding:4px 12px">$$\max_\pi\ \E_{y\sim\pi}[\hat r(x,y)]-\beta\,\KL(\pi\,\|\,\piref)$$</div>
+      <p class="small step">One episode = one answer; the actions are the tokens; the reward arrives at the end.</p>
+      <p class="small step why"><b>DPO</b> (2023) skips the reward model and the RL loop: the optimum of this objective gives $\hat r=\beta\log(\pi/\piref)+\text{const}$, so the policy is fitted to the preferences directly with the Bradley–Terry loss.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Reward hacking and the KL leash</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="rl-hack" data-auto="k=5 :: β = 1: close to the reference, proxy and true utility improve together | k=11 :: β = 0.2: the best true utility, 2.69 | k=17 :: β = 0.05: the proxy keeps rising, the true utility collapses">
+      <svg class="fig" aria-label="Proxy reward and true utility of the KL-regularised optimal policy against its KL from the reference, and the distribution of answer lengths"></svg>
+      <div class="ctl"><label for="hk-k">less KL penalty →</label><input type="range" id="hk-k" data-k="k" min="0" max="20" step="1" value="0"><span class="v" data-v="k"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">The optimum of the KL-regularised objective has a closed form:</p>
+      <div class="bluebox" style="font-size:19px;padding:4px 14px">$$\pi^*_\beta(y)=\frac{\piref(y)\,e^{\hat r(y)/\beta}}{Z}$$</div>
+      <p class="small">Large β: stay near $\piref$. β → 0: all the mass on the argmax of $\hat r$.</p>
+      <p class="small step">Lab toy: 1,000 answers; people like some extra length, not too much ($u$ = quality $+\,0.6\ell-0.3\ell^2$). The linear reward model (71 % held-out accuracy) learned +0.45 per unit of length: true where people looked.</p>
+      <p class="small step">As β falls the proxy rises steadily (to 4.64), the true utility peaks at 2.69 (β = 0.2) and collapses to −1.27: answers of length 4.8, far beyond the data.</p>
+      <div class="warnbox step"><p class="small"><b>Reward hacking</b>: the policy finds the reward model's mistakes. Remedies: the KL leash, fresh comparisons of the new policy's answers, reward-model ensembles, human evaluation.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>RL in practice: what to do when…</h2>
+  <table class="t xs">
+    <tr><th style="width:27%">situation</th><th>what to do</th></tr>
+    <tr><td>designing the reward</td><td>reward the outcome you want, not a behaviour you think leads to it; watch for exploits (a boat-racing agent learned to circle forever hitting the same targets). Potential-based shaping keeps the optimal policy.</td></tr>
+    <tr><td>interactions are expensive</td><td>RL needs millions of steps: build a simulator, learn a model of the dynamics (model-based RL), or reuse logged data.</td></tr>
+    <tr><td>the simulator is not reality</td><td>randomise the simulator (masses, friction, lighting) so the real world looks like one more variation, then fine-tune: sim-to-real.</td></tr>
+    <tr><td>only logged data (offline RL)</td><td>the learned policy picks actions the logs rarely contain, whose values are guesses: conservative methods (CQL, IQL), and off-policy evaluation by importance sampling before deploying.</td></tr>
+    <tr><td>comparing algorithms</td><td>many seeds and confidence intervals: RL results vary a lot from seed to seed. Never conclude from one run.</td></tr>
+    <tr><td>the action does not change the future</td><td>it is a (contextual) bandit, or plain supervised learning if the right answer is known. Much simpler and more data-efficient.</td></tr>
+    <tr><td>the model of the world is known</td><td>plan: value iteration, tree search, optimisation. No trial and error needed.</td></tr>
+    <tr><td>tools</td><td>Gymnasium (environments), Stable-Baselines3 and CleanRL (algorithms), TRL (RLHF, DPO for language models).</td></tr>
+  </table>
+</section>
+
+<section class="slide">
+  <h2>The topic in one slide</h2>
+  <div class="cards c2" style="gap:12px">
+    <div class="card"><h3>A · The RL problem</h3><ul>
+      <li>agent, environment, reward; return $G_t=\sum_k\gamma^kR_{t+k+1}$</li>
+      <li>no labels, delayed rewards, the agent makes its own data</li>
+      <li>bandits: ε-greedy has linear regret, UCB and Thompson $O(\log T)$</li></ul></div>
+    <div class="card g"><h3>B · MDPs and planning</h3><ul>
+      <li>Bellman expectation: a linear system for $V^\pi$</li>
+      <li>optimality: $V^*=\max_a\sum_{s'}P\,[r+\gamma V^*]$; value iteration contracts by γ</li>
+      <li>policy iteration: few steps; γ, noise and rewards shape $\pi^*$</li></ul></div>
+    <div class="card y"><h3>C · Learning from experience</h3><ul>
+      <li>TD(0): $V\leftarrow V+\alpha\delta$; MC unbiased, TD lower variance</li>
+      <li>SARSA on-policy (safe path), Q-learning off-policy (optimal path)</li>
+      <li>DQN: a network for $Q$, replay buffer, target network</li></ul></div>
+    <div class="card o"><h3>D · Policy gradients and RLHF</h3><ul>
+      <li>REINFORCE: $\E[\sum_tG_t\nabla\log\pi_\theta(A_t|S_t)]$; baseline → advantage</li>
+      <li>actor–critic; PPO clips the probability ratio</li>
+      <li>RLHF: Bradley–Terry reward model + PPO with a KL leash; reward hacking</li></ul></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Vocabulary of Extra 12</h2>
+  <div class="cols">
+    <dl class="gloss" style="font-size:16px;gap:5px 14px">
+      <dt>policy $\pi(a\mid s)$</dt><dd>the probability of each action in each state.</dd>
+      <dt>return $G_t$</dt><dd>the discounted sum of future rewards.</dd>
+      <dt>discount γ</dt><dd>weight of a reward one step later; horizon ≈ $1/(1-\gamma)$.</dd>
+      <dt>MDP</dt><dd>states, actions, $P(s'\mid s,a)$, rewards, γ; the Markov property.</dd>
+      <dt>regret</dt><dd>reward lost against always taking the best action.</dd>
+      <dt>ε-greedy</dt><dd>a random action with probability ε, else the greedy one.</dd>
+      <dt>UCB / Thompson</dt><dd>optimism bonus / sample from the posterior, then act greedily.</dd>
+      <dt>$V^\pi$, $Q^\pi$</dt><dd>expected return from a state / from a state and an action.</dd>
+      <dt>Bellman equations</dt><dd>value = expected reward + γ · value of the next state.</dd>
+      <dt>value / policy iteration</dt><dd>iterate the optimality equation / evaluate and improve.</dd>
+      <dt>model-free</dt><dd>learns from samples, without $P$ and $r$.</dd>
+    </dl>
+    <dl class="gloss" style="font-size:16px;gap:5px 14px">
+      <dt>TD error δ</dt><dd>$R_{t+1}+\gamma V(S_{t+1})-V(S_t)$, the one-step surprise.</dd>
+      <dt>bootstrapping</dt><dd>updating a guess towards another guess.</dd>
+      <dt>on- / off-policy</dt><dd>learns about the policy it follows / about another one.</dd>
+      <dt>SARSA, Q-learning</dt><dd>TD control with target $Q(S',A')$ / $\max_{a'}Q(S',a')$.</dd>
+      <dt>DQN</dt><dd>Q-learning with a network, a replay buffer and a target network.</dd>
+      <dt>deadly triad</dt><dd>approximation + bootstrapping + off-policy: may diverge.</dd>
+      <dt>REINFORCE</dt><dd>policy gradient $\E[G_t\nabla\log\pi_\theta(A_t\mid S_t)]$.</dd>
+      <dt>advantage</dt><dd>$Q(s,a)-V(s)$: better or worse than usual.</dd>
+      <dt>PPO</dt><dd>policy gradient with a clipped probability ratio.</dd>
+      <dt>RLHF</dt><dd>reward model from human comparisons, then PPO with a KL penalty.</dd>
+      <dt>reward hacking</dt><dd>maximising the proxy reward instead of the intended goal.</dd>
+    </dl>
+  </div>
+  <p class="labline">Read more: <a href="http://incompleteideas.net/book/the-book-2nd.html" target="_blank" rel="noopener">Sutton and Barto, the RL book (free)</a> · <a href="https://www.nature.com/articles/nature14236" target="_blank" rel="noopener">DQN</a> · <a href="https://arxiv.org/abs/1707.06347" target="_blank" rel="noopener">PPO</a> · <a href="https://arxiv.org/abs/2203.02155" target="_blank" rel="noopener">InstructGPT</a> · <a href="https://arxiv.org/abs/2305.18290" target="_blank" rel="noopener">DPO</a> · <a href="https://spinningup.openai.com/" target="_blank" rel="noopener">Spinning Up in deep RL</a>.</p>
+</section>
+
+<section class="slide lab">
+  <div class="labtag">EXTRA 12</div>
+  <h2>Reinforcement learning from scratch</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:10px">
+      <p>Every environment in a few lines of NumPy, every algorithm by hand, every number checked against an exact answer.</p>
+      <ol class="todo">
+        <li>Bandits: greedy, ε-greedy, UCB and Thompson sampling; regret over 400 runs.</li>
+        <li>A gridworld MDP; policy evaluation, exact and iterative, checked by Monte Carlo.</li>
+        <li>Value iteration and policy iteration; γ, slip and rewards change the optimal policy.</li>
+        <li>Monte Carlo vs TD(0) on the random walk; SARSA vs Q-learning on the cliff.</li>
+        <li>REINFORCE with a baseline on CartPole, written from its physics equations.</li>
+        <li>A tiny DQN with a replay buffer and a target network.</li>
+        <li>RLHF in miniature: Bradley–Terry reward model, KL-regularised optimum, reward hacking.</li>
+      </ol>
+    </div>
+    <div class="labcard">
+      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/extra/extra 12 - Reinforcement Learning.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <dl class="gloss">
+        <dt>notebook</dt><dd><code>extra 12 - Reinforcement Learning.ipynb</code></dd>
+        <dt>you need</dt><dd>MLPs, softmax and cross-entropy, the PyTorch training loop (Neural networks 1–3)</dd>
+        <dt>runs on</dt><dd>CPU, about 1.5 minutes; no GPU, no RL library</dd>
+        <dt>data</dt><dd>none: the environments are simulated</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section class="slide cover">
+  <div class="inner"><h1>Extra topics</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Reinforcement learning · end</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+</div></div>
+<script src="../assets/figures.js?v=20260930"></script>
+<script src="../neural_networks/assets/nn-core.js?v=20260930"></script>
+<script src="assets/rl-data.js?v=20261009"></script>
+<script src="assets/fig-rl.js?v=20261009"></script>
+<script src="../assets/deck.js?v=20260930"></script>
+</body>
+</html>

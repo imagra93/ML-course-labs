@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="author" content="Imanol Granada (imanolgranada@gmail.com)">
+<title>Explainability</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="../assets/deck.css?v=20260930">
+<link rel="stylesheet" href="../neural_networks/assets/nn.css?v=20261006c">
+<script src="../assets/mathjax-config.js?v=20260930"></script>
+<script>Object.assign(MathJax.tex.macros,{xcf:'\\mathbf{x}^{\\mathrm{cf}}',PD:'\\mathrm{PD}',ALE:'\\mathrm{ALE}',IG:'\\mathrm{IG}'});</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
+</head>
+<body data-deck="Extra 9 · Explainability" data-prev="08_self_supervised.html" data-next="10_conformal.html">
+<div id="viewport"><div id="stage">
+<section class="slide cover">
+  <div class="inner"><h1>Extra topics</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Explainability</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+
+<section class="slide">
+  <h2>Where we are</h2>
+  <svg class="fig" data-fig="xai-where" style="max-height:220px" aria-label="A policy goes into a gradient-boosting model that quotes 1,108 euros; three people ask three different why-questions"></svg>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p class="small">The course built models that predict well: boosted trees, forests, CNNs. A prediction alone is often not enough. An underwriter, a regulator, a customer and the data scientist who trained the model all ask <b>why</b>.</p>
+      <p class="small step">They ask different questions. <b>Local</b>: why this price for this policy? <b>Global</b>: what drives the prices of the whole portfolio? <b>Debugging</b>: did the model learn something it should not?</p>
+    </div>
+    <div class="stack" style="gap:10px">
+      <div class="note step"><p class="small"><b>Explainable AI (XAI)</b>: methods that describe how a trained model turns inputs into outputs, for one prediction or for the model as a whole.</p></div>
+      <p class="small step why">Four parts: <b>A</b> why and what to explain, a running example with a known truth; <b>B</b> global methods (importance, PDP, ICE, ALE, surrogates); <b>C</b> local methods (Shapley values, SHAP, LIME); <b>D</b> neural networks, counterfactuals and practice. It ends with the Extra 9 lab.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card blue"><h1><b>Part A</b><br>Why and what<br>to explain</h1><ul class="small"><li>debugging, trust, regulation, insight</li><li>global or local, specific or agnostic</li><li>a portfolio with a known truth</li><li>interpretable by design</li></ul></div></section>
+
+<section class="slide">
+  <h2>Why explain a model?</h2>
+  <div class="cards c4" style="gap:12px">
+    <div class="card"><h3>Debugging</h3><p>A model can be right for the wrong reason: a "wolf" classifier that detects snow, a pneumonia model that reads the hospital's stamp. In the lab a random policy ID gets more credit than past claims.</p></div>
+    <div class="card o"><h3>Trust</h3><p>Underwriters and claims handlers act on a score only if it makes sense to them. A fraud flag with "3 claims in 6 months, same garage" gets used; a bare 0.87 gets ignored.</p></div>
+    <div class="card g"><h3>Regulation</h3><p><b>GDPR</b> (art. 13–15, 22): "meaningful information about the logic involved" in automated decisions. <b>EU AI Act</b>: risk assessment and pricing in life and health insurance and credit scoring are <b>high-risk</b> (annex III), with transparency duties and a right to an explanation (art. 86).</p></div>
+    <div class="card y"><h3>Insight</h3><p>What drives claims? Which customers react to a price change? An explanation of a good model is a hypothesis about the world: one to test, not a proof.</p></div>
+  </div>
+  <div class="warnbox step"><p class="small"><b>Explanation ≠ causation.</b> An explanation says how the <em>model</em> uses its inputs. "Power raises the predicted cost by 181 €" does not mean that a smaller car would cause 181 € fewer claims. Causal questions need causal inference (Extra 11).</p></div>
+  <p class="small step why">Fairness is a fifth reason: since 21 December 2012 EU insurers may not price on sex (Test-Achats ruling). A model that never sees sex can still use a proxy of it; explanations help to find out.</p>
+</section>
+
+<section class="slide">
+  <h2>A map of the methods</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="xai-map" aria-label="Methods placed on two axes: global or local, and model-agnostic or model-specific; interpretable-by-design models in green"></svg>
+    <div class="stack" style="gap:9px">
+      <p class="small"><b>Global</b>: the model as a whole (which features matter, how the prediction moves with each one). <b>Local</b>: one prediction.</p>
+      <p class="small"><b>Model-agnostic</b>: only needs $f(\bx)$, works for any model. <b>Model-specific</b>: uses the inside (tree structure, gradients).</p>
+      <p class="small step"><b>Interpretable by design</b> (green): linear models, GAMs, small trees. The model is its own explanation. <b>Post-hoc</b>: a second method explains a black box after training; the explanation is an approximation that can be wrong.</p>
+      <p class="small step">Global from local: average many local explanations (mean $|\text{SHAP}|$, beeswarm plots).</p>
+      <p class="small step why">Libraries: <code>sklearn.inspection</code> (permutation importance, PDP, ICE), <code>shap</code>, <code>lime</code>, <code>alibi</code> (anchors, counterfactuals), <code>captum</code> (gradients in PyTorch). The lab writes every method from scratch.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Running example: a portfolio with a known truth</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:7px">
+      <p class="small">6,000 fictional motor policies, 9 features. Simulated, so the true expected cost $\mu(\bx)$ is known and every explanation can be graded:</p>
+      <div class="eq xs">$$\begin{aligned}\mu=400&+300e^{-\text{lic}/2}+250e^{-(\text{age}-18)/6}+5(\text{age}-60)_+\\&+1.8(\text{kW}-100)+4(\text{kW}-100)_+\mathbb 1[\text{age}\lt 25]\\&+8(\text{km}-14)+120\,\text{urban}-0.15\,\text{ded}+90\,\text{claims}\end{aligned}$$</div>
+      <p class="small">Observed cost $y=\mu+\varepsilon$, $\varepsilon\sim\mathcal N(0,120^2)$. Even the truth only reaches test $R^2=0.721$.</p>
+      <ul class="small step" style="gap:3px"><li><code>age</code> and <code>licence_years</code>: correlation 0.987, <b>both</b> matter</li><li><code>car_value</code>: correlation 0.863 with power, <b>no effect</b></li><li><code>vehicle_age</code>: no effect; power × young: an <b>interaction</b></li><li>sex: not an input, but men drive 108.7 kW, women 94.3 kW</li></ul>
+    </div>
+    <svg class="fig" data-fig="xai-truth" aria-label="The true effects of age, licence years and power, and the scatter of age against licence years"></svg>
+  </div>
+  <p class="small step why">Policy A, explained again and again: 21 years old, 2 years of licence, 160 kW, 22,000 km a year, urban, one past claim, no deductible. True expected cost 1,284 €, the average is 507 €.</p>
+</section>
+
+<section class="slide">
+  <h2>Interpretable by design</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:7px">
+      <p class="small"><b>Linear</b>: $\beta_j$ = change per unit of $x_j$, all else fixed. <b>GAM</b>: $f=\beta_0+\sum_jg_j(x_j)$, one free curve per feature (splines): the model is its plot. <b>Small tree</b>: a few if–then rules.</p>
+      <table class="t xs">
+        <tr><th>model (lab)</th><th>test $R^2$</th><th>RMSE to $\mu$</th></tr>
+        <tr><td>linear regression</td><td>0.385</td><td>126 €</td></tr>
+        <tr><td><b>GAM (splines)</b></td><td><b>0.698</b></td><td><b>32.5 €</b></td></tr>
+        <tr><td>random forest</td><td>0.666</td><td>53.2 €</td></tr>
+        <tr><td>gradient boosting</td><td>0.698</td><td>38.0 €</td></tr>
+      </table>
+      <p class="small step">The linear model gets the sign of experience <b>wrong</b>: $\beta_{\text{licence}}=+5.51\pm0.89$ €/year. With correlation 0.987, "one more year of licence at the same age" never occurs, so the two coefficients trade off.</p>
+      <p class="small step">The GAM is as accurate as boosting and closer to the truth: try interpretable models first (Rudin, 2019). We still explain the boosting model from now on: in real portfolios with many interactions it usually wins.</p>
+    </div>
+    <svg class="fig" data-fig="xai-gam" aria-label="GAM shape functions against the true effects for age, licence years, power and mileage"></svg>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card green"><h1><b>Part B</b><br>Global methods</h1><ul class="small"><li>impurity vs permutation importance</li><li>partial dependence and ICE</li><li>correlated features: extrapolation</li><li>ALE plots</li><li>global surrogate trees</li></ul></div></section>
+
+<section class="slide">
+  <h2>Impurity importance and its bias</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="xai-mdi" aria-label="Impurity importance on training data and permutation importance on test data for a random forest with a random policy_id column"></svg>
+    <div class="stack" style="gap:8px">
+      <p class="small"><b>Impurity importance</b> (MDI, <code>feature_importances_</code>): the total decrease in squared error of all splits on feature $j$, summed over the trees, normalised to 1. Free, but computed <b>on the training data</b>.</p>
+      <p class="small step">The lab adds a random <code>policy_id</code> (4,000 distinct values) to a forest of fully grown trees. Impurity: <b>0.043</b>, 8th of 10, ahead of <code>prior_claims</code> (0.032), a real +90 € effect. <code>car_value</code>, no effect, gets more than the deductible.</p>
+      <p class="small step">Why: the deepest splits fit the noise of tiny leaves, and a column with many distinct values offers the most ways to do it. The same bias hits continuous features against binary ones.</p>
+      <p class="small step">On test data, permutation importance: <code>policy_id</code> $-0.1$ €, <code>vehicle_age</code> $-0.1$ €, <code>car_value</code> 0.6 €. Noise does not help on new data.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Permutation importance</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="xai-perm" data-auto="k=1 :: shuffle age: the points leave the diagonal; test RMSE 124.1 → 155.7 € | k=2 :: shuffle licence_years: the largest damage | k=4 :: shuffle car_value: nothing happens, the model barely uses it | k=7 :: shuffle vehicle_age: no effect in the truth, none in the model">
+      <svg class="fig" aria-label="Prediction against the true cost for 200 test policies, before and after shuffling one feature, and the importance of every feature"></svg>
+      <div class="ctl"><label for="pm-k">shuffled feature</label><input type="range" id="pm-k" data-k="k" min="0" max="9" step="1" value="0"><span class="v" data-v="k"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">How much does the model <b>need</b> feature $j$ on <b>held-out</b> data (Breiman, 2001)?</p>
+      <ol class="small" style="gap:2px"><li>test error $e_0$ of the fitted model</li><li>shuffle column $j$ of the test set, error $e_j$; repeat $R$ times</li><li>importance$_j$ = mean of $e_j-e_0$</li></ol>
+      <p class="small">No refit. With the RMSE the importance is in euros. The lab's version matches <code>sklearn</code> to 0.71 €.</p>
+      <div class="warnbox step"><p class="small"><b>Correlated features.</b> Shuffling age creates impossible rows (85% of the test set: 25 years old, 40 years of licence). And a twin can replace the column: refit without age and the error rises by only <b>3.2 €</b> (permutation: 29.7 €); without power, 4.0 € (32.6 €), as <code>car_value</code> takes over.</p></div>
+      <p class="small step why">Permutation = how much this model relies on the column. Drop-column (orange bars) = how much information the column adds. Neither is the importance in the world.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Partial dependence and ICE curves</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="xai-ice" data-auto="m=ice :: one ICE curve per policy: its prediction as power varies, everything else fixed | m=pdp :: the PDP is the average of all the ICE curves | m=age :: colour by age: drivers under 25 (orange) climb faster above 100 kW | m=cen :: centred ICE: subtract each curve's value at 50 kW, the interaction stands out">
+      <svg class="fig" aria-label="ICE curves of power for 40 test policies and the partial dependence curve"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-m="pdp" aria-pressed="true">PDP</button><button type="button" data-m="ice" aria-pressed="false">ICE</button><button type="button" data-m="age" aria-pressed="false">ICE by age</button><button type="button" data-m="cen" aria-pressed="false">centred ICE</button></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small"><b>Partial dependence</b>: set feature $j$ to $z$ for <b>every</b> policy, predict, average.</p>
+      <div class="bluebox" style="font-size:19px;padding:6px 12px">$$\PD_j(z)=\frac1n\sum_{i=1}^nf(z,\bx_{i,-j})$$</div>
+      <p class="small">If $f=g_j(x_j)+h(\bx_{-j})$ then $\PD_j=g_j+\text{const}$: for an additive model the PDP is exact.</p>
+      <p class="small step"><b>ICE</b> (individual conditional expectation): keep the $n$ curves $z\mapsto f(z,\bx_{i,-j})$. Parallel curves: no interaction. Fanning out: an interaction with another feature.</p>
+      <p class="small step">Lab, 120 → 200 kW: under 25, <b>3.92 €/kW</b>; 25 or older, <b>1.16 €/kW</b>; the PDP averages them to 1.50 and hides the interaction (truth: 5.8 and 1.8). Ours = <code>sklearn</code> to $2\times10^{-12}$.</p>
+      <p class="small step why">Tree models give staircases: their "slope at a point" is zero. Read effects over ranges.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Correlated features: the PDP extrapolates</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="xai-extrap" data-auto="z=2 :: PD(22) averages the model over every licence_years in the data: 85% of these rows are impossible | z=14 :: at 40 too: the green rows are the only realistic 22-year-olds… now 40-year-olds | z=35 :: at 72, rows like '72 years old, 3 years of licence' are rare and mostly impossible">
+      <svg class="fig" aria-label="Left: age against licence years, with the rows evaluated by the PDP at one age. Right: the PDP of age for the model and for the truth"></svg>
+      <div class="ctl"><label for="ex-z">PDP at age</label><input type="range" id="ex-z" data-k="z" min="0" max="39" step="1" value="2"><span class="v" data-v="z"></span></div>
+    </div>
+    <div class="stack" style="gap:9px">
+      <p class="small">$\PD_{\text{age}}(22)$ evaluates every policy with its age overwritten by 22 <b>and its own licence years kept</b>: a 22-year-old with 35 years of licence.</p>
+      <p class="small step">With a correlation of 0.987, <b>85%</b> of these rows lie outside the data. There the model was never trained and its predictions are arbitrary.</p>
+      <p class="small step">Lab: from age 19 to 40 the PDP of gradient boosting drops by <b>177 €</b>, the truth by <b>257 €</b>. At "22 years, 35 years of licence" the trees apply the branches learned for experienced drivers, and the average is pulled down.</p>
+      <p class="small step why">The PDP of the truth is right only because $\mu$ is defined, and additive in age, everywhere. A fitted model has no such guarantee off the data. Permutation importance suffers from the same impossible rows.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>ALE: accumulated local effects</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="xai-ale" data-auto="s=1 :: ALE moves each policy only to the two edges of its own age bin (orange): realistic rows | s=2 :: the PDP of gradient boosting (red) underestimates the youth effect | s=3 :: the ALE (blue) is closer to the truth | m=rf :: random forest: the PDP almost erases the effect, 64 € instead of 244 €; the ALE gets 139 €">
+      <svg class="fig" aria-label="Left: the rows ALE uses in one age bin. Right: the effect of age by the truth, the PDP and the ALE"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-m="hgb" aria-pressed="true">gradient boosting</button><button type="button" data-m="rf" aria-pressed="false">random forest</button></span><label for="al-s">step</label><input type="range" id="al-s" data-k="s" min="0" max="3" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">Apley and Zhu (2020). Cut $x_j$ at its quantiles $z_0\lt\dots\lt z_K$. In bin $k$, use only its own policies, moved to the two edges:</p>
+      <div class="eq xs">$$\Delta_k=\frac1{n_k}\sum_{i\in\text{bin }k}\big[f(z_k,\bx_{i,-j})-f(z_{k-1},\bx_{i,-j})\big]$$</div>
+      <p class="small">$\ALE_j(z_K)=\sum_{k\le K}\Delta_k-\text{const}$ (centred on the data).</p>
+      <p class="small step">Each row moves only within a small bin, so it stays a real policy. For a linear model every $\Delta_k/(z_k-z_{k-1})=\beta_j$: checked in the lab.</p>
+      <p class="small step">Effect of being 18, lab: truth <b>244 €</b>. Boosting: ALE 184, PDP 165. Forest: ALE 139, PDP <b>64</b>.</p>
+      <p class="small step why">ALE fixes extrapolation, not attribution: at correlation 0.987 the data barely say whether youth or inexperience is to blame, and both models give part of the age effect to licence years.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Global surrogate: a readable copy</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="xai-tree" aria-label="A depth-3 decision tree fitted to the predictions of the gradient-boosting model"></svg>
+    <div class="stack" style="gap:9px">
+      <p class="small">Fit an interpretable model to the <b>predictions</b> $f(\bx_i)$ of the black box, not to $y$, and read it instead.</p>
+      <p class="small"><b>Fidelity</b>: $R^2$ between surrogate and black box on new data. Low fidelity = an explanation of a different model.</p>
+      <p class="small step">Lab, depth 3: fidelity <b>0.657</b>. Depth 5: 0.767, depth 8: 0.862, no longer readable. The trade-off is unavoidable.</p>
+      <p class="small step">The rules make sense: the most expensive leaf is licence ≤ 1.4 years, power > 124.8 kW, age ≤ 26.1: <b>1,185 €</b> for 85 policies. The young-novice-powerful-car interaction, found without knowing the truth.</p>
+      <p class="small step why">Good for a slide to management; a third of what the model does is not in it.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card purple"><h1><b>Part C</b><br>Local methods</h1><ul class="small"><li>Shapley values, by hand</li><li>the four axioms</li><li>interventional or conditional?</li><li>KernelSHAP, TreeSHAP, SHAP plots</li><li>LIME and its instability</li></ul></div></section>
+
+<section class="slide">
+  <h2>Shapley values: features as players</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:7px">
+      <p class="small">Shapley (1953): $M$ players earn a payoff together; split it fairly. <b>Players</b> = features, <b>payoff of a coalition</b> $S$ = the expected prediction when only $\bx_S$ is known:</p>
+      <div class="eq xs">$$v(S)=\E\big[f(\bx_S,\bX_{\bar S})\big],\qquad v(\varnothing)=\E[f(\bX)],\quad v(\text{all})=f(\bx)$$</div>
+      <p class="small">Let the features join one by one in a random order; $\phi_j$ = the average gain when $j$ joins:</p>
+      <div class="bluebox" style="font-size:18px;padding:6px 12px">$$\phi_j=\sum_{S\not\ni j}\frac{|S|!\,(M-|S|-1)!}{M!}\big[v(S\cup\{j\})-v(S)\big]$$</div>
+      <p class="small step">The weight is the share of the $M!$ orders in which exactly $S$ arrives before $j$. Lundberg and Lee (2017) named these attributions <b>SHAP values</b>.</p>
+    </div>
+    <svg class="fig" data-fig="xai-orders" aria-label="The six orders of three features for the toy model, the gain of each feature in each order, and their averages"></svg>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>A worked example with three features</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="xai-lattice" data-auto="s=1 :: the empty coalition: the average prediction over the background, 430 € | s=2 :: one feature known: young alone lifts the average to 590 € | s=3 :: two features known | s=4 :: all three known: the prediction for x, 800 € | s=5 :: the four edges where 'young' joins, with their weights 1/3, 1/6, 1/6, 1/3 | s=6 :: the Shapley values: 192.5 + 127.5 + 50 = 370 = 800 − 430">
+      <svg class="fig" aria-label="The lattice of the eight coalitions of three features with their values, the edges where one feature joins, and the resulting Shapley values"></svg>
+      <div class="ctl"><label for="la-s">step</label><input type="range" id="la-s" data-k="s" min="0" max="6" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:6px">
+      <p class="small">Toy pricing model, with an interaction:</p>
+      <div class="eq xs">$$f=300+200Y+2(P-100)+2Y(P-100)+100U$$</div>
+      <p class="small">Explain $\bx=(Y{=}1,P{=}150,U{=}1)$, $f(\bx)=800$, against four background policies:</p>
+      <table class="t xs" style="width:auto"><tr><th>$Y$</th><th>$P$</th><th>$U$</th><th>$f$</th></tr><tr><td>0</td><td>80</td><td>0</td><td>260</td></tr><tr><td>0</td><td>100</td><td>1</td><td>400</td></tr><tr><td>1</td><td>120</td><td>0</td><td>580</td></tr><tr><td>0</td><td>140</td><td>1</td><td>480</td></tr></table>
+      <p class="small step">$v(\{Y\})$: set $Y=1$ in every background row: $420,600,580,760$, mean 590.</p>
+      <p class="small step why">Urban is additive: $\phi_U=100\times(1-0.5)=50$. The interaction is worth 90 € beyond its background average; Shapley splits it 42.5 (young) / 47.5 (power).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The four axioms</h2>
+  <div class="cards c2" style="gap:12px">
+    <div class="card"><h3>Efficiency</h3><p>$\sum_j\phi_j=f(\bx)-v(\varnothing)$: the attributions add up to the prediction minus the average. Policy A: 580.1 € of SHAP values = 1,108 − 528. Checked for all 2,000 test policies to $5\times10^{-13}$.</p></div>
+    <div class="card o"><h3>Symmetry</h3><p>If $v(S\cup\{i\})=v(S\cup\{j\})$ for every $S$, then $\phi_i=\phi_j$. Two features that always contribute the same get the same credit ($x_1x_2$ at $(2,2)$: $2+2$).</p></div>
+    <div class="card g"><h3>Dummy</h3><p>A feature that never changes $v$ gets 0. With the truth $\mu$ as the model, <code>car_value</code> and <code>vehicle_age</code> get exactly 0; the boosting model gives them $-2.6$ and $-9.7$ €: fitted noise.</p></div>
+    <div class="card y"><h3>Additivity</h3><p>The values for $f+g$ are the sums of the values for $f$ and $g$. A forest's SHAP values are the average of its trees'. Linear model: $\phi_j=\beta_j(x_j-\E X_j)$, checked in the lab.</p></div>
+  </div>
+  <div class="idea step"><b>Uniqueness</b> (Shapley, 1953): the Shapley value is the <b>only</b> attribution with these four properties. Any other split of $f(\bx)-v(\varnothing)$ breaks at least one of them.</div>
+  <p class="small step why">Price: $2^M$ coalitions, each an average over a background sample. With $M=9$ and 100 background rows: 51,200 predictions, 0.1 s. With $M=50$: impossible exactly, hence KernelSHAP and TreeSHAP.</p>
+</section>
+
+<section class="slide">
+  <h2>Interventional or conditional value function?</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:7px">
+      <p class="small"><b>Interventional</b> $v(S)=\E[f(\bx_S,\bX_{\bar S})]$: fill the missing features from the background, ignoring $\bx_S$. Same impossible rows as the PDP.</p>
+      <p class="small"><b>Conditional</b> (observational) $v(S)=\E[f(\bx_S,\bX_{\bar S})\mid\bX_S=\bx_S]$: fill them with values plausible <b>given</b> $\bx_S$ (lab: 50 nearest neighbours).</p>
+      <p class="small step">Lab, policy A, the truth $\mu$ as the model: <code>car_value</code> gets <b>0 €</b> interventional, <b>50.3 €</b> conditional; power falls from 203 to 164 €. $\mu$ never reads <code>car_value</code>, but a 35 k€ car <em>reveals</em> a powerful one.</p>
+      <p class="small step"><b>Interventional = true to the model</b>: auditing, debugging, a regulator asking what the model uses. <b>Conditional = true to the data</b>: what information signals risk, but a feature gets credit without being used.</p>
+      <p class="small step why"><code>shap</code>: interventional with a background by default; TreeSHAP's "tree path dependent" mode approximates the conditional one.</p>
+    </div>
+    <svg class="fig" data-fig="xai-cond" aria-label="Left: the rows each value function uses for policy A when only power is known. Right: interventional and conditional SHAP values of the truth for four features"></svg>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>KernelSHAP and TreeSHAP</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:7px">
+      <p class="small">Encode a coalition as $\mathbf z\in\{0,1\}^M$. Fit $g(\mathbf z)=\phi_0+\sum_j\phi_jz_j$ to $v(\mathbf z)$ by weighted least squares with the <b>Shapley kernel</b>:</p>
+      <div class="bluebox" style="font-size:19px;padding:6px 12px">$$\pi(\mathbf z)=\frac{M-1}{\binom{M}{|\mathbf z|}\,|\mathbf z|\,(M-|\mathbf z|)}$$</div>
+      <p class="small">with $\phi_0=v(\varnothing)$ and $\sum\phi_j=f(\bx)-v(\varnothing)$ imposed. With all coalitions the solution <b>is</b> the Shapley values (Lundberg and Lee, 2017).</p>
+      <p class="small step">Lab: all 510 coalitions, exact to $2\times10^{-13}$. Sampled: 16 coalitions, 29.8 € error; 64, <b>2.45 €</b>; 1,024, 0.52 €. Small and large coalitions get the weight: they isolate single features.</p>
+      <p class="small step"><b>TreeSHAP</b> (Lundberg et al., 2020): exact SHAP values of tree ensembles in polynomial time, by walking each tree once. Milliseconds per prediction for XGBoost, LightGBM, forests: the default in practice.</p>
+    </div>
+    <svg class="fig" data-fig="xai-kshap" aria-label="Left: the Shapley kernel weight of one coalition by its size. Right: the error of KernelSHAP against the number of sampled coalitions"></svg>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Reading SHAP: the waterfall of one policy</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="xai-waterfall" data-auto="s=1 :: start from the average prediction, 528 €, and add the largest contribution: power 160 kW, +181 € | s=2 :: age 21: +163 € | s=5 :: urban, one past claim, no deductible: about +50 € each | s=9 :: all nine: 1,108 €, the model's prediction. Exactly, by efficiency">
+      <svg class="fig" aria-label="Waterfall chart for policy A from the baseline of 528 euros to the prediction of 1,108 euros, one feature at a time"></svg>
+      <div class="ctl"><label for="wf-s">features added</label><input type="range" id="wf-s" data-k="s" min="0" max="9" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">Policy A with the boosting model, 512 coalitions, 100 background policies. The format to show an underwriter or a customer: <b>in euros</b>, from the average to this price.</p>
+      <p class="small step">Grey column: the same attribution with the <b>truth</b> as the model. Same story, same order; the model is 176 € below the true cost (1,108 vs 1,284 €), mostly in power (+181 vs +228) and age (+163 vs +226): it learned only part of the young-driver interaction.</p>
+      <p class="small step">SHAP explains the model, errors included: <code>vehicle_age</code> −10 €, <code>car_value</code> −3 € are noise the trees fitted.</p>
+      <p class="small step why">Order matters for the picture, not for the numbers: the values do not depend on the order of the bars.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>From local to global: beeswarm and dependence plots</h2>
+  <svg class="fig" data-fig="xai-bees" style="max-height:345px" aria-label="Left: beeswarm of the SHAP values of 300 test policies coloured by feature value. Right: SHAP value of power against power, drivers under 25 in orange"></svg>
+  <div class="cols">
+    <div class="stack" style="gap:6px">
+      <p class="small"><b>Beeswarm</b>: one dot per policy and feature, at its SHAP value, coloured by the feature value. Spread = importance, colour = direction: high deductibles (red) lower the cost, the few novices (blue licence) add up to 300 €.</p>
+      <p class="small step">Mean $|\text{SHAP}|$ ranks licence years, urban, power, mileage, age. Permutation ranks power and age higher and urban lower: moving predictions is not the same as reducing error.</p>
+    </div>
+    <div class="stack" style="gap:6px">
+      <p class="small step"><b>Dependence plot</b>: SHAP value of power against power. Above 100 kW the drivers under 25 lie above the others: the vertical spread at one value is the interaction.</p>
+      <p class="small step why">Exact values for all 2,000 test policies in the lab (background of 20): under a minute. The additivity check holds for every one of them.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>LIME: a local linear surrogate</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="xai-lime" data-auto="w=6 :: kernel width 1: the nearby samples (big dots) decide the slopes, close to the trend | w=1 :: a narrow kernel: about 5 effective samples | seed=click :: same width, new random samples: a very different explanation | seed=click :: and another | w=12 :: a wide kernel: stable, but it describes a whole region, not the point">
+      <svg class="fig" aria-label="A staircase model of two features as a colour map, perturbed samples around one point sized by their weight, and the trend gradient and the LIME slopes as arrows"></svg>
+      <div class="ctl"><label for="li-w">kernel width</label><input type="range" id="li-w" data-k="w" min="0" max="12" step="1" value="6"><span class="v" data-v="w"></span><span class="seg"><button type="button" data-k="seed">new samples</button></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">Ribeiro, Singh and Guestrin (2016): a linear model that only has to be right <b>near</b> $\bx$.</p>
+      <div class="eq xs">$$g=\arg\min_g\sum_k\pi_\bx(\mathbf z_k)\big(f(\mathbf z_k)-g(\mathbf z_k)\big)^2+\Omega(g)$$</div>
+      <p class="small">$\pi_\bx(\mathbf z)=e^{-\norm{\mathbf z-\bx}^2/\sigma^2}$. Perturb, predict, weight, fit: the slopes of $g$ are the explanation.</p>
+      <p class="small step">Lab, policy A: age slope $-24.3$ €/year at $\sigma=0.75$ (truth $-25.3$), $-11.4$ at $\sigma=10$. Curved effects have no single slope, and LIME does not say which $\sigma$ to use.</p>
+      <p class="small step">Unstable: at $\sigma=1$ with 200 samples, 20 seeds give <b>4 different top-3 feature sets</b>; with 5,000 samples, one.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card coral"><h1><b>Part D</b><br>Neural networks,<br>counterfactuals,<br>practice</h1><ul class="small"><li>saliency, Integrated Gradients</li><li>Grad-CAM and sanity checks</li><li>counterfactuals and recourse</li><li>fairness, pitfalls, which method when</li></ul></div></section>
+
+<section class="slide">
+  <h2>Gradients and Integrated Gradients</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="xai-ig" data-auto="a=0.2 :: walk from the baseline x′ = 0 towards x, adding up the gradient along the way | a=0.5 :: halfway: most of the change of f has already happened | a=1 :: at x: the attributions add up to f(x) − f(x′) = 0.995. Gradient × input at x gives only 0.030">
+      <svg class="fig" aria-label="Left: the function tanh(x1 + 2 x2) as a colour map with the straight path from the baseline to the input. Right: the accumulated integrated gradients and gradient times input"></svg>
+      <div class="ctl"><label for="ig-a">path position α</label><input type="range" id="ig-a" data-k="a" min="0" max="1" step="0.05" value="0"><span class="v" data-v="a"></span></div>
+    </div>
+    <div class="stack" style="gap:6px">
+      <p class="small"><b>Saliency</b> $|\partial f_c/\partial x_j|$: one backward pass to the input. <b>Gradient × input</b> $x_j\,\partial f_c/\partial x_j$.</p>
+      <p class="small step">Both fail where the network <b>saturates</b>: $f=\tanh(x_1+2x_2)$ at $\bx=(1,1)$ has gradient $(0.0099, 0.0197)$, yet the inputs moved $f$ from 0 to 0.995.</p>
+      <p class="small step"><b>Integrated Gradients</b> (Sundararajan et al., 2017): average the gradient on the path from a baseline $\bx'$:</p>
+      <div class="eq xs step">$$\IG_j=(x_j-x'_j)\int_0^1\frac{\partial f(\bx'+\alpha(\bx-\bx'))}{\partial x_j}\,d\alpha$$</div>
+      <p class="small step"><b>Completeness</b>: $\sum_j\IG_j=f(\bx)-f(\bx')$, the efficiency axiom. Lab (CNN, MNIST): 0.11% error with 64 steps, 0.02% with 256.</p>
+      <p class="small step why">The <b>baseline</b> is a choice: black image, blurred image, average policy. IG explains $f(\bx)$ <em>relative to</em> it.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Grad-CAM, and a sanity check</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="xai-maps" data-auto="a=ig :: Integrated Gradients for the trained CNN: the strokes of the digit | w=random :: randomise all the weights: the IG map hardly changes. It is drawing the input | a=sal :: saliency with random weights: noise. It depends on the model | a=cam;w=trained :: Grad-CAM, trained: a coarse blob over the parts that drive the class">
+      <svg class="fig" aria-label="Two MNIST digits with an attribution map, for the trained network or after randomising its weights, and the rank correlation between trained and random maps"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-a="sal" aria-pressed="false">saliency</button><button type="button" data-a="gxi" aria-pressed="false">grad × input</button><button type="button" data-a="ig" aria-pressed="true">IG</button><button type="button" data-a="cam" aria-pressed="false">Grad-CAM</button></span><span class="seg"><button type="button" data-w="trained" aria-pressed="true">trained</button><button type="button" data-w="random" aria-pressed="false">random weights</button></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small"><b>Grad-CAM</b> (Selvaraju et al., 2017): weight each feature map $A^k$ of the last convolution by its average gradient, $\alpha_k=\frac1{HW}\sum_{u,v}\partial f_c/\partial A^k_{uv}$, and show $\mathrm{ReLU}(\sum_k\alpha_kA^k)$ upsampled. Coarse, class-specific.</p>
+      <p class="small step"><b>Sanity check</b> (Adebayo et al., 2018): randomise the layers from the top down. A map of <em>the model</em> must change.</p>
+      <p class="small step">Lab, all layers random, rank correlation with the trained maps: saliency 0.15, Grad-CAM 0.09, but gradient × input and IG <b>0.99</b>: the black background is zero in both. On the digit pixels alone: saliency $-0.01$, IG still <b>0.28</b>.</p>
+      <p class="small step why">A map that looks like the digit is not evidence that the model looks at the digit. Run the test before trusting a method.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Counterfactual explanations</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="xai-cf" data-auto="n=l1 :: L1 distance (diamonds): the diamond touches the threshold at a corner, only the power changes | n=l2 :: L2 distance (ellipses): the ellipse touches it on a side, power and mileage both move | n=l1;act=km :: keep the car: even at 2,000 km a year the cost stays above 900 €, there is no counterfactual">
+      <svg class="fig" aria-label="True cost of policy B over engine power and mileage, the 900 euro threshold, and the closest point below it under L1 or L2 distance"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-n="l1" aria-pressed="true">L1</button><button type="button" data-n="l2" aria-pressed="false">L2</button></span><span class="seg"><button type="button" data-act="both" aria-pressed="true">power + mileage</button><button type="button" data-act="kw" aria-pressed="false">power only</button><button type="button" data-act="km" aria-pressed="false">mileage only</button></span></div>
+    </div>
+    <div class="stack" style="gap:6px">
+      <p class="small">"What is the smallest change that flips the decision?" (Wachter et al., 2017). Refer to underwriting if $f(\bx)\gt\tau=900$ €:</p>
+      <div class="eq xs">$$\xcf=\arg\min_{\bx'}\ \lambda\big(f(\bx')-\tau\big)_+^2+\sum_j\frac{|x'_j-x_j|}{s_j}$$</div>
+      <p class="small step"><b>Actionable</b>: only power, mileage, deductible may move; never age or past claims. <b>Plausible</b>: within the data, valid levels (no 159 € deductible). L1 gives sparse changes (widget: policy B, rural, no claims, true cost 1,074 €).</p>
+      <p class="small step">Lab: on the MLP, power 160 → 100 kW and mileage 22 → 17 (899 €). A grid search on boosting: <b>a car of 110 kW</b>, nothing else (862 €). Keeping the car: no solution.</p>
+      <p class="small step"><b>Recourse</b>: "with a car of at most 110 kW you would not be referred". Never "be older". <b>Anchors</b> (Ribeiro et al., 2018) give the dual: a rule that keeps the decision, e.g. "licence ≤ 1 year and power > 125 kW ⇒ referred".</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Pitfalls, and a fairness check by group</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:7px">
+      <ul class="small" style="gap:5px">
+        <li><b>Correlated features</b>: impossible rows (PDP, permutation, interventional SHAP), credit split arbitrarily between twins. Look at groups; use ALE; report drop-column too.</li>
+        <li class="step"><b>Model ≠ world</b>: an explanation of a wrong model is a correct description of a wrong model. Check accuracy first; never read SHAP as causal effects.</li>
+        <li class="step"><b>Instability</b>: LIME seeds, KernelSHAP samples, background choice. Repeat and report the spread.</li>
+        <li class="step"><b>Fairness by group</b>: sex is not an input, yet the model predicts <b>21 € more</b> for men (truth 22 €). SHAP gaps add up exactly to the gap: <b>+28.7 € through power</b>.</li>
+      </ul>
+      <p class="small step why">Here power has a real effect; had the gap come through a feature with none (<code>car_value</code>), it would be proxy discrimination. Explanations locate a gap; judging it is a legal and ethical decision.</p>
+    </div>
+    <svg class="fig" data-fig="xai-fair" aria-label="Mean SHAP value of men minus women for each feature, on the 2,000 test policies; power dominates"></svg>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Which method when, and how to present it</h2>
+  <table class="t xs">
+    <tr><th style="width:30%">question</th><th style="width:36%">method</th><th>watch out for</th></tr>
+    <tr><td>which features does the model use?</td><td>permutation importance on test data; mean $|\text{SHAP}|$</td><td>correlated twins; not impurity importance</td></tr>
+    <tr><td>how does the prediction move with $x_j$?</td><td>ALE; PDP if features are roughly independent; ICE for interactions</td><td>extrapolation of the PDP</td></tr>
+    <tr><td>a simple picture of the whole model</td><td>GAM by design; or a surrogate tree</td><td>report the fidelity</td></tr>
+    <tr><td>why this prediction? (tabular)</td><td>SHAP: TreeSHAP for trees, KernelSHAP otherwise; waterfall</td><td>background and value function</td></tr>
+    <tr><td>why this prediction? (images, text)</td><td>Integrated Gradients, Grad-CAM</td><td>baseline choice; sanity checks</td></tr>
+    <tr><td>what should change to flip the decision?</td><td>counterfactuals with actionability and plausibility</td><td>only actionable features</td></tr>
+    <tr><td>audit for discrimination</td><td>predictions and SHAP gaps by group</td><td>proxies; it is not causal</td></tr>
+  </table>
+  <div class="idea step"><b>For non-experts:</b> euros, not log-odds; the 3 to 5 largest contributions and "others"; a sentence per factor ("your car's power adds 181 €"); a counterfactual they can act on; say what the explanation does <em>not</em> mean (not causal, the model can be wrong).</div>
+</section>
+
+<section class="slide">
+  <h2>The topic in one slide</h2>
+  <div class="cards c2" style="gap:12px">
+    <div class="card"><h3>A · Why and what</h3><ul>
+      <li>debugging, trust, regulation (GDPR, AI Act), insight; not causal</li>
+      <li>global / local, agnostic / specific, by design / post-hoc</li>
+      <li>try interpretable first: GAM = boosting on the lab data</li></ul></div>
+    <div class="card g"><h3>B · Global methods</h3><ul>
+      <li>impurity importance is biased; permutation on test data</li>
+      <li>$\PD_j(z)=\frac1n\sum_if(z,\bx_{i,-j})$ = mean of ICE; ICE shows interactions</li>
+      <li>correlated features: PDP extrapolates, ALE does not; surrogates need fidelity</li></ul></div>
+    <div class="card y"><h3>C · Local methods</h3><ul>
+      <li>$\phi_j$ = average marginal contribution over orders; four axioms, unique</li>
+      <li>interventional (true to the model) vs conditional (true to the data)</li>
+      <li>KernelSHAP = weighted regression; TreeSHAP; LIME depends on $\sigma$ and the seed</li></ul></div>
+    <div class="card o"><h3>D · Networks, counterfactuals, practice</h3><ul>
+      <li>saliency, gradient × input; IG with completeness; Grad-CAM</li>
+      <li>sanity check: maps must change with random weights</li>
+      <li>counterfactuals: sparse, actionable, plausible; fairness gaps by SHAP</li></ul></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Vocabulary of Extra 9</h2>
+  <div class="cols">
+    <dl class="gloss" style="font-size:16px;gap:5px 14px">
+      <dt>global / local</dt><dd>explains the whole model / one prediction.</dd>
+      <dt>model-agnostic</dt><dd>uses only $f(\bx)$; works for any model.</dd>
+      <dt>interpretable by design</dt><dd>linear model, GAM, small tree: its own explanation.</dd>
+      <dt>impurity importance</dt><dd>split gains on training data; biased.</dd>
+      <dt>permutation importance</dt><dd>test-error increase when a column is shuffled.</dd>
+      <dt>drop-column importance</dt><dd>test-error increase when refitted without it.</dd>
+      <dt>PDP</dt><dd>average prediction with $x_j$ set to $z$ for everyone.</dd>
+      <dt>ICE</dt><dd>one such curve per observation.</dd>
+      <dt>ALE</dt><dd>accumulated local differences within bins.</dd>
+      <dt>surrogate, fidelity</dt><dd>simple model fitted to $f$; its $R^2$ against $f$.</dd>
+      <dt>Shapley value</dt><dd>average marginal contribution over all orders.</dd>
+    </dl>
+    <dl class="gloss" style="font-size:16px;gap:5px 14px">
+      <dt>value function $v(S)$</dt><dd>expected prediction knowing only $\bx_S$.</dd>
+      <dt>interventional / conditional</dt><dd>missing features from the background / given $\bx_S$.</dd>
+      <dt>KernelSHAP</dt><dd>Shapley values by kernel-weighted regression.</dd>
+      <dt>TreeSHAP</dt><dd>exact, fast SHAP values for tree ensembles.</dd>
+      <dt>LIME</dt><dd>proximity-weighted local linear surrogate.</dd>
+      <dt>saliency</dt><dd>$|\nabla_\bx f_c|$, gradient with respect to the input.</dd>
+      <dt>Integrated Gradients</dt><dd>gradient averaged on a path from a baseline.</dd>
+      <dt>completeness</dt><dd>attributions add up to $f(\bx)-f(\bx')$.</dd>
+      <dt>Grad-CAM</dt><dd>gradient-weighted last-layer feature maps.</dd>
+      <dt>counterfactual</dt><dd>closest input with a different decision.</dd>
+      <dt>recourse</dt><dd>an actionable change the person can make.</dd>
+    </dl>
+  </div>
+  <p class="labline">Original papers: <a href="https://arxiv.org/abs/1705.07874" target="_blank" rel="noopener">SHAP</a> · <a href="https://arxiv.org/abs/1602.04938" target="_blank" rel="noopener">LIME</a> · <a href="https://arxiv.org/abs/1612.08468" target="_blank" rel="noopener">ALE</a> · <a href="https://arxiv.org/abs/1703.01365" target="_blank" rel="noopener">Integrated Gradients</a> · <a href="https://arxiv.org/abs/1610.02391" target="_blank" rel="noopener">Grad-CAM</a> · <a href="https://arxiv.org/abs/1810.03292" target="_blank" rel="noopener">sanity checks</a> · <a href="https://arxiv.org/abs/1711.00399" target="_blank" rel="noopener">counterfactuals</a> · <a href="https://christophm.github.io/interpretable-ml-book/" target="_blank" rel="noopener">Interpretable ML (book)</a>.</p>
+</section>
+
+<section class="slide lab">
+  <div class="labtag">EXTRA 9</div>
+  <h2>Explainability, from scratch, against a known truth</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:10px">
+      <p>Simulate a fictional motor portfolio whose true cost is known, build every method of this deck by hand, check it against scikit-learn, and grade it against the truth.</p>
+      <ol class="todo">
+        <li>The portfolio; linear model, GAM, random forest, gradient boosting.</li>
+        <li>Impurity vs permutation importance with a random ID; drop-column.</li>
+        <li>PDP and ICE from scratch; extrapolation; ALE; a surrogate tree.</li>
+        <li>Exact Shapley values by enumerating coalitions; the axioms; interventional vs conditional.</li>
+        <li>KernelSHAP; beeswarm, dependence and waterfall plots; LIME and its instability.</li>
+        <li>A CNN on MNIST: saliency, IG (completeness), Grad-CAM, randomisation test.</li>
+        <li>Counterfactuals on an MLP and by grid search; a fairness check by group.</li>
+      </ol>
+    </div>
+    <div class="labcard">
+      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/extra/extra 09 - Explainability.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <dl class="gloss">
+        <dt>notebook</dt><dd><code>extra 09 - Explainability.ipynb</code></dd>
+        <dt>you need</dt><dd>linear regression, trees, random forests, boosting; CNNs and backprop (Neural networks 2 and 4)</dd>
+        <dt>runs on</dt><dd>CPU, about 1.5 min with 4 threads; no GPU needed</dd>
+        <dt>data</dt><dd>a simulated portfolio (in the notebook) and MNIST (torchvision, 11 MB)</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section class="slide cover">
+  <div class="inner"><h1>Extra topics</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Next: Uncertainty and conformal prediction</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+</div></div>
+<script src="../assets/figures.js?v=20260930"></script>
+<script src="../neural_networks/assets/nn-core.js?v=20260930"></script>
+<script src="assets/xai-data.js?v=20261009"></script>
+<script src="assets/fig-xai.js?v=20261009"></script>
+<script src="../assets/deck.js?v=20260930"></script>
+</body>
+</html>

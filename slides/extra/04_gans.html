@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="author" content="Imanol Granada (imanolgranada@gmail.com)">
+<title>Generative Adversarial Networks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="../assets/deck.css?v=20260930">
+<link rel="stylesheet" href="../neural_networks/assets/nn.css?v=20261006c">
+<script src="../assets/mathjax-config.js?v=20260930"></script>
+<script>Object.assign(MathJax.tex.macros,{pd:'p_{\\text{data}}',pg:'p_g',bmu:'\\boldsymbol{\\mu}',bSigma:'\\boldsymbol{\\Sigma}',KL:'\\mathrm{KL}',JS:'\\mathrm{JS}',tr:'\\operatorname{tr}'});</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
+</head>
+<body data-deck="Extra 4 · Generative adversarial networks" data-prev="03_autoencoders.html" data-next="05_anomaly_detection.html">
+<div id="viewport"><div id="stage">
+<section class="slide cover">
+  <div class="inner"><h1>Extra topics</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Generative adversarial networks</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+
+<section class="slide">
+  <h2>Where we are</h2>
+  <svg class="fig" data-fig="gan-where" style="max-height:215px" aria-label="Three panels: an autoencoder compresses and reconstructs, a VAE decodes noise into a blurry sample, a GAN generates a fake that a discriminator compares with real data"></svg>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p class="small">Extra 3 learned a <b>density</b>. The autoencoder compresses and reconstructs; the VAE maximises the ELBO and samples by decoding $\bz\sim\mathcal N(\mathbf 0,\mathbf I)$. Its samples are blurry: a Gaussian decoder averages every image compatible with $\bz$.</p>
+      <p class="small step">A GAN drops the density altogether. A <b>generator</b> maps noise to samples; a <b>discriminator</b>, trained to tell real from fake, serves as the generator's loss function. The two are trained against each other.</p>
+    </div>
+    <div class="stack" style="gap:10px">
+      <div class="note step"><p class="small"><b>Generative adversarial network</b> (Goodfellow et al., 2014): a generator $G$ and a discriminator $D$ playing a two-player game whose equilibrium is $\pg=\pd$.</p></div>
+      <p class="small step why">Four parts: <b>A</b> generative modelling and the game, with numbers; <b>B</b> the theory: optimal $D$, Jensen–Shannon, saturation; <b>C</b> failure modes and the Wasserstein GAN; <b>D</b> architectures (DCGAN, conditional, pix2pix, CycleGAN, StyleGAN) and evaluation (FID). It ends with the Extra 4 lab.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card blue"><h1><b>Part A</b><br>Generative modelling<br>and the game</h1><ul class="small"><li>learning $\pd$: densities and samplers</li><li>a generator is a push-forward</li><li>what GANs are used for</li><li>the game and its training loop</li><li>one round with numbers; a 1-D GAN</li></ul></div></section>
+
+<section class="slide">
+  <h2>Two ways to learn $\pd$</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="gan-explicit" aria-label="Left: a density curve that can be evaluated at any point. Right: only samples and their histogram, no formula."></svg>
+    <div class="stack" style="gap:8px">
+      <p class="small">We only have samples $\bx_1,\dots,\bx_n\sim\pd$. A generative model must <b>evaluate</b> a density, <b>sample</b> new $\bx$, or both.</p>
+      <p class="small"><b>Explicit density</b>: write $p_\theta(\bx)$, maximise the likelihood.</p>
+      <ul class="small" style="gap:3px"><li><b>autoregressive</b>: $p(\bx)=\prod_ip(x_i\mid x_{\lt i})$, exact (PixelCNN, GPT)</li><li><b>flows</b>: an invertible map, exact by change of variables</li><li><b>VAE</b>: a lower bound, the ELBO (Extra 3)</li></ul>
+      <p class="small"><b>Implicit</b>: only a sampler $\bx=G_\theta(\bz)$. No formula for $\pg(\bx)$. <b>GANs.</b></p>
+      <p class="small step why">Why sampling can be easier: no normalising constant, no special architecture. And images live near a thin low-dimensional set of pixel space, where a density is huge on the set and zero off it; a generator from a low-dimensional $\bz$ simply lands on it. The price: no likelihood to train with, or to evaluate.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>A generator is a push-forward</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="gan-push" data-auto="t=0.5 :: halfway between the identity and the exact map: the noise starts to split in two | t=1 :: the exact map G*: its histogram is the mixture 0.4 N(−2, 0.5²) + 0.6 N(2, 0.5²)">
+      <svg class="fig" aria-label="A map from noise z to x, with the noise density below and the histogram of x on the right"></svg>
+      <div class="ctl"><label for="pu-t">t</label><input type="range" id="pu-t" data-k="t" min="0" max="1" step="0.05" value="0"><span class="v" data-v="t"></span></div>
+    </div>
+    <div class="stack" style="gap:9px">
+      <p class="small">If $\bz\sim p_z$, then $\bx=G(\bz)$ has a distribution $\pg$: $G$ <b>pushes</b> the noise forward. In 1-D the exact sampler is known:</p>
+      <div class="bluebox" style="font-size:21px">$$G^*(z)=F^{-1}\big(\Phi(z)\big)$$</div>
+      <p class="small">$\Phi$ is the normal CDF, $F$ the data CDF. Proof: $\Phi(z)$ is uniform, so $P(G^*(z)\le t)=P(\Phi(z)\le F(t))=F(t)$.</p>
+      <p class="small step">The map is flat inside each mode and very <b>steep</b> across the gap (slope ≈ 420 at $z=-0.25$). A neural $G$ is continuous: it must learn this step, and it always leaves a thin bridge of samples between the modes.</p>
+      <p class="small step why">For images there is no formula. A GAN <b>learns</b> $G$ from samples, guided by a discriminator.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>What GANs are used for</h2>
+  <div class="cards c3" style="gap:12px">
+    <div class="card app"><h3>Image synthesis</h3><svg class="fig" data-fig="gan-use" data-use="synth" aria-label="Three faces of people who do not exist"></svg><p>Faces, objects, scenes from noise. StyleGAN's faces (2019) are hard to tell from photos.</p></div>
+    <div class="card o app"><h3>Super-resolution</h3><svg class="fig" data-fig="gan-use" data-use="sr" aria-label="A coarse pixel grid and a sharp upscaled version"></svg><p>An adversarial loss restores sharp texture where an L2 loss gives a blur. Old photos, satellite images, video.</p></div>
+    <div class="card g app"><h3>Data augmentation</h3><svg class="fig" data-fig="gan-use" data-use="aug" aria-label="Two common classes and one rare class completed with synthetic examples"></svg><p>Extra examples of a rare class: an unusual damage type, a rare tumour. Validate on real data only.</p></div>
+    <div class="card y app"><h3>Synthetic data</h3><svg class="fig" data-fig="gan-use" data-use="tab" aria-label="A table of numbers next to a shield with a question mark"></svg><p>Share data without the records. Caveat: a GAN can memorise, and samples can leak; privacy needs a formal method (DP).</p></div>
+    <div class="card r app"><h3>Image-to-image</h3><svg class="fig" data-fig="gan-use" data-use="i2i" aria-label="A line sketch of mountains turned into a coloured picture"></svg><p>Sketch → photo, day → night, map → aerial, horse → zebra (pix2pix, CycleGAN; Part D).</p></div>
+    <div class="card app"><h3>An adversarial loss</h3><svg class="fig" data-fig="gan-use" data-use="loss" aria-label="A model's output judged by a discriminator, whose verdict is fed back as a loss"></svg><p>A discriminator as an extra loss inside other models: the autoencoders of latent diffusion, fast samplers.</p></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The GAN game</h2>
+  <svg class="fig" data-fig="gan-arch" style="max-height:230px" aria-label="Noise goes through the generator to a fake image; the discriminator receives fakes and real images and outputs the probability of real; its gradient flows back into the generator"></svg>
+  <div class="cols c64">
+    <div class="stack" style="gap:8px">
+      <div class="bluebox" style="font-size:18px;align-self:stretch">$$\min_G\max_D\;V(D,G)=\E_{\bx\sim\pd}\big[\log D(\bx)\big]+\E_{\bz\sim p_z}\big[\log\big(1-D(G(\bz))\big)\big]$$</div>
+      <p class="small step">$D$ maximises $V$: $-V$ is the binary cross-entropy with label 1 for real and 0 for fake, so <b>$D$ is a logistic-regression classifier</b> (any network with a sigmoid output).</p>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small step">$G$ minimises $V$: it wants $D(G(\bz))\to1$. It never sees a real example; it learns <b>only through the gradient of $D$</b>.</p>
+      <p class="small step why">A zero-sum game: what $D$ gains, $G$ loses. Its equilibrium (Part B): $\pg=\pd$ and $D=\tfrac12$ everywhere.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Training: alternating gradient steps</h2>
+  <div class="cols c64">
+<pre class="code s">bce = nn.BCEWithLogitsLoss()           <span class="c"># D outputs a logit</span>
+ones, zeros = torch.ones(m, 1), torch.zeros(m, 1)
+for x in loader:                       <span class="c"># a batch of m real examples</span>
+    <span class="c"># 1. discriminator step: real -> 1, fake -> 0</span>
+    fake = G(torch.randn(m, d_z))
+    loss_D = bce(D(x), ones) + bce(D(fake.detach()), zeros)
+    opt_D.zero_grad(); loss_D.backward(); opt_D.step()
+
+    <span class="c"># 2. generator step: make D say "real" on fakes</span>
+    loss_G = bce(D(fake), ones)        <span class="c"># non-saturating loss</span>
+    opt_G.zero_grad(); loss_G.backward(); opt_G.step()
+
+opt_G = torch.optim.Adam(G.parameters(), 2e-4, betas=(0.5, 0.999))
+opt_D = torch.optim.Adam(D.parameters(), 2e-4, betas=(0.5, 0.999))</pre>
+    <div class="stack" style="gap:8px">
+      <p class="small"><b>Algorithm</b> (Goodfellow et al., 2014). Repeat: $k$ steps on $\phi$ to decrease $L_D=-\frac1m\sum_i\log D(\bx_i)-\frac1m\sum_i\log(1-D(G(\bz_i)))$, then one step on $\theta$.</p>
+      <p class="small"><b>$k=1$</b> in practice (DCGAN); WGAN uses $k=5$.</p>
+      <p class="small step"><b><code>detach()</code></b>: the $D$ step must not update $G$. The $G$ step backpropagates <b>through</b> $D$ into $G$; only <code>opt_G</code> steps.</p>
+      <p class="small step"><b>Labels flipped</b> for $G$: minimise $-\log D(G(\bz))$ instead of $\log(1-D(G(\bz)))$. Same goal, better gradients (Part B).</p>
+      <p class="small step why"><b>$\beta_1=0.5$</b> in Adam: less momentum, because each player's target moves at every step.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>One round of the game, with numbers</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="gan-toy" data-auto="s=1 :: D(x) = σ(x − 1) already rejects the fakes and accepts the real points | s=2 :: the discriminator step: only the slope grows, w = 1 → 1.462 | s=3 :: the generator step: θ = 0 → 1.036, the fakes move towards the data">
+      <svg class="fig" aria-label="The discriminator curve, two real points and two fake points, before and after one discriminator step and one generator step"></svg>
+      <div class="ctl"><label for="to-s">step</label><input type="range" id="to-s" data-k="s" min="0" max="3" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">$D(x)=\sigma(wx+b)$, $G(z)=\theta+z$. Real $x=1.5,\,2.5$; noise $z=-0.5,\,0.5$; $w=1$, $b=-1$, $\theta=0$; SGD, $\eta=1$.</p>
+      <div class="panels" style="min-height:300px">
+        <div data-i="0"><p class="small">The two groups and $D$ before training. Its boundary $wx+b=0$ is at $x=1$, exactly midway.</p></div>
+        <div data-i="1"><p class="small">$D$ on real: $\sigma(0.5)=0.622$, $\sigma(1.5)=0.818$.<br>$D$ on fake: $\sigma(-1.5)=0.182$, $\sigma(-0.5)=0.378$.</p><p class="small">$L_D=0.338+0.338=0.675$</p></div>
+        <div data-i="2"><p class="small">$\frac{\partial L_D}{\partial w}=-\frac12\sum(1-D)x_r+\frac12\sum D\,\tilde x$</p><p class="small">$\quad=-0.511+0.049=-0.462$</p><p class="small">$\frac{\partial L_D}{\partial b}=-0.280+0.280=0$: the boundary stays, the slope grows, $w=1.462$. Fakes now get $0.150$ and $0.433$.</p></div>
+        <div data-i="3"><p class="small">$\frac{\partial L_G}{\partial\theta}=-\frac12\sum(1-D(\tilde x))\,w$</p><p class="small">$\quad=-\frac12(0.850+0.567)\cdot1.462=-1.036$</p><p class="small">$\theta=0+1.036$: the fakes move to $0.536,\,1.536$, where $D$ says $0.446$ and $0.777$.</p><p class="small why">The minimax loss would give $-0.427$: 2.4 times smaller.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>A 1-D GAN learns a mixture</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="gan-1d" data-auto="k=5 :: iteration 50: D says real is on the right, so G puts all its mass on the right mode | k=10 :: iteration 100: D now rejects the right mode; G spills over the gap towards the left mode | k=20 :: iteration 200: a broad blanket over both modes and the gap | k=26 :: iteration 500: collapsed again, a sharp peak on the right mode | k=51 :: iteration 4000: p_g ≈ p_data and D ≈ 0.5 on the data">
+      <svg class="fig" aria-label="The data density, the generator density and the discriminator output at a chosen training iteration"></svg>
+      <div class="ctl"><label for="od-k">iteration</label><input type="range" id="od-k" data-k="k" min="0" max="51" step="1" value="0"><span class="v" data-v="k"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">$\pd=0.4\,\mathcal N(-2,0.5^2)+0.6\,\mathcal N(2,0.5^2)$. $G$: $\bz\in\R^4\to64\to64\to1$; $D$: $1\to64\to64\to1$; Adam $5\cdot10^{-4}$, 4000 iterations, 6 s on a CPU.</p>
+      <p class="small step"><b>$D$ is a map of the error</b>: high where $\pd\gt\pg$, low where $\pg\gt\pd$. $G$ follows its gradient to where mass is missing.</p>
+      <p class="small step">It overshoots, back and forth: all of $G$'s mass on the right mode (iterations 10–60), a broad blanket (100–200), a sharp peak on the right mode again (around 500). Episodes of <b>mode collapse</b> and recovery.</p>
+      <p class="small step">At the end: JS = 0.027 (it started at 0.692), mean 0.440 (data 0.400), std 1.953 (2.022). $D\approx0.5$ on the data, with a dip in the gap: the bridge a continuous $G$ cannot remove.</p>
+      <p class="small step why">The losses hover at $L_D\approx$ 1.384 and $L_G\approx$ 0.700, near the equilibrium values $2\log2=1.386$ and $\log2=0.693$. A GAN loss curve says little about quality.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card green"><h1><b>Part B</b><br>The theory</h1><ul class="small"><li>the optimal discriminator</li><li>checked in the lab</li><li>the game minimises Jensen–Shannon</li><li>why the minimax loss saturates</li></ul></div></section>
+
+<section class="slide">
+  <h2>The optimal discriminator</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:8px">
+      <p class="small">An expectation over $\bz$ of a function of $G(\bz)$ is an expectation over $\pg$, so</p>
+      <div class="eq s">$$V=\int\big[\pd(\bx)\log D(\bx)+\pg(\bx)\log(1-D(\bx))\big]\,d\bx$$</div>
+      <p class="small step">$D$ is free at each $\bx$: maximise pointwise. With $a=\pd(\bx)$, $b=\pg(\bx)$, $y=D(\bx)$:</p>
+      <div class="eq s step">$$f(y)=a\log y+b\log(1-y),\quad f'(y)=\frac ay-\frac b{1-y}=0$$</div>
+      <div class="bluebox step" style="font-size:22px">$$D^*(\bx)=\frac{\pd(\bx)}{\pd(\bx)+\pg(\bx)}$$</div>
+      <p class="small step why">$f''=-a/y^2-b/(1-y)^2\lt0$: a maximum. $D^*$ needs only the <b>ratio</b> of the two densities, which a classifier can estimate from samples: the core trick of GANs.</p>
+    </div>
+    <div class="widget" data-fig="gan-dstar" data-auto="a=0.3;b=0.1 :: three times more data than fakes at this x: D* = 0.3 / 0.4 = 0.75 | a=0.2;b=0.2 :: as many fakes as data: D* = 1/2, D cannot tell | a=0.05;b=0.4 :: mostly fakes here: D* = 0.11, G is pushed away">
+      <svg class="fig" aria-label="The function a log y + b log(1 − y) and its maximum at a / (a + b)"></svg>
+      <div class="ctl"><label for="ds-a">p_data(x)</label><input type="range" id="ds-a" data-k="a" min="0" max="0.6" step="0.05" value="0.3"><span class="v" data-v="a"></span><label for="ds-b">p_g(x)</label><input type="range" id="ds-b" data-k="b" min="0" max="0.6" step="0.05" value="0.3"><span class="v" data-v="b"></span></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Checked: a trained $D$ finds $D^*$</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="gan-dstar-lab" aria-label="The data density, the frozen generator's density, the formula D star and a trained discriminator, which overlap"></svg>
+    <div class="stack" style="gap:9px">
+      <p class="small">In the lab: freeze $G$ at iteration 200 (broad, far from the data), estimate $\pg$ from 2 million samples, train a fresh $D$ for 3000 steps, compare with the formula.</p>
+      <p class="small step">Mean $|D-D^*|$ = <b>0.010</b> on the 90 grid points that have samples (max 0.039).</p>
+      <p class="small step">At $x=1$ there is almost no data and many fakes: $D^*\approx0$. At $x=2$ data outnumber fakes: $D^*\gt0.5$. The classifier learned the density ratio without being told any density.</p>
+      <p class="small step why">Grey: no samples, $D^*=0/0$. There $D$ is unconstrained and arbitrary. In high dimensions most of the space is like that.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The game minimises Jensen–Shannon</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:7px">
+      <p class="small">Put $D^*$ into $V$, with $M=\tfrac12(\pd+\pg)$, so that $\frac{\pd}{\pd+\pg}=\frac12\frac{\pd}M$:</p>
+      <div class="eq xs">$$V(G,D^*)=\int\pd\log\frac{\pd}{2M}+\int\pg\log\frac{\pg}{2M}$$</div>
+      <div class="eq xs step">$$=-\log4+\KL(\pd\,\|\,M)+\KL(\pg\,\|\,M)$$</div>
+      <div class="bluebox step" style="font-size:21px">$$V(G,D^*)=-\log4+2\,\JS(\pd\,\|\,\pg)$$</div>
+      <p class="small step">$0\le\JS\le\log2$, and $\JS=0$ only if $\pg=\pd$. So the <b>global optimum</b> is $\pg=\pd$, with $D^*=\tfrac12$ and $V=-\log4=-1.386$.</p>
+      <p class="small step why">Lab, $G$ of iteration 200: $\JS=$ 0.1552, so $-\log4+2\JS=$ −1.0759; Monte Carlo with the trained $D$: −1.0769.</p>
+    </div>
+    <div class="stack" style="gap:6px">
+      <svg class="fig" data-fig="gan-js" aria-label="The Jensen–Shannon divergence between data and generator during training of the 1-D GAN, falling from log 2"></svg>
+      <p class="small why">With an optimal $D$ at every step, training $G$ would minimise JS. In practice $D$ takes one step per $G$ step, so this is only the target the game aims at.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Why the minimax loss saturates</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="gan-sat" data-auto="d=0.007 :: the lab: after 300 D steps the initial fakes get D(G(z)) = 0.007, and the minimax gradient almost vanishes | d=0.5 :: D undecided: both losses give the same push | d=0.9 :: G winning: now the non-saturating gradient is the small one, which does no harm">
+      <svg class="fig" aria-label="Left: the two generator losses as functions of D(G(z)). Right: the size of their gradients with respect to the logit."></svg>
+      <div class="ctl"><label for="sa-d">D(G(z))</label><input type="range" id="sa-d" data-k="d" min="0.002" max="0.998" step="0.001" value="0.25"><span class="v" data-v="d"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">Write $D=\sigma(a)$ on a fake, with $a$ the logit:</p>
+      <table class="t xs">
+        <tr><th>loss for $G$</th><th>$\partial/\partial a$</th><th>when $D\to0$</th></tr>
+        <tr><td>minimax $\log(1-D)$</td><td>$-D$</td><td>$\to0$: stalls</td></tr>
+        <tr><td>non-saturating $-\log D$</td><td>$-(1-D)$</td><td>$\to-1$</td></tr>
+      </table>
+      <p class="small step">Early on the fakes are bad and $D$ rejects them: $D(G(\bz))\approx0$, exactly where the minimax loss is flat. Lab: $D(G(\bz))=$ 0.007, gradient <b>100 times</b> larger with $-\log D$.</p>
+      <p class="small step">Same fixed point, strong gradient when $G$ is bad: every practical GAN trains $G$ with $-\log D(G(\bz))$, the BCE with the fake labels flipped to 1.</p>
+      <p class="small step why">The price: no longer zero-sum. With $D^*$ it minimises $\KL(\pg\|\pd)-2\JS$ (Arjovsky and Bottou, 2017): a reverse KL, which is <b>mode-seeking</b>. Part C.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card purple"><h1><b>Part C</b><br>Failure modes<br>and fixes</h1><ul class="small"><li>mode collapse on a ring of Gaussians</li><li>why: reverse KL, chasing</li><li>two players do not descend one hill</li><li>no overlap, no gradient</li><li>earth mover's distance, WGAN, WGAN-GP</li></ul></div></section>
+
+<section class="slide">
+  <h2>Mode collapse on a ring of 8 Gaussians</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="gan-ring" data-auto="kind=vanilla;s=3 :: vanilla GAN, step 300: almost all samples on one mode | s=6 :: step 600: a different mode. The generator hops | s=10 :: step 1000: hopping again | s=20 :: step 2000: still one mode at a time | kind=wgan;s=6 :: WGAN-GP, step 600: the samples spread around the whole ring | s=20 :: WGAN-GP, step 2000: all 8 modes covered">
+      <svg class="fig" aria-label="Samples of the generator on a ring of eight Gaussian modes, and the number of good samples per mode"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-kind="vanilla" aria-pressed="true">vanilla GAN</button><button type="button" data-kind="wgan" aria-pressed="false">WGAN-GP</button></span><label for="ri-s">step</label><input type="range" id="ri-s" data-k="s" min="0" max="20" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">8 Gaussians, std 0.05, on a circle of radius 2. A sample is <b>good</b> if within 3 std of a mode; a mode is <b>covered</b> if it holds ≥ 1% of the samples.</p>
+      <p class="small">Same networks for both (2-layer MLPs, 128 units, $d_z=256$), Adam $10^{-3}$, 2,000 generator steps.</p>
+      <p class="small step"><b>Vanilla GAN</b>: one mode at a time, and the mode keeps changing: <b>mode hopping</b>. At step 2000: 0 of 8 modes, 0.00 of the samples good.</p>
+      <p class="small step"><b>WGAN-GP</b> (later in this part): 8 of 8 modes, 0.58 good.</p>
+      <p class="small step why">Mode collapse is partly luck: with other seeds the vanilla GAN sometimes finds all the modes. But its loss has no force against collapse; the Wasserstein loss does.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Why the generator collapses</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="gan-kl" data-auto="kl=f :: maximum likelihood (forward KL): the best single Gaussian covers both modes and puts mass in the gap: the VAE's blur | kl=r :: reverse KL: the best single Gaussian sits on one mode and ignores the other: the GAN's collapse">
+      <svg class="fig" aria-label="A two-mode density and the best single Gaussian under the forward or the reverse Kullback–Leibler divergence"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-kl="f" aria-pressed="true">KL(p ‖ q): likelihood</button><button type="button" data-kl="r" aria-pressed="false">KL(q ‖ p): reverse</button></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small"><b>1 · The loss is mode-seeking.</b> $\KL(q\|p)=\int q\log\frac qp$ is huge where $q\gt0$ and $p\approx0$ (fakes where there is no data) and small for missing modes. Maximum likelihood, $\KL(p\|q)$, is the opposite: it covers everything, and blurs.</p>
+      <p class="small step"><b>2 · $G$ chases a moving target.</b> $G$ moves its mass to wherever the current $D$ says "real"; $D$ learns to reject that spot; $G$ jumps to the next. Nothing in one step rewards covering several modes at once.</p>
+      <p class="small step"><b>3 · Minimax ≠ maximin.</b> The theory needs $D$ optimal for each $G$. Alternating single steps are closer to $\max_D\min_G$, where collapsing onto $D$'s favourite point is the best reply.</p>
+      <p class="small step why">Cures: losses with a useful gradient everywhere (WGAN), regularised $D$ (gradient penalty, spectral norm), minibatch features that let $D$ see diversity, unrolled $D$ steps.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Two players do not descend one hill</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="gan-bilinear" data-auto="m=sim;t=100 :: simultaneous steps: the distance grows by √(1 + η²) per step, 7.1 after 100 steps | m=alt;t=100 :: alternating steps, as in GAN training: a closed orbit, no convergence | m=eg;t=100 :: extragradient: a look-ahead step, then the real one. It spirals in | m=opt;t=100 :: optimistic steps: also converge">
+      <svg class="fig" aria-label="Trajectories of gradient play on the game min over x max over y of x times y, and their distance to the equilibrium"></svg>
+      <div class="ctl"><span class="seg"><button type="button" data-m="sim" aria-pressed="true">simult.</button><button type="button" data-m="alt" aria-pressed="false">altern.</button><button type="button" data-m="eg" aria-pressed="false">extragrad.</button><button type="button" data-m="opt" aria-pressed="false">optimistic</button></span><label for="bi-t">steps</label><input type="range" id="bi-t" data-k="t" min="0" max="100" step="1" value="0"><span class="v" data-v="t"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">The smallest game: $\ \min_x\max_y\ xy$. Equilibrium $(0,0)$. Gradient steps for both, simultaneously:</p>
+      <div class="eq xs">$$x\leftarrow x-\eta y,\qquad y\leftarrow y+\eta x$$</div>
+      <div class="eq xs step">$$(x-\eta y)^2+(y+\eta x)^2=(1+\eta^2)(x^2+y^2)$$</div>
+      <p class="small step">The cross terms cancel: the distance grows by $\sqrt{1+\eta^2}$ at <b>every</b> step, for every learning rate. The vector field rotates; each player's descent feeds the other's.</p>
+      <p class="small step"><b>Alternating</b>: determinant 1, an orbit. <b>Extragradient</b>: shrinks by $\sqrt{1-\eta^2+\eta^4}$; <b>optimistic</b> GD: $x_{t+1}=x_t-2\eta y_t+\eta y_{t-1}$, converges.</p>
+      <p class="small step why">In GANs: oscillating losses, cycling samples. Remedies: small $\eta$, $\beta_1=0.5$, different rates for $D$ and $G$ (TTUR), optimistic Adam, gradient penalties, averaging $G$'s weights (EMA).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>No overlap, no gradient</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="gan-jsw" data-auto="th=0.5 :: half overlapping: JS = 0.5 log 2, W₁ = 0.5 | th=1.5 :: disjoint: JS is stuck at log 2, its gradient is 0; W₁ = 1.5 still says how far | th=-2.5 :: on the other side: JS = log 2 again, W₁ = 2.5">
+      <svg class="fig" aria-label="Two uniform distributions, one shifted by theta, and the Jensen–Shannon divergence and Wasserstein distance as functions of theta"></svg>
+      <div class="ctl"><label for="jw-t">shift θ</label><input type="range" id="jw-t" data-k="th" min="-2.5" max="2.5" step="0.05" value="0"><span class="v" data-v="th"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">$p=\mathcal U[0,1]$, $q_\theta=\mathcal U[\theta,\theta+1]$. If $|\theta|\ge1$ the supports are disjoint: where $p\gt0$, $q=0$, so $M=p/2$ and $\KL(p\|M)=\log2$. Hence</p>
+      <div class="bluebox" style="font-size:20px">$$\JS(p\|q_\theta)=\log2\ \text{ for all }|\theta|\ge1$$</div>
+      <p class="small step">A flat loss: <b>zero gradient</b>, nothing tells $G$ which way to move. The perfect $D^*$ is 1 on the data, 0 on the fakes, and flat around both.</p>
+      <p class="small step">In high dimensions this is the normal case: data and early fakes lie on thin sets that almost never meet.</p>
+      <p class="small step"><b>Wasserstein-1</b>: $W_1(p,q_\theta)=|\theta|$. It grows with the distance and always points the way. The lab checks both curves against SciPy.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The earth mover's distance</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="gan-emd" data-auto="s=1 :: the two CDFs: blue for the pile p, orange dashed for the hole q | s=2 :: W₁ in 1-D = the area between the CDFs: 0.4 + 0.6 + 0.6 + 0.4 = 2.0 | s=3 :: one optimal transport plan: 7 moves, total cost 2.0">
+      <svg class="fig" aria-label="Two five-bin histograms, their cumulative distributions, the area between them, and arrows of an optimal transport plan"></svg>
+      <div class="ctl"><label for="em-s">step</label><input type="range" id="em-s" data-k="s" min="0" max="3" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">$p$ is a pile of earth, $q$ a hole of the same volume. $W_1$ = the least total work, mass × distance, to fill the hole:</p>
+      <div class="eq s">$$W_1(p,q)=\inf_{\gamma\in\Pi(p,q)}\E_{(x,y)\sim\gamma}\,|x-y|$$</div>
+      <p class="small">$\Pi(p,q)$: transport plans, joint distributions with marginals $p$ and $q$.</p>
+      <p class="small">In 1-D the best plan never crosses itself, and $W_1$ is the area between the CDFs:</p>
+      <div class="eq s">$$W_1=\int|F_p(t)-F_q(t)|\,dt$$</div>
+      <p class="small">$p=(0.4,0.3,0.2,0.1,0)$, $q=(0,0.1,0.2,0.3,0.4)$: $W_1=2.0$ bins. On average every grain travels two bins.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The Wasserstein GAN</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:7px">
+      <p class="small">The best plan is out of reach between image distributions. The <b>Kantorovich–Rubinstein duality</b> turns $W_1$ into a maximisation over functions:</p>
+      <div class="bluebox" style="font-size:19px;align-self:stretch">$$W_1(\pd,\pg)=\sup_{\|f\|_L\le1}\ \E_{\pd}f(\bx)-\E_{p_z}f(G(\bz))$$</div>
+      <p class="small step">Over <b>1-Lipschitz</b> $f$: $|f(\bx)-f(\mathbf y)|\le\|\bx-\mathbf y\|$. A network can do the sup.</p>
+      <p class="small step"><b>Critic</b> $f_w$: no sigmoid, a real-valued score. It maximises $\E f_w(\text{real})-\E f_w(\text{fake})$; $G$ minimises $-\E f_w(G(\bz))$. $k=5$ critic steps per $G$ step.</p>
+      <p class="small step why">The critic's value estimates $W_1$, a loss that decreases as samples improve, unlike the GAN loss. Arjovsky, Chintala and Bottou, 2017.</p>
+    </div>
+    <div class="stack" style="gap:6px">
+      <svg class="fig" data-fig="gan-critic" aria-label="Real data on [0, 1], fakes on [2, 3]: the optimal standard discriminator is a flat step, the optimal critic a line of slope minus one"></svg>
+      <p class="small why">On the disjoint uniforms: $D^*$ is flat at the fakes (no gradient), while the critic $f(x)=1.5-x$ has slope 1 everywhere and pushes the fakes towards the data.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Keeping the critic 1-Lipschitz</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:6px">
+      <svg class="fig" data-fig="gan-gp" aria-label="Real points, fake points, lines between pairs and random interpolates on the lines where the gradient penalty is applied"></svg>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">Without a constraint the critic blows the difference up to infinity. Three ways to keep $\|f\|_L\le1$:</p>
+      <p class="small step"><b>Weight clipping</b> (WGAN): clip every weight to $[-0.01,0.01]$. Crude: the critic becomes almost linear, gradients explode or vanish with the clip value.</p>
+      <p class="small step"><b>Gradient penalty</b> (WGAN-GP, Gulrajani et al., 2017): the optimal critic has gradient norm 1 between coupled points, so add</p>
+      <div class="eq s step">$$\lambda\,\E_{\hat\bx}\big(\|\nabla_{\hat\bx}f_w(\hat\bx)\|-1\big)^2,\quad\hat\bx=\epsilon\bx+(1-\epsilon)G(\bz)$$</div>
+      <p class="small step"><b>Spectral normalisation</b> (Miyato et al., 2018): divide each weight matrix by its largest singular value, so every layer is 1-Lipschitz. Cheap; works with the standard loss too.</p>
+      <p class="small step why">Lab, ring of Gaussians, $\lambda=0.1$: gradient norm on the interpolates 1.45, all 8 modes found. With clipping instead: 0 of 8 after 2,000 steps.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide divider"><div class="card coral"><h1><b>Part D</b><br>Architectures<br>and evaluation</h1><ul class="small"><li>transposed convolutions; DCGAN</li><li>conditional GANs</li><li>pix2pix, CycleGAN, StyleGAN</li><li>no likelihood: IS, FID</li><li>precision, recall, memorisation</li><li>GANs, VAEs, diffusion</li></ul></div></section>
+
+<section class="slide">
+  <h2>Upsampling: the transposed convolution</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="gan-convt" data-auto="s=1 :: the first input pixel (1) pastes 1 × the kernel into the top-left 3 × 3 patch | s=2 :: the second pixel (2) pastes its copy 2 columns to the right; the shared column adds up | s=4 :: all four copies: the centre gets 1 + 2 + 3 + 4 = 10">
+      <svg class="fig" aria-label="A 2 by 2 input, a 3 by 3 kernel of ones, and the 5 by 5 output built by pasting a scaled kernel per input pixel"></svg>
+      <div class="ctl"><label for="ct-s">step</label><input type="range" id="ct-s" data-k="s" min="0" max="4" step="1" value="0"><span class="v" data-v="s"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">A generator goes from a small tensor to an image. A <b>transposed convolution</b> upsamples with learned weights: each input pixel multiplies the kernel, and the copies are pasted <code>stride</code> pixels apart; overlaps add up.</p>
+      <div class="bluebox" style="font-size:20px">$$H_{\text{out}}=(H_{\text{in}}-1)\,s-2p+k$$</div>
+      <p class="small step">DCGAN: $k=4$, $s=2$, $p=1$ gives $H_{\text{out}}=2H_{\text{in}}$: $7\to14\to28$.</p>
+      <p class="small step">The name: it is the <b>transpose</b> of a strided convolution, $\langle\mathrm{conv}(\mathbf y),\bx\rangle=\langle\mathbf y,\mathrm{convT}(\bx)\rangle$, the very operation backprop uses to send gradients through a convolution. The lab checks it.</p>
+      <p class="small step why">Uneven overlaps ($k$ not a multiple of $s$) give <b>checkerboard artefacts</b>; resize + convolution avoids them.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>DCGAN: the lab's two networks</h2>
+  <svg class="fig" data-fig="gan-dcgan" style="max-height:290px" aria-label="Generator: noise of size 64 to 128 by 7 by 7, to 64 by 14 by 14, to a 28 by 28 image. Discriminator: the mirror image down to one logit."></svg>
+  <div class="cols">
+    <ul class="small" style="gap:4px">
+      <li>no pooling: <b>strided convolutions</b> in $D$, <b>transposed</b> in $G$</li>
+      <li><b>BatchNorm</b> in both, except $G$'s output and $D$'s input</li>
+      <li>ReLU in $G$, <b>tanh</b> output (images in $[-1,1]$); <b>LeakyReLU</b> 0.2 in $D$</li>
+    </ul>
+    <ul class="small" style="gap:4px">
+      <li>Adam, $\eta=2\cdot10^{-4}$, $\beta_1=0.5$; weights from $\mathcal N(0,0.02^2)$</li>
+      <li>no big fully connected hidden layers</li>
+      <li class="why">Radford, Metz and Chintala, 2016: the recipe that made convolutional GANs train reliably</li>
+    </ul>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>DCGAN samples during training</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="gan-samples" data-auto="k=1 :: iteration 50: only global statistics, a dark background and a bright blob | k=2 :: iteration 200: stroke-like shapes | k=3 :: iteration 500: most samples look like digits | k=4 :: end of epoch 1 | k=6 :: end of epoch 3: clear digits; FID and recall keep improving">
+      <svg class="fig" aria-label="A grid of 24 generated MNIST digits at a chosen training checkpoint, with the FID, precision and recall"></svg>
+      <div class="ctl"><label for="sp-k">iteration</label><input type="range" id="sp-k" data-k="k" min="0" max="6" step="1" value="0"><span class="v" data-v="k"></span></div>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small">MNIST, 3 epochs, $m=64$ (2,811 iterations), the same 24 noise vectors at every checkpoint. CPU: about 45 s per epoch.</p>
+      <p class="small step">In a healthy run neither player wins: in the last epoch mean $D(\bx)=$ 0.72 and $D(G(\bz))=$ 0.28.</p>
+      <p class="small step"><b>Latent walks</b>: $G((1-t)\bz_a+t\bz_b)$ for $t=0,\dots,1$ morphs one digit into another, not a cross-fade:</p>
+      <svg class="fig step" data-fig="gan-image" data-img="interp" aria-label="Two rows of ten generated digits, each row a straight line between two noise vectors"></svg>
+      <p class="small step why">A smooth latent space makes <b>GAN inversion</b> possible: find the $\bz$ with $G(\bz)\approx$ a real image, then edit by moving $\bz$.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Conditional GANs: digits on demand</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:8px">
+      <svg class="fig" data-fig="gan-cond" style="max-height:230px" aria-label="Noise and a label go into the generator; the fake and the same label go into the discriminator"></svg>
+      <p class="small">Give the label $y$ to <b>both</b> networks (Mirza and Osindero, 2014): $G(\bz,y)$, $D(\bx,y)$. $D$ now asks "a real image <b>of class $y$</b>?", so $G$ must produce the right class to fool it.</p>
+      <p class="small step">Lab: the DCGAN code with a one-hot $y$, 2 epochs. A classifier that never saw a fake agrees with the requested digit for <b>90.1%</b> of 10,000 samples.</p>
+      <p class="small step why">Each column of the grid uses the same $\bz$: the label sets the content, $\bz$ the style (thickness, slant). pix2pix conditions on a whole image instead of a label, text-to-image models on a sentence.</p>
+    </div>
+    <svg class="fig" data-fig="gan-image" data-img="cgan" style="max-height:540px" aria-label="Ten rows of generated digits, row d asking for digit d, with the same eight noise vectors in each row"></svg>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Image-to-image translation</h2>
+  <svg class="fig" data-fig="gan-i2i" style="max-height:250px" aria-label="Left: pix2pix maps an edge image to a photo, judged in pairs by a patch discriminator, with an L1 loss. Right: CycleGAN maps horses to zebras and back, with a cycle-consistency loss."></svg>
+  <div class="cols">
+    <div class="stack" style="gap:7px">
+      <p class="small"><b>pix2pix</b> (Isola et al., 2017): a conditional GAN whose condition is an image. U-Net generator; $D$ judges <b>(input, output) pairs</b> on $70\times70$ patches; an L1 term keeps the output close to the target.</p>
+      <p class="small step why">It needs <b>paired</b> data: the same scene as a sketch and as a photo, a map and its aerial image.</p>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small step"><b>CycleGAN</b> (Zhu et al., 2017): no pairs, only two collections. Two generators $G:X\to Y$, $F:Y\to X$, a discriminator per domain, and <b>cycle consistency</b>: $F(G(x))\approx x$.</p>
+      <p class="small step why">Without the cycle, $G$ could map every horse to the same zebra and still fool $D_Y$. The cycle forces it to keep the content.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>StyleGAN, in one slide</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="gan-style" aria-label="A mapping network turns z into a style code w; the synthesis network starts from a learned constant and is modulated by w and fed noise at every resolution"></svg>
+    <div class="stack" style="gap:8px">
+      <p class="small"><b>StyleGAN</b> (Karras et al., 2019–2021), the GAN behind the famous fake faces:</p>
+      <ul class="small" style="gap:4px">
+        <li><b>mapping network</b>: 8 FC layers turn $\bz$ into a style code $\mathbf w$, a less tangled latent space</li>
+        <li>the synthesis network starts from a <b>learned constant</b>; $\mathbf w$ modulates every resolution (AdaIN, later weight modulation): coarse layers set pose, fine layers colour</li>
+        <li>per-pixel <b>noise</b> inputs for stochastic detail: hair, pores</li>
+        <li>grown resolution by resolution, $4^2\to1024^2$ (ProGAN, 2018)</li>
+        <li><b>truncation trick</b>: sample $\mathbf w$ closer to its mean, quality up, diversity down</li>
+      </ul>
+      <p class="small step why"><b>GAN inversion</b>: optimise $\mathbf w$ so that $G(\mathbf w)$ matches a real photo; then edit the photo by moving $\mathbf w$ (age, smile, lighting).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Evaluating a generator without a likelihood</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="gan-fid" data-auto="mg=1;sg=1 :: right spread, wrong mean: FID = 1 | mg=0;sg=2 :: right mean, twice the spread: FID = 1 | mg=0;sg=0.2 :: right mean, almost no spread, as in mode collapse: FID = 0.64 | mg=0.1;sg=0.95 :: close on both: FID = 0.0125">
+      <svg class="fig" aria-label="A real Gaussian and a generated Gaussian, with the two terms of the Fréchet distance"></svg>
+      <div class="ctl"><label for="fi-m">μ_g</label><input type="range" id="fi-m" data-k="mg" min="-2" max="2" step="0.1" value="0.5"><span class="v" data-v="mg"></span><label for="fi-s">σ_g</label><input type="range" id="fi-s" data-k="sg" min="0.2" max="2.5" step="0.05" value="1.5"><span class="v" data-v="sg"></span></div>
+    </div>
+    <div class="stack" style="gap:7px">
+      <p class="small">No $\log p(\bx)$ to report. We compare <b>features</b> of real and generated images, from a classifier trained on real data.</p>
+      <p class="small step"><b>Inception Score</b>: $\exp\big(\E_{\bx}\KL(p(y|\bx)\,\|\,p(y))\big)$: confident classes and balanced classes. It never looks at real images.</p>
+      <p class="small step"><b>FID</b> (Heusel et al., 2017): fit a Gaussian to each feature set,</p>
+      <div class="eq xs step">$$\mathrm{FID}=\|\bmu_r-\bmu_g\|^2+\tr\big(\bSigma_r+\bSigma_g-2(\bSigma_r\bSigma_g)^{1/2}\big)$$</div>
+      <p class="small step">In 1-D: $(\mu_r-\mu_g)^2+(\sigma_r-\sigma_g)^2$, a content term and a diversity term.</p>
+      <p class="small step why">2-D by hand: $\bmu_g=(1,0)$, $\bSigma_g=\mathrm{diag}(4,1)$ vs $\mathcal N(\mathbf 0,\mathbf I)$: $1+\big[(1+1)+(4+1)-2(2+1)\big]=2$, as the lab asserts.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>FID, precision and recall in the lab</h2>
+  <div class="cols c64">
+    <svg class="fig" data-fig="gan-fid-lab" aria-label="Left: the FID-like score of the DCGAN falling over training, with the real-versus-real floor. Right: precision and recall rising."></svg>
+    <div class="stack" style="gap:7px">
+      <p class="small">Features: the 64-d layer of a small MNIST classifier (97.2% test accuracy), 5,000 images per set. An "FID-like" score: compare within the lab, not with papers.</p>
+      <table class="t xs">
+        <tr><th></th><th>FID</th><th>prec.</th><th>recall</th></tr>
+        <tr><td>real vs real</td><td>0.61</td><td>0.91</td><td>0.89</td></tr>
+        <tr><td>DCGAN, iteration 0</td><td>1798.6</td><td>0.00</td><td>0.00</td></tr>
+        <tr><td>DCGAN, iteration 200</td><td>167.7</td><td>0.75</td><td>0.16</td></tr>
+        <tr><td>DCGAN, 3 epochs</td><td>35.4</td><td>0.63</td><td>0.86</td></tr>
+        <tr><td>conditional, 2 epochs</td><td>7.90</td><td>0.72</td><td>0.81</td></tr>
+      </table>
+      <p class="small step"><b>Precision</b>: fraction of fakes inside the k-NN balls of the real features (quality). <b>Recall</b>: fraction of real images inside the balls of the fakes (coverage). Kynkäänniemi et al., 2019.</p>
+      <p class="small step why">FID is biased upwards for small samples: compare models with the same number of samples (50,000 for papers) and the same feature network.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Quality, coverage and memorisation</h2>
+  <div class="cols">
+    <div class="stack" style="gap:8px">
+      <svg class="fig" data-fig="gan-pr" aria-label="Two schematics: generated points clustered in one corner of the real data (high precision, low recall) and generated points spread beyond the real data (low precision, high recall)"></svg>
+      <p class="small">FID mixes two failures into one number. A collapsed GAN has high precision and low recall; a blurry model (a VAE) the opposite.</p>
+      <p class="small step why">A cheap extra check: the class histogram of the samples, by the classifier. Mode dropping shows up as a missing class.</p>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small step"><b>Memorisation</b>: a GAN that copies its training images looks perfect and is useless, and for synthetic data it is a privacy leak. Check: each sample's <b>nearest training image</b>.</p>
+      <svg class="fig step" data-fig="gan-image" data-img="nn_pairs" aria-label="Top row: the six generated digits closest to the training set; bottom row: their nearest training images, visibly different"></svg>
+      <p class="small step">Lab: median distance to the nearest training image 5.96 for samples, 4.38 for real test digits. The samples are no closer than new real data; the closest ones are simple 1s, and different 1s from their neighbours: no sign of copying.</p>
+      <p class="small step why">Not a privacy proof: a sample can leak a detail (a face, a plate) without being a copy. Formal guarantees need differentially private training.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>GANs, VAEs and diffusion models</h2>
+  <table class="t xs">
+    <tr><th style="width:21%"></th><th>GAN</th><th>VAE (Extra 3)</th><th>diffusion model</th></tr>
+    <tr><td>training signal</td><td>a discriminator: a two-player game</td><td>ELBO: reconstruction + KL</td><td>denoising: a regression on the added noise</td></tr>
+    <tr><td>sample quality</td><td>sharp</td><td>blurry</td><td>sharp, today's best</td></tr>
+    <tr><td>diversity, coverage</td><td>the weak point: mode collapse</td><td>good, covers the data</td><td>good</td></tr>
+    <tr><td>training stability</td><td>delicate: needs tricks and tuning</td><td>stable</td><td>stable</td></tr>
+    <tr><td>likelihood</td><td>none</td><td>a lower bound</td><td>a bound (exact with extra work)</td></tr>
+    <tr><td>sampling speed</td><td>one forward pass</td><td>one forward pass</td><td>tens to hundreds of passes (fewer when distilled)</td></tr>
+    <tr><td>latent space</td><td>$\bz$, smooth, editable</td><td>$\bz$, with an encoder</td><td>the noise itself, less semantic</td></tr>
+    <tr><td>typical use today</td><td>real-time, super-resolution, as a loss</td><td>compression, latents for diffusion</td><td>text-to-image, video, audio</td></tr>
+  </table>
+  <p class="small why">The three are often combined: Stable Diffusion runs diffusion in the latent space of an autoencoder trained with a KL term <b>and</b> an adversarial loss.</p>
+</section>
+
+<section class="slide">
+  <h2>Diffusion is today's default for images</h2>
+  <svg class="fig" data-fig="gan-timeline" style="max-height:200px" aria-label="A timeline from 2014 to 2024: GAN milestones in orange, diffusion milestones in blue"></svg>
+  <div class="cols">
+    <div class="stack" style="gap:8px">
+      <p class="small"><b>Why diffusion won</b> (2021–2022): it trains like a regression (no game, no collapse), covers the modes, and scales with data and compute. "Diffusion models beat GANs on image synthesis" (Dhariwal and Nichol, 2021) closed the debate for ImageNet.</p>
+      <p class="small step"><b>Its weak point</b> is speed: many denoising passes per sample.</p>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small step"><b>Where GANs still win</b>: one forward pass. Real-time super-resolution and video enhancement, on-device filters, face editing; GigaGAN (2023) showed that GANs scale too.</p>
+      <p class="small step"><b>Adversarial ideas live on</b>: the VQGAN autoencoder under latent diffusion, and adversarial distillation (SDXL Turbo, 2023) that turns a diffusion model into a 1–4 step generator with a discriminator.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>A practical guide: what to do when…</h2>
+  <table class="t xs">
+    <tr><th style="width:31%">situation</th><th>what to do</th></tr>
+    <tr><td>starting a new image GAN</td><td>DCGAN rules, Adam $2\cdot10^{-4}$, $\beta_1=0.5$, non-saturating loss; look at sample grids from a fixed $\bz$ every few hundred steps.</td></tr>
+    <tr><td>$L_D\to0$, $G$ stops improving</td><td>$D$ wins, gradients vanish: weaken $D$ (smaller, dropout, spectral norm), add a gradient penalty, or switch to WGAN-GP.</td></tr>
+    <tr><td>all samples look alike</td><td>mode collapse: check precision and recall and the class histogram; WGAN-GP, spectral norm, minibatch standard deviation (ProGAN); several seeds.</td></tr>
+    <tr><td>losses oscillate, samples cycle</td><td>lower learning rates, TTUR ($D$ faster than $G$), average $G$'s weights (EMA) and sample from the average.</td></tr>
+    <tr><td>checkerboard artefacts</td><td>kernel size divisible by the stride, or resize + convolution instead of transposed convolutions.</td></tr>
+    <tr><td>reporting results</td><td>FID with 50,000 samples and the standard features; precision and recall; nearest-neighbour checks; never the loss value.</td></tr>
+    <tr><td>you need likelihoods or full coverage</td><td>a VAE, a flow or a diffusion model instead; or diffusion with adversarial distillation for speed.</td></tr>
+    <tr><td>synthetic data for privacy</td><td>memorisation checks are not enough: differentially private training and a privacy audit.</td></tr>
+  </table>
+</section>
+
+<section class="slide">
+  <h2>The topic in one slide</h2>
+  <div class="cards c2" style="gap:12px">
+    <div class="card"><h3>A · The game</h3><ul>
+      <li>implicit model: $\bx=G(\bz)$, a push-forward of noise, no density</li>
+      <li>$\min_G\max_D\E\log D(\bx)+\E\log(1-D(G(\bz)))$</li>
+      <li>alternating steps; $G$ learns only through $D$'s gradient</li></ul></div>
+    <div class="card g"><h3>B · The theory</h3><ul>
+      <li>$D^*=\pd/(\pd+\pg)$: a density-ratio estimator</li>
+      <li>$V(G,D^*)=-\log4+2\JS(\pd\|\pg)$; optimum $\pg=\pd$, $D=\tfrac12$</li>
+      <li>minimax loss saturates; train $G$ with $-\log D(G(\bz))$</li></ul></div>
+    <div class="card y"><h3>C · Failures and fixes</h3><ul>
+      <li>mode collapse and hopping; rotation of the two-player field</li>
+      <li>disjoint supports: JS $=\log2$, no gradient</li>
+      <li>WGAN: $W_1$ by duality, a 1-Lipschitz critic (clipping, GP, spectral norm)</li></ul></div>
+    <div class="card o"><h3>D · Architectures and evaluation</h3><ul>
+      <li>DCGAN: (transposed) strided convolutions, BN, LeakyReLU</li>
+      <li>conditional, pix2pix, CycleGAN, StyleGAN</li>
+      <li>FID, precision and recall, memorisation; diffusion leads today</li></ul></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Vocabulary of Extra 4</h2>
+  <div class="cols">
+    <dl class="gloss" style="font-size:16px;gap:5px 14px">
+      <dt>generator $G$</dt><dd>maps noise $\bz$ to a sample; its samples follow $\pg$.</dd>
+      <dt>discriminator $D$</dt><dd>outputs the probability that its input is real.</dd>
+      <dt>implicit model</dt><dd>gives samples but no density.</dd>
+      <dt>push-forward</dt><dd>the distribution of $G(\bz)$ when $\bz\sim p_z$.</dd>
+      <dt>value function</dt><dd>$V(D,G)$, maximised by $D$ and minimised by $G$.</dd>
+      <dt>$D^*$</dt><dd>the optimal discriminator, $\pd/(\pd+\pg)$.</dd>
+      <dt>non-saturating loss</dt><dd>$-\log D(G(\bz))$ for the generator.</dd>
+      <dt>mode collapse</dt><dd>the generator covers only some modes of the data.</dd>
+      <dt>mode hopping</dt><dd>the covered mode keeps changing during training.</dd>
+      <dt>Jensen–Shannon</dt><dd>$\frac12\KL(p\|M)+\frac12\KL(q\|M)$, $M=\frac{p+q}2$; at most $\log2$.</dd>
+      <dt>transposed conv.</dt><dd>learned upsampling, the adjoint of a strided convolution.</dd>
+    </dl>
+    <dl class="gloss" style="font-size:16px;gap:5px 14px">
+      <dt>earth mover's, $W_1$</dt><dd>least work to move one distribution onto another.</dd>
+      <dt>critic</dt><dd>WGAN's real-valued, 1-Lipschitz replacement for $D$.</dd>
+      <dt>gradient penalty</dt><dd>$\lambda(\|\nabla f(\hat\bx)\|-1)^2$ on interpolates.</dd>
+      <dt>spectral norm</dt><dd>weights divided by their largest singular value.</dd>
+      <dt>DCGAN</dt><dd>the convolutional recipe: strides, BatchNorm, LeakyReLU.</dd>
+      <dt>conditional GAN</dt><dd>$G(\bz,y)$ and $D(\bx,y)$: generation on demand.</dd>
+      <dt>cycle consistency</dt><dd>$F(G(x))\approx x$ in CycleGAN.</dd>
+      <dt>truncation trick</dt><dd>sampling near the mean latent: quality over diversity.</dd>
+      <dt>GAN inversion</dt><dd>finding the latent code of a real image.</dd>
+      <dt>FID</dt><dd>Fréchet distance between Gaussians fitted to features.</dd>
+      <dt>precision / recall</dt><dd>quality of the samples / coverage of the data.</dd>
+    </dl>
+  </div>
+  <p class="labline">Original papers: <a href="https://arxiv.org/abs/1406.2661" target="_blank" rel="noopener">GAN</a> · <a href="https://arxiv.org/abs/1511.06434" target="_blank" rel="noopener">DCGAN</a> · <a href="https://arxiv.org/abs/1701.07875" target="_blank" rel="noopener">WGAN</a> · <a href="https://arxiv.org/abs/1704.00028" target="_blank" rel="noopener">WGAN-GP</a> · <a href="https://arxiv.org/abs/1812.04948" target="_blank" rel="noopener">StyleGAN</a> · <a href="https://arxiv.org/abs/1706.08500" target="_blank" rel="noopener">FID</a> · <a href="https://arxiv.org/abs/1701.00160" target="_blank" rel="noopener">NIPS 2016 tutorial (Goodfellow)</a>.</p>
+</section>
+
+<section class="slide lab">
+  <div class="labtag">EXTRA 4</div>
+  <h2>GANs, from a 1-D game to MNIST</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:10px">
+      <p>Play the game by hand, check every theorem of this deck numerically, watch GANs fail and fix them, then train image GANs on a CPU and measure them.</p>
+      <ol class="todo">
+        <li>Densities and samplers; one round of the game by hand vs autograd.</li>
+        <li>A 1-D GAN from scratch; $D^*$ and $-\log4+2\,\JS$ checked; saturation measured.</li>
+        <li>The bilinear game: simultaneous, alternating, extragradient, optimistic.</li>
+        <li>JS vs $W_1$; vanilla GAN vs WGAN-GP on a ring of 8 Gaussians.</li>
+        <li>Transposed convolutions; DCGAN on MNIST; latent walks; memorisation.</li>
+        <li>A conditional GAN; FID from scratch, precision and recall.</li>
+      </ol>
+    </div>
+    <div class="labcard">
+      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/extra/extra 04 - GANs.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <dl class="gloss">
+        <dt>notebook</dt><dd><code>extra 04 - GANs.ipynb</code></dd>
+        <dt>you need</dt><dd>MLPs, CNNs and the PyTorch training loop; autoencoders and VAEs (Extra 3)</dd>
+        <dt>runs on</dt><dd>CPU, about 4 min with 4 threads; a GPU is optional</dd>
+        <dt>data</dt><dd>synthetic 1-D and 2-D mixtures; MNIST (torchvision, 11 MB)</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section class="slide cover">
+  <div class="inner"><h1>Extra topics</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Next: Anomaly detection</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+</div></div>
+<script src="../assets/figures.js?v=20260930"></script>
+<script src="../neural_networks/assets/nn-core.js?v=20260930"></script>
+<script src="assets/gans-data.js?v=20261008"></script>
+<script src="assets/fig-gans.js?v=20261008"></script>
+<script src="../assets/deck.js?v=20260930"></script>
+</body>
+</html>
