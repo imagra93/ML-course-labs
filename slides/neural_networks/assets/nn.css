@@ -52,6 +52,10 @@ table.t.xs{font-size:16px} table.t.xs th,table.t.xs td{padding:4px 8px}
 a.colab{display:inline-flex;align-items:center;gap:10px;align-self:flex-start;background:#f9ab00;color:#1f1f1f;font-weight:700;font-size:22px;text-decoration:none;padding:9px 18px;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
 a.colab:hover,a.colab:focus-visible{background:#ffc53d}
 a.colab .co{font-family:var(--mono);font-size:19px;background:#1f1f1f;color:#f9ab00;border-radius:4px;padding:1px 6px}
+a.colab-ext{display:inline-flex;flex-wrap:wrap;align-items:center;gap:0 8px;align-self:flex-start;max-width:100%;margin-top:-4px;border:1.5px solid #f9ab00;background:#fffaf0;color:#1f1f1f;font-size:16px;font-weight:600;text-decoration:none;padding:4px 10px;border-radius:6px}
+a.colab-ext:hover,a.colab-ext:focus-visible{background:#fff1cc}
+a.colab-ext .co{font-family:var(--mono);font-size:13px;background:#1f1f1f;color:#f9ab00;border-radius:3px;padding:0 4px}
+a.colab-ext small{flex-basis:100%;font-weight:400;font-size:15px;line-height:1.3;color:#595959}
 .lab ol.todo{counter-reset:t;list-style:none;padding-left:0;gap:7px}
 .lab ol.todo li{counter-increment:t;position:relative;padding-left:34px;font-size:19px;line-height:1.3}
 .lab ol.todo li::before{content:counter(t);position:absolute;left:0;top:1px;width:24px;height:24px;border-radius:50%;background:#e2f0d9;color:#385723;font-weight:700;font-size:15px;display:grid;place-items:center}

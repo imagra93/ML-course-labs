@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
 <link rel="stylesheet" href="../assets/deck.css?v=20260930">
-<link rel="stylesheet" href="assets/nn.css?v=20260930">
+<link rel="stylesheet" href="assets/nn.css?v=20261011b">
 <script src="../assets/mathjax-config.js?v=20260930"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
 </head>
@@ -403,18 +403,19 @@ nn.utils.clip_grad_norm_(model.parameters(), 1.0)</pre>
       <p>50,000 movie reviews, each labelled positive or negative. Is word order worth modelling?</p>
       <ol class="todo">
         <li>A strong baseline that ignores word order: TF-IDF + logistic regression.</li>
-        <li>From text to tensors: truncation, padding and lengths; word embeddings.</li>
-        <li>An RNN and an LSTM <b>from scratch</b>; backpropagation through time and vanishing gradients, measured.</li>
+        <li>From text to tensors: vocabulary, truncation, padding and lengths.</li>
         <li>Embedding → LSTM → linear, with packing, gradient clipping and early stopping.</li>
-        <li>Compare a plain RNN, an LSTM, a GRU and a bidirectional LSTM; read a review word by word; try your own reviews.</li>
+        <li>Evaluate on the test set and read the most confident errors.</li>
+        <li>Compare a plain RNN, an LSTM, a GRU and a mean of embeddings; try your own reviews.</li>
       </ol>
     </div>
     <div class="labcard">
       <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 13 - LSTM sentiment analysis.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <a class="colab-ext" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 13 - LSTM sentiment analysis - extended.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Extended version <small>RNN and LSTM from scratch, BPTT, inside the models</small></a>
       <dl class="gloss">
         <dt>notebook</dt><dd><code>lab 13 - LSTM sentiment analysis.ipynb</code></dd>
-        <dt>you need</dt><dd>this chapter: embeddings, RNN, BPTT, LSTM and GRU, padding and packing</dd>
-        <dt>results</dt><dd>validation accuracy: plain RNN 80 %, LSTM 87 %, GRU 88 %, and the order-free TF-IDF baseline 90 %. For sentiment, which words appear matters more than their order</dd>
+        <dt>you need</dt><dd>this chapter: embeddings, RNN, LSTM and GRU, padding and packing</dd>
+        <dt>results</dt><dd>validation accuracy: plain RNN 78 %, LSTM 87 %, GRU 88 %, and the order-free TF-IDF baseline 90 %. For sentiment, which words appear matters more than their order</dd>
         <dt>runs on</dt><dd>CPU works; a GPU is faster</dd>
       </dl>
     </div>

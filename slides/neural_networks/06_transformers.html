@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
 <link rel="stylesheet" href="../assets/deck.css?v=20260930">
-<link rel="stylesheet" href="assets/nn.css?v=20260930">
+<link rel="stylesheet" href="assets/nn.css?v=20261011b">
 <script src="../assets/mathjax-config.js?v=20260930"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
 </head>
@@ -289,7 +289,7 @@ Z = self_attention(X, Wq, Wk, Wv, causal=True)   <span class="c"># [10, 64]</spa
       <p class="small">Everything of the last slides fits in a handful of lines: three projections, one scaled product, an optional mask, a softmax per row, and a weighted average of the values.</p>
       <p class="small">With a batch, the same code works on tensors $[B,n,d]$ (write <code>K.transpose(-2, -1)</code> for $\bK^\top$). Multi-head: reshape to $[B,h,n,d_k]$ and run all heads at once.</p>
       <p class="small">In practice: <code>nn.MultiheadAttention</code>, or <code>F.scaled_dot_product_attention(Q, K, V, is_causal=True)</code>, which uses fast fused kernels (FlashAttention).</p>
-      <p class="why">Lab 14 plots the real attention matrices of GPT-2.</p>
+      <p class="why">The extended version of Lab 14 plots the real attention matrices of GPT-2.</p>
     </div>
   </div>
 </section>
@@ -480,7 +480,7 @@ Z = self_attention(X, Wq, Wk, Wv, causal=True)   <span class="c"># [10, 64]</spa
 
 <section class="slide">
   <h2>Decoding in practice: what GPT-2 writes</h2>
-  <p class="small">Real outputs of GPT-2 small in Lab 14. Prompt: <b>"Studying the MINT master is the best decision I"</b>, then 35 new tokens.</p>
+  <p class="small">Real outputs of GPT-2 small in Lab 14 (extended version). Prompt: <b>"Studying the MINT master is the best decision I"</b>, then 35 new tokens.</p>
   <div class="cards c2" style="gap:12px">
     <div class="card r"><h3>greedy ($T=0.1$)</h3><p>… I've ever made. I'm not sure if I'm going to be able to do it, but I'm going to be able to do it. I'm going to be</p><p class="why">Fluent, then it loops: once a phrase is written, repeating it is the most likely continuation.</p></div>
     <div class="card r"><h3>$T=1.8$, no filter</h3><p>… I ever makes. ...olla refund results:y cookrentice Orc tattoo worker Clay Destroyer Gotan togethericipsiecer garbage wars</p><p class="why">The 50,000 unlikely tokens of the tail now get real probability: nonsense.</p></div>
@@ -498,7 +498,7 @@ Z = self_attention(X, Wq, Wk, Wv, causal=True)   <span class="c"># [10, 64]</spa
   </div>
   <div class="cols">
     <p class="small">To choose token $t+1$, the new query $\mathbf q_t$ needs the <b>keys and values of all earlier tokens</b>. The causal mask guarantees that those never change once computed, so we keep them in memory (the <b>KV cache</b>) and only compute the new token's $\mathbf k_t,\mathbf v_t$.</p>
-    <p class="small">Without it the work for $n$ tokens grows like $1+2+\dots+n=n(n+1)/2$; with it, like $n$. The price is memory: two vectors per layer and per token, for every token of the conversation. It is one of the reasons long contexts are expensive. Lab 14, a 201-token prompt and 200 new tokens: 60,100 token positions processed without the cache, 401 with it, and the same text.</p>
+    <p class="small">Without it the work for $n$ tokens grows like $1+2+\dots+n=n(n+1)/2$; with it, like $n$. The price is memory: two vectors per layer and per token, for every token of the conversation. It is one of the reasons long contexts are expensive. Lab 14 (extended), a 201-token prompt and 200 new tokens: 60,100 token positions processed without the cache, 401 with it, and the same text.</p>
   </div>
 </section>
 
@@ -507,7 +507,7 @@ Z = self_attention(X, Wq, Wk, Wv, causal=True)   <span class="c"># [10, 64]</spa
   <svg class="fig" data-fig="surprisal" style="max-height:350px" aria-label="Bars with the surprisal in bits that GPT-2 assigns to each token of a sentence that ends in an unexpected word"></svg>
   <div class="cols">
     <p class="small">If the model gave the token that really came the probability $p$, its <b>surprisal</b> is $-\log_2p$ bits: $p=\tfrac12$ costs 1 bit, $p=\tfrac1{1024}$ costs 10. Words that the context makes obvious ("bread" after "a fresh loaf of": 0.3 bits) are almost free; a word that does not fit costs a lot.</p>
-    <p class="small">These are the real numbers of GPT-2 small from Lab 14. The last word, "elephant", costs 17.3 bits: about 1 chance in 160,000. The <b>average surprisal</b> is the training loss per token (in bits, instead of nats), and $2^{\text{average}}$ is the <b>perplexity</b>: next slide.</p>
+    <p class="small">These are the real numbers of GPT-2 small from Lab 14 (extended version). The last word, "elephant", costs 17.3 bits: about 1 chance in 160,000. The <b>average surprisal</b> is the training loss per token (in bits, instead of nats), and $2^{\text{average}}$ is the <b>perplexity</b>: next slide.</p>
   </div>
 </section>
 
@@ -570,21 +570,21 @@ print(tok.decode(out[0]))   <span class="c"># decoding, done for you</span></pre
   <h2>Text generation with transformers (GPT-2)</h2>
   <div class="cols c64">
     <div class="stack" style="gap:10px">
-      <p>Open up GPT-2 small (124 M parameters) and find every piece of this chapter inside a real model.</p>
+      <p>Use GPT-2 small (124 M parameters) through Hugging Face <code>transformers</code>, and see the ideas of this chapter at work in a real model.</p>
       <ol class="todo">
-        <li>Byte-pair encoding from scratch; how GPT-2 cuts English and Spanish text.</li>
-        <li>Count the parameters (the $12d^2$ per block) and run one forward pass: a next-token distribution at every position.</li>
-        <li>Score text: log-likelihood, <b>perplexity</b>, per-token surprisal.</li>
-        <li>Look at the <b>causal attention</b> patterns of the heads.</li>
-        <li>Decoding from scratch: greedy, temperature, top-k, top-p; the <b>KV cache</b>; beam search.</li>
-        <li>A base model is not an assistant: prompting and few-shot learning.</li>
+        <li>The tokenizer: how GPT-2 cuts English and Spanish text into tokens.</li>
+        <li>One forward pass: a next-token distribution at every position.</li>
+        <li><code>model.generate</code>: greedy, beam search, temperature, top-k and top-p.</li>
+        <li>Score text with <b>perplexity</b>.</li>
+        <li>A base model is not an assistant: zero-shot vs few-shot prompting.</li>
       </ol>
     </div>
     <div class="labcard">
       <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 14 - Text generation with Transformers.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <a class="colab-ext" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 14 - Text generation with Transformers - extended.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Extended version <small>BPE from scratch, attention maps, KV cache, sampling by hand</small></a>
       <dl class="gloss">
         <dt>notebook</dt><dd><code>lab 14 - Text generation with Transformers.ipynb</code></dd>
-        <dt>you need</dt><dd>attention, the causal mask, the transformer block, language modelling, decoding and perplexity (this chapter)</dd>
+        <dt>you need</dt><dd>the transformer block, language modelling, decoding and perplexity (this chapter); the Hugging Face slide</dd>
         <dt>runs on</dt><dd>CPU works; a GPU is faster</dd>
         <dt>data</dt><dd>GPT-2 weights (≈500 MB) from the Hugging Face Hub</dd>
       </dl>
@@ -639,7 +639,7 @@ print(tok.decode(out[0]))   <span class="c"># decoding, done for you</span></pre
         <li><b>Cosine</b> looks only at the <b>direction</b>: 1 = same, 0 = unrelated, −1 = opposite. The length of the text does not matter.</li>
         <li><b>Dot product</b> and <b>distance</b> also depend on the lengths.</li>
       </ul>
-      <p class="small step">From Lab 15: $\mathbf a=(1,2,0)$ and $\mathbf b=10\,\mathbf a$ (the same text repeated 10 times): cosine 1.00 but distance 20.12. $\mathbf c=(2,1,0)$: cosine 0.80 and distance 1.41.</p>
+      <p class="small step">From Lab 15 (extended version): $\mathbf a=(1,2,0)$ and $\mathbf b=10\,\mathbf a$ (the same text repeated 10 times): cosine 1.00 but distance 20.12. $\mathbf c=(2,1,0)$: cosine 0.80 and distance 1.41.</p>
       <div class="note step"><p class="small"><b>Unit vectors:</b> if every vector has length 1, then $\norm{\mathbf a-\mathbf b}^2=2-2\cos(\mathbf a,\mathbf b)$ and the cosine is just the dot product. All three give the same ranking. That is why embedding models output unit vectors.</p></div>
     </div>
     <div class="widget" data-fig="sim-measures" data-auto="m=raw;th=0;r=10 :: b = 10a (the same text repeated 10 times): cosine 1.00, but the dot product is 50 and the distance 20.12|th=-36.87;r=1 :: c = (2, 1): another direction, cosine 0.80, yet it is close: distance 1.41|m=unit :: normalized to length 1: cosine = dot product = 0.80 and distance² = 2 − 2·0.80 = 0.40 (the same ranking)">
@@ -687,7 +687,7 @@ print(tok.decode(out[0]))   <span class="c"># decoding, done for you</span></pre
     <div class="stack" style="gap:10px">
       <p class="small"><b>Exact search</b> compares the question with all $N$ vectors, $O(N\,d)$: fine for 24 pages, slow for hundreds of millions of chunks.</p>
       <p class="small"><b>IVF</b> (inverted file): cluster the vectors once with k-means (the <b>+</b> are the cell centres). For a question, find the nearest centres and scan only the vectors of those cells.</p>
-      <p class="small">The price: a true neighbour (◯) in a cell you skipped is missed. Lab 15 (200,000 vectors, 512 cells): exact 18.3 ms per question; <code>nprobe</code> = 1: 0.65 ms, 581 vectors, 93 % of the true 10 neighbours; <code>nprobe</code> = 32: 17.3 ms, 98 %, no longer faster.</p>
+      <p class="small">The price: a true neighbour (◯) in a cell you skipped is missed. Lab 15, extended version (200,000 vectors, 512 cells): exact 18.3 ms per question; <code>nprobe</code> = 1: 0.65 ms, 581 vectors, 93 % of the true 10 neighbours; <code>nprobe</code> = 32: 17.3 ms, 98 %, no longer faster.</p>
       <p class="why">Dark dots = scanned, grey = skipped. Green ring: the index found that neighbour; red dashed: missed. ◆ = the question. Other indexes (HNSW graphs, product quantization) play the same game.</p>
     </div>
   </div>
@@ -742,7 +742,7 @@ print(tok.decode(out[0]))   <span class="c"># decoding, done for you</span></pre
   <div class="cols">
     <div class="stack" style="gap:10px">
       <svg class="fig" data-fig="methods" style="max-height:300px" aria-label="Hit rate at 1, 3 and 5 and MRR for four embedding methods on the 16 questions of Lab 15"></svg>
-      <p class="small why">Lab 15, 24 pages and 16 questions: the real results of the four embeddings.</p>
+      <p class="small why">Lab 15 (extended version), 24 pages and 16 questions: the real results of the four embeddings. The main lab compares word TF-IDF with the neural encoder.</p>
     </div>
     <ul class="small">
       <li><b>Word TF-IDF</b>: one dimension per word, rare words weigh more. Fails when the question uses other words: "perro" vs "perros", "bicicleta pinchada" vs "taller de reparación". Similarity is exactly 0 when no word is shared.</li>
@@ -779,20 +779,21 @@ print(tok.decode(out[0]))   <span class="c"># decoding, done for you</span></pre
     <div class="stack" style="gap:10px">
       <p>A fictional guide to the coffee shops of an invented city (in Spanish), and a small chatbot that answers from it.</p>
       <ol class="todo">
-        <li>Similarity: dot product, cosine and Euclidean distance.</li>
-        <li>Four ways to embed text: word TF-IDF, character n-grams, LSA and a neural sentence encoder, compared with hit rate@k and MRR.</li>
-        <li>Search at scale: exact vs approximate nearest neighbours (IVF).</li>
-        <li>Chunking long documents.</li>
-        <li>An LLM answering with and without the retrieved context; failure modes: retrieval misses, hallucination, prompt injection.</li>
+        <li>A knowledge base and labelled test questions.</li>
+        <li>Cosine similarity search, with a TF-IDF baseline.</li>
+        <li>A neural sentence encoder, compared with TF-IDF using hit rate@k and MRR.</li>
+        <li>An LLM answering with and without the retrieved context: citations and “I don't know”.</li>
+        <li>When RAG fails: a retrieval miss, a hallucination and a <b>prompt injection</b>.</li>
       </ol>
     </div>
     <div class="labcard">
       <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 15 - RAG embeddings and similarity search.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <a class="colab-ext" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 15 - RAG embeddings and similarity search - extended.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Extended version <small>character n-grams, LSA, approximate search, chunking</small></a>
       <dl class="gloss">
         <dt>notebook</dt><dd><code>lab 15 - RAG embeddings and similarity search.ipynb</code></dd>
         <dt>you need</dt><dd>embeddings (ch. 5), cosine similarity, RAG and retrieval metrics (this part), decoding (Lab 14)</dd>
         <dt>runs on</dt><dd>CPU works; a GPU speeds up the generation part</dd>
-        <dt>data</dt><dd>a sentence encoder (≈470 MB) and two small Qwen2.5 instruct models (≈4 GB) from the Hugging Face Hub</dd>
+        <dt>data</dt><dd>a sentence encoder (≈470 MB) and Qwen2.5-1.5B-Instruct (≈3 GB) from the Hugging Face Hub</dd>
       </dl>
     </div>
   </div>

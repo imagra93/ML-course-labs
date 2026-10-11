@@ -504,7 +504,7 @@ fused = F.scaled_dot_product_attention(X @ Wq, X @ Wk, X @ Wv, is_causal=True)
 print("Z:", tuple(Z.shape), "  same as F.scaled_dot_product_attention:", torch.allclose(Z, fused, atol=1e-5))
 ```
 
-With a batch, the same code works on tensors $[B,n,d]$ (write `K.transpose(-2, -1)` for $\mathbf{K}^\top$). Multi-head: reshape to $[B,h,n,d_k]$ and run all heads at once. In practice use `nn.MultiheadAttention`, or `F.scaled_dot_product_attention(Q, K, V, is_causal=True)`, which uses fused kernels (FlashAttention) that never store the $n\times n$ matrix. [Lab 14](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 14 - Text generation with Transformers.ipynb) plots the real attention matrices of GPT-2.
+With a batch, the same code works on tensors $[B,n,d]$ (write `K.transpose(-2, -1)` for $\mathbf{K}^\top$). Multi-head: reshape to $[B,h,n,d_k]$ and run all heads at once. In practice use `nn.MultiheadAttention`, or `F.scaled_dot_product_attention(Q, K, V, is_causal=True)`, which uses fused kernels (FlashAttention) that never store the $n\times n$ matrix. [Lab 14](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 14 - Text generation with Transformers - extended.ipynb) plots the real attention matrices of GPT-2.
 
 ## 8. Why transformers won, and what they cost
 
@@ -564,7 +564,7 @@ $$
 
 For GPT-2 small in 16-bit precision ($N = 12$, $d = 768$, $b = 2$): $2\cdot12\cdot768\cdot2 = 36{,}864$ bytes per token, about 37.7 MB for a full context of 1,024 tokens, per sequence in the batch. For large models this, not the weights, often limits how many users a GPU can serve; tricks such as grouped-query attention share keys and values between heads to shrink it. Section 13 checks that generation with and without the cache gives the same text.
 
-**Try it.** Without a cache, step $t$ recomputes the keys and values of all $t$ tokens: after 5 tokens that is $1 + 2 + 3 + 4 + 5 = 15$ computations; with the cache, 5. In [Lab 14](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 14 - Text generation with Transformers.ipynb), GPT-2 small generates 200 tokens after a 201-token prompt: $\sum_{k=0}^{199}(201 + k) = 60{,}100$ token positions processed without the cache, 401 with it, and the same text.
+**Try it.** Without a cache, step $t$ recomputes the keys and values of all $t$ tokens: after 5 tokens that is $1 + 2 + 3 + 4 + 5 = 15$ computations; with the cache, 5. In [Lab 14](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 14 - Text generation with Transformers - extended.ipynb), GPT-2 small generates 200 tokens after a 201-token prompt: $\sum_{k=0}^{199}(201 + k) = 60{,}100$ token positions processed without the cache, 401 with it, and the same text.
 
 ```{=html}
 <div class="widget" data-fig="kv-cache" data-auto="s=2 :: after 2 tokens: 1 + 2 = 3 computations of K and V without a cache, 2 with it|s=3 :: after 3 tokens: 6 without, 3 with|s=4 :: after 4 tokens: 10 without, 4 with|s=5 :: after 5 tokens: 15 without, 5 with: the gap keeps growing">
@@ -650,7 +650,7 @@ $$
 
 This is **self-supervised**: the targets are the inputs shifted by one, so any amount of raw text is training data. One sequence of 6 tokens gives 5 classification problems, all trained in a single forward pass thanks to the causal mask.
 
-**With numbers: GPT-2 scores a sentence.** GPT-2 small ([Lab 14](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 14 - Text generation with Transformers.ipynb)) reads "Paris is the capital of France." (7 tokens) and gives these probabilities to the 6 tokens that follow the first one (the first token has no context and is not scored, as in the lab):
+**With numbers: GPT-2 scores a sentence.** GPT-2 small ([Lab 14](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 14 - Text generation with Transformers - extended.ipynb)) reads "Paris is the capital of France." (7 tokens) and gives these probabilities to the 6 tokens that follow the first one (the first token has no context and is not scored, as in the lab):
 
 | given | next token | $p$ | $-\ln p$ |
 |---|---|---|---|
@@ -941,7 +941,7 @@ p = z.softmax(0); print("top-3 at tau = 1:", (p[:3] / p[:3].sum()).numpy().round
 
 With top-$p = 0.9$ the nucleus would be the first six words (cumulative 0.89 after five, 0.94 after six).
 
-**What GPT-2 writes ([Lab 14](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 14 - Text generation with Transformers.ipynb)).** The same strategies on a real model, prompt "Studying the MINT master is the best decision I", 35 new tokens:
+**What GPT-2 writes ([Lab 14](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 14 - Text generation with Transformers - extended.ipynb)).** The same strategies on a real model, prompt "Studying the MINT master is the best decision I", 35 new tokens:
 
 - greedy ($\tau = 0.1$; both seeds give the same text): "… I've ever made. I'm not sure if I'm going to be able to do it, but I'm going to be able to do it. I'm going to be". A loop.
 - $\tau = 1.8$ without truncation: "… I ever makes. ...olla refund results:y cookrentice Orc tattoo worker Clay Destroyer …". The tail of 50,000 unlikely tokens takes over.
@@ -1046,7 +1046,7 @@ $$
 
 **Bits.** With base-2 logarithms the same loss is measured in bits: $J_{\text{bits}} = J/\log 2$ bits per token, and perplexity $= 2^{J_{\text{bits}}}$. A perplexity of 4 is 2 bits per token: the average number of yes/no questions an optimal code needs to identify the next token.
 
-**GPT-2 small, measured in [Lab 14](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 14 - Text generation with Transformers.ipynb):**
+**GPT-2 small, measured in [Lab 14](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 14 - Text generation with Transformers - extended.ipynb):**
 
 | text | perplexity |
 |---|---|
@@ -1058,7 +1058,7 @@ $$
 
 Word order matters a lot ($1536/21.7\approx71$ times), GPT-2 saw little Spanish, and it prefers the true fact only slightly: it learned statistics about words, not facts.
 
-**Surprisal: the loss token by token.** The terms of $J$, measured in bits, are the **surprisals** $-\log_2 p(x_t\mid x_{<t})$. For GPT-2 small on "I went to the bakery this morning and bought a fresh loaf of bread and a large elephant." ([Lab 14](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 14 - Text generation with Transformers.ipynb)), "bread" after "a fresh loaf of" costs 0.3 bits ($p = 0.81$), while "elephant" costs 17.3 bits, about 1 chance in 160,000: GPT-2 expected "bag", "amount" or "bowl" (about 5 % each). The average over the sentence is 4.7 bits per token, so its perplexity is $2^{4.7}\approx26$.
+**Surprisal: the loss token by token.** The terms of $J$, measured in bits, are the **surprisals** $-\log_2 p(x_t\mid x_{<t})$. For GPT-2 small on "I went to the bakery this morning and bought a fresh loaf of bread and a large elephant." ([Lab 14](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 14 - Text generation with Transformers - extended.ipynb)), "bread" after "a fresh loaf of" costs 0.3 bits ($p = 0.81$), while "elephant" costs 17.3 bits, about 1 chance in 160,000: GPT-2 expected "bag", "amount" or "bowl" (about 5 % each). The average over the sentence is 4.7 bits per token, so its perplexity is $2^{4.7}\approx26$.
 
 ```{=html}
 <div class="widget"><svg class="fig" data-fig="surprisal" style="max-height:350px" aria-label="Bars with the surprisal in bits that GPT-2 assigns to each token of a sentence that ends in an unexpected word"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#35">slide 35</a> of the Attention and Transformers deck.</p></div>
@@ -1336,4 +1336,4 @@ On text from its own source the tokeniser needs 0.48 tokens per character: the 4
 - Modern LLMs keep the recipe and swap parts: RoPE, RMSNorm, SwiGLU, grouped-query attention, sometimes a mixture of experts, then instruction and preference tuning.
 - Diagnose: a loss that is too low (mask leakage), train/validation divergence (overfitting), the initial loss vs $\log|V|$, overlapping splits, tokens per character.
 
-**Lab.** [Text generation with transformers (GPT-2)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 14 - Text generation with Transformers.ipynb): BPE, the $12d^2$ count, perplexity and surprisal, causal attention patterns, decoding from scratch with the KV cache and beam search, prompting a base model.
+**Lab.** [Text generation with transformers (GPT-2)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 14 - Text generation with Transformers - extended.ipynb): BPE, the $12d^2$ count, perplexity and surprisal, causal attention patterns, decoding from scratch with the KV cache and beam search, prompting a base model.

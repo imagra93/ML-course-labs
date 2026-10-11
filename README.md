@@ -5,7 +5,8 @@ topic by topic, and every topic has:
 
 - **Slides**: what we cover in class. Interactive HTML decks: → / Space advances, ← goes back,
   F is full screen, N / P jump between topics.
-- **Notebook**: the hands-on lab for the topic. Open it in Google Colab with its badge.
+- **Notebook**: the hands-on lab for the topic. Open it in Google Colab with its badge. Labs 10 to 15
+  also have an optional **extended** version (see Part 2).
 - **Extra notes**: optional reading that goes deeper than the slides: every derivation, the
   assumptions of each method and what to do when they fail, and code that reproduces every plot.
 
@@ -154,6 +155,19 @@ PyTorch. Labs marked **GPU** need one, and those marked *GPU optional* run faste
 Colab, use **Runtime → Change runtime type → T4 GPU**. The labs are numbered in class order, and
 the course ends with a test.
 
+**Main and extended labs.** Labs 10 to 15 come in two versions:
+
+- the **main** notebook, linked from the slides, is the one we work through in class. It shows how to
+  use each kind of network in practice (load the data, build or load the model, train it with early
+  stopping, read the metrics, look at the errors) and ends with practical tips, at the level of the
+  machine learning labs;
+- the **extended** notebook (same name, ending in `- extended.ipynb`) keeps the same data and models
+  and adds what happens under the hood: the key pieces written from scratch, the derivations, more
+  experiments and more exercises.
+
+Do the main lab first. The extended one is optional, for whoever wants to go deeper; it is linked at
+the end of each main lab, on its slide and below.
+
 ## 01 · From logistic regression to neural networks
 
 - **Slides:** [From logistic regression to neural networks](https://imagra93.github.io/ML-course-labs/slides/neural_networks/01_neural_networks.html)
@@ -207,17 +221,27 @@ the course ends with a test.
 - **Notebooks:**
   - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab%2010%20-%20CNNs%20for%20image%20classification.ipynb)
     [Lab 10 · CNNs for image classification](notebooks/neural_networks/lab%2010%20-%20CNNs%20for%20image%20classification.ipynb)
-    · *GPU optional*: convolution from scratch, output size, parameter count, equivariance,
-    receptive field, feature maps, augmentation, dropout, BatchNorm
+    · **GPU**: a CNN layer by layer, shapes and parameters, early stopping (best weights and
+    patience), metrics and errors, shifted images, augmentation and dropout, a stronger CNN with
+    BatchNorm  
+    *Extended:* [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab%2010%20-%20CNNs%20for%20image%20classification%20-%20extended.ipynb)
+    [Lab 10 extended](notebooks/neural_networks/lab%2010%20-%20CNNs%20for%20image%20classification%20-%20extended.ipynb): convolution from scratch, output size, equivariance, pooling, receptive field,
+    learned filters and feature maps, more experiments
   - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab%2011%20-%20Fine-tuning%20ResNet%20pretrained%20vs%20scratch.ipynb)
     [Lab 11 · Fine-tuning a ResNet: pre-trained vs scratch](notebooks/neural_networks/lab%2011%20-%20Fine-tuning%20ResNet%20pretrained%20vs%20scratch.ipynb)
-    · **GPU**: transfer learning on EuroSAT satellite images: ImageNet features with no CNN
-    training, feature extraction, fine-tuning with discriminative learning rates, accuracy vs
-    number of labels, three ways to break a fine-tune
+    · **GPU**: transfer learning on EuroSAT satellite images: a pre-trained ResNet from
+    `torchvision`, `Dataset` and transforms with the ImageNet normalisation, from scratch vs frozen
+    backbone vs fine-tuning, save, load and predict  
+    *Extended:* [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab%2011%20-%20Fine-tuning%20ResNet%20pretrained%20vs%20scratch%20-%20extended.ipynb)
+    [Lab 11 extended](notebooks/neural_networks/lab%2011%20-%20Fine-tuning%20ResNet%20pretrained%20vs%20scratch%20-%20extended.ipynb): ImageNet features with no CNN training, fine-tuning the last block with a
+    warm-up, which weights move, t-SNE, accuracy vs number of labels, three ways to break a fine-tune
   - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab%2012%20-%20Object%20detection%20with%20YOLO.ipynb)
     [Lab 12 · Object detection with YOLO](notebooks/neural_networks/lab%2012%20-%20Object%20detection%20with%20YOLO.ipynb)
-    · **GPU**: box formats, IoU, the YOLO11 head, NMS and mAP from scratch, fine-tuning
-    YOLO11n on African Wildlife, ONNX export
+    · **GPU**: the YOLO label format, IoU, NMS, precision, recall and mAP, fine-tuning
+    YOLO11n on African Wildlife with Ultralytics, choosing the confidence threshold, errors  
+    *Extended:* [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab%2012%20-%20Object%20detection%20with%20YOLO%20-%20extended.ipynb)
+    [Lab 12 extended](notebooks/neural_networks/lab%2012%20-%20Object%20detection%20with%20YOLO%20-%20extended.ipynb): box formats and IoU from scratch, the YOLO11 head and loss, NMS and mAP from
+    scratch, label errors, speed, ONNX export
 - **Extra notes:** [CNNs, transfer and multi-task learning](https://imagra93.github.io/ML-course-labs/notes/neural_networks/03_cnn_transfer_multitask.html):
   convolution and its backward pass, ResNet, transfer and multi-task learning, segmentation, detection
 
@@ -229,8 +253,11 @@ the course ends with a test.
   RNNs, practicalities, the limit of recurrence: one vector for everything
 - **Notebook:** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab%2013%20-%20LSTM%20sentiment%20analysis.ipynb)
   [Lab 13 · LSTM sentiment analysis](notebooks/neural_networks/lab%2013%20-%20LSTM%20sentiment%20analysis.ipynb)
-  · *GPU optional*: TF-IDF baseline, embeddings, RNN and LSTM from scratch, BPTT and vanishing
-  gradients, packing, RNN vs LSTM vs GRU, reading a review word by word
+  · *GPU optional*: TF-IDF baseline, padding and packing, Embedding → LSTM → linear with gradient
+  clipping and early stopping, RNN vs LSTM vs GRU vs an order-free model, your own reviews  
+  *Extended:* [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab%2013%20-%20LSTM%20sentiment%20analysis%20-%20extended.ipynb)
+  [Lab 13 extended](notebooks/neural_networks/lab%2013%20-%20LSTM%20sentiment%20analysis%20-%20extended.ipynb): Zipf's law, RNN and LSTM from scratch, BPTT and vanishing gradients, packing
+  measured, bidirectional LSTM, reading a review word by word
 - **Extra notes:** [Embeddings, RNNs and LSTMs](https://imagra93.github.io/ML-course-labs/notes/neural_networks/04_rnn_lstm.html):
   embeddings, RNN, BPTT, clipping, LSTM/GRU, masking; sequence-model assumptions
 
@@ -245,13 +272,19 @@ the course ends with a test.
 - **Notebooks:**
   - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab%2014%20-%20Text%20generation%20with%20Transformers.ipynb)
     [Lab 14 · Text generation with Transformers](notebooks/neural_networks/lab%2014%20-%20Text%20generation%20with%20Transformers.ipynb)
-    · *GPU optional*: BPE from scratch, GPT-2 parameter count, perplexity and surprisal, causal
-    attention, greedy/temperature/top-k/top-p from scratch, KV cache, beam search, few-shot prompting
+    · *GPU optional*: GPT-2 with Hugging Face `transformers`: tokenizer, next-token
+    distribution, `generate` with greedy, beam search, temperature, top-k and top-p, perplexity,
+    few-shot prompting  
+    *Extended:* [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab%2014%20-%20Text%20generation%20with%20Transformers%20-%20extended.ipynb)
+    [Lab 14 extended](notebooks/neural_networks/lab%2014%20-%20Text%20generation%20with%20Transformers%20-%20extended.ipynb): BPE from scratch, GPT-2 parameter count, surprisal, causal attention maps,
+    KV cache, greedy/temperature/top-k/top-p from scratch
   - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab%2015%20-%20RAG%20embeddings%20and%20similarity%20search.ipynb)
     [Lab 15 · RAG: embeddings and similarity search](notebooks/neural_networks/lab%2015%20-%20RAG%20embeddings%20and%20similarity%20search.ipynb)
-    · *GPU optional*: full RAG pipeline: TF-IDF, character n-grams, LSA and a neural encoder
-    compared with hit rate@k and MRR, approximate search (IVF), chunking, grounded answers with a
-    small LLM, hallucination and prompt injection
+    · *GPU optional*: RAG pipeline: cosine search, TF-IDF vs a neural encoder with hit rate@k
+    and MRR, grounded answers with a small LLM, a retrieval miss, hallucination and prompt injection  
+    *Extended:* [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab%2015%20-%20RAG%20embeddings%20and%20similarity%20search%20-%20extended.ipynb)
+    [Lab 15 extended](notebooks/neural_networks/lab%2015%20-%20RAG%20embeddings%20and%20similarity%20search%20-%20extended.ipynb): character n-grams and LSA, how encoders are trained, approximate search (IVF),
+    chunking, a smaller LLM that hallucinates
 - **Extra notes:**
   - [Attention and transformers](https://imagra93.github.io/ML-course-labs/notes/neural_networks/05_attention_transformers.html):
     attention, Q/K/V, backpropagation through attention, multi-head, positions, causal and
