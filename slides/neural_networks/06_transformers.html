@@ -537,6 +537,34 @@ Z = self_attention(X, Wq, Wk, Wv, causal=True)   <span class="c"># [10, 64]</spa
   </div>
 </section>
 
+<section class="slide">
+  <h2>Pre-trained transformers in practice: Hugging Face</h2>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p class="small">The <b>Hugging Face Hub</b> hosts thousands of pre-trained models, downloaded by name. The <code>transformers</code> library loads any of them with <code>from_pretrained(name)</code>, as <b>two objects</b>:</p>
+      <div class="card y"><h3>tokenizer: text ⇄ token ids</h3><p>The sub-word tokens of slide 26, with the model's own vocabulary: <code>tok.encode(text)</code> gives ids, <code>tok.decode(ids)</code> gives text back.</p></div>
+      <div class="card step"><h3>model: token ids → numbers</h3><p>An <code>nn.Module</code> like ours: <code>.to(device)</code>, <code>.eval()</code> and <code>torch.no_grad()</code> work as usual.</p><ul><li><code>AutoModelForCausalLM</code>: next-token logits $[B,T,|V|]$ (GPT-2, Lab 14).</li><li><code>AutoModel</code>: hidden states $[B,T,d]$, one vector per token (embeddings, Lab 15).</li></ul></div>
+    </div>
+    <div class="stack step" style="gap:8px">
+      <pre class="code">from transformers import (AutoTokenizer,
+                          AutoModelForCausalLM)
+name = "openai-community/gpt2"
+tok = AutoTokenizer.from_pretrained(name)
+model = AutoModelForCausalLM.from_pretrained(name)
+
+ids = tok.encode("The cat sat on the",
+                 return_tensors="pt")  <span class="c"># [1, T]</span>
+logits = model(ids).logits   <span class="c"># [1, T, 50257]</span>
+next_id = logits[0, -1].argmax()   <span class="c"># greedy</span>
+print(tok.decode(next_id))
+
+out = model.generate(ids, max_new_tokens=20)
+print(tok.decode(out[0]))   <span class="c"># decoding, done for you</span></pre>
+      <p class="small why">The first call downloads the weights (GPT-2 small: ≈500 MB) and caches them. Lab 14 opens this model up; Lab 15 adds a sentence encoder and a small chat model.</p>
+    </div>
+  </div>
+</section>
+
 <section class="slide lab">
   <div class="labtag">LAB 14</div>
   <h2>Text generation with transformers (GPT-2)</h2>

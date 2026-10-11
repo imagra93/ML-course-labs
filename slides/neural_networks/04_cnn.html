@@ -556,6 +556,7 @@ m.fc = nn.Linear(m.fc.in_features, n_classes)</pre>
         <dt>notebook</dt><dd><code>lab 12 - Object detection with YOLO.ipynb</code></dd>
         <dt>you need</dt><dd>transfer learning (Part B, Lab 11), and detection, IoU, NMS, mAP (this part)</dd>
         <dt>runs on</dt><dd><b>GPU</b> (T4 in Colab)</dd>
+        <dt>library</dt><dd>Ultralytics: <code>model = YOLO("yolo11n.pt")</code> loads a COCO-pretrained detector, then <code>model.predict(img)</code>, <code>.train(data=…)</code>, <code>.val()</code>, <code>.export(format="onnx")</code></dd>
         <dt>data</dt><dd>≈100 MB of images and YOLO11n weights, downloaded by Ultralytics</dd>
       </dl>
     </div>

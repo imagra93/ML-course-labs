@@ -343,6 +343,40 @@ W2 -= lr * dW2;  b2 -= lr * db2</pre>
 </section>
 
 <section class="slide">
+  <h2>PyTorch: tensors and autograd</h2>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p class="small"><b>PyTorch</b> is the library of the labs (from Lab 8) and the standard one in deep learning. It adds three things to NumPy:</p>
+      <ul class="small">
+        <li><b>Tensors</b>: arrays like NumPy's, with a shape and a dtype, that can also live on a <b>GPU</b>.</li>
+        <li class="step"><b>Autograd</b>: a tensor created with <code>requires_grad=True</code> records every operation done with it (the computational graph). <code>.backward()</code> runs backprop on that graph and fills <code>.grad</code>.</li>
+        <li class="step"><b>Ready-made blocks</b>: layers, losses, optimizers and data loading (<code>nn.Linear</code>, <code>nn.CrossEntropyLoss</code>, <code>torch.optim.Adam</code>, <code>DataLoader</code>; chapter 3).</li>
+      </ul>
+    </div>
+    <div class="stack" style="gap:10px">
+      <table class="t" style="font-size:16px">
+        <tr><th></th><th>NumPy</th><th>PyTorch</th></tr>
+        <tr><td>create</td><td><code>np.array(a)</code></td><td><code>torch.tensor(a)</code></td></tr>
+        <tr><td>maths</td><td><code>A @ B</code>, <code>A.shape</code></td><td>the same</td></tr>
+        <tr><td>default type</td><td>float64</td><td>float32 (<code>A.dtype</code>)</td></tr>
+        <tr><td>GPU</td><td>no</td><td><code>A.to("cuda")</code></td></tr>
+        <tr><td>convert</td><td><code>torch.from_numpy(a)</code></td><td><code>A.numpy()</code></td></tr>
+      </table>
+      <div class="stack step" style="gap:10px">
+      <p class="small">Autograd on the chain-rule example of slide 3, $y=(3x+1)^2$ at $x=1$:</p>
+      <pre class="code">import torch
+x = torch.tensor(1.0, requires_grad=True)
+y = (3 * x + 1) ** 2   <span class="c"># forward: builds the graph</span>
+y.backward()           <span class="c"># backward: the chain rule</span>
+print(y.item(), x.grad.item())   <span class="c"># 16.0 24.0</span></pre>
+      <p class="small">$\frac{dy}{dx}=2(3x+1)\cdot3=24$, the number we found by hand. A network is the same: after one <code>loss.backward()</code>, every weight tensor has its <code>.grad</code>, the $\partial J/\partial\bW$ of the previous slides.</p>
+      <p class="why">Next slide: how to check those gradients, and the three lines of every training step.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
   <h2>Gradient checking, and autograd</h2>
   <div class="cols">
     <div class="stack" style="gap:12px">

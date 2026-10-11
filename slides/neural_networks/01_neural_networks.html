@@ -690,7 +690,7 @@
       <tr><td>Regression, any value</td><td>house price</td><td>none (linear)</td><td>MSE (or L1 / Huber)</td><td><code>nn.MSELoss</code></td></tr>
       <tr><td>Regression, values in 0–1</td><td>box coordinates</td><td>sigmoid</td><td>MSE or binary cross-entropy</td><td><code>nn.MSELoss</code></td></tr>
     </table>
-    <p class="small step"><b>PyTorch</b> is the library we will use for the labs, and the standard one in deep learning. The last column lists its loss classes. We will talk about it more later.</p>
+    <p class="small step"><b>PyTorch</b> is the library we will use for the labs, and the standard one in deep learning. The last column lists its loss classes. It gives <b>tensors</b> (NumPy-like arrays that can run on a GPU), <b>automatic gradients</b>, and ready-made layers, losses and optimizers: chapter 2 introduces tensors and autograd, chapter 3 the objects of a training loop.</p>
     <p class="small step why">The multiclass rows (softmax, one-hot targets, categorical cross-entropy) are explained later in this chapter, together with where these pairs come from and how PyTorch uses them.</p>
   </div>
 </section>
