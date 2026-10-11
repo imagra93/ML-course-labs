@@ -151,8 +151,8 @@ Scikit-learn / NumPy. Small datasets: a laptop CPU is enough.
 # Part 2 · Neural networks
 
 PyTorch. Labs marked **GPU** need one, and those marked *GPU optional* run faster with one: in
-Colab, use **Runtime → Change runtime type → T4 GPU**. The lab numbers do not follow the class
-order: follow the topics below.
+Colab, use **Runtime → Change runtime type → T4 GPU**. The labs are numbered in class order, and
+the course ends with a test.
 
 ## 01 · From logistic regression to neural networks
 
@@ -201,30 +201,22 @@ order: follow the topics below.
 - **Slides:** [CNNs, transfer learning, segmentation, detection](https://imagra93.github.io/ML-course-labs/slides/neural_networks/04_cnn.html)
 - **Content:** why not an MLP on pixels, convolutional layers and filters, output size, pooling,
   receptive field; classic architectures (AlexNet, VGG, ResNet), residual connections, 1×1
-  convolutions, data augmentation, transfer learning, multi-task learning, PyTorch Lightning;
-  semantic segmentation (FCN, upsampling, U-Net, IoU and Dice), object detection (YOLO, its loss,
-  IoU, non-maximum suppression, mAP)
+  convolutions, data augmentation, transfer learning, multi-task learning; semantic segmentation
+  (FCN, upsampling, U-Net, IoU and Dice), object detection (YOLO, its loss, IoU, non-maximum
+  suppression, mAP)
 - **Notebooks:**
   - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab%2010%20-%20CNNs%20for%20image%20classification.ipynb)
     [Lab 10 · CNNs for image classification](notebooks/neural_networks/lab%2010%20-%20CNNs%20for%20image%20classification.ipynb)
     · *GPU optional*: convolution from scratch, output size, parameter count, equivariance,
     receptive field, feature maps, augmentation, dropout, BatchNorm
-  - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab%2012%20-%20Fine-tuning%20ResNet%20pretrained%20vs%20scratch.ipynb)
-    [Lab 12 · Fine-tuning a ResNet: pre-trained vs scratch](notebooks/neural_networks/lab%2012%20-%20Fine-tuning%20ResNet%20pretrained%20vs%20scratch.ipynb)
+  - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab%2011%20-%20Fine-tuning%20ResNet%20pretrained%20vs%20scratch.ipynb)
+    [Lab 11 · Fine-tuning a ResNet: pre-trained vs scratch](notebooks/neural_networks/lab%2011%20-%20Fine-tuning%20ResNet%20pretrained%20vs%20scratch.ipynb)
     · **GPU**: transfer learning on EuroSAT satellite images: ImageNet features with no CNN
     training, feature extraction, fine-tuning with discriminative learning rates, accuracy vs
     number of labels, three ways to break a fine-tune
-  - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/demo%20-%20multitask%20face%20analysis%20plain%20PyTorch.ipynb)
-    [Demo · Multi-task face analysis (plain PyTorch)](notebooks/neural_networks/demo%20-%20multitask%20face%20analysis%20plain%20PyTorch.ipynb)
-    · **GPU**: ResNet-50 transfer learning on real photos, shared backbone with a regression head
-    (eye positions)
-  - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/demo%20-%20multitask%20face%20analysis%20Lightning.ipynb)
-    [Demo · Multi-task face analysis (Lightning)](notebooks/neural_networks/demo%20-%20multitask%20face%20analysis%20Lightning.ipynb)
-    · **GPU**: three tasks (eyes + gender + age) with Lightning: `LightningModule`,
-    `LightningDataModule`, callbacks, TorchMetrics, loss weighting
-  - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab%2013%20-%20Object%20detection%20with%20YOLO.ipynb)
-    [Lab 13 · Object detection with YOLO](notebooks/neural_networks/lab%2013%20-%20Object%20detection%20with%20YOLO.ipynb)
-    · *GPU optional*: box formats, IoU, the YOLO11 head, NMS and mAP from scratch, fine-tuning
+  - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab%2012%20-%20Object%20detection%20with%20YOLO.ipynb)
+    [Lab 12 · Object detection with YOLO](notebooks/neural_networks/lab%2012%20-%20Object%20detection%20with%20YOLO.ipynb)
+    · **GPU**: box formats, IoU, the YOLO11 head, NMS and mAP from scratch, fine-tuning
     YOLO11n on African Wildlife, ONNX export
 - **Extra notes:** [CNNs, transfer and multi-task learning](https://imagra93.github.io/ML-course-labs/notes/neural_networks/03_cnn_transfer_multitask.html):
   convolution and its backward pass, ResNet, transfer and multi-task learning, segmentation, detection
@@ -235,8 +227,8 @@ order: follow the topics below.
 - **Content:** from text to vectors, embeddings and word2vec, the recurrent cell, backpropagation
   through time, vanishing gradients, gates, the LSTM one gate at a time, GRU, bidirectional and deep
   RNNs, practicalities, the limit of recurrence: one vector for everything
-- **Notebook:** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab%2011%20-%20LSTM%20sentiment%20analysis.ipynb)
-  [Lab 11 · LSTM sentiment analysis](notebooks/neural_networks/lab%2011%20-%20LSTM%20sentiment%20analysis.ipynb)
+- **Notebook:** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab%2013%20-%20LSTM%20sentiment%20analysis.ipynb)
+  [Lab 13 · LSTM sentiment analysis](notebooks/neural_networks/lab%2013%20-%20LSTM%20sentiment%20analysis.ipynb)
   · *GPU optional*: TF-IDF baseline, embeddings, RNN and LSTM from scratch, BPTT and vanishing
   gradients, packing, RNN vs LSTM vs GRU, reading a review word by word
 - **Extra notes:** [Embeddings, RNNs and LSTMs](https://imagra93.github.io/ML-course-labs/notes/neural_networks/04_rnn_lstm.html):
@@ -267,3 +259,20 @@ order: follow the topics below.
   - [Embeddings, retrieval and RAG](https://imagra93.github.io/ML-course-labs/notes/neural_networks/06_embeddings_rag.html):
     TF-IDF, BM25, LSA, neural embeddings, IVF / HNSW / PQ, retrieval metrics, hybrid search and
     re-ranking, chunking, RAG
+
+## 07 · Test for students
+
+- **Slides:** [Test for students](https://imagra93.github.io/ML-course-labs/slides/neural_networks/07_test_for_students.html)
+- **Content:** multi-task face analysis: one pre-trained ResNet-50 shared by three heads (eye
+  positions, gender, age). The starting point solves one task of the three; the students add the
+  other two. Then PyTorch Lightning, and the solution written with it
+- **Notebooks:**
+  - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/test%20-%20multitask%20face%20analysis%20plain%20PyTorch.ipynb)
+    [Test · Multi-task face analysis: the starting point (plain PyTorch)](notebooks/neural_networks/test%20-%20multitask%20face%20analysis%20plain%20PyTorch.ipynb)
+    · **GPU**: ResNet-50 transfer learning on real photos with one head (eye positions) and a
+    hand-written training loop; the task is to add the gender and age heads
+  - [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/test%20solution%20-%20multitask%20face%20analysis%20Lightning.ipynb)
+    [Test solution · Multi-task face analysis (Lightning)](notebooks/neural_networks/test%20solution%20-%20multitask%20face%20analysis%20Lightning.ipynb)
+    · **GPU**: the three tasks (eyes + gender + age) with Lightning: trivial baselines,
+    `LightningModule`, `LightningDataModule`, callbacks, TorchMetrics, loss weighting
+- **Theory:** multi-task learning, chapter 4 and its [extra notes](https://imagra93.github.io/ML-course-labs/notes/neural_networks/03_cnn_transfer_multitask.html#multi-task-learning)

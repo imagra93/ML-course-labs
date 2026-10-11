@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="author" content="Imanol Granada (imanolgranada@gmail.com)">
+<title>Test for students</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
+<link rel="stylesheet" href="../assets/deck.css?v=20260930">
+<link rel="stylesheet" href="assets/nn.css?v=20261006c">
+<script src="../assets/mathjax-config.js?v=20260930"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
+</head>
+<body data-deck="7 · Test for students" data-prev="06_transformers.html">
+<div id="viewport"><div id="stage">
+<section class="slide cover">
+  <div class="inner"><h1>Neural Networks</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Test for students: multi-task face analysis</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+
+<section class="slide">
+  <h2>Where we are</h2>
+  <div class="pipe" style="justify-content:center;padding-top:10px">
+    <div class="pb g"><b>training loop</b>ch. 3</div><span class="ar">→</span><div class="pb b"><b>transfer learning</b>ch. 4 · Lab 11</div><span class="ar">→</span><div class="pb o"><b>multi-task learning</b>ch. 4</div><span class="ar">→</span><div class="pb y"><b>this test</b>one backbone, three heads</div>
+  </div>
+  <div class="cols" style="padding-top:10px">
+    <div class="stack" style="gap:12px">
+      <p>The test puts together three pieces you already know: the <b>training loop</b> of chapter 3, a <b>pre-trained ResNet</b> (transfer learning, Lab 11) and <b>several heads on one backbone</b> (multi-task learning, chapter 4).</p>
+    </div>
+    <div class="stack" style="gap:12px">
+      <div class="note step"><p>Your job: go from <b>one head to three</b> on the same backbone, and check each task against a trivial baseline.</p></div>
+      <p class="step why">This deck: the problem, your starting point (one task of three, in plain PyTorch), a tool that writes the training loop for you (PyTorch Lightning), and the solution written with it.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>The problem: one face, three answers</h2>
+  <svg class="fig" data-fig="multitask" style="max-height:240px" aria-label="A face image goes through a shared ResNet-50 backbone into a feature vector read by three small heads for eyes, gender and age, whose losses are added with weights"></svg>
+  <div class="cols c64">
+    <table class="t">
+      <tr><th>task</th><th>target</th><th>type</th><th>metric</th></tr>
+      <tr><td>eyes</td><td>4 coordinates: left and right eye, x and y</td><td>regression</td><td>RMSE</td></tr>
+      <tr><td>gender</td><td>male or female</td><td>binary classification</td><td>accuracy</td></tr>
+      <tr><td>age</td><td>years (11 to 77)</td><td>regression</td><td>MAE in years</td></tr>
+    </table>
+    <div class="stack" style="gap:10px">
+      <p class="small"><b>Data</b>: 5,000 face photos (178 × 218 pixels) and a CSV with the eye positions in pixels, the gender and the age.</p>
+      <p class="small"><b>The model</b>: one pre-trained ResNet-50 shared by the three tasks, a small head per task, and one loss: a weighted sum of the three.</p>
+      <p class="small why">Theory: transfer learning and multi-task learning, chapter 4.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide lab">
+  <div class="labtag">TEST</div>
+  <h2>Finish the three heads</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:10px">
+      <p>The starting point solves <b>one of the three tasks</b>, the eye positions, with a ResNet-50 and a training loop written by hand. Your job: the other two.</p>
+      <ol class="todo">
+        <li>Run the notebook as it is: the data, the ResNet-50 backbone, the eye head, the training loop, the predicted eyes on test faces.</li>
+        <li>Return the gender and the age from the <code>Dataset</code>, next to the eyes.</li>
+        <li>Add two heads on the same backbone: <b>gender</b> (1 logit, BCE) and <b>age</b> (1 number, MSE).</li>
+        <li>Train the three at once with a weighted sum of the losses, and make sure no task dominates (chapter 4: loss scales).</li>
+        <li>Report each task on the test set next to a trivial baseline: the mean eye position, the majority class, the mean age.</li>
+      </ol>
+    </div>
+    <div class="labcard">
+      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/test - multitask face analysis plain PyTorch.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <dl class="gloss">
+        <dt>notebook</dt><dd><code>test - multitask face analysis plain PyTorch.ipynb</code> (the starting point)</dd>
+        <dt>you need</dt><dd>transfer learning (ch. 4, Lab 11), multi-task learning (ch. 4), the training loop (ch. 3)</dd>
+        <dt>runs on</dt><dd><b>GPU</b> (T4 in Colab)</dd>
+        <dt>data</dt><dd>5,000 face photos, downloaded by the notebook</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Less boilerplate: PyTorch Lightning</h2>
+  <div class="cols c64">
+    <pre class="code s">class FaceNet(L.LightningModule):
+    def __init__(self):
+        super().__init__()
+        self.trunk = resnet50(weights="IMAGENET1K_V2")
+        self.trunk.fc = nn.Identity()           <span class="c"># 2048 features</span>
+        self.eyes = nn.Linear(2048, 4)
+        self.gender = nn.Linear(2048, 1)
+        self.age = nn.Linear(2048, 1)
+
+    def training_step(self, batch, idx):
+        h = self.trunk(batch["image"])
+        loss = (mse(self.eyes(h), batch["eyes_z"])
+              + bce(self.gender(h).squeeze(1), batch["gender"])
+              + mse(self.age(h).squeeze(1), batch["age_z"]))
+        self.log("train/loss", loss)
+        return loss                <span class="c"># no backward(), no step()</span>
+
+    def configure_optimizers(self):
+        return torch.optim.AdamW(self.parameters(), lr=1e-4)
+
+trainer = L.Trainer(max_epochs=20, gradient_clip_val=1.0,
+                    callbacks=[EarlyStopping(monitor="val/loss")])
+trainer.fit(model, datamodule=dm)</pre>
+    <div class="stack" style="gap:10px">
+      <p class="small">The training loop of chapter 3 is always the same: <code>zero_grad</code>, <code>backward</code>, <code>step</code>, move data to the GPU, switch <code>train()</code> / <code>eval()</code>, log, save the best checkpoint.</p>
+      <p class="small"><b>Lightning</b> writes that loop for you. You only fill in the parts that change: the model, <code>training_step</code> (return the loss), <code>validation_step</code>, and <code>configure_optimizers</code>.</p>
+      <p class="small">The <code>Trainer</code> adds GPU support, gradient clipping, early stopping and checkpointing with one argument each.</p>
+      <p class="why">It does not make the model better; it removes a family of silent bugs (a forgotten <code>zero_grad</code>, metrics averaged wrongly, <code>eval()</code> never called).</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide lab demo">
+  <div class="labtag">SOLUTION</div>
+  <h2>The solution, with Lightning</h2>
+  <div class="cols c64">
+    <div class="stack" style="gap:10px">
+      <p>The same faces with the <b>three heads</b>, written with PyTorch Lightning. Compare it with your version.</p>
+      <ol class="todo">
+        <li>Trivial baselines first: what a model that learned nothing scores on each task.</li>
+        <li>A <code>LightningDataModule</code> that computes the target statistics on the training split only.</li>
+        <li>A <code>LightningModule</code>: the shared ResNet-50, three heads, standardized targets, a weighted loss, TorchMetrics.</li>
+        <li>A <code>Trainer</code> with early stopping, checkpointing and a CSV logger.</li>
+        <li>The test set against the baselines, learning curves, predictions drawn on test faces, and what Lightning removed from the plain-PyTorch version.</li>
+      </ol>
+    </div>
+    <div class="labcard">
+      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/test solution - multitask face analysis Lightning.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <dl class="gloss">
+        <dt>notebook</dt><dd><code>test solution - multitask face analysis Lightning.ipynb</code></dd>
+        <dt>results</dt><dd>test set, model vs trivial baseline: eyes RMSE 0.0042 vs 0.0076, gender accuracy 97 % vs 56 %, age MAE 4.0 vs 5.9 years</dd>
+        <dt>runs on</dt><dd><b>GPU</b> (T4 in Colab)</dd>
+      </dl>
+    </div>
+  </div>
+</section>
+
+<section class="slide cover">
+  <div class="inner"><h1>Neural Networks</h1><div class="rule"></div><p class="sub">Máster en Innovación Tecnológica (MINT)</p><p class="topic">Thank you!</p></div>
+  <p class="mail">imanolgranada@gmail.com</p>
+</section>
+</div></div>
+<script src="../assets/figures.js?v=20260930"></script>
+<script src="assets/nn-core.js?v=20260930"></script>
+<script src="assets/fig-nn-cnn.js?v=20260930"></script>
+<script src="../assets/deck.js?v=20260930"></script>
+</body>
+</html>

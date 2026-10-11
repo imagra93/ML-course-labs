@@ -21,6 +21,23 @@
 </section>
 
 <section class="slide">
+  <h2>Where we are</h2>
+  <div class="pipe" style="justify-content:center;padding-top:10px">
+    <div class="pb g"><b>MLP</b>a vector of features · ch. 1–3</div><span class="ar">→</span><div class="pb b"><b>CNN</b>a grid of pixels · ch. 4</div><span class="ar">→</span><div class="pb o"><b>RNN, LSTM</b>a sequence, one step at a time · this chapter</div><span class="ar">→</span><div class="pb y"><b>transformer</b>a sequence, all at once · ch. 6</div>
+  </div>
+  <div class="cols" style="padding-top:10px">
+    <div class="stack" style="gap:12px">
+      <p>Chapters 1–3: a network for a <b>vector</b> of features, and how to train it. Chapter 4: a network that uses the structure of an <b>image</b>.</p>
+      <p class="step">This chapter: <b>sequences</b> (text, speech, sensor logs), where the length changes and the order matters. The training loop stays the same: forward, loss, backward, update.</p>
+    </div>
+    <div class="stack" style="gap:12px">
+      <div class="note step"><p>The new piece is a layer with <b>memory</b>, and the trouble of training it through many time steps.</p></div>
+      <p class="step why">The plan: words as vectors (embeddings), the recurrent cell with numbers, backpropagation through time and why the gradient vanishes, the LSTM gate by gate, the GRU, practicalities. It ends with Lab 13 (sentiment of movie reviews); chapter 6 replaces the recurrence with attention.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
   <h2>Recurrent Neural Networks: why?</h2>
   <div class="cols">
     <div class="stack" style="gap:12px">
@@ -379,7 +396,7 @@ nn.utils.clip_grad_norm_(model.parameters(), 1.0)</pre>
 </section>
 
 <section class="slide lab">
-  <div class="labtag">LAB 11</div>
+  <div class="labtag">LAB 13</div>
   <h2>Sentiment analysis with an LSTM (IMDB)</h2>
   <div class="cols c64">
     <div class="stack" style="gap:10px">
@@ -393,9 +410,9 @@ nn.utils.clip_grad_norm_(model.parameters(), 1.0)</pre>
       </ol>
     </div>
     <div class="labcard">
-      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 11 - LSTM sentiment analysis.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
+      <a class="colab" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 13 - LSTM sentiment analysis.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Open in Colab</a>
       <dl class="gloss">
-        <dt>notebook</dt><dd><code>lab 11 - LSTM sentiment analysis.ipynb</code></dd>
+        <dt>notebook</dt><dd><code>lab 13 - LSTM sentiment analysis.ipynb</code></dd>
         <dt>you need</dt><dd>this chapter: embeddings, RNN, BPTT, LSTM and GRU, padding and packing</dd>
         <dt>results</dt><dd>validation accuracy: plain RNN 80 %, LSTM 87 %, GRU 88 %, and the order-free TF-IDF baseline 90 %. For sentiment, which words appear matters more than their order</dd>
         <dt>runs on</dt><dd>CPU works; a GPU is faster</dd>
