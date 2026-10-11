@@ -373,21 +373,19 @@ optimizer.step()           <span class="c"># update</span></pre>
   <h2>Weight Initialization:</h2>
   <div class="cols">
     <div class="stack" style="gap:10px">
-      <p><b>How would you initialize your weights?</b></p>
-      <ul class="small">
-        <li><b>All zeros (or all equal)?</b> Every unit in a layer computes the same thing, gets the same $\bdelta$, the same update, and stays identical forever. Random initialization <b>breaks the symmetry</b>.</li>
-        <li class="step">A deep linear chain: $\hat y=\bW^{[L]}\bW^{[L-1]}\cdots\bW^{[1]}\bx$. With every $\bW=1.5\,\bI$: $\hat y=1.5^{L}x$, <b>exploding</b>. With $0.5\,\bI$: $0.5^{L}x$, <b>vanishing</b>.</li>
-      </ul>
-      <p class="step small"><b>How large?</b> For zero-mean independent weights: $\ \mathrm{Var}(z_k)=n_{\text{in}}\,\mathrm{Var}(w)\,\E[a^2]$. Through $L$ layers these factors <b>multiply</b>: we want each to be 1.</p>
-      <ul class="small step"><li><b>tanh:</b> $\mathrm{Var}(w)=\frac{1}{n_{\text{in}}}$ (Xavier/Glorot: $\frac{2}{n_{\text{in}}+n_{\text{out}}}$).</li><li><b>ReLU</b> zeroes half the signal, $\E[\mathrm{ReLU}(z)^2]=\frac12\E[z^2]$, so $\mathrm{Var}(w)=\frac{2}{n_{\text{in}}}$ (He / Kaiming). Biases usually start at 0. PyTorch's <code>nn.Linear</code> default is smaller: uniform $\pm1/\sqrt{n_{\text{in}}}$, $\mathrm{Var}(w)=\frac{1}{3n_{\text{in}}}$.</li></ul>
-      <p class="tiny"><a href="https://www.deeplearning.ai/ai-notes/initialization/index.html" target="_blank" rel="noopener">deeplearning.ai: initialization</a></p>
+      <p><b>1 · All zeros?</b> The tiny network of slide 13, with every weight and bias at 0:</p>
+      <svg class="fig" data-fig="init-zeros" style="max-height:400px" aria-label="The tiny network with all weights at 0: both hidden units output 0, and the backward pass gives them no gradient"></svg>
+      <p>Every hidden unit computes the same thing and gets the same gradient, so they stay copies forever. <b>Random weights break the symmetry.</b></p>
     </div>
-    <div class="widget" data-fig="init" data-auto="init=small :: too small: activations and gradients shrink layer by layer | init=large :: too large: tanh saturates, and the gradient grows on its way back (6.99 at layer 1) | init=good :: Xavier: both keep their scale, of order 1 (0.22 and 0.26 after 10 layers) | act=relu; init=good :: ReLU needs He (2/n), and then both stay of order 1 too (0.92 and 0.66)">
-      <svg class="fig" aria-label="Size of the activations and gradients layer by layer for different initializations"></svg>
-      <div class="ctl"><span class="seg" data-g="act" role="group" aria-label="Activation"><button type="button" data-v="tanh" data-act="tanh" aria-pressed="true">tanh</button><button type="button" data-v="relu" data-act="relu" aria-pressed="false">ReLU</button></span>
-        <span class="seg" data-g="init" role="group" aria-label="Initialization"><button type="button" data-v="small" data-init="small" aria-pressed="false">too small</button><button type="button" data-v="good" data-init="good" aria-pressed="true">Xavier / He</button><button type="button" data-v="large" data-init="large" aria-pressed="false">too large</button></span></div>
-      <div class="ro"><div class="m"><span>rule</span><b data-r="v" style="font-size:17px">–</b></div><div class="m"><span>activations, layer 10</span><b data-r="a">–</b></div><div class="m"><span>gradient, layer 1</span><b data-r="g">–</b></div></div>
-      <p class="why">10 layers of 100 units, 200 random inputs. The dashed line is "size 1".</p>
+    <div class="stack" style="gap:10px">
+      <p class="step"><b>2 · How large?</b> Keep each layer's output the size of its input: <b>tanh</b> $\mathrm{Var}(w)=\frac{1}{n_{\text{in}}}$ (Xavier), <b>ReLU</b> $\mathrm{Var}(w)=\frac{2}{n_{\text{in}}}$ (He). Biases start at 0.</p>
+      <div class="widget" data-fig="init" data-auto="init=small :: too small: activations and gradients shrink layer by layer | init=large :: too large: tanh saturates, and the gradient grows on its way back (6.99 at layer 1) | init=good :: Xavier: both keep their scale, of order 1 (0.22 and 0.26 after 10 layers) | act=relu; init=good :: ReLU needs He (2/n), and then both stay of order 1 too (0.92 and 0.66)">
+        <svg class="fig" aria-label="Size of the activations and gradients layer by layer for different initializations"></svg>
+        <div class="ctl"><span class="seg" data-g="act" role="group" aria-label="Activation"><button type="button" data-v="tanh" data-act="tanh" aria-pressed="true">tanh</button><button type="button" data-v="relu" data-act="relu" aria-pressed="false">ReLU</button></span>
+          <span class="seg" data-g="init" role="group" aria-label="Initialization"><button type="button" data-v="small" data-init="small" aria-pressed="false">too small</button><button type="button" data-v="good" data-init="good" aria-pressed="true">Xavier / He</button><button type="button" data-v="large" data-init="large" aria-pressed="false">too large</button></span></div>
+        <div class="ro"><div class="m"><span>rule</span><b data-r="v" style="font-size:17px">–</b></div><div class="m"><span>activations, layer 10</span><b data-r="a">–</b></div><div class="m"><span>gradient, layer 1</span><b data-r="g">–</b></div></div>
+        <p class="why">10 layers of 100 units, 200 random inputs. The dashed line is "size 1".</p>
+      </div>
     </div>
   </div>
 </section>
@@ -398,7 +396,7 @@ optimizer.step()           <span class="c"># update</span></pre>
     <p>Unroll the backward formula from the output down to layer $l$:</p>
     <div class="eq s">$$\bdelta^{[l]}=\Big(\cdots\big(\bdelta^{[L]}\bW^{[L]\top}\odot g'(\bZ^{[L-1]})\big)\cdots\bW^{[l+1]\top}\Big)\odot g'(\bZ^{[l]})$$</div>
     <p class="step small">The gradient reaching an early layer is a <b>product</b> of $L-l$ factors "weight matrix × activation derivative". Products of many numbers shrink or blow up <b>exponentially</b>.</p>
-    <svg class="fig step" data-fig="vanish-chain" style="max-height:190px" aria-label="Two chains of ten layers ending at the loss, with lines whose width shows the gradient size, shrinking towards layer 1 for sigmoid and constant for ReLU"></svg>
+    <svg class="fig step" data-fig="vanish-chain" style="max-height:228px" aria-label="An arrow from the loss back to layer 1, over two chains of ten layers ending at the loss, with lines whose width shows the gradient size, shrinking towards layer 1 for sigmoid and constant for ReLU"></svg>
     <div class="cols step">
       <div class="note"><p class="small"><b>Sigmoid</b> has $\sigma'\le\frac14$: after 10 layers the gradient can be $4^{-10}\approx10^{-6}$. Early layers barely learn: <b>vanishing gradients</b>. Large weights: <b>exploding</b> (loss becomes NaN).</p></div>
       <div class="note"><p class="small"><b>Remedies:</b> ReLU activations · proper initialization · normalization layers (BatchNorm / LayerNorm, ch. 3) · <b>residual connections</b> $\ba^{[l+1]}=\ba^{[l]}+F(\ba^{[l]})$, whose Jacobian contains the identity (ch. 4) · gradient clipping (ch. 5).</p></div>
@@ -460,7 +458,7 @@ optimizer.step()           <span class="c"># update</span></pre>
 </div></div>
 <script src="../assets/figures.js?v=20260930"></script>
 <script src="assets/nn-core.js?v=20260930"></script>
-<script src="assets/fig-nn-backprop.js?v=20261006b"></script>
+<script src="assets/fig-nn-backprop.js?v=20261011"></script>
 <script src="../assets/deck.js?v=20260930"></script>
 </body>
 </html>

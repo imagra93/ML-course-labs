@@ -93,13 +93,18 @@ FIG['ema']=root=>{const r=rng(4);const T=80;const g=[];for(let t=1;t<=T;t++){con
     setR(root,'win','≈ '+Math.round(1/(1-beta))+' steps');setR(root,'m1',fmt(raw[1][1],2));setR(root,'c1',fmt(cor[0][1],2))}
   ib.addEventListener('input',draw);draw()};
 /* RMSProp: two parameters with very different gradient scales, before and after dividing by the running RMS */
-FIG['rms-scale']=root=>{const svg=initSvg(svgOf(root),600,250);const r=rng(2);const n=10;const g1=[...Array(n)].map(()=>Math.abs(0.02+0.007*randn(r))),g2=[...Array(n)].map(()=>Math.abs(1+0.35*randn(r)));
+/* two parameters whose gradients are 50× apart, raw and divided by their running RMS. data-panel="raw" | "norm" draws one panel; none: both side by side */
+FIG['rms-scale']=root=>{const panel=root.dataset.panel;const r=rng(2);const n=10;const g1=[...Array(n)].map(()=>Math.abs(0.02+0.007*randn(r))),g2=[...Array(n)].map(()=>Math.abs(1+0.35*randn(r)));
   const rms=a=>Math.sqrt(a.reduce((s,v)=>s+v*v,0)/a.length);const s1=rms(g1),s2=rms(g2);const lg=v=>Math.log10(Math.max(v,0.003));
-  const P=Plot(svg,{at:[0,0],w:295,h:250,x:[0.3,n+0.7],y:[-2.5,0.5],m:{l:44,r:6,t:26,b:34}});P.axes({xt:[1,5,10],yt:[-2,-1,0],fy:v=>v===0?'1':v===-1?'0.1':'0.01',xl:'step',yl:'|gradient| (log)'});T(P.root,160,16,'raw gradients: 50× apart','lab');
-  g1.forEach((v,i)=>P.rect(i+1-0.36,-2.5,i+1-0.02,lg(v),'fb'));g2.forEach((v,i)=>P.rect(i+1+0.02,-2.5,i+1+0.36,lg(v),'fo'));
-  const Q=Plot(svg,{at:[305,0],w:295,h:250,x:[0.3,n+0.7],y:[0,1.8],m:{l:44,r:6,t:26,b:34}});Q.axes({xt:[1,5,10],yt:[0,0.5,1,1.5],xl:'step',yl:'|g| / √s'});T(Q.root,160,16,'divided by their running RMS','lab');
-  g1.forEach((v,i)=>Q.rect(i+1-0.36,0,i+1-0.02,v/s1,'fb'));g2.forEach((v,i)=>Q.rect(i+1+0.02,0,i+1+0.36,v/s2,'fo'));Q.line(0.3,1,n+0.7,1,'ln thin sm dash');
-  const lgd=E('g',{},svg);E('rect',{x:360,y:30,width:12,height:12,fill:'#4472c4'},lgd);T(lgd,378,40,'w₁ (tiny gradients)','','start');E('rect',{x:480,y:30,width:12,height:12,fill:'#ed7d31'},lgd);T(lgd,498,40,'w₂ (large)','','start')};
+  const legend=(x,y)=>{const lgd=E('g',{},svg);E('rect',{x:x,y:y,width:12,height:12,fill:'#4472c4'},lgd);T(lgd,x+18,y+10,'w₁ (tiny gradients)','','start');E('rect',{x:x+130,y:y,width:12,height:12,fill:'#ed7d31'},lgd);T(lgd,x+148,y+10,'w₂ (large)','','start')};
+  const raw=(at,w,h,title)=>{const P=Plot(svg,{at:at,w:w,h:h,x:[0.3,n+0.7],y:[-2.5,0.5],m:{l:panel?56:44,r:6,t:26,b:34}});P.axes({xt:[1,5,10],yt:[-2,-1,0],fy:v=>v===0?'1':v===-1?'0.1':'0.01',xl:'step',yl:'|gradient| (log)'});T(P.root,panel?56:160,16,title,'lab',panel?'start':'middle');
+    g1.forEach((v,i)=>P.rect(i+1-0.36,-2.5,i+1-0.02,lg(v),'fb'));g2.forEach((v,i)=>P.rect(i+1+0.02,-2.5,i+1+0.36,lg(v),'fo'))};
+  const norm=(at,w,h,title)=>{const Q=Plot(svg,{at:at,w:w,h:h,x:[0.3,n+0.7],y:[0,1.8],m:{l:panel?56:44,r:6,t:26,b:34}});Q.axes({xt:[1,5,10],yt:[0,0.5,1,1.5],xl:'step',yl:'|g| / √s'});T(Q.root,panel?56:160,16,title,'lab',panel?'start':'middle');
+    g1.forEach((v,i)=>Q.rect(i+1-0.36,0,i+1-0.02,v/s1,'fb'));g2.forEach((v,i)=>Q.rect(i+1+0.02,0,i+1+0.36,v/s2,'fo'));Q.line(0.3,1,n+0.7,1,'ln thin sm dash')};
+  let svg;
+  if(panel==='raw'){svg=initSvg(svgOf(root),600,200);raw([0,0],600,200,'raw gradients: w₂ is about 50× w₁');legend(330,6)}
+  else if(panel==='norm'){svg=initSvg(svgOf(root),600,200);norm([0,0],600,200,'each divided by its own typical size (RMS): both ≈ 1')}
+  else{svg=initSvg(svgOf(root),600,250);raw([0,0],295,250,'raw gradients: 50× apart');norm([305,0],295,250,'divided by their running RMS');legend(360,30)}};
 FIG['optim']=root=>{const f=(x,y)=>0.5*(0.08*x*x+2*y*y);const g=(x,y)=>[0.08*x,2*y];const m2={l:34,r:10,t:10,b:30};const xr=[-5.5,1.5];
   const P=Plot(svgOf(root),{w:600,h:380,x:xr,y:equalY(600,380,m2,xr,0),m:m2});P.axes({xt:[-5,-4,-3,-2,-1,0,1],yt:[-2,-1,0,1,2],xl:'w₁',yl:'w₂'});
   [0.05,0.2,0.5,1,1.8,2.8].forEach(l=>{const pts=[];for(let i=0;i<=120;i++){const t=2*Math.PI*i/120;pts.push([Math.sqrt(2*l/0.08)*Math.cos(t),Math.sqrt(2*l/2)*Math.sin(t)])}P.path(pts,'ln thin sb',P.bgc).setAttribute('opacity','0.4')});P.dot(0,0,5,'fk',P.bg);
@@ -153,21 +158,31 @@ FIG['overfit-l2']=root=>{const tr=moons(40,5,0.28),te=moons(600,99,0.28);const L
 /* EMA, step by step: 30 days of temperatures, the weight each past day gets in today's average (v₀ = 0 takes the rest), raw or bias-corrected.
    Controls: slider t (day), seg data-b (β), seg data-c (0 = raw, 1 = with the bias correction) */
 const TEMPS=[10,12,11,14,13,15,14,16,15,17,19,18,17,19,20,18,21,20,22,21,19,22,23,21,24,22,23,25,24,26];
-FIG['ema-steps']=root=>{const n=TEMPS.length;const svg=initSvg(svgOf(root),600,320);
-  const P=Plot(svg,{at:[0,0],w:600,h:176,x:[-0.8,n+0.6],y:[0,28],m:{l:44,r:12,t:10,b:34}});P.axes({xt:[0,5,10,15,20,25,30],yt:[0,7,14,21,28],xl:'day t',yl:'temperature (°C)'});
-  TEMPS.forEach((v,i)=>P.dot(i+1,v,3.4,'fm',P.bg));let Q=null;const it=q(root,'t');
-  const gb=segs(root,'b',draw),gc=segs(root,'c',draw);
-  function draw(){const t=+it.value,b=+(gb()||0.9),c=gc()==='1';setV(root,'t',t);
-    let v=0;const raw=[[0,0]],cor=[];TEMPS.slice(0,t).forEach((x,i)=>{v=b*v+(1-b)*x;raw.push([i+1,v]);cor.push([i+1,v/(1-Math.pow(b,i+1))])});
-    P.clear();P.line(t,0,t,28,'ln thin sm dash');P.path(raw,'ln').setAttribute('stroke','#c00000');P.dot(t,raw[t][1],5,'fr pt');
-    if(c){P.path(cor,'ln dash').setAttribute('stroke','#4472c4');P.dot(t,cor[t-1][1],5,'fb pt')}P.dot(t,TEMPS[t-1],5,'fk');
-    const s=1-Math.pow(b,t);const w=[Math.pow(b,t)];for(let k=1;k<=t;k++)w.push((1-b)*Math.pow(b,t-k));
-    const top=Math.max(w[0],...w.slice(1).map(x=>c?x/s:x))*1.2;if(Q)Q.root.remove();
+function emaRuns(b){let v=0;const raw=[[0,0]],cor=[];TEMPS.forEach((x,i)=>{v=b*v+(1-b)*x;raw.push([i+1,v]);cor.push([i+1,v/(1-Math.pow(b,i+1))])});return {raw,cor}}
+function emaTop(svg){const n=TEMPS.length;const P=Plot(svg,{at:[0,0],w:600,h:176,x:[-0.8,n+0.6],y:[0,28],m:{l:44,r:12,t:10,b:34}});P.axes({xt:[0,5,10,15,20,25,30],yt:[0,7,14,21,28],xl:'day t',yl:'temperature (°C)'});
+  TEMPS.forEach((v,i)=>P.dot(i+1,v,3.4,'fm',P.bg));return P}
+/* slide 1: the raw EMA up to day t, and the weight of each past day (gray: the weight left on v₀ = 0) */
+FIG['ema-steps']=root=>{const n=TEMPS.length;const svg=initSvg(svgOf(root),600,320);const P=emaTop(svg);let Q=null;const it=q(root,'t');
+  const gb=segs(root,'b',draw);
+  function draw(){const t=+it.value,b=+(gb()||0.9);setV(root,'t',t);const {raw}=emaRuns(b);
+    P.clear();P.line(t,0,t,28,'ln thin sm dash');P.path(raw.slice(0,t+1),'ln').setAttribute('stroke','#c00000');P.dot(t,raw[t][1],5,'fr pt');P.dot(t,TEMPS[t-1],5,'fk');
+    const w=[Math.pow(b,t)];for(let k=1;k<=t;k++)w.push((1-b)*Math.pow(b,t-k));const top=Math.max(...w)*1.2;if(Q)Q.root.remove();
     Q=Plot(svg,{at:[0,176],w:600,h:144,x:[-0.8,n+0.6],y:[0,top],m:{l:44,r:12,t:16,b:32}});
     Q.axes({xt:[0,5,10,15,20,25,30],fx:k=>k?k:'v₀',yt:[0,top/2.4,top/1.2],fy:y=>fmt(y,2),xl:'weight of each day in vₜ (gray: the weight left on v₀ = 0)'});
-    w.forEach((x,k)=>{if(c&&!k)return;Q.rect(k-0.36,0,k+0.36,c?x/s:x,c?'fb':k?'fr':'fm').setAttribute('opacity',k?'0.8':'0.6')});
-    Q.text(0.7,top*0.86,c?'v₀ = 0: weight 0 after the correction':'v₀ = 0 keeps '+Math.round(100*w[0])+' % of the weight','', 'start');
-    setR(root,'x',TEMPS[t-1]+' °C');setR(root,'v',fmt(raw[t][1],2));setR(root,'s',fmt(s,3));setR(root,'vh',fmt(cor[t-1][1],2))}
+    w.forEach((x,k)=>{Q.rect(k-0.36,0,k+0.36,x,k?'fr':'fm').setAttribute('opacity',k?'0.8':'0.6')});
+    Q.text(0.7,top*0.86,'v₀ = 0 keeps '+Math.round(100*w[0])+' % of the weight','', 'start');
+    setR(root,'x',TEMPS[t-1]+' °C');setR(root,'v',fmt(raw[t][1],2));setR(root,'w0',Math.round(100*w[0])+' %')}
+  it.addEventListener('input',draw);draw()};
+/* slide 2: raw and bias-corrected EMA together, and the correction factor 1/(1 − βᵗ) of each day */
+FIG['ema-bias']=root=>{const n=TEMPS.length;const svg=initSvg(svgOf(root),600,320);const P=emaTop(svg);const it=q(root,'t');
+  const Q=Plot(svg,{at:[0,176],w:600,h:144,x:[-0.8,n+0.6],y:[0,11],m:{l:44,r:12,t:16,b:32}});Q.axes({xt:[0,5,10,15,20,25,30],yt:[1,5,10],fy:y=>'×'+y,xl:'correction factor 1 / (1 − βᵗ) of each day'});
+  const gb=segs(root,'b',draw);
+  function draw(){const t=+it.value,b=+(gb()||0.9);setV(root,'t',t);const {raw,cor}=emaRuns(b);
+    P.clear();P.line(t,0,t,28,'ln thin sm dash');P.path(raw.slice(0,t+1),'ln').setAttribute('stroke','#c00000');P.path(cor.slice(0,t),'ln dash').setAttribute('stroke','#4472c4');
+    P.dot(t,raw[t][1],5,'fr pt');P.dot(t,cor[t-1][1],5,'fb pt');P.dot(t,TEMPS[t-1],5,'fk');
+    Q.clear();for(let k=1;k<=t;k++)Q.rect(k-0.36,0,k+0.36,1/(1-Math.pow(b,k)),'fb').setAttribute('opacity',k===t?'1':'0.6');Q.line(-0.8,1,n+0.6,1,'ln thin sm dash');
+    const f=1/(1-Math.pow(b,t));Q.text(n+0.4,10,'day '+t+': ×'+fmt(f,2),'','end');
+    setR(root,'x',TEMPS[t-1]+' °C');setR(root,'v',fmt(raw[t][1],2));setR(root,'s',fmt(1-Math.pow(b,t),3));setR(root,'vh',fmt(cor[t-1][1],2))}
   it.addEventListener('input',draw);draw()};
 /* Data augmentation on 28×28 pictures (Fashion-MNIST style, in colour). Every click on a transformation draws new random parameters;
    the strip keeps the last 8 versions. seg data-s: picture; seg data-op: transformation. Flipping the digit changes its label. */

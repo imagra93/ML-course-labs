@@ -94,13 +94,23 @@ FIG['bp-chain']=root=>{const svg=initSvg(svgOf(root),580,230);const row=92;
   const br=(x1,x2,y,c,t)=>{E('path',{d:'M'+x1+','+(y-8)+' L'+x1+','+y+' L'+x2+','+y+' L'+x2+','+(y-8),fill:'none',stroke:c,'stroke-width':2},svg);const tt=TT(svg,(x1+x2)/2,y+19,t,'lab','middle');tt.style.fill=c};
   br(xs[2]-30,576-6,row+66,'#4472c4','δ^{[l]} = ∂J/∂Z^{[l]}: already known');br(xs[0]-30,576-6,row+112,'#c55a11','δ^{[l−1]} = δ^{[l]} · W^{[l]} · g′(Z^{[l−1]}): what we want')};
 /* product of many factors: why gradients vanish or explode */
-FIG['vanish-chain']=root=>{const svg=initSvg(svgOf(root),940,200);
-  [['sigmoid, 10 layers: each factor ≤ 0.25',0.25,'#c00000',30],['ReLU + He init: each factor ≈ 1',1,'#548235',120]].forEach(([lab,f,c,y])=>{T(svg,16,y-10,lab,'lab','start');
+/* the tiny network of the worked example with every weight and bias at 0: the hidden layer gets no gradient */
+FIG['init-zeros']=root=>{const svg=initSvg(svgOf(root),600,400);svg.setAttribute('viewBox','0 44 600 362');
+  const N={x:NET.x,y:NET.y,W1:[[0,0],[0,0]],b1:[0,0],W2:[[0],[0]],b2:[0]};const F=tinyForward(N);const d2=F.yh-N.y;
+  drawTiny(svg,N,F,5);
+  E('rect',{x:20,y:248,width:150,height:48,rx:6,fill:'#fff2cc',stroke:'#bf9000'},svg);T(svg,95,268,'a₁ = a₂: the same','lab');T(svg,95,288,'unit, twice','lab');
+  E('rect',{x:10,y:316,width:580,height:86,rx:8,fill:'#fdf2f2',stroke:'#e6b8b8'},svg);T(svg,20,334,'backward pass','lab','start').style.fill='#c00000';
+  const bw=(y,t,cls)=>{const tt=TT(svg,300,y,t,cls||'','middle',16);tt.style.fill='#c00000'};
+  bw(358,'δ^{[2]} = ŷ − y = '+f3(d2)+', but a = 0 and W^{[2]} = 0, so ∂W^{[2]} = 0 and ∂W^{[1]} = 0');
+  bw(386,'only b^{[2]} learns: ŷ moves, the hidden layer never does','lab')};
+FIG['vanish-chain']=root=>{const svg=initSvg(svgOf(root),940,240);
+  T(svg,470,14,'backward pass: the gradient starts at the loss and travels back to layer 1','lab','middle').style.fill='#c00000';arrowPx(svg,918,28,16,28,'ln sr','fr');
+  [['sigmoid, 10 layers: each factor ≤ 0.25',0.25,'#c00000',66],['ReLU + He init: each factor ≈ 1',1,'#548235',156]].forEach(([lab,f,c,y])=>{T(svg,16,y-10,lab,'lab','start');
     const bx=l=>16+(l-1)*84;for(let l=1;l<=10;l++){E('rect',{x:bx(l),y:y,width:58,height:30,rx:4,fill:'#f2f2f2',stroke:'#7f7f7f'},svg);T(svg,bx(l)+29,y+20,'layer '+l,'')}
     E('rect',{x:856,y:y,width:62,height:30,rx:4,fill:'#fbe5d6',stroke:'#ed7d31'},svg);T(svg,887,y+20,'loss','lab');
     for(let l=10;l>=1;l--){const k=10-l;const g=Math.pow(f,k);const x1=l===10?856:bx(l+1),x2=bx(l)+58;const w=Math.max(0.6,10*g);E('line',{x1:x1-2,y1:y+15,x2:x2+2,y2:y+15,stroke:c,'stroke-width':w},svg);
       T(svg,(x1+x2)/2,y+48,g>=0.01?g.toFixed(2):g.toExponential(0),'','middle')}});
-  T(svg,470,192,'Line width = size of the gradient that reaches each layer, starting at the loss (right) and going back to layer 1 (left).','','middle')};
+  T(svg,470,232,'Line width = size of the gradient that reaches each layer.','','middle')};
 /* the chain rule with numbers: y = (3x + 1)^2 at x = 1, and a nudge to check it */
 FIG['chain-num']=root=>{const svg=svgOf(root);
   stepper(root,s=>{initSvg(svg,620,300);const node=(x,y,t,v,c)=>{E('circle',{cx:x,cy:y,r:30,fill:c,stroke:'#404040'},svg);T(svg,x,y+6,t,'lab big');const tt=T(svg,x,y-40,v,'lab');tt.style.fill='#1f3864'};

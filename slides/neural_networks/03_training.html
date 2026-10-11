@@ -52,7 +52,6 @@
         <li>Some activation functions are not differentiable.
           <ul><li>Only at some points (e.g. 0 for ReLU).</li><li>We still have sub-derivatives.</li></ul></li>
       </ul>
-      <p class="tiny"><a href="https://www.quora.com/Are-neural-nets-always-convex-with-respect-to-the-weights-And-if-not-how-does-gradient-descent-work-so-well" target="_blank" rel="noopener">Why does gradient descent work so well on non-convex nets?</a> · <a href="https://www.quora.com/Why-does-ReLU-work-with-backprops-if-its-non-differentiable" target="_blank" rel="noopener">ReLU and backprop</a></p>
     </div>
     <div class="stack" style="gap:12px">
       <div class="note"><p class="small">In high dimensions most flat points are <b>saddle points</b>, not bad local minima: some directions go up, others go down. Noise in the gradient (mini-batches) and momentum help to leave them.</p></div>
@@ -140,22 +139,47 @@
 <section class="slide">
   <h2>The exponential moving average (EMA), step by step</h2>
   <div class="cols c46">
-    <div class="stack" style="gap:6px">
+    <div class="stack" style="gap:8px">
       <p class="small">A running average that <b>forgets slowly</b>. Every day keep a fraction $\beta$ of the old average and add $1-\beta$ of today's value:</p>
       <div class="bluebox" style="font-size:20px">$$v_t=\beta\,v_{t-1}+(1-\beta)\,x_t,\qquad v_0=0$$</div>
       <p class="small step">By hand, $\beta=0.9$, temperatures $10,12,11$ °C:</p>
-      <div class="eq xs step">$$v_1=0.9\cdot0+0.1\cdot10=1.0$$$$v_2=0.9\cdot1.0+0.1\cdot12=2.1$$$$v_3=0.9\cdot2.1+0.1\cdot11=2.99$$</div>
-      <p class="small step">Far below 11 °C. Unrolled, $v_3=0.1\cdot11+0.09\cdot12+0.081\cdot10$: each day further back weighs $\beta$ times less, and the real days share only $1-\beta^3=0.271$ of the weight. The rest stays on $v_0=0$.</p>
-      <p class="small step"><b>Bias correction</b>: divide by that share, $\ \hat v_t=\dfrac{v_t}{1-\beta^t}$, so $\hat v_3=\dfrac{2.99}{0.271}=11.03$.</p>
-      <p class="small why step">The weights fade after about $\frac{1}{1-\beta}$ days ($\beta=0.9$: 10 days, $\beta=0.5$: 2). Next slide: the same tool on noisy gradients.</p>
+      <div class="eq xs step">$$v_1=0.9\cdot0+0.1\cdot10=1.0$$</div>
+      <div class="eq xs step">$$v_2=0.9\cdot1.0+0.1\cdot12=2.1$$</div>
+      <div class="eq xs step">$$v_3=0.9\cdot2.1+0.1\cdot11=2.99$$</div>
+      <p class="small step">Unrolled, $v_3=0.1\cdot11+0.09\cdot12+0.081\cdot10$: each day further back weighs $\beta$ times less. The weights fade after about $\frac{1}{1-\beta}$ days ($\beta=0.9$: 10 days, $\beta=0.5$: 2).</p>
     </div>
-    <div class="widget" data-fig="ema-steps" data-auto="t=1 :: Day 1: v₁ = 0.1 · 10 = 1.0. The real day gets 10 % of the weight, the other 90 % stays on v₀ = 0 | t=3 :: Day 3: v₃ = 2.99 while it is 11 °C outside: days 1–3 carry only 0.271 of the weight | t=3;c=1 :: With the correction: divide by 0.271, v̂₃ = 11.03 | t=30;c=1 :: Day 30: v₀ keeps 4 % of the weight, raw (20.86) and corrected (21.78) nearly agree. Both lag behind the warming trend: they average about the last 10 days | t=30;b=0.5;c=0 :: β = 0.5: an average of about 2 days. It follows the data closely, and the start-up bias is gone after a few days">
-      <svg class="fig" aria-label="Thirty daily temperatures with their exponential moving average up to the chosen day, raw or bias-corrected, and below the weight that each past day gets in today's average"></svg>
-      <div class="ctl"><label for="es-t">day t</label><input type="range" id="es-t" data-k="t" min="1" max="30" step="1" value="3" style="max-width:200px"><span class="v" data-v="t">3</span>
-        <span class="seg" role="group" aria-label="Forgetting factor beta"><button type="button" data-b="0.5" aria-pressed="false">β 0.5</button><button type="button" data-b="0.9" aria-pressed="true">β 0.9</button></span>
-        <span class="seg" role="group" aria-label="Bias correction"><button type="button" data-c="0" aria-pressed="true">raw v</button><button type="button" data-c="1" aria-pressed="false">corrected v̂</button></span></div>
+    <div class="widget" data-fig="ema-steps" data-auto="t=10 :: Day 10: v₁₀ = 9.29 while it is 17 °C. The EMA is still climbing up from v₀ = 0 | t=30 :: Day 30: v₃₀ = 20.86. A smooth curve that follows the warming trend a few days late: it averages about the last 10 days | t=30;b=0.5 :: β = 0.5: an average of about 2 days. It follows the data closely, noise included | t=3;b=0.9 :: Back to day 3: v₃ = 2.99 while it is 11 °C. The gray bar: v₀ = 0 still holds 73 % of the weight">
+      <svg class="fig" aria-label="Thirty daily temperatures with their exponential moving average up to the chosen day, and below the weight that each past day gets in today's average"></svg>
+      <div class="ctl"><label for="es-t">day t</label><input type="range" id="es-t" data-k="t" min="1" max="30" step="1" value="3" style="max-width:220px"><span class="v" data-v="t">3</span>
+        <span class="seg" role="group" aria-label="Forgetting factor beta"><button type="button" data-b="0.5" aria-pressed="false">β 0.5</button><button type="button" data-b="0.9" aria-pressed="true">β 0.9</button></span></div>
+      <div class="ro"><div class="m"><span>today xₜ</span><b data-r="x">–</b></div><div class="m"><span>EMA vₜ</span><b data-r="v">–</b></div><div class="m"><span>weight left on v₀ (βᵗ)</span><b data-r="w0">–</b></div></div>
+      <div class="legend"><span><i style="background:var(--muted)"></i>temperatures $x_t$</span><span><i style="background:var(--red)"></i>EMA $v_t$</span></div>
+    </div>
+  </div>
+  <div class="note step"><p class="small"><b>The problem:</b> on day 3 it is 11 °C, but $v_3=2.99$. The starting value $v_0=0$ was never measured, yet it still holds $\beta^3=73\,\%$ of the weight. For the first $\sim\frac{1}{1-\beta}$ days the EMA is <b>biased towards 0</b>. Next slide: the fix.</p></div>
+</section>
+
+<section class="slide">
+  <h2>Bias correction: fixing the start of the EMA</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:8px">
+      <p class="small">Unrolled, the real days get the weights $(1-\beta),\ (1-\beta)\beta,\ \dots,\ (1-\beta)\beta^{t-1}$. They add up to</p>
+      <div class="eq xs">$$(1-\beta)\big(1+\beta+\dots+\beta^{t-1}\big)=1-\beta^t,$$</div>
+      <p class="small">not 1: the missing $\beta^t$ sits on $v_0=0$.</p>
+      <p class="small step"><b>The fix:</b> divide by the weight that the real days have.</p>
+      <div class="bluebox step" style="font-size:20px">$$\hat v_t=\frac{v_t}{1-\beta^t}$$</div>
+      <p class="small step">By hand, the same three days ($\beta=0.9$):</p>
+      <div class="eq xs step">$$\hat v_1=\frac{1.0}{1-0.9}=10.0\quad\text{(exactly today's value)}$$</div>
+      <div class="eq xs step">$$\hat v_2=\frac{2.1}{1-0.81}=11.05$$</div>
+      <div class="eq xs step">$$\hat v_3=\frac{2.99}{1-0.729}=11.03$$</div>
+      <p class="small step">As $t$ grows, $\beta^t\to0$: the factor goes to 1 and $\hat v_t\to v_t$. The correction only matters at the start.</p>
+    </div>
+    <div class="widget" data-fig="ema-bias" data-auto="t=1 :: Day 1: v₁ = 1.0 is multiplied by 10, so v̂₁ = 10.0, exactly today's value | t=3 :: Day 3: ×3.69, v̂₃ = 11.03 against the raw 2.99 | t=10 :: Day 10: ×1.54, raw 9.29 and corrected 14.27. The gap is closing | t=30 :: Day 30: ×1.04, raw 20.86 and corrected 21.78 almost agree | t=30;b=0.5 :: β = 0.5: v₀ loses its weight fast. By day 5 the factor is 1.03 and there is little left to correct">
+      <svg class="fig" aria-label="Thirty daily temperatures with the raw and the bias-corrected exponential moving average up to the chosen day, and below the correction factor of each day"></svg>
+      <div class="ctl"><label for="eb-t">day t</label><input type="range" id="eb-t" data-k="t" min="1" max="30" step="1" value="3" style="max-width:220px"><span class="v" data-v="t">3</span>
+        <span class="seg" role="group" aria-label="Forgetting factor beta"><button type="button" data-b="0.5" aria-pressed="false">β 0.5</button><button type="button" data-b="0.9" aria-pressed="true">β 0.9</button></span></div>
       <div class="ro"><div class="m"><span>today xₜ</span><b data-r="x">–</b></div><div class="m"><span>raw vₜ</span><b data-r="v">–</b></div><div class="m"><span>weight on real days 1 − βᵗ</span><b data-r="s">–</b></div><div class="m"><span>corrected v̂ₜ</span><b data-r="vh">–</b></div></div>
-      <div class="legend"><span><i style="background:var(--muted)"></i>temperatures $x_t$</span><span><i style="background:var(--red)"></i>raw EMA $v_t$</span><span><i style="background:var(--blue)"></i>corrected $\hat v_t$</span></div>
+      <div class="legend"><span><i style="background:var(--muted)"></i>temperatures $x_t$</span><span><i style="background:var(--red)"></i>raw EMA $v_t$</span><span><i style="background:var(--blue)"></i>corrected $\hat v_t$ (dashed)</span></div>
     </div>
   </div>
 </section>
@@ -164,7 +188,7 @@
   <h2>A tool for optimizers: the EMA of noisy gradients</h2>
   <div class="cols c46">
     <div class="stack" style="gap:8px">
-      <p class="small">Mini-batch gradients are <b>noisy</b>. Smooth them with the EMA of the previous slide:</p>
+      <p class="small">Mini-batch gradients are <b>noisy</b>. Smooth them with the EMA of the previous two slides:</p>
       <div class="bluebox">$$v_t=\beta\,v_{t-1}+(1-\beta)\,g_t,\qquad v_0=0$$</div>
       <p class="small step">Unrolled: $\ v_t=(1-\beta)\big(g_t+\beta g_{t-1}+\beta^2g_{t-2}+\dots\big)$. Recent values weigh more; the weights $\beta^k$ fade after about $\frac{1}{1-\beta}$ steps ($\beta=0.9$ → 10 steps, $0.99$ → 100).</p>
       <p class="small step"><b>Bias at the start.</b> Because $v_0=0$, the first values are too small: $v_1=(1-\beta)g_1$ is only 10 % of $g_1$ for $\beta=0.9$. Dividing by $1-\beta^t$ fixes it:</p>
@@ -204,19 +228,24 @@
 
 <section class="slide">
   <h2>Optimizers - RMSProp: a step size per parameter</h2>
-  <div class="cols">
-    <div class="stack" style="gap:10px">
-      <p class="small">Gradients of different parameters can be <b>1000× apart</b> (a bias of the last layer vs a weight of the first). One learning rate cannot suit both. <b>RMSProp</b> divides each parameter's step by the typical size of its own gradient:</p>
-      <div class="bluebox">$$\bs\leftarrow\beta_2\bs+(1-\beta_2)\,\bg\odot\bg,\qquad\mathbf w\leftarrow\mathbf w-\alpha\frac{\bg}{\sqrt{\bs}+\varepsilon}$$</div>
-      <ul class="small step">
-        <li>$\bs$ is an <b>EMA of the squared gradient</b>, element by element; $\sqrt{\bs}$ is the root-mean-square: the typical gradient size of each parameter.</li>
-        <li>Tiny gradients ($\approx0.02$) are divided by $\approx0.02$, large ones ($\approx1$) by $\approx1$: <b>every parameter moves about $\alpha$ per step</b>.</li>
-        <li>$\varepsilon\approx10^{-8}$ only avoids dividing by zero. Typical $\beta_2=0.9$–$0.999$.</li>
-      </ul>
+  <div class="stack" style="gap:12px">
+    <div class="cols" style="align-items:center">
+      <div class="stack" style="gap:8px">
+        <p class="small"><b>The problem.</b> Gradients of different parameters can have very different sizes: a bias of the last layer and a weight of the first can be 1000× apart. Here $w_2$'s gradients are about 50× larger than $w_1$'s.</p>
+        <p class="small step">With one learning rate, say $\alpha=0.1$: $w_1$ moves $0.1\cdot0.02=0.002$ per step and crawls, $w_2$ moves $0.1$. A larger $\alpha$ helps $w_1$ but makes $w_2$ overshoot. <b>One $\alpha$ cannot suit both.</b></p>
+      </div>
+      <svg class="fig" data-fig="rms-scale" data-panel="raw" style="max-height:200px" aria-label="Gradient sizes of two parameters over ten steps, on a log scale: about 0.02 for w1 and about 1 for w2"></svg>
     </div>
-    <div class="stack" style="gap:8px">
-      <svg class="fig" data-fig="rms-scale" aria-label="Gradient magnitudes of two parameters before and after dividing by their running RMS"></svg>
-      <p class="small why step">Left: raw gradient sizes, on a log scale, 50× apart. Right: after dividing by the running RMS both hover around 1, so one learning rate works for both.</p>
+    <div class="cols step" style="align-items:center">
+      <div class="stack" style="gap:8px">
+        <p class="small"><b>The idea: normalize.</b> Divide each gradient by its own typical size. Both become about 1, so <b>every parameter moves about $\alpha$ per step</b>.</p>
+        <p class="small">Typical size = the <b>root-mean-square</b> (RMS) of its recent gradients: the root of an EMA of $g^2$ (slides 8–9).</p>
+      </div>
+      <svg class="fig" data-fig="rms-scale" data-panel="norm" style="max-height:200px" aria-label="The same gradients divided by their running RMS: both hover around 1"></svg>
+    </div>
+    <div class="cols" style="align-items:center">
+      <div class="bluebox step" style="font-size:21px">$$\bs\leftarrow\beta_2\,\bs+(1-\beta_2)\,\bg\odot\bg,\qquad\mathbf w\leftarrow\mathbf w-\alpha\,\frac{\bg}{\sqrt{\bs}+\varepsilon}$$</div>
+      <p class="small why step">Element by element: every parameter has its own $s$. $\varepsilon\approx10^{-8}$ only avoids dividing by zero. Typical $\beta_2=0.9$–$0.999$.</p>
     </div>
   </div>
 </section>
@@ -610,7 +639,7 @@ loss_fn = nn.CrossEntropyLoss()  <span class="c"># softmax inside</span></pre>
 <script src="../assets/figures.js?v=20260930"></script>
 <script src="assets/nn-core.js?v=20260930"></script>
 <script src="assets/fig-nn-intro.js?v=20261006"></script>
-<script src="assets/fig-nn-training.js?v=20261006"></script>
+<script src="assets/fig-nn-training.js?v=20261011"></script>
 <script src="../assets/deck.js?v=20260930"></script>
 </body>
 </html>
