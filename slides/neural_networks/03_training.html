@@ -148,8 +148,8 @@
       <div class="eq xs step">$$v_3=0.9\cdot2.1+0.1\cdot11=2.99$$</div>
       <p class="small step">Unrolled, $v_3=0.1\cdot11+0.09\cdot12+0.081\cdot10$: each day further back weighs $\beta$ times less. The weights fade after about $\frac{1}{1-\beta}$ days ($\beta=0.9$: 10 days, $\beta=0.5$: 2).</p>
     </div>
-    <div class="widget" data-fig="ema-steps" data-auto="t=10 :: Day 10: v₁₀ = 9.29 while it is 17 °C. The EMA is still climbing up from v₀ = 0 | t=30 :: Day 30: v₃₀ = 20.86. A smooth curve that follows the warming trend a few days late: it averages about the last 10 days | t=30;b=0.5 :: β = 0.5: an average of about 2 days. It follows the data closely, noise included | t=3;b=0.9 :: Back to day 3: v₃ = 2.99 while it is 11 °C. The gray bar: v₀ = 0 still holds 73 % of the weight">
-      <svg class="fig" aria-label="Thirty daily temperatures with their exponential moving average up to the chosen day, and below the weight that each past day gets in today's average"></svg>
+    <div class="widget" data-fig="ema-steps" data-auto="t=10 :: Day 10: v₁₀ = 9.29 while it is 17 °C, still climbing up from v₀ = 0 | t=30 :: Day 30: smooth and a few days late, it averages about the last 10 days | t=30;b=0.5 :: β = 0.5: an average of about 2 days, it follows the data, noise included | t=3;b=0.9 :: Back to day 3: v₃ = 2.99 at 11 °C, and v₀ = 0 holds 73 % of the weight">
+      <svg class="fig" style="max-height:275px" aria-label="Thirty daily temperatures with their exponential moving average up to the chosen day, and below the weight that each past day gets in today's average"></svg>
       <div class="ctl"><label for="es-t">day t</label><input type="range" id="es-t" data-k="t" min="1" max="30" step="1" value="3" style="max-width:220px"><span class="v" data-v="t">3</span>
         <span class="seg" role="group" aria-label="Forgetting factor beta"><button type="button" data-b="0.5" aria-pressed="false">β 0.5</button><button type="button" data-b="0.9" aria-pressed="true">β 0.9</button></span></div>
       <div class="ro"><div class="m"><span>today xₜ</span><b data-r="x">–</b></div><div class="m"><span>EMA vₜ</span><b data-r="v">–</b></div><div class="m"><span>weight left on v₀ (βᵗ)</span><b data-r="w0">–</b></div></div>
@@ -234,18 +234,18 @@
         <p class="small"><b>The problem.</b> Gradients of different parameters can have very different sizes: a bias of the last layer and a weight of the first can be 1000× apart. Here $w_2$'s gradients are about 50× larger than $w_1$'s.</p>
         <p class="small step">With one learning rate, say $\alpha=0.1$: $w_1$ moves $0.1\cdot0.02=0.002$ per step and crawls, $w_2$ moves $0.1$. A larger $\alpha$ helps $w_1$ but makes $w_2$ overshoot. <b>One $\alpha$ cannot suit both.</b></p>
       </div>
-      <svg class="fig" data-fig="rms-scale" data-panel="raw" style="max-height:200px" aria-label="Gradient sizes of two parameters over ten steps, on a log scale: about 0.02 for w1 and about 1 for w2"></svg>
+      <svg class="fig" data-fig="rms-scale" data-panel="raw" style="max-height:175px" aria-label="Gradient sizes of two parameters over ten steps, on a log scale: about 0.02 for w1 and about 1 for w2"></svg>
     </div>
     <div class="cols step" style="align-items:center">
       <div class="stack" style="gap:8px">
         <p class="small"><b>The idea: normalize.</b> Divide each gradient by its own typical size. Both become about 1, so <b>every parameter moves about $\alpha$ per step</b>.</p>
         <p class="small">Typical size = the <b>root-mean-square</b> (RMS) of its recent gradients: the root of an EMA of $g^2$ (slides 8–9).</p>
       </div>
-      <svg class="fig" data-fig="rms-scale" data-panel="norm" style="max-height:200px" aria-label="The same gradients divided by their running RMS: both hover around 1"></svg>
+      <svg class="fig" data-fig="rms-scale" data-panel="norm" style="max-height:175px" aria-label="The same gradients divided by their running RMS: both hover around 1"></svg>
     </div>
     <div class="cols" style="align-items:center">
-      <div class="bluebox step" style="font-size:21px">$$\bs\leftarrow\beta_2\,\bs+(1-\beta_2)\,\bg\odot\bg,\qquad\mathbf w\leftarrow\mathbf w-\alpha\,\frac{\bg}{\sqrt{\bs}+\varepsilon}$$</div>
-      <p class="small why step">Element by element: every parameter has its own $s$. $\varepsilon\approx10^{-8}$ only avoids dividing by zero. Typical $\beta_2=0.9$–$0.999$.</p>
+      <div class="bluebox step" style="font-size:20px;padding:0 18px">$$\bs\leftarrow\beta_2\,\bs+(1-\beta_2)\,\bg\odot\bg,\qquad\mathbf w\leftarrow\mathbf w-\alpha\,\frac{\overbrace{\bg}^{\text{today's }\bg}}{\underbrace{\sqrt{\bs}}_{\text{typical size}}+\,\varepsilon}$$</div>
+      <div class="note step"><p class="small"><b>$\bs$ has one job: the scale.</b> RMSProp computes $\bs$ only to divide by $\sqrt{\bs}$. The direction is still today's raw $\bg$, not an average: no momentum.</p><p class="tiny">Per parameter · $\varepsilon\approx10^{-8}$ avoids dividing by 0 · $\beta_2\approx0.9$–$0.999$</p></div>
     </div>
   </div>
 </section>
@@ -253,16 +253,20 @@
 <section class="slide">
   <h2>Optimizers - Adam = momentum + RMSProp</h2>
   <div class="cols">
-    <div class="stack" style="gap:8px">
-      <p class="small">Keep both averages, correct their start, and step:</p>
-      <div class="eq s">$$\bm_t=\beta_1\bm_{t-1}+(1-\beta_1)\bg_t\qquad\text{(momentum: EMA of }\bg)$$$$\bs_t=\beta_2\bs_{t-1}+(1-\beta_2)\bg_t^2\qquad\text{(RMSProp: EMA of }\bg^2)$$</div>
-      <div class="bluebox" style="font-size:20px">$$\hat\bm_t=\frac{\bm_t}{1-\beta_1^t},\quad\hat\bs_t=\frac{\bs_t}{1-\beta_2^t},\qquad\mathbf w_t=\mathbf w_{t-1}-\alpha\frac{\hat\bm_t}{\sqrt{\hat\bs_t}+\varepsilon}$$</div>
-      <p class="small">Defaults: $\beta_1=0.9$, $\beta_2=0.999$, $\varepsilon=10^{-8}$, $\alpha=10^{-3}$. The most popular method: it usually works without tuning anything but $\alpha$.</p>
+    <div class="stack" style="gap:10px">
+      <p class="small">Adam keeps <b>two EMAs</b> of the gradient, each with <b>one job</b>:</p>
+      <div class="cards c2">
+        <div class="card o"><h3>$\bm$: the direction</h3><p>EMA of $\bg$, a smoothed gradient. This is <b>momentum</b> (slide 11).</p><div class="eq xs">$$\bm_t=\beta_1\bm_{t-1}+(1-\beta_1)\,\bg_t$$</div></div>
+        <div class="card"><h3>$\bs$: the scale</h3><p>EMA of $\bg^2$, the typical size of each gradient. This is <b>RMSProp</b> (slide 12).</p><div class="eq xs">$$\bs_t=\beta_2\bs_{t-1}+(1-\beta_2)\,\bg_t^2$$</div></div>
+      </div>
+      <p class="small step">Correct both starts (slide 9), then step: <b>direction divided by scale</b>.</p>
+      <div class="bluebox step" style="font-size:20px">$$\hat\bm_t=\frac{\bm_t}{1-\beta_1^t},\quad\hat\bs_t=\frac{\bs_t}{1-\beta_2^t},\qquad\mathbf w_t=\mathbf w_{t-1}-\alpha\,\frac{\overbrace{\hat\bm_t}^{\text{direction}}}{\underbrace{\sqrt{\hat\bs_t}}_{\text{scale}}+\,\varepsilon}$$</div>
     </div>
-    <div class="stack" style="gap:8px">
-      <p class="small step"><b>Why the bias correction?</b> Both averages start at 0. At $t=1$: $\bm_1=0.1\,\bg_1$ and $\bs_1=0.001\,\bg_1^2$, far too small. After the correction $\hat\bm_1=\bg_1$, $\hat\bs_1=\bg_1^2$, so the <b>first step is $\alpha\cdot\mathrm{sign}(\bg_1)$</b>: every parameter moves by about $\alpha$.</p>
-      <p class="small step">The factor matters for about 50 steps for $\bm$ ($0.9^{50}\approx0.005$) but for thousands of steps for $\bs$ ($0.999^{5000}\approx0.007$).</p>
-      <table class="t step" style="font-size:16px"><tr><th>Method</th><th>Idea</th><th>to tune</th></tr><tr><td>Momentum</td><td>smooths the direction, speeds up flat valleys</td><td>α, β</td></tr><tr><td>RMSProp</td><td>per-parameter step size</td><td>α, β₂</td></tr><tr><td>Adam</td><td>both, bias-corrected</td><td>α (rest: defaults)</td></tr></table>
+    <div class="stack" style="gap:10px">
+      <p class="small step"><b>The only change from RMSProp:</b> the same denominator, but the numerator is the average $\hat\bm$ instead of today's raw $\bg$. With $\beta_1=0$, $\hat\bm_t=\bg_t$ and Adam is RMSProp.</p>
+      <p class="small step"><b>Why the bias correction?</b> Both averages start at 0, so at $t=1$: $\bm_1=0.1\,\bg_1$ and $\bs_1=0.001\,\bg_1^2$. After the correction $\hat\bm_1=\bg_1$, $\hat\bs_1=\bg_1^2$: the <b>first step is $\alpha\cdot\mathrm{sign}(\bg_1)$</b>.</p>
+      <p class="small step">Defaults: $\beta_1=0.9$, $\beta_2=0.999$, $\varepsilon=10^{-8}$, $\alpha=10^{-3}$. The most popular method: it usually works without tuning anything but $\alpha$.</p>
+      <table class="t step" style="font-size:16px"><tr><th>Method</th><th>averages</th><th>used for</th><th>to tune</th></tr><tr><td>Momentum</td><td>$\bg$</td><td>the direction</td><td>α, β</td></tr><tr><td>RMSProp</td><td>$\bg^2$</td><td>the scale (step size per parameter)</td><td>α, β₂</td></tr><tr><td>Adam</td><td>both</td><td>$\bm$ the direction, $\bs$ the scale</td><td>α (rest: defaults)</td></tr></table>
     </div>
   </div>
 </section>
@@ -490,23 +494,23 @@ loss_fn = nn.CrossEntropyLoss()  <span class="c"># softmax inside</span></pre>
 </section>
 
 <section class="slide">
-  <h2>Batchnorm layer:</h2>
+  <h2>Batchnorm layer: computed, applied, learned</h2>
   <div class="cols">
     <div class="stack" style="gap:8px">
-      <p class="small">Helps correct training that is slow or unstable. In gradient-based algorithms it's a good idea to put all your data on a common scale; maybe also normalizing <b>inside</b> the network would be better!</p>
-      <p class="small">A batch-normalization layer looks at each batch as it comes in, first normalizing it with its own mean and standard deviation, then putting it on a new scale with <b>two trainable parameters</b> per feature:</p>
-      <div class="eq s">$$\mu_{\mathcal B}=\frac1m\sum_iz_i,\qquad\sigma^2_{\mathcal B}=\frac1m\sum_i(z_i-\mu_{\mathcal B})^2$$$$\hat z_i=\frac{z_i-\mu_{\mathcal B}}{\sqrt{\sigma^2_{\mathcal B}+\varepsilon}},\qquad y_i=\gamma\hat z_i+\beta$$</div>
-      <ul class="small">
-        <li>Higher learning rates, faster training, mild regularization (batch noise).</li>
-        <li><b>Train vs eval:</b> batch statistics in training; running averages at test time (<code>model.eval()</code>). Forgetting <code>eval()</code> is a classic bug.</li>
-        <li>Where? Usually <code>Linear/Conv → BatchNorm → ReLU</code>. In CNNs, one $\gamma,\beta$ per <b>channel</b>.</li>
-      </ul>
+      <p class="small">Normalize <b>inside</b> the network, like the inputs. For each feature $z$:</p>
+      <div class="card y step"><h3>① Computed from each mini-batch, every step · not learned</h3><div class="eq xs">$$\mu_{\mathcal B}=\frac1m\sum_iz_i,\qquad\sigma^2_{\mathcal B}=\frac1m\sum_i(z_i-\mu_{\mathcal B})^2$$</div></div>
+      <div class="card step"><h3>② Applied: normalize, then rescale</h3><div class="eq xs">$$\hat z_i=\frac{z_i-\mu_{\mathcal B}}{\sqrt{\sigma^2_{\mathcal B}+\varepsilon}}\quad\longrightarrow\quad y_i=\gamma\,\hat z_i+\beta$$</div></div>
+      <div class="card g step"><h3>③ Learned by gradient descent: $\gamma$ and $\beta$</h3><p>Trained like the weights, one pair per feature (per channel in CNNs).</p></div>
+      <div class="card o step"><h3>④ Stored for test time: running averages</h3><p>An EMA of $\mu_{\mathcal B}$ and $\sigma^2_{\mathcal B}$ (slides 8–9), updated in training, not learned. <code>model.eval()</code> uses them instead of the batch.</p></div>
     </div>
-    <div class="widget" data-fig="bn" data-auto="g=1; b=0 :: normalize: mean 0, std 1, whatever the batch looked like | g=2.5; b=3 :: then γ and β (learned) put it wherever the next layer prefers">
-      <svg class="fig" aria-label="Histogram of a unit's pre-activations before and after batch normalization"></svg>
-      <div class="ctl"><label for="bn-g">γ</label><input type="range" id="bn-g" data-k="g" min="0.2" max="3" step="0.1" value="1"><span class="v" data-v="g">1.0</span></div>
-      <div class="ctl"><label for="bn-b">β</label><input type="range" id="bn-b" data-k="b" min="-4" max="8" step="0.1" value="0"><span class="v" data-v="b">0.0</span></div>
-      <div class="ro"><div class="m"><span>before: mean, std</span><b><span data-r="m0">–</span>, <span data-r="s0">–</span></b></div><div class="m"><span>after: mean, std</span><b><span data-r="m1">–</span>, <span data-r="s1">–</span></b></div></div>
+    <div class="stack" style="gap:8px">
+      <div class="widget" data-fig="bn" data-auto="g=1; b=0 :: ② normalize: mean 0, std 1, whatever the batch looked like | g=2.5; b=3 :: ③ then the learned γ and β put it wherever the next layer prefers">
+        <svg class="fig" aria-label="Histogram of a unit's pre-activations before and after batch normalization"></svg>
+        <div class="ctl"><label for="bn-g">learned γ</label><input type="range" id="bn-g" data-k="g" min="0.2" max="3" step="0.1" value="1"><span class="v" data-v="g">1.0</span></div>
+        <div class="ctl"><label for="bn-b">learned β</label><input type="range" id="bn-b" data-k="b" min="-4" max="8" step="0.1" value="0"><span class="v" data-v="b">0.0</span></div>
+        <div class="ro"><div class="m"><span>① computed: batch μ, σ</span><b><span data-r="m0">–</span>, <span data-r="s0">–</span></b></div><div class="m"><span>after: mean, std (= β, γ)</span><b><span data-r="m1">–</span>, <span data-r="s1">–</span></b></div></div>
+      </div>
+      <p class="small why step">Forgetting <code>model.eval()</code> at test time is a classic bug. Where? Usually <code>Linear/Conv → BatchNorm → ReLU</code>. Allows higher learning rates; the batch noise is a mild regularizer.</p>
     </div>
   </div>
 </section>
