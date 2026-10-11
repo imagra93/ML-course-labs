@@ -46,6 +46,54 @@ FIG['channels']=root=>{const svg=initSvg(svgOf(root),620,300);const cs=14;
   T(svg,110,190,'C_out = 4 filters','lab');for(let f=0;f<4;f++)[['#9dc3e6',16],['#a9d18e',8],['#f4b183',0]].forEach(([c,off])=>{for(let i=0;i<3;i++)for(let j=0;j<3;j++)E('rect',{x:30+f*60+off+j*9,y:210+(16-off)*0.7+i*9,width:9,height:9,fill:c,'fill-opacity':0.9,stroke:'#404040','stroke-width':0.4},svg)});
   arrowPx(svg,290,235,395,235,'ln thin sk','fk');T(svg,342,225,'4 × 28 = 112 params','');T(svg,470,190,'output 4×4×4','lab');[3,2,1,0].forEach(f=>{for(let i=0;i<4;i++)for(let j=0;j<4;j++)E('rect',{x:420+f*12+j*cs,y:215+(3-f)*8+i*cs,width:cs,height:cs,fill:['#ffe699','#ffd966','#f4b183','#f8cbad'][f],stroke:'#7f7f7f','stroke-width':0.6},svg)});
   T(svg,310,276,'filter depth = number of input channels','','middle');T(svg,310,294,'number of filters = number of output channels','','middle')};
+/* ---------- many filters, step by step: each filter slides over the input and adds one map to the front of the output stack.
+   data-k="k": 1–4 filters, 5 = the next layer's filter. CSS animations replay the newest map (see nn.css .anim-*) ---------- */
+FIG['filter-stack']=root=>{const svg=svgOf(root);const ik=q(root,'k');const CH=['#9dc3e6','#a9d18e','#f4b183'],MC=['#ffd966','#b4a7d6','#76c5b4','#e88a8a'];
+  const cs=20,ix=30,iy=100,od=[14,-10],T0=75;
+  const play=root.querySelector('button[data-k="play"]');if(play)play.addEventListener('click',draw);
+  function grid(g,x,y,n,c,fill,o){o=o||{};for(let i=0;i<n;i++)for(let j=0;j<n;j++)E('rect',{x:x+j*c,y:y+i*c,width:c-1,height:c-1,fill:fill,stroke:o.stroke||'#7f7f7f','stroke-width':0.5,'fill-opacity':o.op||0.9},g)}
+  function filt(g,x,y,depth,cols,c,edge){for(let d=depth-1;d>=0;d--)grid(g,x+d*8,y-d*6,3,c,cols[d%cols.length],{stroke:'#404040',op:0.95});if(edge)E('rect',{x:x-3,y:y-3,width:3*c+5,height:3*c+5,fill:'none',stroke:edge,'stroke-width':3,rx:3},g)}
+  function draw(){const k=+ik.value,nf=Math.min(k,4),f=k<=4?k-1:-1;setV(root,'k',k<=4?String(k):'4 + next layer');initSvg(svg,640,330);
+    /* input: three channels, back to front */
+    T(svg,ix+60+14,32,'input 6×6×3','lab');[2,1,0].forEach(d=>grid(svg,ix+d*od[0],iy+d*od[1],6,cs,CH[d]));
+    /* filter bank */
+    T(svg,330,32,'filters 3×3×3','lab');
+    for(let i=0;i<nf;i++){const g=E('g',{class:i===f?'anim-in':''},svg);const x=270+(i%2)*80,y=84+Math.floor(i/2)*84;filt(g,x,y,3,CH,12,MC[i]);T(g,x+30,y+56,'filter '+(i+1),'')}
+    T(svg,330,250,'each: 3·3·3 + 1 = 28 parameters','','middle');
+    arrowPx(svg,205,160,255,160,'ln thin sk','fk');
+    /* output: newest map in front, older ones pushed back */
+    T(svg,540,32,'output 4×4×'+nf,'lab');const ox=478,oy=126;
+    for(let i=0;i<nf;i++){const d=nf-1-i;const x=ox+d*od[0],y=oy+d*od[1];const g=E('g',{},svg);
+      if(i===f){for(let p=0;p<16;p++){const r=Math.floor(p/4),c=p%4;E('rect',{x:x+c*cs,y:y+r*cs,width:cs-1,height:cs-1,fill:MC[i],stroke:'#7f7f7f','stroke-width':0.5,class:'anim-in',style:'animation-delay:'+(p*T0)+'ms'},g)}}
+      else grid(g,x,y,4,cs,MC[i])}
+    arrowPx(svg,425,160,468,160,'ln thin sk','fk');T(svg,446,150,'Σ','lab');
+    /* the sliding window of the newest filter: one flash per position, then it rests on the first position */
+    if(f>=0){const fx=ox,fy=oy;
+      for(let p=0;p<16;p++){const r=Math.floor(p/4),c=p%4;const g=E('g',{class:'anim-flash',style:'animation-delay:'+(p*T0)+'ms;animation-duration:'+T0+'ms'},svg);
+        E('rect',{x:ix+c*cs-1,y:iy+r*cs-1,width:3*cs+1,height:3*cs+1,fill:'none',stroke:'#c00000','stroke-width':3},g);
+        E('line',{x1:ix+(c+3)*cs,y1:iy+(r+1.5)*cs,x2:fx+(c+0.5)*cs,y2:fy+(r+0.5)*cs,stroke:'#c00000','stroke-width':1.2,'stroke-dasharray':'4 3'},g)}
+      const g=E('g',{class:'anim-hold',style:'animation-duration:'+(16*T0)+'ms'},svg);
+      E('rect',{x:ix-1,y:iy-1,width:3*cs+1,height:3*cs+1,fill:'none',stroke:'#c00000','stroke-width':3},g);
+      E('line',{x1:ix+3*cs,y1:iy+1.5*cs,x2:fx+0.5*cs,y2:fy+0.5*cs,stroke:'#c00000','stroke-width':1.2,'stroke-dasharray':'4 3'},g);
+      E('rect',{x:fx-1,y:fy-1,width:cs+1,height:cs+1,fill:'none',stroke:'#c00000','stroke-width':2.5},g)}
+    /* the next layer: its filters are as deep as this output */
+    if(k===5){const g=E('g',{class:'anim-in'},svg);arrowPx(g,530,232,530,252,'ln thin sk','fk');filt(g,505,288,4,MC,10,null);T(g,492,290,'next layer: filters 3×3×4','lab','end')}
+    setR(root,'n',String(nf));setR(root,'o','4×4×'+nf);setR(root,'p',String(28*nf))}
+  ik.addEventListener('input',draw);draw()};
+/* ---------- a basic CNN, built one layer at a time; the code lines and table rows with data-l follow the figure ---------- */
+FIG['cnn-build']=root=>{const svg=svgOf(root);const ik=q(root,'k');const marks=[...root.querySelectorAll('[data-l]')];
+  const B=[g=>cube(g,20,60,90,90,10,'#d9d9d9','input','28×28×1'),g=>cube(g,150,50,80,110,40,'#8ea9db','conv 3×3 + ReLU','28×28×32'),g=>cube(g,280,70,56,70,40,'#b4c7e7','max pool','14×14×32'),
+    g=>cube(g,380,60,50,90,70,'#8ea9db','conv 3×3 + ReLU','14×14×64'),g=>cube(g,500,80,36,50,70,'#b4c7e7','max pool','7×7×64'),
+    g=>{E('rect',{x:630,y:30,width:24,height:170,fill:'#f4b183',stroke:'#404040'},g);T(g,642,222,'flatten','');T(g,642,238,'3136','')},
+    g=>{E('rect',{x:710,y:70,width:24,height:90,fill:'#f4b183',stroke:'#404040'},g);T(g,722,182,'dense + ReLU','');T(g,722,198,'128','')},
+    g=>{E('rect',{x:800,y:100,width:24,height:36,fill:'#ffc000',stroke:'#404040'},g);T(g,812,158,'dense','');T(g,812,174,'10 logits','')}];
+  const AX=[[118,105,144],[245,105,274],[350,105,374],[440,105,494],[555,105,622],[662,115,702],[742,118,792]];
+  function draw(){const k=+ik.value;initSvg(svg,960,270);
+    B.forEach((b,i)=>{if(i>k)return;const g=E('g',{class:i===k?'anim-in':''},svg);b(g);if(i>0){const a=AX[i-1];arrowPx(g,a[0],a[1],a[2],a[1],'ln thin sk','fk')}});
+    if(k>=1){E('line',{x1:20,x2:590,y1:252,y2:252,class:'ln thin sb'},svg);T(svg,305,268,'FEATURE LEARNING','lab')}
+    if(k>=5){E('line',{x1:620,x2:840,y1:252,y2:252,class:'ln thin so'},svg);T(svg,730,268,'CLASSIFICATION','lab')}
+    marks.forEach(m=>{const l=+m.dataset.l;const on=l===8?k===7:l<=k;m.classList.toggle('off',!on);m.classList.toggle('cur',l===k||(l===8&&k===7))})}
+  ik.addEventListener('input',draw);draw()};
 /* ---------- receptive field (1-D cross-section) ---------- */
 FIG['rf']=root=>{const svg=svgOf(root);const inp=q(root,'l');
   function draw(){const L=+inp.value;setV(root,'l',L);initSvg(svg,600,300);const n0=17;const cs=28;const rows=[];for(let l=0;l<=L;l++)rows.push(n0-2*l);
@@ -76,6 +124,20 @@ FIG['cnn-arch']=root=>{const svg=initSvg(svgOf(root),960,270);cube(svg,20,60,90,
   E('rect',{x:630,y:30,width:24,height:170,fill:'#f4b183',stroke:'#404040'},svg);T(svg,642,222,'flatten','');T(svg,642,238,'3136','');E('rect',{x:700,y:70,width:24,height:90,fill:'#f4b183',stroke:'#404040'},svg);T(svg,712,182,'dense','');T(svg,712,198,'128','');
   E('rect',{x:770,y:100,width:24,height:36,fill:'#ffc000',stroke:'#404040'},svg);T(svg,782,158,'softmax','');T(svg,782,174,'10','');
   E('line',{x1:20,x2:590,y1:252,y2:252,class:'ln thin sb'},svg);T(svg,305,268,'FEATURE LEARNING','lab');E('line',{x1:620,x2:810,y1:252,y2:252,class:'ln thin so'},svg);T(svg,715,268,'CLASSIFICATION','lab')};
+/* ---------- ImageNet-1k: a few of the 1,000 classes, and a top-5 prediction whose top-1 is wrong ---------- */
+FIG['imagenet']=root=>{const svg=initSvg(svgOf(root),600,400);
+  T(svg,300,18,'ImageNet-1k: 1,000 classes, 1.28 M training photos','lab');
+  const cls=['tabby cat','Siberian husky','goldfish','espresso','volcano','school bus','pizza','zebra','mushroom','laptop','Granny Smith','space shuttle'];
+  const col=['#f4b183','#9dc3e6','#ffd966','#c9a27e','#e88a8a','#ffc000','#f8cbad','#d9d9d9','#c5e0b4','#b4c7e7','#a9d18e','#bdd7ee'];
+  cls.forEach((c,i)=>{const x=20+(i%4)*142,y=34+Math.floor(i/4)*50;E('rect',{x:x,y:y,width:134,height:42,rx:4,fill:col[i],'fill-opacity':0.75,stroke:'#7f7f7f','stroke-width':0.6},svg);T(svg,x+67,y+26,c,'','middle')});
+  T(svg,300,200,'… and 988 more, including 120 dog breeds','','middle');
+  T(svg,20,236,'Top-5 example: a photo of a Siberian husky','lab','start');
+  const P=[['Eskimo dog',0.44],['Siberian husky',0.31],['malamute',0.15],['white wolf',0.04],['Samoyed',0.02]];
+  P.forEach(([c,p],i)=>{const y=250+i*24,hit=c==='Siberian husky';T(svg,150,y+15,(i+1)+'. '+c,hit?'lab':'','end');
+    E('rect',{x:160,y:y+3,width:p*500,height:16,fill:hit?'#548235':'#9dafd6'},svg);T(svg,166+p*500,y+15,p.toFixed(2),'','start')});
+  E('rect',{x:440,y:256,width:150,height:96,rx:6,fill:'#fff2cc',stroke:'#bf9000'},svg);T(svg,515,280,'top-1: Eskimo dog','','middle');T(svg,515,298,'✗ wrong','lab','middle').style.fill='#c00000';
+  T(svg,515,322,'top-5: husky is 2nd','','middle');T(svg,515,340,'✓ correct','lab','middle').style.fill='#548235';
+  T(svg,300,390,'The bars are made-up probabilities; the five class names are real ImageNet classes.','','middle')};
 /* ---------- ImageNet timeline ---------- */
 FIG['timeline']=root=>{const svg=initSvg(svgOf(root),620,300);const D=[['2010','SIFT + SVM',28.2,'–'],['2011','',25.8,'–'],['2012','AlexNet',16.4,'8 layers'],['2013','ZFNet',11.7,'8'],['2014','VGG',7.3,'19'],['2014','GoogLeNet',6.7,'22'],['2015','ResNet',3.6,'152'],['2017','SENet',2.3,'152']];
   const P=Plot(svg,{w:620,h:300,x:[-0.6,D.length-0.4],y:[0,32],m:{l:44,r:14,t:26,b:56}});P.axes({yt:[0,10,20,30],xt:[],yl:'top-5 error (%)'});T(P.root,330,16,'ImageNet classification challenge: error by year','lab');
@@ -164,6 +226,82 @@ FIG['fcn']=root=>{const svg=initSvg(svgOf(root),960,270);cube(svg,20,80,80,80,10
   box(svg,590,36,150,48,'global avg pool\n+ Linear → K','#fbe5d6',{lh:17,cls:''});arrowPx(svg,742,60,770,60,'ln thin sk','fk');for(let k=0;k<4;k++)E('rect',{x:775,y:44+k*9,width:40,height:8,fill:'#ffc000',stroke:'#404040','stroke-width':0.5},svg);T(svg,795,100,'K scores','');T(svg,870,60,'classification','lab','start');
   box(svg,590,166,150,48,'1×1 conv → K maps\n+ upsample ×8','#e2f0d9',{lh:17,cls:''});arrowPx(svg,742,190,770,190,'ln thin sk','fk');cube(svg,775,150,60,60,14,'#70ad47','H×W×K','');T(svg,880,190,'segmentation','lab','start');
   T(svg,480,250,'"fully convolutional": no Flatten, so the spatial layout survives to the output and any image size works (Long et al. 2015)','','middle')};
+/* ---------- build-along helper: [data-l] elements up to step k shown, the one of step k highlighted ---------- */
+function markSteps(root,k){root.querySelectorAll('[data-l]').forEach(m=>{const l=+m.dataset.l;m.classList.toggle('off',l>k);m.classList.toggle('cur',l===k)})}
+/* ---------- fully convolutional networks, in three steps: backbone, classification head, segmentation head ---------- */
+FIG['fcn-build']=root=>{const svg=svgOf(root);const ik=q(root,'k');
+  function draw(){const k=+ik.value;initSvg(svg,960,250);const gi=i=>E('g',{class:i===k?'anim-in':''},svg);
+    let g=gi(1);cube(g,20,80,80,80,10,'#d9d9d9','image','H×W×3');cube(g,140,90,56,56,30,'#8ea9db','conv + pool','H/2 × W/2 × 64');cube(g,250,100,36,36,50,'#8ea9db','conv + pool','H/4 × W/4 × 128');cube(g,360,108,22,22,70,'#8ea9db','conv + pool','H/8 × W/8 × 256');
+    [[100,120,138],[200,120,248],[290,120,358]].forEach(a=>arrowPx(g,a[0],a[1],a[2],a[1],'ln thin sk','fk'));T(g,220,40,'shared backbone (any CNN)','lab');
+    if(k>=2){g=gi(2);E('path',{d:'M455,110 C520,60 560,60 600,60',fill:'none',stroke:'#404040','stroke-width':1.2},g);box(g,590,36,150,48,'global avg pool\n+ Linear → K','#fbe5d6',{lh:17,cls:''});arrowPx(g,742,60,770,60,'ln thin sk','fk');
+      for(let r=0;r<4;r++)E('rect',{x:775,y:44+r*9,width:40,height:8,fill:'#ffc000',stroke:'#404040','stroke-width':0.5},g);T(g,795,100,'K scores','');T(g,870,64,'classification','lab','start')}
+    if(k>=3){g=gi(3);E('path',{d:'M455,130 C520,190 560,190 600,190',fill:'none',stroke:'#404040','stroke-width':1.2},g);box(g,590,166,150,48,'1×1 conv → K maps\n+ upsample ×8','#e2f0d9',{lh:17,cls:''});arrowPx(g,742,190,770,190,'ln thin sk','fk');
+      cube(g,775,150,60,60,14,'#70ad47','H×W×K','');T(g,880,194,'segmentation','lab','start');T(g,480,244,'"fully convolutional": no Flatten, so the layout survives to the output and any image size works (Long et al. 2015)','','middle')}
+    markSteps(root,k)}
+  ik.addEventListener('input',draw);draw()};
+/* ---------- the segmentation head on a 32×32 picture of a car: features 4×4, 1×1 conv, upsample ×8, argmax ---------- */
+FIG['seg-head']=root=>{const svg=svgOf(root);const ik=q(root,'k');const N=32,B=8,n=4;
+  const wheel=(i,j)=>Math.hypot(i-24,j-9)<=3||Math.hypot(i-24,j-22)<=3;
+  const car=[...Array(N)].map((_,i)=>[...Array(N)].map((_,j)=>((i>=16&&i<=23&&j>=4&&j<=27)||(i>=10&&i<=15&&j>=9&&j<=21)||wheel(i,j))?1:0));
+  const frac=[...Array(n)].map((_,a)=>[...Array(n)].map((_,b)=>{let t=0;for(let i=0;i<B;i++)for(let j=0;j<B;j++)t+=car[a*B+i][b*B+j];return t/(B*B)}));
+  const up=[...Array(N)].map((_,i)=>[...Array(N)].map((_,j)=>{const sy=Math.min(n-1,Math.max(0,(i+0.5)/B-0.5)),sx=Math.min(n-1,Math.max(0,(j+0.5)/B-0.5));const y0=Math.floor(sy),x0=Math.floor(sx),y1=Math.min(n-1,y0+1),x1=Math.min(n-1,x0+1),fy=sy-y0,fx=sx-x0;
+    return (1-fy)*((1-fx)*frac[y0][x0]+fx*frac[y0][x1])+fy*((1-fx)*frac[y1][x0]+fx*frac[y1][x1])}));
+  const sc=v=>heat(Math.max(-1,Math.min(1,2.4*(v-0.5))));
+  const pix=(g,x0,y0,c,f)=>{for(let i=0;i<N;i++)for(let j=0;j<N;j++)E('rect',{x:x0+j*c,y:y0+i*c,width:c+0.2,height:c+0.2,fill:f(i,j)},g)};
+  const outline=(g,x0,y0,c)=>{let d='';for(let i=0;i<N;i++)for(let j=0;j<N;j++){if(!car[i][j])continue;const x=x0+j*c,y=y0+i*c;
+    if(i===0||!car[i-1][j])d+='M'+x+','+y+'h'+c;if(i===N-1||!car[i+1][j])d+='M'+x+','+(y+c)+'h'+c;if(j===0||!car[i][j-1])d+='M'+x+','+y+'v'+c;if(j===N-1||!car[i][j+1])d+='M'+(x+c)+','+y+'v'+c}
+    E('path',{d:d,stroke:'#c00000','stroke-width':1.6,fill:'none'},g)};
+  function draw(){const k=+ik.value;initSvg(svg,960,240);const gi=i=>E('g',{class:i===k?'anim-in':''},svg);const c=4,Y=46;
+    let g=gi(1);T(g,84,26,'image 32×32','lab');pix(g,20,Y,c,(i,j)=>car[i][j]?(wheel(i,j)?'#262626':'#c00000'):i>=24?'#bfbfbf':'#dbeeff');
+    arrowPx(g,156,110,206,110,'ln thin sk','fk');T(g,181,100,'backbone','');T(g,181,130,'÷8','');
+    [2,1,0].forEach(d=>{for(let a=0;a<n;a++)for(let b=0;b<n;b++)E('rect',{x:212+d*8+b*24,y:62-d*6+a*24,width:23,height:23,fill:d?'#b4c7e7':'#8ea9db',stroke:'#404040','stroke-width':0.5},g)});T(g,272,26,'features 4×4×256','lab');
+    if(k>=2){g=gi(2);arrowPx(g,330,110,380,110,'ln thin sk','fk');T(g,355,100,'1×1 conv','');T(g,355,130,'256 → K','');
+      for(let a=0;a<n;a++)for(let b=0;b<n;b++)E('rect',{x:396+b*24,y:56+a*24,width:23,height:23,fill:sc(1-frac[a][b]),stroke:'#7f7f7f','stroke-width':0.4,'fill-opacity':0.6},g);
+      for(let a=0;a<n;a++)for(let b=0;b<n;b++)E('rect',{x:388+b*24,y:62+a*24,width:23,height:23,fill:sc(frac[a][b]),stroke:'#404040','stroke-width':0.5},g);T(g,436,26,'K = 2 score maps, 4×4','lab');T(g,436,178,'front: "car" score','')}
+    if(k>=3){g=gi(3);arrowPx(g,500,110,550,110,'ln thin sk','fk');T(g,525,100,'upsample','');T(g,525,130,'×8','');T(g,628,26,'"car" score, 32×32','lab');pix(g,564,Y,c,(i,j)=>sc(up[i][j]))}
+    if(k>=4){g=gi(4);arrowPx(g,700,110,750,110,'ln thin sk','fk');T(g,725,100,'argmax','');T(g,828,26,'mask (red: the truth)','lab');pix(g,764,Y,c,(i,j)=>up[i][j]>0.5?'#4472c4':'#e7e6e6');outline(g,764,Y,c)}
+    T(svg,480,228,'orange = high score, blue = low','','middle');markSteps(root,k)}
+  ik.addEventListener('input',draw);draw()};
+/* ---------- transposed convolution, one input value at a time: each paints value × kernel, 2 pixels apart (stride 2); overlaps add up ---------- */
+FIG['tconv']=root=>{const svg=svgOf(root);const is=q(root,'s');const gk=segs(root,'kern',draw);
+  const I=[[1,2],[3,4]],KB=[[.25,.5,.25],[.5,1,.5],[.25,.5,.25]],KL=[[0.1,0.6,0.2],[0.3,1.2,-0.4],[0,0.5,0.3]],IC=['#9dc3e6','#a9d18e','#f4b183','#ffd966'];
+  function draw(){const s=+is.value,K=gk()==='learn'?KL:KB;setV(root,'s',String(s));initSvg(svg,640,340);
+    T(svg,20,26,'input 2×2','lab','start');for(let i=0;i<2;i++)for(let j=0;j<2;j++){const p=i*2+j,cur=p===s-1;E('rect',{x:20+j*44,y:38+i*44,width:43,height:43,fill:IC[p],'fill-opacity':p<s?0.95:0.4,stroke:cur?'#c00000':'#7f7f7f','stroke-width':cur?3:0.6},svg);T(svg,41+j*44,66+i*44,String(I[i][j]),'lab')}
+    T(svg,20,160,'kernel 3×3: learned weights','lab','start');for(let i=0;i<3;i++)for(let j=0;j<3;j++){E('rect',{x:20+j*40,y:172+i*40,width:39,height:39,fill:'#fbe5d6',stroke:'#7f7f7f','stroke-width':0.6},svg);T(svg,39+j*40,197+i*40,f2(K[i][j]),'')}
+    const O=[...Array(5)].map(()=>new Array(5).fill(0)),last=[...Array(5)].map(()=>new Array(5).fill(-1));
+    for(let p=0;p<Math.min(s,4);p++){const i=p>>1,j=p&1;for(let u=0;u<3;u++)for(let v=0;v<3;v++){O[2*i+u][2*j+v]+=I[i][j]*K[u][v];last[2*i+u][2*j+v]=p}}
+    const ox=330,oy=40,c=56;T(svg,ox+2.5*c,26,'output 5×5 = (2 − 1)·2 + 3','lab');
+    for(let a=0;a<5;a++)for(let b=0;b<5;b++){const p=last[a][b];const g=E('g',{class:p>=0&&p===s-1?'anim-in':''},svg);
+      E('rect',{x:ox+b*c,y:oy+a*c,width:c-1,height:c-1,fill:p<0?'#f7f7f7':IC[p],'fill-opacity':0.6,stroke:'#7f7f7f','stroke-width':0.6},g);if(p>=0)T(g,ox+b*c+c/2,oy+a*c+c/2+5,f2(O[a][b]),'')}
+    if(s>=1&&s<=4){const p=s-1,i=p>>1,j=p&1;E('rect',{x:ox+2*j*c-2,y:oy+2*i*c-2,width:3*c+3,height:3*c+3,fill:'none',stroke:'#c00000','stroke-width':3},svg);
+      arrowPx(svg,112,82,318,82,'ln thin sk','fk');T(svg,215,72,I[i][j]+' × kernel','lab')}
+    if(s>=5){E('rect',{x:ox+c-3,y:oy+c-3,width:4*c+5,height:4*c+5,fill:'none',stroke:'#c00000','stroke-width':2.5,'stroke-dasharray':'7 4'},svg);T(svg,ox+2.5*c,oy+5*c+24,'kept: padding=1 and output_padding=1 give 4×4, twice the input','','middle')}
+    setR(root,'n',s<1?'0 of 4':Math.min(s,4)+' of 4')}
+  is.addEventListener('input',draw);draw()};
+/* ---------- U-Net in the style of the original paper: feature maps as bars (height = resolution), built in five steps ---------- */
+FIG['unet2']=root=>{const svg=svgOf(root);const ik=q(root,'k');
+  const C=[64,128,256,512,1024],R=['H×W','H/2','H/4','H/8','H/16'],h=[112,82,60,44,32],top=[34,170,276,356,420],w=[8,11,14,17,20];
+  const bot=l=>top[l]+h[l],mid=l=>top[l]+h[l]/2,xe=l=>30+l*62,xd=l=>610-l*62-(4*w[l]+10);
+  function draw(){const k=+ik.value;initSvg(svg,660,490);const gi=i=>E('g',{class:i===k?'anim-in':''},svg);
+    const bar=(g,x,l,fill)=>E('rect',{x:x,y:top[l],width:w[l],height:h[l],fill:fill,stroke:'#404040','stroke-width':0.6},g);
+    /* 1 encoder: two conv blocks per level, then max pool down */
+    let g=gi(1);for(let l=0;l<4;l++){bar(g,xe(l),l,'#4472c4');bar(g,xe(l)+w[l]+4,l,'#4472c4');T(g,xe(l)+w[l]+2,top[l]-6,String(C[l]),'');
+      arrowPx(g,xe(l)+w[l]+4+w[l]/2,bot(l)+3,xe(l+1)+w[l+1]/2,top[l+1]-4,'ln thin sr','fr')}
+    /* 2 bottleneck */
+    if(k>=2){g=gi(2);bar(g,xe(4),4,'#2f5597');bar(g,xe(4)+w[4]+4,4,'#2f5597');T(g,xe(4)+w[4]+2,top[4]-6,'1024','');T(g,xe(4)+2*w[4]+10,mid(4)+5,'H/16','','start')}
+    /* 3 decoder: up-conv from the level below, then two conv blocks */
+    if(k>=3){g=gi(3);for(let l=3;l>=0;l--){const x=xd(l);bar(g,x+w[l],l,'#4472c4');bar(g,x+2*w[l]+5,l,'#4472c4');bar(g,x+3*w[l]+10,l,'#4472c4');T(g,x+2.5*w[l]+5,top[l]-6,String(C[l]),'');
+      const fx=l===3?xe(4)+w[4]+4+w[4]/2:xd(l+1)+3*w[l+1]+10+w[l+1]/2;arrowPx(g,fx,top[l+1]-3,x+1.5*w[l],bot(l)+4,'ln thin sg','fgr')}}
+    /* 4 skip connections: copy and concatenate (the light bar) */
+    if(k>=4){g=gi(4);for(let l=0;l<4;l++){const x=xd(l);bar(g,x,l,'#bdd7ee');const y=mid(l);E('line',{x1:xe(l)+2*w[l]+8,x2:x-4,y1:y,y2:y,stroke:'#7f7f7f','stroke-width':1.4,'stroke-dasharray':'6 4'},g);
+      arrowPx(g,x-14,y,x-3,y,'ln thin sm','fm');T(g,(xe(l)+2*w[l]+4+x)/2,y-6,R[l],'')}}
+    /* 5 output */
+    if(k>=5){g=gi(5);const x=xd(0)+4*w[0]+10;arrowPx(g,x+2,mid(0),x+24,mid(0),'ln thin so','fo');E('rect',{x:x+28,y:top[0],width:12,height:h[0],fill:'#70ad47',stroke:'#404040','stroke-width':0.6},g);T(g,x+34,top[0]-6,'K','');T(g,x+34,bot(0)+16,'mask','')}
+    /* legend */
+    const lg=[[(x)=>E('rect',{x:x,y:462,width:8,height:16,fill:'#4472c4'},svg),'conv 3×3 + ReLU',150],[(x)=>arrowPx(svg,x,470,x+22,470,'ln thin sr','fr'),'max pool 2×2',134],[(x)=>arrowPx(svg,x,470,x+22,470,'ln thin sg','fgr'),'up-conv 2×2',128],
+      [(x)=>E('line',{x1:x,x2:x+22,y1:470,y2:470,stroke:'#7f7f7f','stroke-width':1.4,'stroke-dasharray':'6 4'},svg),'copy + concatenate',166],[(x)=>arrowPx(svg,x,470,x+22,470,'ln thin so','fo'),'1×1 conv',90]];
+    let lx=6;lg.forEach(([f,t,wd])=>{f(lx);T(svg,lx+28,475,t,'','start');lx+=wd});markSteps(root,k)}
+  ik.addEventListener('input',draw);draw()};
 /* ---------- mask IoU and Dice ---------- */
 FIG['maskiou']=root=>{const svg=svgOf(root);const N=10;const ix=q(root,'x'),ir=q(root,'r');
   const blob=(cx,cy,rad)=>{const M=[];for(let i=0;i<N;i++){const row=[];for(let j=0;j<N;j++)row.push(Math.hypot(i-cy,j-cx)<=rad?1:0);M.push(row)}return M};

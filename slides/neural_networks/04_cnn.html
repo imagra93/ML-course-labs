@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Carlito:ital,wght@0,400;0,700;1,400&display=swap">
 <link rel="stylesheet" href="../assets/deck.css?v=20260930">
-<link rel="stylesheet" href="assets/nn.css?v=20261005">
+<link rel="stylesheet" href="assets/nn.css?v=20261011">
 <script src="../assets/mathjax-config.js?v=20260930"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.js" async></script>
 </head>
@@ -103,40 +103,46 @@
 
 <section class="slide">
   <h2>Convolutional layers - output size</h2>
-  <div class="cols c64">
-    <div class="widget" data-fig="outsize" data-auto="p=1 :: padding 1 with a 3×3 kernel: output = input (&quot;same&quot;) | s=2 :: stride 2: the output halves (down-sampling) | f=5; p=2; s=1 :: 5×5 kernel needs padding 2 to keep the size">
-      <svg class="fig" aria-label="An input grid with padding and the output size for a given kernel and stride"></svg>
+  <div class="cols c46">
+    <div class="stack" style="gap:8px">
+      <p class="small">Four numbers fix the output size of a convolution (for one side; width works the same):</p>
+      <ul class="small">
+        <li class="step"><b>$H$ · input size</b>: the height of the input image or feature map (green).</li>
+        <li class="step"><b>$F$ · filter (kernel) size</b>: the window is $F\times F$ (red square). PyTorch: <code>kernel_size</code>.</li>
+        <li class="step"><b>$S$ · stride</b>: how many pixels the window jumps to the next position (dashed square). PyTorch: <code>stride</code>.</li>
+        <li class="step"><b>$P$ · padding</b>: rings of zeros added around the input (gray), so that the border is covered too. PyTorch: <code>padding</code>.</li>
+      </ul>
+      <div class="bluebox step" style="font-size:20px;padding:0 18px">$$H_{\text{out}}=\left\lfloor\frac{H+2P-F}{S}\right\rfloor+1$$</div>
+      <p class="step small"><b>Why?</b> With padding the input is $H+2P$ wide. The first window starts at 0, the last at most at $H+2P-F$, and there is one start every $S$ pixels: $\lfloor(H+2P-F)/S\rfloor+1$ of them.</p>
+    </div>
+    <div class="widget" data-fig="outsize" data-auto="p=1 :: &quot;same&quot; padding: P = (F − 1)/2 = 1 with a 3×3 kernel, so the output keeps the input size | s=2 :: stride 2: the window jumps 2 pixels, the output halves (down-sampling) | f=5; p=2; s=1 :: a 5×5 kernel needs padding 2 to keep the size | h=12; f=7; p=3; s=2 :: ResNet's first layer: F = 7, P = 3, S = 2 halves the input (224 → 112; here 12 → 6)">
+      <svg class="fig" style="max-height:250px" aria-label="An input grid with padding and the output size for a given kernel and stride"></svg>
       <div class="ctl"><label for="os-h">input H</label><input type="range" id="os-h" data-k="h" min="3" max="12" step="1" value="7"><span class="v" data-v="h">7</span></div>
       <div class="ctl"><label for="os-f">kernel F</label><input type="range" id="os-f" data-k="f" min="1" max="7" step="1" value="3"><span class="v" data-v="f">3</span></div>
       <div class="ctl"><label for="os-p">padding P</label><input type="range" id="os-p" data-k="p" min="0" max="3" step="1" value="0"><span class="v" data-v="p">0</span></div>
       <div class="ctl"><label for="os-s">stride S</label><input type="range" id="os-s" data-k="s" min="1" max="3" step="1" value="1"><span class="v" data-v="s">1</span></div>
-    </div>
-    <div class="stack" style="gap:12px">
-      <div class="bluebox">$$H_{\text{out}}=\left\lfloor\frac{H+2P-F}{S}\right\rfloor+1$$</div>
-      <div class="ro"><div class="m"><span>output</span><b data-r="o">–</b></div></div>
-      <p class="step small"><b>Why?</b> With padding the input is $H+2P$ wide. The first window starts at 0 and the last must start at most at $H+2P-F$. Starting points every $S$ steps: $\lfloor(H+2P-F)/S\rfloor+1$ of them.</p>
-      <ul class="small step"><li><b>"same" padding</b>: $P=(F-1)/2$ with $S=1$ keeps $H_{\text{out}}=H$.</li><li>Stride 2 halves the size: down-sampling.</li><li>Example: $H=224,F=7,P=3,S=2$ → $\lfloor 223/2\rfloor+1=112$ (ResNet's first layer).</li></ul>
+      <div class="ro"><div class="m"><span>output H<sub>out</sub> × H<sub>out</sub></span><b data-r="o">–</b></div></div>
     </div>
   </div>
 </section>
 
 <section class="slide">
   <h2>Convolutional layers - many filters</h2>
-  <div class="cols">
-    <div class="stack" style="gap:10px">
-      <svg class="fig" data-fig="channels" aria-label="A 3-channel input, a 3 by 3 by 3 filter producing one map, and four filters producing four output channels"></svg>
-      <div class="eq step">$$\#\text{params}=(F\cdot F\cdot C_{\text{in}}+1)\cdot C_{\text{out}}$$</div>
-      <p class="step small">3×3 conv, 64 → 128 channels: $(9\cdot64+1)\cdot128=73{,}856$ parameters, <b>whatever the image size</b>.</p>
+  <div class="cols c64">
+    <div class="widget" data-fig="filter-stack" data-auto="play=click :: One filter of 3×3×3 weights (as deep as the 3 input channels) slides over the input: one 4×4 feature map | k=2 :: A second filter, with its own weights, looks for another pattern: a second map, stacked on the first | k=3 :: A third filter, a third map | k=4 :: 4 filters → 4 maps: the output is 4×4×4, with 4 × 28 = 112 parameters | k=5 :: This output is the input of the next layer: its filters must be 3×3×4">
+      <svg class="fig" style="max-height:340px" aria-label="A 6 by 6 by 3 input, filters of 3 by 3 by 3 sliding over it, and their feature maps stacked into the output"></svg>
+      <div class="ctl"><label for="fs-k">filters</label><input type="range" id="fs-k" data-k="k" min="1" max="5" step="1" value="1" style="max-width:200px"><span class="v" data-v="k">1</span><button type="button" data-k="play" style="border:1px solid var(--blue);background:#fff;color:var(--blue);font:700 15px var(--font);padding:5px 12px;cursor:pointer">▶ slide the filter</button></div>
+      <div class="ro"><div class="m"><span>filters C<sub>out</sub></span><b data-r="n">–</b></div><div class="m"><span>output</span><b data-r="o">–</b></div><div class="m"><span>parameters</span><b data-r="p">–</b></div></div>
     </div>
-    <div class="stack" style="gap:12px">
+    <div class="stack" style="gap:10px">
       <ul class="small">
-        <li>The input has $C_{\text{in}}$ channels (3 for RGB). Each filter is $F\times F\times C_{\text{in}}$: the <b>third dimension matches</b> the previous layer's automatically.</li>
-        <li>$C_{\text{out}}$ filters → an output with $C_{\text{out}}$ channels ("feature maps").</li>
-        <li>PyTorch: <code>nn.Conv2d(in_channels=3, out_channels=64, kernel_size=3, stride=1, padding=1)</code>.</li>
+        <li>Each filter is $F\times F\times C_{\text{in}}$: its <b>depth matches the input's channels</b> (3 for RGB).</li>
+        <li>Each filter gives one <b>feature map</b>. $C_{\text{out}}$ filters give $C_{\text{out}}$ maps, <b>stacked</b>: the output has $C_{\text{out}}$ channels.</li>
       </ul>
-      <p class="step"><b>Weight sharing ⇒ translation equivariance.</b> Shift the input by $(a,b)$, $X'_{ij}=X_{i-a,j-b}$:</p>
-      <div class="eq step">$$Z'_{ij}=\sum_{u,v}X_{i-a+u,\,j-b+v}K_{uv}=Z_{i-a,\,j-b}$$</div>
-      <p class="step small">The output shifts by the same amount: <b>a pattern is detected wherever it appears</b>. Pooling then adds a little invariance to small shifts. $\blacksquare$</p>
+      <div class="bluebox step" style="font-size:20px;padding:0 18px">$$\#\text{params}=(F\cdot F\cdot C_{\text{in}}+1)\cdot C_{\text{out}}$$</div>
+      <p class="small step">3×3 conv, 64 → 128 channels: $(9\cdot64+1)\cdot128=73{,}856$ parameters, <b>whatever the image size</b>.</p>
+      <p class="small step">PyTorch, the layer on the left: <code>nn.Conv2d(in_channels=3, out_channels=4, kernel_size=3)</code>.</p>
+      <p class="small why step"><b>Weight sharing:</b> the same filter at every position, so a pattern is detected wherever it appears (translation equivariance, proved in the notes).</p>
     </div>
   </div>
 </section>
@@ -174,22 +180,14 @@
 <section class="slide divider"><div class="card coral"><h1><b>Part B</b><br>Architectures and transfer learning</h1><ul class="small" style="color:#fff"><li>a basic CNN, layer by layer · Lab 10</li><li>AlexNet, VGG, ResNet</li><li>transfer learning · Lab 11</li><li>multi-task learning</li></ul></div></section>
 
 <section class="slide">
-  <h2>Basic CNN architecture:</h2>
-  <svg class="fig" data-fig="cnn-arch" style="max-height:250px" aria-label="Input, two convolution and pooling blocks, flatten, dense layer and softmax"></svg>
-  <div class="cols">
-    <pre class="code s">model = nn.Sequential(
-  nn.Conv2d(1, 32, 3, padding=1), nn.ReLU(), <span class="c"># 28×28×32</span>
-  nn.MaxPool2d(2),                            <span class="c"># 14×14×32</span>
-  nn.Conv2d(32, 64, 3, padding=1), nn.ReLU(), <span class="c"># 14×14×64</span>
-  nn.MaxPool2d(2),                            <span class="c"># 7×7×64</span>
-  nn.Flatten(),                               <span class="c"># 3136</span>
-  nn.Linear(3136, 128), nn.ReLU(),
-  nn.Linear(128, 10))                         <span class="c"># logits</span></pre>
-    <div class="stack" style="gap:8px">
-      <p class="small"><b>Pooling combined with more filters!</b> The spatial size shrinks while the number of channels grows. Then flatten and classify with dense layers.</p>
-      <table class="t xs"><tr><th>layer</th><th>params</th></tr><tr><td>conv 1→32</td><td>(9·1+1)·32 = 320</td></tr><tr><td>conv 32→64</td><td>(9·32+1)·64 = 18,496</td></tr><tr><td>dense 3136→128</td><td>3136·128+128 = 401,536</td></tr><tr><td>dense 128→10</td><td>128·10+10 = 1,290</td></tr></table>
-      <p class="small why">95 % of the weights sit in the first dense layer: that is why modern nets use global average pooling instead (a few slides ahead).</p>
+  <h2>Basic CNN architecture, layer by layer</h2>
+  <div class="widget build" data-fig="cnn-build" data-auto="k=1 :: conv 3×3 with 32 filters of 3×3×1 (slide 10): depth 1 → 32, and padding 1 keeps 28×28 | k=2 :: max pool 2×2: the size halves, the depth stays, no parameters | k=3 :: conv 3×3 with 64 filters, now 3×3×32: depth 32 → 64 | k=4 :: pool again, 7×7×64: the size shrinks while the channels grow | k=5 :: flatten: the 7×7×64 block becomes one vector of 3,136 numbers | k=6 :: dense 3136 → 128: the MLP of chapters 1–3, with 95 % of all the weights (global pooling avoids it, slide 21) | k=7 :: dense 128 → 10: one logit per class (the softmax is inside nn.CrossEntropyLoss)">
+    <svg class="fig" style="max-height:215px" aria-label="A CNN built one layer at a time: input, two convolution and pooling blocks, flatten, a dense layer and the 10 logits"></svg>
+    <div class="cols" style="gap:24px;align-items:start">
+      <pre class="code s"><span data-l="0">model = nn.Sequential(</span><span data-l="1">  nn.Conv2d(1, 32, 3, padding=1), nn.ReLU(),</span><span data-l="2">  nn.MaxPool2d(2),</span><span data-l="3">  nn.Conv2d(32, 64, 3, padding=1), nn.ReLU(),</span><span data-l="4">  nn.MaxPool2d(2),</span><span data-l="5">  nn.Flatten(),</span><span data-l="6">  nn.Linear(3136, 128), nn.ReLU(),</span><span data-l="7">  nn.Linear(128, 10))</span></pre>
+      <table class="t xs tight"><tr><th>layer</th><th>output</th><th>parameters</th></tr><tr data-l="0"><td>input</td><td>28×28×1</td><td>–</td></tr><tr data-l="1"><td>conv 3×3, 1 → 32</td><td>28×28×32</td><td>(9·1+1)·32 = 320</td></tr><tr data-l="2"><td>max pool 2</td><td>14×14×32</td><td>0</td></tr><tr data-l="3"><td>conv 3×3, 32 → 64</td><td>14×14×64</td><td>(9·32+1)·64 = 18,496</td></tr><tr data-l="4"><td>max pool 2</td><td>7×7×64</td><td>0</td></tr><tr data-l="5"><td>flatten</td><td>3136</td><td>0</td></tr><tr data-l="6"><td>dense 3136 → 128</td><td>128</td><td>3136·128+128 = 401,536</td></tr><tr data-l="7"><td>dense 128 → 10</td><td>10</td><td>128·10+10 = 1,290</td></tr><tr data-l="8"><td><b>total</b></td><td></td><td><b>421,642</b></td></tr></table>
     </div>
+    <div class="ctl" style="display:none"><label for="cb-k">layers</label><input type="range" id="cb-k" data-k="k" min="0" max="7" step="1" value="0"></div>
   </div>
 </section>
 
@@ -233,6 +231,19 @@
         <dt>runs on</dt><dd>CPU works; a GPU is faster (Runtime → Change runtime type → T4 GPU)</dd>
       </dl>
     </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>ImageNet: the benchmark behind modern vision</h2>
+  <div class="cols c46">
+    <div class="stack" style="gap:10px">
+      <p class="small"><b>ImageNet</b> (Fei-Fei Li's group, 2009): 14 million photos from the web, each labelled by people through crowd-sourcing, in about 22,000 categories.</p>
+      <div class="card"><h3>ImageNet-1k: the ILSVRC challenge (2010–2017)</h3><ul><li>1,000 classes, 1.28 M training and 50,000 validation images</li><li>fine-grained: 120 dog breeds, many look-alike objects</li><li>fed to the networks as 224×224 RGB crops</li></ul></div>
+      <p class="small step"><b>Top-5 error</b>: a prediction counts as correct if the true class is among the model's 5 best guesses (right). Photos often contain several objects and some classes are very close. People score about 5 %.</p>
+      <p class="small step"><b>Why it matters.</b> AlexNet's win in 2012 (next slide) started the deep-learning boom. Today "pre-trained weights" usually means trained on ImageNet-1k: <code>resnet18(weights="IMAGENET1K_V1")</code>, used for transfer learning (slide 22) and in Lab 11. Their inputs are normalized with ImageNet's mean and std.</p>
+    </div>
+    <svg class="fig" data-fig="imagenet" aria-label="Twelve of the 1,000 ImageNet classes, and a top-5 prediction for a husky photo where the first guess is wrong but the true class is second"></svg>
   </div>
 </section>
 
@@ -371,37 +382,65 @@ m.fc = nn.Linear(m.fc.in_features, n_classes)</pre>
 
 <section class="slide">
   <h2>Fully convolutional networks</h2>
-  <svg class="fig" data-fig="fcn" style="max-height:280px" aria-label="A shared backbone with a classification head and a segmentation head"></svg>
-  <div class="cols">
-    <p class="small"><b>Classification head</b>: pool everything into one vector, lose the "where". <b>Segmentation head</b>: keep the spatial grid, predict $K$ scores at each cell with a 1×1 conv, then <b>upsample</b> to the input size.</p>
-    <p class="small">Upsampling ×32 in one go gives blobby masks. Better: go up <b>gradually</b>, and reuse the high-resolution features of the early layers. That is the U-Net.</p>
+  <div class="widget build" data-fig="fcn-build" data-auto="k=2 :: Classification head: pool everything into one vector, K scores for the whole image | k=3 :: Segmentation head: keep the grid, K scores per cell, then upsample to the input size">
+    <svg class="fig" style="max-height:260px" aria-label="A shared CNN backbone, then a classification head and a segmentation head added one at a time"></svg>
+    <div class="cols" style="gap:24px">
+      <div class="card o" data-l="2"><h3>Classification head: <i>what</i></h3><p>Global average pooling squeezes the H/8 × W/8 grid into one vector, then a linear layer gives $K$ scores. The <b>where</b> is thrown away.</p></div>
+      <div class="card g" data-l="3"><h3>Segmentation head: <i>what</i> and <i>where</i></h3><p>Keep the grid: a 1×1 conv gives $K$ scores at every cell, then upsample to $H\times W\times K$. Next slide: step by step.</p></div>
+    </div>
+    <div class="ctl" style="display:none"><input type="range" id="fc-k" aria-label="step" data-k="k" min="1" max="3" step="1" value="1"></div>
   </div>
 </section>
 
 <section class="slide">
-  <h2>Going up: nearest, bilinear, transposed convolution</h2>
-  <svg class="fig" data-fig="upsample" style="max-height:240px" aria-label="A 2 by 2 input upsampled to 4 by 4 by copying, by interpolation and by a transposed convolution"></svg>
-  <div class="cols">
-    <ul class="small">
-      <li><b>Nearest / bilinear</b>: fixed rules, no parameters. Usually followed by a normal conv to refine (<code>nn.Upsample</code>).</li>
-      <li><b>Transposed convolution</b>: each input value "paints" a copy of a <b>learned</b> kernel, scaled by the value, onto the output; overlaps add up (<code>nn.ConvTranspose2d</code>).</li>
-    </ul>
-    <p class="small">Same parameters as a conv: kernel size, stride, padding. With stride 2 it doubles $H$ and $W$: exactly the mirror of a stride-2 conv, and its backward pass is a normal convolution.</p>
+  <h2>The segmentation head, step by step</h2>
+  <div class="widget build" data-fig="seg-head" data-auto="k=2 :: 1×1 conv: the same small dense layer (256 → K) at every cell gives K score maps, still 4×4 | k=3 :: upsample ×8 back to 32×32 (bilinear: a fixed rule, no parameters) | k=4 :: argmax per pixel: the car is in the right place, but its borders are blobby">
+    <svg class="fig" style="max-height:250px" aria-label="A 32 by 32 picture of a car, its 4 by 4 features, the coarse car score map, the score upsampled to 32 by 32, and the resulting blobby mask against the true outline"></svg>
+    <div class="cols" style="gap:24px">
+      <p class="small" data-l="2"><b>1×1 convolution</b> = a dense layer applied at every position: $K\times256$ weights and $K$ biases, the same at every cell, whatever the image size. <code>nn.Conv2d(256, K, kernel_size=1)</code>.</p>
+      <p class="small" data-l="4"><b>The problem:</b> each of the 4×4 cells summarizes an 8×8 patch, and a fixed upsampling cannot bring back the detail. Better: go up <b>gradually</b> with learned layers (next slide), and reuse the early high-resolution features (U-Net).</p>
+    </div>
+    <div class="ctl" style="display:none"><input type="range" id="sh-k" aria-label="step" data-k="k" min="1" max="4" step="1" value="1"></div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Going up: the transposed convolution</h2>
+  <div class="cols c64">
+    <div class="widget" data-fig="tconv" data-auto="s=1 :: The first value (1) paints 1 × kernel onto the top-left corner of the output | s=2 :: The second value (2) paints 2 × kernel, 2 pixels to the right (stride 2): the shared column adds up | s=3 :: The third value (3), 2 pixels down | s=4 :: All four painted: the centre cell collects a share of every input value | s=5 :: padding=1 and output_padding=1 keep the 4×4 inside the dashed frame: twice the input | kern=learn :: Other weights, another upsampling: these 9 numbers are what training learns">
+      <svg class="fig" style="max-height:350px" aria-label="A 2 by 2 input and a 3 by 3 kernel; each input value paints value times kernel onto a 5 by 5 output, two pixels apart, and the overlaps add up"></svg>
+      <div class="ctl"><label for="tc-s">step</label><input type="range" id="tc-s" data-k="s" min="0" max="5" step="1" value="0" style="max-width:180px"><span class="v" data-v="s">0</span>
+        <span class="seg" role="group" aria-label="Kernel weights"><button type="button" data-kern="bil" aria-pressed="true">bilinear kernel</button><button type="button" data-kern="learn" aria-pressed="false">a learned kernel</button></span></div>
+    </div>
+    <div class="stack" style="gap:10px">
+      <p class="small">The backbone shrank the image. The <b>transposed convolution</b> (<code>nn.ConvTranspose2d</code>) is a <b>learnable</b> way back up:</p>
+      <ul class="small">
+        <li>Each input value <b>paints</b> a copy of the kernel, scaled by that value.</li>
+        <li>The copies are placed <b>S</b> pixels apart: stride 2 doubles $H$ and $W$. Where they overlap, they <b>add up</b>.</li>
+        <li>The kernel weights are <b>parameters</b>, learned by backprop like a normal conv: $C_{\text{in}}\cdot C_{\text{out}}\cdot F^2+C_{\text{out}}$ (256 → 128 channels, $F=3$: 295,040).</li>
+      </ul>
+      <p class="small step">Exactly 2×: <code>nn.ConvTranspose2d(256, 128, kernel_size=3, stride=2, padding=1, output_padding=1)</code>. U-Net uses <code>kernel_size=2, stride=2</code>: no overlaps.</p>
+      <p class="small why step"><b>Nearest / bilinear</b> (<code>nn.Upsample</code>): fixed rules, <b>no parameters</b>, usually followed by a conv. With the bilinear kernel, a transposed conv gives almost exactly bilinear upsampling; training can find better weights.</p>
+    </div>
   </div>
 </section>
 
 <section class="slide">
   <h2>U-Net: encoder, decoder, skip connections</h2>
-  <div class="cols c64">
-    <svg class="fig" data-fig="unet" aria-label="U-Net: an encoder that shrinks, a decoder that grows, and skip connections"></svg>
-    <div class="stack" style="gap:10px">
-      <ul class="small">
-        <li><b>Encoder</b> (left, down): conv + pooling, like any CNN, often a pre-trained ResNet. Understands <i>what</i> is in the image.</li>
-        <li><b>Decoder</b> (right, up): upsampling + conv. Recovers <i>where</i>.</li>
-        <li><b>Skip connections</b> (dashed): copy the encoder's feature maps at each resolution and concatenate them to the decoder's. They bring back the fine detail (exact borders) that the bottleneck lost.</li>
-      </ul>
-      <p class="small">Output: $K$ channels at full resolution, one per class. Born in medical imaging (2015), still the default for segmentation, and the core of image generators like Stable Diffusion.</p>
+  <div class="widget build" data-fig="unet2" data-auto="k=2 :: Bottleneck at H/16: rich features (1024 channels), but very coarse | k=3 :: Decoder: each up-conv doubles the size, back to H×W | k=4 :: Skip connections copy each encoder map and concatenate it to the decoder's (light bars) | k=5 :: A 1×1 conv gives K scores per pixel: the mask, at full resolution">
+    <div class="cols c64">
+      <svg class="fig" style="max-height:420px" aria-label="U-Net: an encoder of conv blocks and max pooling, a bottleneck, a decoder of up-convolutions, skip connections that copy and concatenate, and a final 1 by 1 convolution to the mask"></svg>
+      <div class="stack" style="gap:10px">
+        <ul class="small">
+          <li data-l="1"><b>Encoder</b> (down): conv blocks and max pooling, like any CNN, often a pre-trained ResNet. The size halves and the channels double at each level. Learns <i>what</i> is in the image.</li>
+          <li data-l="3"><b>Decoder</b> (up): up-convs (transposed convs, previous slide) and conv blocks. Recovers <i>where</i>.</li>
+          <li data-l="4"><b>Skip connections</b>: copy the encoder's maps at each resolution and concatenate them to the decoder's. They bring back the fine detail (exact borders) that the bottleneck lost.</li>
+          <li data-l="5"><b>Output</b>: a 1×1 conv, $K$ channels at full resolution: one score per class and pixel.</li>
+        </ul>
+        <p class="small why">Ronneberger et al. 2015, for medical images. Still the default for segmentation, and the core of image generators like Stable Diffusion.</p>
+      </div>
     </div>
+    <div class="ctl" style="display:none"><input type="range" id="un-k" aria-label="step" data-k="k" min="1" max="5" step="1" value="1"></div>
   </div>
 </section>
 
@@ -416,10 +455,13 @@ m.fc = nn.Linear(m.fc.in_features, n_classes)</pre>
     </div>
     <div class="stack" style="gap:10px">
       <div class="eq">$$\mathrm{IoU}=\frac{|P\cap G|}{|P\cup G|},\qquad\mathrm{Dice}=\frac{2|P\cap G|}{|P|+|G|}$$</div>
-      <p class="small">$P$ = predicted pixels, $G$ = ground-truth pixels. Both are 1 for a perfect mask and 0 for no overlap.</p>
-      <p class="small"><b>Why not pixel accuracy?</b> If damage covers 2 % of the image, predicting "no damage" everywhere is 98 % accurate and useless. IoU ignores the easy background.</p>
-      <p class="small"><b>mIoU</b>: the IoU of each class, averaged. The standard segmentation metric.</p>
-      <p class="small"><b>Dice loss</b> $=1-\mathrm{Dice}$ computed on the soft probabilities, often added to the cross-entropy to fight class imbalance.</p>
+      <p class="small">$P$ = predicted pixels, $G$ = true pixels. Both are 1 for a perfect mask, 0 for no overlap.</p>
+      <p class="small"><b>Why not pixel accuracy?</b> If damage covers 2 % of the image, "no damage" everywhere is 98 % accurate and useless. IoU ignores the easy background.</p>
+      <p class="small"><b>mIoU</b>: the IoU of each class, averaged; the standard metric.</p>
+      <div class="card g step"><h3>Dice as a loss</h3><div class="eq xs">$$\mathcal L_{\text{Dice}}=1-\frac{2\sum_ip_i\,g_i}{\sum_ip_i+\sum_ig_i}$$</div><ul>
+        <li><b>Why $1-$?</b> Dice is a score to maximize; optimizers minimize, so $1-\mathrm{Dice}$ (0 = perfect). That is all the $1-$ does.</li>
+        <li><b>Why soft?</b> $p_i$ are probabilities, not the 0/1 argmax mask, which has no gradient.</li>
+        <li><b>Why Dice?</b> Relative to the object's size: small objects count as much as big ones, while cross-entropy is dominated by the background. In practice: CE + Dice.</li></ul></div>
     </div>
   </div>
 </section>
@@ -607,7 +649,7 @@ m.fc = nn.Linear(m.fc.in_features, n_classes)</pre>
 </div></div>
 <script src="../assets/figures.js?v=20260930"></script>
 <script src="assets/nn-core.js?v=20260930"></script>
-<script src="assets/fig-nn-cnn.js?v=20260930"></script>
+<script src="assets/fig-nn-cnn.js?v=20261011c"></script>
 <script src="../assets/deck.js?v=20260930"></script>
 </body>
 </html>

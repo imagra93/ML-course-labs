@@ -96,3 +96,20 @@ body.flow .cols.split>.rspan{grid-column:auto;grid-row:auto}
 .hint.b{border-color:var(--blue)} .hint.b>.hd{background:var(--blue);color:#fff} .hint.b>.bd{background:#f5f8fd}
 .hint.o{border-color:var(--orange)} .hint.o>.hd{background:var(--orange);color:#fff} .hint.o>.bd{background:#fef8f3}
 .hint.b,.hint.o{display:flex;flex-direction:column} .hint.b>.bd,.hint.o>.bd{flex:1}
+/* CSS-only figure animations: the figure is always drawn in its final state and the animation only replays it,
+   so print (the class PDFs) and reduced motion show the final state */
+.fig .anim-in{animation:fig-in .35s ease-out both}
+.fig .anim-flash{opacity:0;animation:fig-flash .1s linear}
+.fig .anim-hold{animation:fig-hold 1s linear}
+@keyframes fig-in{from{opacity:0}}
+@keyframes fig-flash{0%,100%{opacity:1}}
+@keyframes fig-hold{0%,100%{opacity:0}}
+@media print{.fig .anim-in,.fig .anim-flash,.fig .anim-hold{animation:none}}
+@media (prefers-reduced-motion:reduce){.fig .anim-in,.fig .anim-flash,.fig .anim-hold{animation:none}}
+/* build-along widgets: the code line and the table row of the current step, later ones dimmed */
+.build [data-l]{transition:opacity .2s,background-color .2s}
+.build [data-l].off{opacity:.25}
+.build [data-l].cur{background:#fff2cc}
+.build pre.code span[data-l]{display:block}
+table.t.xs.tight{font-size:15px}
+table.t.xs.tight th,table.t.xs.tight td{padding:3px 8px}
