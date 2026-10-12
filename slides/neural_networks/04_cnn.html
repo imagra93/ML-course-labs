@@ -39,7 +39,7 @@
     <div class="stack" style="gap:10px">
       <p>Neural networks are not restricted to vectors of features. They also accept <b>formatted data</b>:</p>
       <ul class="small"><li>1D: audio, temporal signals.</li><li>2D: black and white images.</li><li>3D: coloured pictures (channels × height × width).</li><li>4D: coloured video.</li></ul>
-      <p class="small">Mini-batches add an extra dimension 0: <code>[batch, channels, H, W]</code>. For a single image at prediction time, reshape it to a batch of 1: <code>x.unsqueeze(0)</code>.</p>
+      <p class="small">Mini-batches add an extra dimension 0: <code>[B, C, H, W]</code> (B = batch size, C = channels). For a single image at prediction time, reshape it to a batch of 1: <code>x.unsqueeze(0)</code>.</p>
     </div>
   </div>
 </section>
@@ -58,6 +58,7 @@
       <div class="note step"><p><b>Two ideas</b> fix all three problems:</p>
         <ol class="small"><li><b>Local connections</b>: each unit looks at a small patch (3×3), not at the whole image.</li><li><b>Weight sharing</b>: the same small set of weights is used at every position.</li></ol></div>
       <p class="step">Together they give the <b>convolutional layer</b>. A 3×3 conv from 3 to 64 channels has <b>1,792</b> parameters, whatever the image size.</p>
+      <p class="small step">Only the conv layers get these properties: a dense classifier on top still depends on positions (Lab 10 measures it; global average pooling, slide 14, removes most of it).</p>
     </div>
   </div>
 </section>
@@ -129,14 +130,14 @@
 <section class="slide">
   <h2>Convolutional layers - many filters</h2>
   <div class="cols c64">
-    <div class="widget" data-fig="filter-stack" data-auto="play=click :: One filter of 3×3×3 weights (as deep as the 3 input channels) slides over the input: one 4×4 feature map | k=2 :: A second filter, with its own weights, looks for another pattern: a second map, stacked on the first | k=3 :: A third filter, a third map | k=4 :: 4 filters → 4 maps: the output is 4×4×4, with 4 × 28 = 112 parameters | k=5 :: This output is the input of the next layer: its filters must be 3×3×4">
-      <svg class="fig" style="max-height:340px" aria-label="A 6 by 6 by 3 input, filters of 3 by 3 by 3 sliding over it, and their feature maps stacked into the output"></svg>
+    <div class="widget" data-fig="filter-stack" data-auto="play=click :: One filter of 3×3×3 weights (as deep as the 3 input channels) slides over the input: one 4×4 feature map | k=2 :: A second filter, with its own weights, looks for another pattern: a second map, stacked on the first | k=3 :: A third filter, a third map | k=4 :: 4 filters → 4 maps: the output is 4×4×4, with 4 × 28 = 112 parameters | k=5 :: This output is the input of the next layer: its filters must be 4×3×3">
+      <svg class="fig" style="max-height:340px" aria-label="A 3 by 6 by 6 input (3 channels), filters of 3 by 3 by 3 sliding over it, and their feature maps stacked into the output"></svg>
       <div class="ctl"><label for="fs-k">filters</label><input type="range" id="fs-k" data-k="k" min="1" max="5" step="1" value="1" style="max-width:200px"><span class="v" data-v="k">1</span><button type="button" data-k="play" style="border:1px solid var(--blue);background:#fff;color:var(--blue);font:700 15px var(--font);padding:5px 12px;cursor:pointer">▶ slide the filter</button></div>
       <div class="ro"><div class="m"><span>filters C<sub>out</sub></span><b data-r="n">–</b></div><div class="m"><span>output</span><b data-r="o">–</b></div><div class="m"><span>parameters</span><b data-r="p">–</b></div></div>
     </div>
     <div class="stack" style="gap:10px">
       <ul class="small">
-        <li>Each filter is $F\times F\times C_{\text{in}}$: its <b>depth matches the input's channels</b> (3 for RGB).</li>
+        <li>Each filter is $C_{\text{in}}\times F\times F$: its <b>depth matches the input's channels</b> (3 for RGB).</li>
         <li>Each filter gives one <b>feature map</b>. $C_{\text{out}}$ filters give $C_{\text{out}}$ maps, <b>stacked</b>: the output has $C_{\text{out}}$ channels.</li>
       </ul>
       <div class="bluebox step" style="font-size:20px;padding:0 18px">$$\#\text{params}=(F\cdot F\cdot C_{\text{in}}+1)\cdot C_{\text{out}}$$</div>
@@ -181,11 +182,14 @@
 
 <section class="slide">
   <h2>Basic CNN architecture, layer by layer</h2>
-  <div class="widget build" data-fig="cnn-build" data-auto="k=1 :: conv 3×3 with 32 filters of 3×3×1 (slide 10): depth 1 → 32, and padding 1 keeps 28×28 | k=2 :: max pool 2×2: the size halves, the depth stays, no parameters | k=3 :: conv 3×3 with 64 filters, now 3×3×32: depth 32 → 64 | k=4 :: pool again, 7×7×64: the size shrinks while the channels grow | k=5 :: flatten: the 7×7×64 block becomes one vector of 3,136 numbers | k=6 :: dense 3136 → 128: the MLP of chapters 1–3, with 95 % of all the weights (global pooling avoids it, slide 21) | k=7 :: dense 128 → 10: one logit per class (the softmax is inside nn.CrossEntropyLoss)">
+  <div class="widget build" data-fig="cnn-build" data-auto="k=1 :: conv 3×3 with 32 filters of 1×3×3 (slide 10): depth 1 → 32, and padding 1 keeps 28×28 | k=2 :: max pool 2×2: the size halves, the depth stays, no parameters | k=3 :: conv 3×3 with 64 filters, now 32×3×3: depth 32 → 64 | k=4 :: pool again, 64×7×7: the size shrinks while the channels grow | k=5 :: flatten: the 64×7×7 block becomes one vector of 3,136 numbers | k=6 :: dense 3136 → 128: the MLP of chapters 1–3, with 95 % of all the weights (global average pooling avoids it: below the code) | k=7 :: dense 128 → 10: one logit per class (the softmax is inside nn.CrossEntropyLoss)">
     <svg class="fig" style="max-height:215px" aria-label="A CNN built one layer at a time: input, two convolution and pooling blocks, flatten, a dense layer and the 10 logits"></svg>
     <div class="cols" style="gap:24px;align-items:start">
+      <div class="stack" style="gap:10px">
       <pre class="code s"><span data-l="0">model = nn.Sequential(</span><span data-l="1">  nn.Conv2d(1, 32, 3, padding=1), nn.ReLU(),</span><span data-l="2">  nn.MaxPool2d(2),</span><span data-l="3">  nn.Conv2d(32, 64, 3, padding=1), nn.ReLU(),</span><span data-l="4">  nn.MaxPool2d(2),</span><span data-l="5">  nn.Flatten(),</span><span data-l="6">  nn.Linear(3136, 128), nn.ReLU(),</span><span data-l="7">  nn.Linear(128, 10))</span></pre>
-      <table class="t xs tight"><tr><th>layer</th><th>output</th><th>parameters</th></tr><tr data-l="0"><td>input</td><td>28×28×1</td><td>–</td></tr><tr data-l="1"><td>conv 3×3, 1 → 32</td><td>28×28×32</td><td>(9·1+1)·32 = 320</td></tr><tr data-l="2"><td>max pool 2</td><td>14×14×32</td><td>0</td></tr><tr data-l="3"><td>conv 3×3, 32 → 64</td><td>14×14×64</td><td>(9·32+1)·64 = 18,496</td></tr><tr data-l="4"><td>max pool 2</td><td>7×7×64</td><td>0</td></tr><tr data-l="5"><td>flatten</td><td>3136</td><td>0</td></tr><tr data-l="6"><td>dense 3136 → 128</td><td>128</td><td>3136·128+128 = 401,536</td></tr><tr data-l="7"><td>dense 128 → 10</td><td>10</td><td>128·10+10 = 1,290</td></tr><tr data-l="8"><td><b>total</b></td><td></td><td><b>421,642</b></td></tr></table>
+      <div class="note" style="padding:6px 14px"><p class="small"><b>Global average pooling</b> replaces Flatten + the big dense layer: each map becomes its mean (64×7×7 → 64), then <code>nn.Linear(64, 10)</code>. PyTorch: <code>nn.AdaptiveAvgPool2d(1)</code>. Few parameters, no dependence on position, any image size.</p></div>
+      </div>
+      <table class="t xs tight"><tr><th>layer</th><th>output</th><th>parameters</th></tr><tr data-l="0"><td>input</td><td>1×28×28</td><td>–</td></tr><tr data-l="1"><td>conv 3×3, 1 → 32</td><td>32×28×28</td><td>(9·1+1)·32 = 320</td></tr><tr data-l="2"><td>max pool 2</td><td>32×14×14</td><td>0</td></tr><tr data-l="3"><td>conv 3×3, 32 → 64</td><td>64×14×14</td><td>(9·32+1)·64 = 18,496</td></tr><tr data-l="4"><td>max pool 2</td><td>64×7×7</td><td>0</td></tr><tr data-l="5"><td>flatten</td><td>3136</td><td>0</td></tr><tr data-l="6"><td>dense 3136 → 128</td><td>128</td><td>3136·128+128 = 401,536</td></tr><tr data-l="7"><td>dense 128 → 10</td><td>10</td><td>128·10+10 = 1,290</td></tr><tr data-l="8"><td><b>total</b></td><td></td><td><b>421,642</b></td></tr></table>
     </div>
     <div class="ctl" style="display:none"><label for="cb-k">layers</label><input type="range" id="cb-k" data-k="k" min="0" max="7" step="1" value="0"></div>
   </div>
@@ -228,7 +232,7 @@
       <a class="colab-ext" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 10 - CNNs for image classification - extended.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Extended version <small>convolution from scratch, receptive field, feature maps</small></a>
       <dl class="gloss">
         <dt>notebook</dt><dd><code>lab 10 - CNNs for image classification.ipynb</code></dd>
-        <dt>you need</dt><dd>Part A of this chapter and the basic CNN; dropout and BatchNorm (ch. 3); Lab 9</dd>
+        <dt>you need</dt><dd>Part A of this chapter and the basic CNN (with global average pooling); dropout and BatchNorm (ch. 3); Lab 9. The VGG-style blocks are explained in the lab.</dd>
         <dt>result</dt><dd>test accuracy: MLP 88 %, small CNN 90 %, stronger CNN 91 % (and 91 % on images shifted by 3 pixels)</dd>
         <dt>runs on</dt><dd><b>GPU</b> recommended (T4 in Colab), 5 to 10 minutes</dd>
       </dl>
@@ -283,7 +287,7 @@
   <svg class="fig" data-fig="one-by-one" style="max-height:260px" aria-label="A 1 by 1 convolution reducing channels, and global average pooling turning maps into a vector"></svg>
   <div class="cols">
     <p class="small"><b>1×1 conv</b>: a dense layer applied at every pixel, across channels. Used to shrink 256 channels to 64 before an expensive 3×3 conv (the "bottleneck" of ResNet-50), and as the classifier of segmentation heads.</p>
-    <p class="small"><b>Global average pooling</b>: average each feature map to one number. A 7×7×512 tensor becomes 512 numbers, then one <code>Linear(512, K)</code>. Few parameters, and the network accepts any image size.</p>
+    <p class="small"><b>Global average pooling</b> (slide 14) ends every ResNet: the last 512×7×7 maps become 512 numbers, then one <code>Linear(512, K)</code>, so the network accepts any image size.</p>
   </div>
 </section>
 
@@ -295,13 +299,13 @@
       <p class="small">The first conv layers learn to extract general features from images (edges, textures), so you can reuse that knowledge in new problems:</p>
       <ul class="small">
         <li>Download a trained net (with the learned weights), e.g. a ResNet trained on ImageNet (1.2 M images, 1,000 classes).</li>
-        <li>Fix (<b>freeze</b>) the first layers, where the complex feature engineering happens.</li>
-        <li>Replace or randomly initialize the last fully connected layers: they learn the more specific, "high-level" features of your problem.</li>
-        <li>Train these (fewer) weights with your (smaller) dataset, with a small learning rate. Feed the images normalized <b>as in pre-training</b> (ImageNet mean and std).</li>
+        <li>Fix (<b>freeze</b>) the pre-trained layers: all of them with little data, only the first ones with more (right).</li>
+        <li>Replace the last layer (the <b>head</b>, <code>fc</code> in a ResNet) by a new one for your classes; new layers are trainable.</li>
+        <li>Train the new head with a normal learning rate; layers you unfreeze get a <b>~10× smaller</b> one. Feed the images normalized <b>as in pre-training</b> (ImageNet mean and std).</li>
       </ul>
-      <pre class="code s">m = torchvision.models.resnet18(weights="DEFAULT")
-for p in m.parameters(): p.requires_grad = False
-m.fc = nn.Linear(m.fc.in_features, n_classes)</pre>
+      <pre class="code s">model = resnet18(weights="IMAGENET1K_V1")  # torchvision
+for p in model.parameters(): p.requires_grad = False
+model.fc = nn.Linear(model.fc.in_features, n_classes)</pre>
     </div>
     <svg class="fig" data-fig="transfer" aria-label="How many layers to freeze for small, medium and large datasets"></svg>
   </div>
@@ -345,7 +349,7 @@ m.fc = nn.Linear(m.fc.in_features, n_classes)</pre>
       <p class="small">so the backbone receives gradient from every task. Benefits: one forward pass for three outputs, and each task acts as a regularizer for the others.</p>
     </div>
     <div class="stack" style="gap:6px">
-      <p class="small"><b>The catch: loss scales.</b> At the start the eye MSE (coordinates in $[0,1]$) is about $6\cdot10^{-5}$, the gender BCE about $0.69$, the age MSE (in years²) about $73$. With all $\lambda_k=1$ the age term dominates and the eyes are not trained at all.</p>
+      <p class="small"><b>The catch: loss scales.</b> Predicting the training mean already gives an eye MSE (coordinates in $[0,1]$) of about $6\cdot10^{-5}$, a gender BCE of about $0.69$ and an age MSE (in years²) of about $73$. With all $\lambda_k=1$ the age term dominates and the eyes are not trained at all.</p>
       <p class="small"><b>The fix</b>: standardize each regression target, $z=(y-\mu)/\sigma$ with training-set statistics, so every loss starts near 1. For an MSE this is the same as choosing $\lambda=1/\sigma^2$.</p>
       <p class="small why">It is the same recipe as a detector (next part): one backbone, a box head and a class head, a weighted sum of losses.</p>
     </div>
@@ -387,8 +391,8 @@ m.fc = nn.Linear(m.fc.in_features, n_classes)</pre>
   <div class="widget build" data-fig="fcn-build" data-auto="k=2 :: Classification head: pool everything into one vector, K scores for the whole image | k=3 :: Segmentation head: keep the grid, K scores per cell, then upsample to the input size">
     <svg class="fig" style="max-height:260px" aria-label="A shared CNN backbone, then a classification head and a segmentation head added one at a time"></svg>
     <div class="cols" style="gap:24px">
-      <div class="card o" data-l="2"><h3>Classification head: <i>what</i></h3><p>Global average pooling squeezes the H/8 × W/8 grid into one vector, then a linear layer gives $K$ scores. The <b>where</b> is thrown away.</p></div>
-      <div class="card g" data-l="3"><h3>Segmentation head: <i>what</i> and <i>where</i></h3><p>Keep the grid: a 1×1 conv gives $K$ scores at every cell, then upsample to $H\times W\times K$. Next slide: step by step.</p></div>
+      <div class="card o" data-l="2"><h3>Classification head: <i>what</i></h3><p>Global average pooling squeezes the H/8 × W/8 grid (8× here to keep the picture small; real backbones shrink 32×) into one vector, then a linear layer gives $K$ scores. The <b>where</b> is thrown away.</p></div>
+      <div class="card g" data-l="3"><h3>Segmentation head: <i>what</i> and <i>where</i></h3><p>Keep the grid: a 1×1 conv gives $K$ scores at every cell, then upsample to $K\times H\times W$. Next slide: step by step.</p></div>
     </div>
     <div class="ctl" style="display:none"><input type="range" id="fc-k" aria-label="step" data-k="k" min="1" max="3" step="1" value="1"></div>
   </div>
@@ -512,16 +516,20 @@ m.fc = nn.Linear(m.fc.in_features, n_classes)</pre>
       <p>A detector is a <b>multi-task</b> network: a box regression and a classification at every cell. For YOLO11 (the lab):</p>
       <div class="eq s">$$J=\lambda_{\text{box}}\underbrace{\big(1-\mathrm{CIoU}\big)}_{\text{box overlap}}+\lambda_{\text{cls}}\underbrace{\mathrm{BCE}}_{\text{class scores}}+\lambda_{\text{dfl}}\underbrace{\mathrm{DFL}}_{\text{box sides}}$$</div>
       <ul class="small">
-        <li><b>Box</b>: $1-\mathrm{IoU}$ (CIoU adds penalties for the distance between centres and the aspect ratio). Unlike an L1 on pixels, it does not depend on the object's size.</li>
-        <li><b>Class</b>: an independent sigmoid + BCE per class, at <b>every</b> cell; most cells must say "no class" (all scores low).</li>
-        <li><b>DFL</b> (distribution focal loss): each side distance is predicted as a small distribution over 16 bins, for more precise borders.</li>
+        <li><b>Box</b> (<code>box_loss</code>): $1-\mathrm{IoU}$ (CIoU adds penalties for the distance between centres and the aspect ratio). Unlike an L1 on pixels, it does not depend on the object's size.</li>
+        <li><b>Class</b> (<code>cls_loss</code>): an independent sigmoid + BCE per class, at <b>every</b> cell; most cells must say "no class" (all scores low).</li>
+        <li><b>DFL</b> (<code>dfl_loss</code>, distribution focal loss): refines the exact position of each box side.</li>
       </ul>
-      <p class="small why">Ultralytics' defaults: $\lambda_{\text{box}}=7.5,\ \lambda_{\text{cls}}=0.5,\ \lambda_{\text{dfl}}=1.5$. Older YOLOs (v1–v5) also had an objectness term.</p>
+      <p class="small">Lab 12 plots these three terms from <code>results.csv</code>. It is the same recipe as multi-task learning (Part B): one backbone, several heads, a weighted sum of losses.</p>
     </div>
     <div class="stack" style="gap:10px">
-      <div class="note"><p class="small"><b>Assignment</b> decides which predictions are responsible for which true object (the "positives"): the cell containing the centre (YOLOv1), the anchor boxes with the best IoU (YOLOv3–5), or a learned score mixing IoU and class confidence (YOLOv8–11, the <b>task-aligned assigner</b>). The box and DFL terms only use the positives.</p></div>
-      <p class="small">It is the same recipe as multi-task learning (Part B): one backbone, several heads, a weighted sum of losses.</p>
-      <p class="small why">Class imbalance is huge (thousands of background cells for a few objects): focal loss and careful weighting exist for that.</p>
+      <div class="note"><p class="small"><b>Optional detail</b> (the extended lab; not needed for Lab 12):</p>
+      <ul class="small">
+        <li>DFL predicts each side distance as a small distribution over 16 bins.</li>
+        <li>Ultralytics' defaults: $\lambda_{\text{box}}=7.5,\ \lambda_{\text{cls}}=0.5,\ \lambda_{\text{dfl}}=1.5$. Older YOLOs (v1–v5) also had an objectness term.</li>
+        <li><b>Assignment</b> decides which predictions are responsible for which true object (the "positives"): the cell containing the centre (YOLOv1), the anchor boxes with the best IoU (YOLOv3–5), or a learned score mixing IoU and class confidence (YOLOv8–11, the <b>task-aligned assigner</b>). The box and DFL terms only use the positives.</li>
+        <li>Class imbalance is huge (thousands of background cells for a few objects): focal loss and careful weighting exist for that.</li>
+      </ul></div>
     </div>
   </div>
 </section>
@@ -558,7 +566,9 @@ m.fc = nn.Linear(m.fc.in_features, n_classes)</pre>
         <li>Keep the best; remove every other box of the same class with IoU above ~0.5 with it.</li>
         <li>Repeat with the next remaining box.</li>
       </ol>
-      <pre class="code s">keep = torchvision.ops.nms(boxes, scores, 0.5)</pre>
+      <pre class="code s"># torchvision.ops: NMS within each class,
+# boxes as (x1, y1, x2, y2)
+keep = batched_nms(boxes, scores, classes, 0.5)</pre>
       <p class="small why">Two people hugging can be wrongly merged: the IoU threshold is a trade-off.</p>
     </div>
   </div>
@@ -625,7 +635,7 @@ m.fc = nn.Linear(m.fc.in_features, n_classes)</pre>
   <h2>Vocabulary of chapter 4</h2>
   <div class="cols">
     <dl class="gloss">
-      <dt>kernel / filter</dt><dd>a small $F\times F\times C_{\text{in}}$ block of weights slid over the input.</dd>
+      <dt>kernel / filter</dt><dd>a small $C_{\text{in}}\times F\times F$ block of weights slid over the input.</dd>
       <dt>feature map</dt><dd>one output channel: where the filter's pattern appears.</dd>
       <dt>stride, padding</dt><dd>step between positions; zeros added at the border.</dd>
       <dt>pooling</dt><dd>max or mean over windows: down-sampling without parameters.</dd>
@@ -653,7 +663,7 @@ m.fc = nn.Linear(m.fc.in_features, n_classes)</pre>
 </div></div>
 <script src="../assets/figures.js?v=20260930"></script>
 <script src="assets/nn-core.js?v=20260930"></script>
-<script src="assets/fig-nn-cnn.js?v=20261011c"></script>
+<script src="assets/fig-nn-cnn.js?v=20261012a"></script>
 <script src="../assets/deck.js?v=20260930"></script>
 </body>
 </html>

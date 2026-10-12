@@ -36,7 +36,7 @@
     </div>
     <div class="stack" style="gap:12px">
       <div class="note step"><p>All of it is "knobs" on the same loop: forward, loss, backward, update. None of it changes the model's formula.</p></div>
-      <p class="step why">Two labs in this chapter: Lab 8 (the MLP again, now in PyTorch) right after the optimizers, and Lab 9 (classifying clothes images) at the end. The chapter closes with the layer zoo, a debugging recipe and a cheat-sheet of defaults.</p>
+      <p class="step why">Two labs in this chapter: Lab 8 (the MLP again, now in PyTorch) right after the optimizers, and Lab 9 (classifying clothes images) at the end. The chapter closes with the layer zoo, a debugging recipe, a cheat-sheet of defaults and, before Lab 9, the shapes through its model.</p>
     </div>
   </div>
 </section>
@@ -110,7 +110,7 @@
         <tr><td><b>Dataset</b></td><td>the data, one example at a time: <code>ds[i]</code> is <code>(x, y)</code></td><td><code>TensorDataset(X, y)</code>, or ready-made ones in <code>torchvision.datasets</code> (Lab 9)</td></tr>
         <tr class="step"><td><b>DataLoader</b></td><td>shuffles a Dataset and cuts it into mini-batches</td><td><code>DataLoader(ds, batch_size=64, shuffle=True)</code></td></tr>
         <tr class="step"><td><b>model</b> (<code>nn.Module</code>)</td><td>the network: holds the weights; <code>model(xb)</code> runs the forward pass</td><td><code>nn.Sequential(nn.Linear(2, 2), nn.Tanh(), nn.Linear(2, 1))</code></td></tr>
-        <tr class="step"><td><b>loss_fn</b></td><td>compares predictions and targets (chapter 1)</td><td><code>nn.BCEWithLogitsLoss()</code>, <code>nn.CrossEntropyLoss()</code></td></tr>
+        <tr class="step"><td><b>criterion</b></td><td>the loss: compares predictions and targets (chapter 1)</td><td><code>nn.BCEWithLogitsLoss()</code>, <code>nn.CrossEntropyLoss()</code></td></tr>
         <tr class="step"><td><b>optimizer</b></td><td>holds the parameters: <code>zero_grad()</code> clears every <code>.grad</code>, <code>step()</code> applies the update rule</td><td><code>torch.optim.SGD(model.parameters(), lr=1.0)</code>; better rules later in this chapter</td></tr>
       </table>
     </div>
@@ -124,33 +124,28 @@
   def forward(self, x):  <span class="c"># model(x)</span>
     h = torch.tanh(self.hidden(x))
     return self.out(h)</pre>
-      <ul class="small">
-        <li><code>model.to("cuda")</code>, <code>xb.to("cuda")</code>: model and data on the same device.</li>
-        <li><code>model.train()</code> / <code>model.eval()</code>: dropout and BatchNorm switch behaviour (later).</li>
-        <li><code>with torch.no_grad():</code> to evaluate without building the graph.</li>
-        <li><code>torch.save(model.state_dict(), "m.pt")</code> saves the weights.</li>
-      </ul>
+      <p class="small">Around the loop (training / evaluation mode, the GPU, saving the weights): slide 17.</p>
     </div>
   </div>
 </section>
 
 <section class="slide">
   <h2>The training loop: iterations and epochs</h2>
-  <div class="cols" style="grid-template-columns:1.55fr 1fr">
+  <div class="cols" style="grid-template-columns:1.45fr 1fr">
     <div class="widget" data-fig="train-loop" data-auto="s=1 :: Epoch 1, iteration 1: take mini-batch 1, 16 of the 64 shuffled rows|s=2 :: Forward: the 16 rows go through the network together, as one matrix: 16 predictions ŷ|s=3 :: Loss: compare the 16 predictions with their labels and average: L = 0.87, the first dot|s=4 :: Backward: the gradient ∇L, one number per weight (9 here)|s=5 :: Update: every weight takes a step against its gradient, w − α∇L. One iteration = one update|s=10 :: Iteration 2: mini-batch 2, the same five stages, one more update|s=20 :: Iterations 3 and 4: every row has been used once. That is one epoch: 4 iterations, 4 updates|s=40 :: Epoch 2: shuffle again (new mini-batches) and repeat. The mean loss of an epoch falls from 0.64 to 0.28|s=60 :: Epoch 3: 12 updates in total. Every mini-batch gives a slightly different loss, so the dots are noisy, but the trend is down">
       <svg class="fig" style="max-height:none" aria-label="The training set of 64 rows coloured by mini-batch, the tiny network with forward and backward arrows, the loss, the nine weights with their gradient and update, and the loss of every iteration grouped into three epochs"></svg>
       <div class="ctl"><label for="tl-s">stage</label><input type="range" id="tl-s" data-k="s" min="0" max="60" step="1" value="0"><span class="v" data-v="s"></span></div>
     </div>
     <div class="stack" style="gap:8px">
       <p class="small">The tiny network of chapters 1 and 2, with the same starting weights, trained for real: 64 labelled rows, mini-batches of 16, $\alpha=1$, 3 epochs.</p>
-      <pre class="code s"><span class="cl" data-hl="0">loader = DataLoader(data, 16, shuffle=True)</span>
-<span class="cl" data-hl="e">for epoch in range(3):             <span class="c"># epoch</span></span>
-<span class="cl" data-hl="1">    for xb, yb in loader:          <span class="c"># mini-batch</span></span>
-<span class="cl" data-hl="2">        y_hat = model(xb)          <span class="c"># forward</span></span>
-<span class="cl" data-hl="3">        loss = loss_fn(y_hat, yb)  <span class="c"># loss</span></span>
-<span class="cl" data-hl="4">        opt.zero_grad()</span>
-<span class="cl" data-hl="4">        loss.backward()            <span class="c"># backward</span></span>
-<span class="cl" data-hl="5">        opt.step()                 <span class="c"># update</span></span></pre>
+      <pre class="code s"><span class="cl" data-hl="0">loader = DataLoader(ds, 16, shuffle=True)</span>
+<span class="cl" data-hl="e">for epoch in range(3):                <span class="c"># epoch</span></span>
+<span class="cl" data-hl="1">    for xb, yb in loader:             <span class="c"># mini-batch</span></span>
+<span class="cl" data-hl="1">        optimizer.zero_grad()         <span class="c"># reset .grad</span></span>
+<span class="cl" data-hl="2">        logits = model(xb)            <span class="c"># forward</span></span>
+<span class="cl" data-hl="3">        loss = criterion(logits, yb)  <span class="c"># loss</span></span>
+<span class="cl" data-hl="4">        loss.backward()               <span class="c"># backward</span></span>
+<span class="cl" data-hl="5">        optimizer.step()              <span class="c"># update</span></span></pre>
       <div class="ro"><div class="m"><span>epoch</span><b data-r="ep">–</b></div><div class="m"><span>mini-batch</span><b data-r="mb">–</b></div><div class="m"><span>updates so far</span><b data-r="up">–</b></div><div class="m"><span>rows seen</span><b data-r="rows">–</b></div></div>
       <div class="idea step"><b>1 iteration</b> = 1 mini-batch → forward → loss → backward → <b>1 update</b>. <b>1 epoch</b> = every row once, here $64/16=4$ iterations; then shuffle and start the next one.</div>
     </div>
@@ -347,41 +342,30 @@
       <svg class="fig" data-fig="sched" aria-label="Constant, step decay, warm-up plus cosine and reduce-on-plateau learning-rate schedules"></svg>
       <p class="small">Large steps early to move fast, small steps late to settle. <b>Warm-up</b> avoids huge first updates while Adam's statistics are still poor (standard for transformers). <b>Reduce on plateau</b> divides α when the validation loss stalls.</p>
     </div>
-    <pre class="code">model = MLP()
-opt = torch.optim.AdamW(model.parameters(),
-                        lr=1e-3, weight_decay=1e-2)
+    <div class="stack" style="gap:8px">
+    <pre class="code">model = TinyNet()   <span class="c"># any nn.Module (slide 6)</span>
+optimizer = torch.optim.AdamW(  <span class="c"># weight decay: slide 20</span>
+    model.parameters(), lr=1e-3, weight_decay=1e-2)
 sched = torch.optim.lr_scheduler.CosineAnnealingLR(
-            opt, T_max=epochs)
+    optimizer, T_max=epochs)
 for epoch in range(epochs):
     model.train()                  <span class="c"># training mode</span>
     for xb, yb in train_loader:    <span class="c"># mini-batches</span>
-        loss = loss_fn(model(xb), yb)
-        opt.zero_grad()
+        optimizer.zero_grad()
+        logits = model(xb)
+        loss = criterion(logits, yb)
         loss.backward()            <span class="c"># backprop</span>
-        opt.step()                 <span class="c"># update</span>
+        optimizer.step()           <span class="c"># update</span>
     sched.step()                   <span class="c"># once per epoch</span>
     model.eval()                   <span class="c"># evaluation mode</span>
     with torch.no_grad():
-        val_loss = evaluate(model, val_loader)</pre>
-  </div>
-</section>
-
-<section class="slide">
-  <h2>Anatomy of a model: shapes through the layers</h2>
-  <svg class="fig" data-fig="shapes-walk" style="max-height:210px" aria-label="Tensor shapes and parameter counts through Flatten, Linear, ReLU, Dropout, Linear and the loss"></svg>
-  <div class="cols">
-    <pre class="code">model = nn.Sequential(
-    nn.Flatten(),                 <span class="c"># [B,1,28,28] -> [B,784]</span>
-    nn.Linear(784, 256),          <span class="c"># 784*256 + 256 params</span>
-    nn.ReLU(),
-    nn.Dropout(0.2),
-    nn.Linear(256, 10),           <span class="c"># logits, one per class</span>
-)
-loss_fn = nn.CrossEntropyLoss()  <span class="c"># softmax inside</span></pre>
-    <div class="stack" style="gap:8px">
-      <p class="small">Every layer is a function <b>tensor in → tensor out</b>. To design or debug a network, write the shape after each layer: the first number is always the batch size.</p>
-      <p class="small"><code>model(xb).shape</code> and <code>sum(p.numel() for p in model.parameters())</code> are the two commands you will type most.</p>
-      <p class="small why">Layers with parameters: <code>Linear</code>, <code>Conv2d</code>, <code>Embedding</code>, <code>BatchNorm</code>, <code>LSTM</code>… Layers without: <code>ReLU</code>, <code>Dropout</code>, <code>Flatten</code>, <code>MaxPool2d</code>.</p>
+        val_loss = criterion(model(X_val), y_val)</pre>
+      <ul class="small">
+        <li><code>model.train()</code> / <code>model.eval()</code>: dropout and BatchNorm switch behaviour (slides 24–25).</li>
+        <li><code>with torch.no_grad():</code> to evaluate without building the graph.</li>
+        <li><code>model.to("cuda")</code>, <code>xb.to("cuda")</code>: model and data on the same device.</li>
+        <li><code>torch.save(model.state_dict(), "m.pt")</code> saves the weights.</li>
+      </ul>
     </div>
   </div>
 </section>
@@ -391,7 +375,7 @@ loss_fn = nn.CrossEntropyLoss()  <span class="c"># softmax inside</span></pre>
   <h2>The MLP again, now with PyTorch</h2>
   <div class="cols c64">
     <div class="stack" style="gap:10px">
-      <p>The same data and network as Lab 7, rebuilt with the tools you will use from now on. Autograd replaces the hand-written backward pass.</p>
+      <p>The same data as Lab 7; the MLP gets ReLU and a second hidden layer. Built with the tools you will use from now on: autograd replaces the hand-written backward pass.</p>
       <ol class="todo">
         <li>Tensors, and <b>autograd</b>: check that <code>loss.backward()</code> gives the gradients you derived by hand.</li>
         <li><code>nn.Linear</code> and <code>nn.Module</code>: an MLP with ReLU hidden layers.</li>
@@ -642,6 +626,25 @@ loss_fn = nn.CrossEntropyLoss()  <span class="c"># softmax inside</span></pre>
   <p class="labline">Theory notes for this chapter: <a href="../../notes/neural_networks/02_training_optimization_regularization.html" target="_blank" rel="noopener">notes 02 · Training: optimization and regularization</a> (SGD, momentum, Adam, schedules, weight decay, dropout, BatchNorm).</p>
 </section>
 
+<section class="slide">
+  <h2>Anatomy of a model: shapes through the layers</h2>
+  <svg class="fig" data-fig="shapes-walk" data-input="[B, 28, 28]" data-hidden="128" data-drop="0" style="max-height:210px" aria-label="Tensor shapes and parameter counts of the Lab 9 MLP through Flatten, Linear, ReLU, Linear and the loss"></svg>
+  <div class="cols">
+    <pre class="code">model = nn.Sequential(
+    nn.Flatten(),                 <span class="c"># [B, 28, 28] -> [B, 784]</span>
+    nn.Linear(784, 128),          <span class="c"># 784*128 + 128 params</span>
+    nn.ReLU(),
+    nn.Linear(128, 10),           <span class="c"># logits, one per class</span>
+)
+criterion = nn.CrossEntropyLoss()  <span class="c"># softmax inside</span></pre>
+    <div class="stack" style="gap:8px">
+      <p class="small">Before Lab 9: the MLP you will train there, layer by layer. Every layer is a function <b>tensor in → tensor out</b>. To design or debug a network, write the shape after each layer: the first number, B, is always the batch size.</p>
+      <p class="small"><code>model(xb).shape</code> and <code>sum(p.numel() for p in model.parameters())</code> are the two commands you will type most.</p>
+      <p class="small why">Layers with parameters: <code>Linear</code>, <code>Conv2d</code>, <code>Embedding</code>, <code>BatchNorm</code>, <code>LSTM</code>… Layers without: <code>ReLU</code>, <code>Dropout</code>, <code>Flatten</code>, <code>MaxPool2d</code>.</p>
+    </div>
+  </div>
+</section>
+
 <section class="slide lab">
   <div class="labtag">LAB 9</div>
   <h2>Multiclass images with an MLP (Fashion-MNIST)</h2>
@@ -677,7 +680,7 @@ loss_fn = nn.CrossEntropyLoss()  <span class="c"># softmax inside</span></pre>
 <script src="../assets/figures.js?v=20260930"></script>
 <script src="assets/nn-core.js?v=20260930"></script>
 <script src="assets/fig-nn-intro.js?v=20261006"></script>
-<script src="assets/fig-nn-training.js?v=20261011"></script>
+<script src="assets/fig-nn-training.js?v=20261012"></script>
 <script src="../assets/deck.js?v=20260930"></script>
 </body>
 </html>

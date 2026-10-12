@@ -69,8 +69,8 @@ X = CountVectorizer().fit_transform(reviews)  <span class="c"># sparse [N, |V|]<
   <div class="cols">
     <div class="stack" style="gap:10px">
       <p class="small">Raw counts are dominated by words that are everywhere: "the" is in 99&nbsp;% of the IMDB reviews and says nothing about any of them.</p>
-      <div class="bluebox">$$\mathrm{tfidf}(t,d)=\mathrm{tf}(t,d)\cdot\ln\frac{N}{\mathrm{df}(t)}$$</div>
-      <p class="small">$\mathrm{tf}(t,d)$: count of word $t$ in document $d$. $\mathrm{df}(t)$: number of the $N$ documents that contain $t$. The second factor, the <b>idf</b>, is 0 for a word in every document and large for a rare one. Each row is then scaled to length 1, so long reviews do not dominate.</p>
+      <div class="bluebox">$$\mathrm{tfidf}(w,d)=\mathrm{tf}(w,d)\cdot\ln\frac{N}{\mathrm{df}(w)}$$</div>
+      <p class="small">$\mathrm{tf}(w,d)$: count of word $w$ in document $d$. $\mathrm{df}(w)$: number of the $N$ documents that contain $w$. The second factor, the <b>idf</b>, is 0 for a word in every document and large for a rare one. Each row is then scaled to length 1, so long reviews do not dominate.</p>
       <table class="t xs tight"><tr><th>IMDB, 20,000 reviews</th><th>the</th><th>movie</th><th>great</th><th>excellent</th><th>waste</th></tr>
         <tr><td>in % of the reviews</td><td>99 %</td><td>61 %</td><td>25 %</td><td>7 %</td><td>5 %</td></tr>
         <tr><td>idf</td><td>0.01</td><td>0.50</td><td>1.37</td><td>2.65</td><td>2.95</td></tr></table>
@@ -85,7 +85,7 @@ X = CountVectorizer().fit_transform(reviews)  <span class="c"># sparse [N, |V|]<
       <pre class="code s">X = TfidfVectorizer().fit_transform(reviews)
 clf = LogisticRegression().fit(X, y)</pre>
       <p class="tiny">scikit-learn smooths the idf, $\ln\frac{1+N}{1+\mathrm{df}}+1$: common words are down-weighted, never erased.</p>
-      <div class="idea step">Lab 13: TF-IDF + logistic regression gets <b>90 %</b> on IMDB, in seconds. A strong baseline, but blind to word order. Next: a network that reads the words <b>in order</b>.</div>
+      <div class="idea step">Lab 13: TF-IDF + logistic regression gets <b>90 %</b> (validation) on IMDB, in seconds. A strong baseline, but blind to word order. Next: a network that reads the words <b>in order</b>.</div>
     </div>
   </div>
 </section>
@@ -104,7 +104,7 @@ clf = LogisticRegression().fit(X, y)</pre>
     </div>
     <div class="stack" style="gap:12px">
       <table class="t xs"><tr><th>data</th><th>one step $\bx_t$</th><th>task</th></tr>
-        <tr><td>text</td><td>a word (embedding)</td><td>sentiment, translation, next word</td></tr>
+        <tr><td>text</td><td>a word, as a vector (next slides)</td><td>sentiment, translation, next word</td></tr>
         <tr><td>speech</td><td>a 10 ms frame of audio features</td><td>transcription</td></tr>
         <tr><td>finance</td><td>price, volume of one day</td><td>forecast tomorrow</td></tr>
         <tr><td>machines</td><td>sensor readings each second</td><td>detect a failure</td></tr></table>
@@ -127,7 +127,7 @@ clf = LogisticRegression().fit(X, y)</pre>
   <svg class="fig" data-fig="lookup" style="max-height:260px" aria-label="A one-hot vector for the word movie times the embedding matrix picks out the row of movie"></svg>
   <div class="cols">
     <p class="small">Each token id $k$ owns one row $\mathbf e_k$ of a matrix $\bE\in\R^{|V|\times d}$. Written as a one-hot row vector $\mathbf o_k$ (a single 1 in position $k$), the lookup is a matrix product, $\ \mathbf e_k=\mathbf o_k\bE$: it picks row $k$. In code nobody multiplies: <code>E[ids]</code>.</p>
-    <p class="small">$\bE$ starts random and is <b>learned by backprop</b> like any other weight; only the rows of the tokens in the batch get a gradient. <code>nn.Embedding(|V|, d)</code>: input $[B,T]$ integers, output $[B,T,d]$ floats. Typical sizes: $|V|$ = 10,000–50,000, $d$ = 50–1,024.</p>
+    <p class="small">$\bE$ starts random and is <b>learned by backprop</b> like any other weight; only the rows of the tokens in the batch get a gradient. <code>nn.Embedding(|V|, d)</code>: input $[B,T]$ integers ($B$ = batch size), output $[B,T,d]$ floats. Typical sizes: $|V|$ = 10,000–50,000, $d$ = 50–1,024.</p>
   </div>
 </section>
 
@@ -136,8 +136,8 @@ clf = LogisticRegression().fit(X, y)</pre>
   <div class="cols">
     <div class="stack" style="gap:10px">
       <ul class="small">
-        <li><b>One-hot</b> $\mathbf o_w\in\{0,1\}^{|V|}$: very sparse, high-dimensional, and every pair of words is equally far apart. No similarity information.</li>
-        <li><b>Embedding</b>: a dense vector $\mathbf e_w\in\R^d$, $d\ll|V|$ (e.g. 50–1,024). Similar words end up close.</li>
+        <li><b>One-hot</b> $\mathbf o_w\in\{0,1\}^{|V|}$: very sparse, high-dimensional, and every pair of words is equally far apart. No similarity information. A bag of words is the sum of a review's one-hot vectors: the same blindness ("great" and "excellent" are unrelated).</li>
+        <li><b>Embedding</b>: a dense vector $\mathbf e_w\in\R^d$, $d\ll|V|$ (e.g. 50–1,024). Similar words end up close. Their mean over a review is again an order-free model (Lab 13).</li>
       </ul>
       <div class="bluebox">$$\mathbf e_w=\mathbf o_w\bE\qquad(\text{row }w\text{ of }\bE)$$</div>
       <p class="step small">$\bE$ is learned like any other weight: by the task itself, or beforehand with <b>target/context likelihood models</b>:</p>
@@ -164,10 +164,10 @@ clf = LogisticRegression().fit(X, y)</pre>
   <h2>Typical Recurrent Neural Networks:</h2>
   <svg class="fig" data-fig="rnn-unroll" aria-label="An RNN cell with a loop, and the same cell unrolled over time steps"></svg>
   <div class="cols">
-    <div class="eq">$$\bh^{\langle t\rangle}=g_1\big(\bx^{\langle t\rangle}\bW_x+\bh^{\langle t-1\rangle}\bW_h+\bb_h\big)$$</div>
-    <div class="eq">$$\hat\by^{\langle t\rangle}=g_2\big(\bh^{\langle t\rangle}\bW_y+\bb_y\big)$$</div>
+    <div class="eq">$$\bh_t=g_1\big(\bx_t\bW_x+\bh_{t-1}\bW_h+\bb_h\big)$$</div>
+    <div class="eq">$$\hat\by_t=g_2\big(\bh_t\bW_y+\bb_y\big)$$</div>
   </div>
-  <p class="small">$\bx^{\langle t\rangle}$: feature vector at time $t$ (e.g. a new word of a sentence). $\hat\by^{\langle t\rangle}$: output at time $t$ (e.g. is this word an entity?). $g_1$ is usually tanh. The hidden state $\bh$ carries the memory. Unrolled, an RNN is just a very deep network whose layers share their weights.</p>
+  <p class="small">$\bx_t$: feature vector at time $t$ (e.g. a new word of a sentence). $\hat\by_t$: output at time $t$ (e.g. is this word an entity?). $g_1$ is usually tanh. The hidden state $\bh$ carries the memory. Unrolled, an RNN is just a very deep network whose layers share their weights.</p>
 </section>
 
 <section class="slide">
@@ -180,7 +180,9 @@ clf = LogisticRegression().fit(X, y)</pre>
       <table class="t xs"><tr><th>object</th><th>shape</th></tr><tr><td>$\bx_t$ (one step, batch $B$)</td><td>$B\times d$</td></tr><tr><td>$\bh_t$</td><td>$B\times d_h$</td></tr><tr><td>$\bW_x$</td><td>$d\times d_h$</td></tr><tr><td>$\bW_h$</td><td>$d_h\times d_h$</td></tr></table>
       <p class="small">Parameters: $d\,d_h+d_h^2+d_h$, whatever the length. With $d=100,d_h=128$: 29,312 (PyTorch keeps two bias vectors: 29,440).</p>
       <pre class="code s">rnn = nn.RNN(input_size=100, hidden_size=128, batch_first=True)
-out, h_T = rnn(x)        <span class="c"># x: [B, T, 100] → out: [B, T, 128]</span></pre>
+out, h_T = rnn(x)    <span class="c"># x: [B, T, 100] (batch_first; default [T, B, 100])</span>
+<span class="c"># out: h_t at every step, [B, T, 128]</span>
+<span class="c"># h_T: last step only, [num_layers, B, 128] = [1, B, 128]</span></pre>
     </div>
   </div>
 </section>
@@ -217,10 +219,10 @@ out, h_T = rnn(x)        <span class="c"># x: [B, T, 100] → out: [B, T, 128]</
   <div class="cols">
     <div class="stack" style="gap:10px">
       <p><b>Loss function</b>: summed over the time steps (or only at the last one, for many-to-one):</p>
-      <div class="eq">$$L(\hat\by,\by)=\sum_{t=1}^{T_y}L\big(\hat\by^{\langle t\rangle},\by^{\langle t\rangle}\big)$$</div>
+      <div class="eq">$$L(\hat\by,\by)=\sum_{t=1}^{T_y}L\big(\hat\by_t,\by_t\big)$$</div>
       <p><b>How do we learn?</b> Unroll the network and run ordinary backprop on the unrolled graph: <b>backpropagation through time</b> (BPTT).</p>
       <div class="eq">$$\frac{\partial L}{\partial\bW_h}=\sum_{t=1}^{T}\frac{\partial L}{\partial\bW_h}\Big|_{\text{step }t}$$</div>
-      <p class="small">$\bW_h$ is used at every step, so its gradient is the <b>sum</b> of the per-step contributions (shared weights → gradients add up, like the "add gate").</p>
+      <p class="small">$\bW_h$ is used at every step, so its gradient is the <b>sum</b> of the per-step contributions (shared weights → gradients add up: chapter 2, a parameter that reaches the loss through several paths gets one term per path).</p>
     </div>
     <div class="stack" style="gap:10px">
       <table class="t" style="font-size:17px"><tr><th>Advantages</th><th>Drawbacks</th></tr>
@@ -237,16 +239,16 @@ out, h_T = rnn(x)        <span class="c"># x: [B, T, 100] → out: [B, T, 128]</
   <svg class="fig" data-fig="bptt" style="max-height:205px" aria-label="The gradient flowing back from the loss through six time steps, getting thinner at every step"></svg>
   <div class="cols">
     <div class="stack" style="gap:6px">
-      <p class="small"><b>With one number per step</b>, $h_t=\tanh(w\,h_{t-1}+u\,x_t)$. The chain rule for one step back:</p>
-      <div class="eq s">$$\frac{\partial h_t}{\partial h_{t-1}}=\underbrace{(1-h_t^2)}_{\tanh'}\cdot w$$</div>
+      <p class="small"><b>With one number per step</b>, $h_t=\tanh(w_h\,h_{t-1}+u\,x_t)$. The chain rule for one step back:</p>
+      <div class="eq s">$$\frac{\partial h_t}{\partial h_{t-1}}=\underbrace{(1-h_t^2)}_{\tanh'}\cdot w_h$$</div>
       <p class="small step">Through $T-k$ steps the factors multiply:</p>
-      <div class="bluebox step" style="font-size:19px">$$\frac{\partial h_T}{\partial h_k}=\prod_{t=k+1}^{T}(1-h_t^2)\,w=w^{\,T-k}\prod_{t=k+1}^{T}(1-h_t^2)$$</div>
+      <div class="bluebox step" style="font-size:19px">$$\frac{\partial h_T}{\partial h_k}=\prod_{t=k+1}^{T}(1-h_t^2)\,w_h=w_h^{\,T-k}\prod_{t=k+1}^{T}(1-h_t^2)$$</div>
     </div>
     <ul class="small step">
-      <li>$0\lt1-h_t^2\le1$, so every step back multiplies the gradient by at most $|w|$.</li>
-      <li>$|w|\lt1$: the signal from $T-k$ steps back shrinks <b>exponentially</b> (vanishing). The network cannot learn long-range dependencies: the gradient never tells it they matter.</li>
-      <li>$|w|\gt1$: it can blow up (exploding) → gradient clipping.</li>
-      <li>With vectors, $w$ becomes $\bW_h^\top$ and $1-h_t^2$ a diagonal matrix: $\ \norm{\partial J/\partial\bh_k}\le\norm{\partial J/\partial\bh_T}\,\norm{\bW_h}^{T-k}$.</li>
+      <li>$0\lt1-h_t^2\le1$, so every step back multiplies the gradient by at most $|w_h|$.</li>
+      <li>$|w_h|\lt1$: the signal from $T-k$ steps back shrinks <b>exponentially</b> (vanishing). The network cannot learn long-range dependencies: the gradient never tells it they matter.</li>
+      <li>$|w_h|\gt1$: it can blow up (exploding) → gradient clipping.</li>
+      <li>With vectors, $w_h$ becomes $\bW_h^\top$ and $1-h_t^2$ a diagonal matrix: $\ \norm{\partial L/\partial\bh_k}\le\norm{\partial L/\partial\bh_T}\,\norm{\bW_h}^{T-k}$.</li>
     </ul>
   </div>
 </section>
@@ -275,8 +277,8 @@ out, h_T = rnn(x)        <span class="c"># x: [B, T, 100] → out: [B, T, 128]</
   <div class="cols">
     <div class="stack" style="gap:8px">
       <p class="small">To remedy this, several versions of <b>gates</b> have been designed, each with its own purpose, but all with a similar structure:</p>
-      <div class="bluebox">$$\Gamma=\sigma\big(\bx^{\langle t\rangle}\bW+\bh^{\langle t-1\rangle}\mathbf U+\bb\big)\in(0,1)$$</div>
-      <p class="small">A gate is a sigmoid: a <b>soft switch</b> between 0 (block) and 1 (let through), applied element-wise by multiplication. Each gate has its own weights and looks at the current input and the previous state to decide.</p>
+      <div class="bluebox">$$\Gamma=\sigma\big([\bh_{t-1},\bx_t]\bW+\bb\big)\in(0,1)$$</div>
+      <p class="small">A gate is a sigmoid: a <b>soft switch</b> between 0 (block) and 1 (let through), applied element-wise by multiplication. Each gate has its own weights and looks at the previous state and the current input, concatenated as in the RNN cell, to decide.</p>
       <svg class="fig" data-fig="gate-demo" style="max-height:200px" aria-label="A signal vector multiplied element by element by a gate vector of sigmoid values"></svg>
     </div>
     <div class="stack" style="gap:10px">
@@ -286,7 +288,7 @@ out, h_T = rnn(x)        <span class="c"># x: [B, T, 100] → out: [B, T, 128]</
         <tr><td>Forget gate $\Gamma_f$</td><td>Erase a memory cell or not?</td><td>LSTM</td></tr>
         <tr><td>Input gate $\Gamma_i$</td><td>Write new content into memory?</td><td>LSTM</td></tr>
         <tr><td>Output gate $\Gamma_o$</td><td>How much to reveal of a cell?</td><td>LSTM</td></tr></table>
-      <p class="small">Analogy: a <b>notebook</b> (the cell state) with three rules: what to erase (forget), what to write (input), what to read aloud (output).</p>
+      <p class="small">Analogy: a <b>notebook</b> (the cell state) with three rules: what to erase (forget), what to write (input), what to read aloud (output). On the next slides $\Gamma_f,\Gamma_i,\Gamma_o$ are written $\bff_t,\bi_t,\bo_t$.</p>
     </div>
   </div>
 </section>
@@ -296,7 +298,7 @@ out, h_T = rnn(x)        <span class="c"># x: [B, T, 100] → out: [B, T, 128]</
   <div class="cols">
     <div class="stack" style="gap:4px">
       <div class="eq" style="font-size:21px">$$\begin{aligned}\bff_t&amp;=\sigma\big([\bh_{t-1},\bx_t]\bW_f+\bb_f\big)\\\bi_t&amp;=\sigma\big([\bh_{t-1},\bx_t]\bW_i+\bb_i\big)\\\tilde\bc_t&amp;=\tanh\big([\bh_{t-1},\bx_t]\bW_c+\bb_c\big)\\\bc_t&amp;=\hl{\bff_t\odot\bc_{t-1}+\bi_t\odot\tilde\bc_t}\\\bo_t&amp;=\sigma\big([\bh_{t-1},\bx_t]\bW_o+\bb_o\big)\\\bh_t&amp;=\bo_t\odot\tanh(\bc_t)\end{aligned}$$</div>
-      <p class="small">$\bff_t$ forget, $\bi_t$ input, $\bo_t$ output gates; $\tilde\bc_t$ candidate content. The memory update is a <b>sum</b>, highlighted in blue.</p><p class="small">Two states travel along time: the <b>cell</b> $\bc_t$ (long-term memory) and the <b>hidden</b> $\bh_t$ (what is shown to the next layer). Parameters: 4 blocks, $4\big(d_h(d_h+d)+d_h\big)$.</p>
+      <p class="small">$\bff_t$ forget, $\bi_t$ input, $\bo_t$ output gates; $\tilde\bc_t$ candidate content. The memory update is a <b>sum</b>, highlighted in blue.</p><p class="small">Two states travel along time: the <b>cell</b> $\bc_t$ (long-term memory) and the <b>hidden</b> $\bh_t$ (what is shown to the next layer). Parameters: 4 blocks, $4\big(d_h(d_h+d)+d_h\big)$ (PyTorch keeps two bias vectors: $4\big(d_h(d_h+d)+2d_h\big)$, 33,280 in Lab 13).</p>
     </div>
     <svg class="fig" data-fig="lstm-cell" aria-label="An LSTM cell with forget, input and output gates on the cell-state line"></svg>
   </div>
@@ -355,7 +357,7 @@ out, h_T = rnn(x)        <span class="c"># x: [B, T, 100] → out: [B, T, 128]</
     </div>
     <div class="stack" style="gap:6px">
       <svg class="fig" data-fig="memory-exp" aria-label="Accuracy against distance for a vanilla RNN, a default LSTM and an LSTM with an open forget gate"></svg>
-      <p class="small">The experiment of the notes: the label is the <b>first</b> token, then up to 99 noise tokens. The tip above is the difference between chance and 100 %.</p>
+      <p class="small">The experiment of <a href="../../notes/neural_networks/04_rnn_lstm.html" target="_blank" rel="noopener">notes 04</a>: the label is the <b>first</b> token, then up to 99 noise tokens. The tip above is the difference between chance and 100 %.</p>
     </div>
   </div>
 </section>
@@ -378,8 +380,8 @@ out, h_T = rnn(x)        <span class="c"># x: [B, T, 100] → out: [B, T, 128]</
   <h2>Other RNN: bidirectional and deep</h2>
   <div class="stack" style="gap:12px">
     <ul class="small">
-      <li>What happens if we model a very non-linear problem? <b>Deep RNNs</b>: stack recurrent layers, the outputs of one are the inputs of the next (<code>num_layers=2</code>).</li>
-      <li>What if the output should not only depend on the past (e.g. S&amp;P 500 values) but also on the future (e.g. classifying words in a sentence)? <b>Bidirectional RNNs</b>: one RNN reads left-to-right, another right-to-left; concatenate their states (<code>bidirectional=True</code>).</li>
+      <li>What happens if we model a very non-linear problem? <b>Deep RNNs</b>: stack recurrent layers, the outputs of one are the inputs of the next (<code>num_layers=2</code>; the final state <code>h</code> then has one row per layer, <code>h[-1]</code> is the top one).</li>
+      <li>What if the output should not only depend on the past (e.g. S&amp;P 500 values) but also on the future (e.g. classifying words in a sentence)? <b>Bidirectional RNNs</b>: one RNN reads left-to-right, another right-to-left; concatenate their states (<code>bidirectional=True</code>; <code>h</code> then has 2 rows per layer: <code>torch.cat([h[-2], h[-1]], 1)</code> joins the last layer's two directions, so the head takes $2d_h$ inputs).</li>
     </ul>
     <svg class="fig" data-fig="birnn" aria-label="A bidirectional RNN and a deep RNN"></svg>
     <p class="small why">A bidirectional model needs the whole sequence first: fine for classification, impossible for real-time forecasting or text generation.</p>
@@ -392,26 +394,28 @@ out, h_T = rnn(x)        <span class="c"># x: [B, T, 100] → out: [B, T, 128]</
     <div class="stack" style="gap:10px">
       <svg class="fig" data-fig="padding" aria-label="Three sentences of different lengths padded to the same length"></svg>
       <ul class="small">
-        <li><b>Batches</b>: pad sequences to a common length. <code>pack_padded_sequence</code> tells the LSTM where each sequence really ends, so the padding is skipped; <code>padding_idx=0</code> keeps the <code>&lt;PAD&gt;</code> embedding at zero.</li>
-        <li><b>Many-to-one</b>: use the hidden state after the <b>last real token</b> (what packing returns), or the mean / max over time. Without packing, <code>h[-1]</code> is the state after the padding!</li>
+        <li><b>Batches</b>: pad sequences to a common length. <code>pack_padded_sequence</code> tells the LSTM where each sequence really ends, so the padding is skipped (the lengths must be on the CPU; <code>enforce_sorted=False</code>: the batch need not be sorted by length); <code>padding_idx=0</code> keeps the <code>&lt;PAD&gt;</code> embedding at zero.</li>
+        <li><b>Many-to-one</b>: use the hidden state after the <b>last real token</b> (what packing returns), or the mean / max over time. Without packing, the final state <code>h</code> is the state after the padding!</li>
         <li><b>Clip gradients</b> (norm 1.0) and use Adam.</li>
       </ul>
     </div>
-    <pre class="code s">class SentimentLSTM(nn.Module):
+    <pre class="code s">class SentimentRNN(nn.Module):
     def __init__(self, V, d=64, dh=64):
         super().__init__()
-        self.emb = nn.Embedding(V, d, padding_idx=0)
-        self.lstm = nn.LSTM(d, dh, batch_first=True)
-        self.head = nn.Linear(dh, 1)
+        self.embedding = nn.Embedding(V, d, padding_idx=0)
+        self.rnn = nn.LSTM(d, dh, batch_first=True)
+        self.fc = nn.Linear(dh, 1)
 
-    def forward(self, tokens, lengths):  <span class="c"># [B, T], [B]</span>
-        x = self.emb(tokens)             <span class="c"># [B, T, d]</span>
-        x = pack_padded_sequence(x, lengths.cpu(),
+    def forward(self, x, lengths):    <span class="c"># [B, T], [B]</span>
+        e = self.embedding(x)          <span class="c"># [B, T, d]</span>
+        packed = pack_padded_sequence(e, lengths.cpu(),
                 batch_first=True, enforce_sorted=False)
-        _, (h, c) = self.lstm(x)         <span class="c"># h: [1, B, dh]</span>
-        return self.head(h[-1]).squeeze(1)  <span class="c"># [B] logits</span>
+        _, (h, c) = self.rnn(packed)   <span class="c"># h: [layers=1, B, dh]</span>
+        <span class="c"># h[-1]: the last layer (not the last time step)</span>
+        return self.fc(h[-1]).squeeze(1)  <span class="c"># [B] logits</span>
 
-loss_fn = nn.BCEWithLogitsLoss()
+model = SentimentRNN(V=10_000)
+criterion = nn.BCEWithLogitsLoss()   <span class="c"># training loop: ch. 3</span>
 <span class="c"># in the loop, after loss.backward():</span>
 nn.utils.clip_grad_norm_(model.parameters(), 1.0)</pre>
   </div>
@@ -469,7 +473,7 @@ nn.utils.clip_grad_norm_(model.parameters(), 1.0)</pre>
       <dl class="gloss">
         <dt>notebook</dt><dd><code>lab 13 - LSTM sentiment analysis.ipynb</code></dd>
         <dt>you need</dt><dd>this chapter: bag of words and TF-IDF, embeddings, RNN, LSTM and GRU, padding and packing</dd>
-        <dt>results</dt><dd>validation accuracy: plain RNN 78 %, LSTM 87 %, GRU 88 %, and the order-free TF-IDF baseline 90 %. For sentiment, which words appear matters more than their order</dd>
+        <dt>results</dt><dd>validation accuracy: plain RNN 78 %, LSTM 87 %, GRU 88 %; order-free: mean of embeddings 88 %, TF-IDF 90 % (it reads the whole review, the networks only the last 200 tokens). For sentiment, which words appear matters more than their order</dd>
         <dt>runs on</dt><dd>CPU works; a GPU is faster</dd>
       </dl>
     </div>
@@ -483,7 +487,7 @@ nn.utils.clip_grad_norm_(model.parameters(), 1.0)</pre>
 </div></div>
 <script src="../assets/figures.js?v=20260930"></script>
 <script src="assets/nn-core.js?v=20260930"></script>
-<script src="assets/fig-nn-rnn.js?v=20260930"></script>
+<script src="assets/fig-nn-rnn.js?v=20261012b"></script>
 <script src="../assets/deck.js?v=20260930"></script>
 </body>
 </html>

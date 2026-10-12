@@ -36,10 +36,10 @@ FIG['embed-strip']=root=>{const svg=initSvg(svgOf(root),1000,326);const n=24,cw=
   box(svg,322,18,78,232,'sentence\nencoder\n\n(a trained\ntransformer)','#dae3f3',{cls:''});
   [38,121,221].forEach(y=>{arrowPx(svg,302,y,320,y,'ln thin sk','fk');arrowPx(svg,402,y,436,y,'ln thin sk','fk')});
   T(svg,x0,12,'the first 24 of the 384 numbers of each text (orange > 0, blue < 0)','','start');
-  strip(26,R.vq);T(svg,x0-6,43,'q','lab','end');
-  strip(98,R.v12);T(svg,x0-6,115,'d','lab','end');prod(128,R.vq,R.v12);T(svg,x0-6,141,'q×d','','end');
+  strip(26,R.vq);T(svg,x0+n*cw+8,43,'q','lab','start');
+  strip(98,R.v12);T(svg,x0+n*cw+8,115,'d','lab','start');prod(128,R.vq,R.v12);T(svg,x0+n*cw+8,141,'q×d','','start');
   T(svg,x0,166,'sum of the products over all 384 numbers = cosine = '+f2(R.cos12),'lab','start').style.fill='#385723';
-  strip(198,R.v17);T(svg,x0-6,215,'d','lab','end');prod(228,R.vq,R.v17);T(svg,x0-6,241,'q×d','','end');
+  strip(198,R.v17);T(svg,x0+n*cw+8,215,'d','lab','start');prod(228,R.vq,R.v17);T(svg,x0+n*cw+8,241,'q×d','','start');
   T(svg,x0,266,'sum of the products over all 384 numbers = cosine = '+f2(R.cos17),'lab','start').style.fill='#c00000';
   T(svg,x0,296,'the cosine is the sum of these products: mostly orange for a text about the same thing,','','start');
   T(svg,x0,314,'a mix of both colours for an unrelated one (length-1 vectors: dot product = cosine)','','start')};

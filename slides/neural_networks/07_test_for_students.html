@@ -62,7 +62,7 @@
       <p>The starting point solves <b>one of the three tasks</b>, the eye positions, with a ResNet-50 and a training loop written by hand. Your job: the other two.</p>
       <ol class="todo">
         <li>Run the notebook as it is: the data, the ResNet-50 backbone, the eye head, the training loop, the predicted eyes on test faces.</li>
-        <li>Return the gender and the age from the <code>Dataset</code>, next to the eyes.</li>
+        <li>Return the gender and the age from the <code>Dataset</code>, next to the eyes (gender as a float 0/1 for <code>BCEWithLogitsLoss</code>).</li>
         <li>Add two heads on the same backbone: <b>gender</b> (1 logit, BCE) and <b>age</b> (1 number, MSE).</li>
         <li>Train the three at once with a weighted sum of the losses, and make sure no task dominates (chapter 4: loss scales).</li>
         <li>Report each task on the test set next to a trivial baseline: the mean eye position, the majority class, the mean age.</li>
@@ -91,24 +91,27 @@
         self.eyes = nn.Linear(2048, 4)
         self.gender = nn.Linear(2048, 1)
         self.age = nn.Linear(2048, 1)
+        self.mse, self.bce = nn.MSELoss(), nn.BCEWithLogitsLoss()
 
     def training_step(self, batch, idx):
         h = self.trunk(batch["image"])
-        loss = (mse(self.eyes(h), batch["eyes_z"])
-              + bce(self.gender(h).squeeze(1), batch["gender"])
-              + mse(self.age(h).squeeze(1), batch["age_z"]))
+        z_eyes = (batch["eyes"] - self.eyes_mu) / self.eyes_sd  <span class="c"># ch. 4</span>
+        z_age = (batch["age"] - self.age_mu) / self.age_sd
+        loss = (self.mse(self.eyes(h), z_eyes)
+              + self.bce(self.gender(h).squeeze(1), batch["gender"])
+              + self.mse(self.age(h).squeeze(1), z_age))
         self.log("train/loss", loss)
         return loss                <span class="c"># no backward(), no step()</span>
 
     def configure_optimizers(self):
         return torch.optim.AdamW(self.parameters(), lr=1e-4)
 
-trainer = L.Trainer(max_epochs=20, gradient_clip_val=1.0,
+trainer = L.Trainer(max_epochs=12, gradient_clip_val=1.0,
                     callbacks=[EarlyStopping(monitor="val/loss")])
-trainer.fit(model, datamodule=dm)</pre>
+trainer.fit(FaceNet(), datamodule=dm)       <span class="c"># dm: the data</span></pre>
     <div class="stack" style="gap:10px">
       <p class="small">The training loop of chapter 3 is always the same: <code>zero_grad</code>, <code>backward</code>, <code>step</code>, move data to the GPU, switch <code>train()</code> / <code>eval()</code>, log, save the best checkpoint.</p>
-      <p class="small"><b>Lightning</b> writes that loop for you. You only fill in the parts that change: the model, <code>training_step</code> (return the loss), <code>validation_step</code>, and <code>configure_optimizers</code>.</p>
+      <p class="small"><b>Lightning</b> writes that loop for you. You only fill in the parts that change: the model, <code>training_step</code> (return the loss), <code>validation_step</code> (here the same loss, logged as <code>"val/loss"</code> for early stopping), and <code>configure_optimizers</code>. The sketch standardises the targets with the training-split mean and standard deviation (chapter 4) but leaves out <code>validation_step</code>, those statistics and the data module <code>dm</code>: the solution has them.</p>
       <p class="small">The <code>Trainer</code> adds GPU support, gradient clipping, early stopping and checkpointing with one argument each.</p>
       <p class="why">It does not make the model better; it removes a family of silent bugs (a forgotten <code>zero_grad</code>, metrics averaged wrongly, <code>eval()</code> never called).</p>
     </div>
@@ -134,6 +137,7 @@ trainer.fit(model, datamodule=dm)</pre>
       <dl class="gloss">
         <dt>notebook</dt><dd><code>test solution - multitask face analysis Lightning.ipynb</code></dd>
         <dt>results</dt><dd>test set, model vs trivial baseline: eyes RMSE 0.0042 vs 0.0076, gender accuracy 97 % vs 56 %, age MAE 4.0 vs 5.9 years</dd>
+        <dt>set-up</dt><dd>not the starting point's: a 70/15/15 split (not 80/10/10), 224-pixel images (not 256), linear heads, colour jitter, 12 epochs (not 4). Compare each model with its own baseline, not the raw numbers</dd>
         <dt>runs on</dt><dd><b>GPU</b> (T4 in Colab)</dd>
       </dl>
     </div>
@@ -147,7 +151,7 @@ trainer.fit(model, datamodule=dm)</pre>
 </div></div>
 <script src="../assets/figures.js?v=20260930"></script>
 <script src="assets/nn-core.js?v=20260930"></script>
-<script src="assets/fig-nn-cnn.js?v=20260930"></script>
+<script src="assets/fig-nn-cnn.js?v=20261012a"></script>
 <script src="../assets/deck.js?v=20260930"></script>
 </body>
 </html>

@@ -185,10 +185,11 @@ the end of each main lab, on its slide and below.
 - **Slides:** [Forward and backward propagation](https://imagra93.github.io/ML-course-labs/slides/neural_networks/02_backpropagation.html)
 - **Content:** a derivative as a sensitivity, computations as graphs, forward and backward with
   numbers, the backpropagation derivation and algorithm, the same algorithm in NumPy, gradient
-  checking and autograd, weight initialisation, vanishing and exploding gradients
+  checking, weight initialisation, vanishing and exploding gradients, then a first look at PyTorch
+  (tensors and autograd)
 - **Notebook:** [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab%207%20-%20MLP%20from%20scratch.ipynb)
   [Lab 7 · MLP from scratch (NumPy)](notebooks/neural_networks/lab%207%20-%20MLP%20from%20scratch.ipynb):
-  forward pass and backpropagation by hand, XOR / non-linear boundaries
+  hands-on: write the forward pass and backpropagation yourself (answers included), XOR / non-linear boundaries
 - **Extra notes:** [Backpropagation](https://imagra93.github.io/ML-course-labs/notes/neural_networks/01_backpropagation.html):
   chain rule on graphs, backprop derivation, gradient checking, autograd, initialisation, vanishing gradients
 

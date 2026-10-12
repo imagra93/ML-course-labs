@@ -7,9 +7,11 @@ function chain(svg,y,labels,subs,hi,col,back){labels.forEach((t,i)=>{const x=12+
   const tt=TT(svg,x+45,y+24,t,'lab');tt.style.fill=on?'#fff':'#595959';const st=T(svg,x+45,y+43,subs[i],'');st.style.fill=on?'#fff':'#8c8c8c';if(i<labels.length-1)arrowPx(svg,back?x+100:x+91,y+26,back?x+91:x+100,y+26,'ln thin sm','fm')})}
 FIG['fb-walk']=root=>{const svg=initSvg(root.querySelector('svg'),620,170);const inp=q(root,'s');const panels=[...root.querySelectorAll('[data-i]')];
   const fwdHi=[[0],[0,1],[0,1,2],[0,1,2,3],[0,1,2,3,4],[0,1,2,3,4,5]];const bwdHi=[[5],[4,5],[3,4,5],[2,3,4,5],[1,2,3,4,5],[0,1,2,3,4,5]];
+  /* data-loss="J" names the batch loss J (deck 2); without it the node is L, as in the notes */
+  const LS=root.dataset.loss||'L',fwd=FWD.slice(0,5).concat(LS),bwd=BWD.slice(0,5).concat(LS);
   function draw(){const s=+inp.value;setV(root,'s',s<6?'forward '+(s+1)+'/6':'backward '+(s-5)+'/6');svg.innerHTML='';
-    T(svg,10,14,'Forward →','lab','start');chain(svg,22,FWD,FSUB,s<6?fwdHi[s]:fwdHi[5],'#2e7d5b',false);
-    T(svg,10,100,'← Backward','lab','start');chain(svg,108,BWD,['gradient','hidden error','','gradient','output error','loss'],s<6?[]:bwdHi[s-6],'#a3336b',true);
+    T(svg,10,14,'Forward →','lab','start');chain(svg,22,fwd,FSUB,s<6?fwdHi[s]:fwdHi[5],'#2e7d5b',false);
+    T(svg,10,100,'← Backward','lab','start');chain(svg,108,bwd,['gradient','hidden error','','gradient','output error','loss'],s<6?[]:bwdHi[s-6],'#a3336b',true);
     panels.forEach(p=>p.hidden=(+p.dataset.i!==s))}inp.addEventListener('input',draw);draw()};
 FIG['net-back']=root=>{const svg=initSvg(svgOf(root),520,300);drawNet(svg,[2,4,1],{x0:50,y0:40,w:400,h:220,r:16,label:(l,i)=>l===0?'x'+(i+1):l===1?'':'L',fill:(l)=>l===0?'#70ad47':l===1?'#a3336b':'#a3336b'});
   arrowPx(svg,420,24,280,24,'ln sr','fr');TT(svg,350,18,'δ^{[2]}','lab');arrowPx(svg,230,24,90,24,'ln sr','fr');TT(svg,160,18,'δ^{[1]}','lab');
@@ -161,7 +163,7 @@ FIG['fb-concrete']=root=>{const svg=svgOf(root);const slide=root.closest('.slide
     if(ring>=0)pos[ring].forEach(p=>E('circle',{cx:p[0],cy:p[1],r:22,fill:'none',stroke:s<6?FW:BW,'stroke-width':3},svg));
     /* loss */
     const lc=s>=5?(s>=6?'#f4dce8':'#fbe5d6'):'#f2f2f2';E('rect',{x:494,y:149,width:82,height:52,rx:8,fill:lc,stroke:s===5?FW:s===6?BW:'#bfbfbf','stroke-width':s===5||s===6?3:1},svg);
-    TT(svg,535,181,'L','lab big').style.fill=s>=5?'#1f1f1f':'#a6a6a6';arrowPx(svg,450,175,492,175,'ln thin sm','fm');
+    TT(svg,535,181,M?'J':'L','lab big').style.fill=s>=5?'#1f1f1f':'#a6a6a6';arrowPx(svg,450,175,492,175,'ln thin sm','fm');
     if(s>=5){arrowPx(svg,535,246,535,203,'ln thin sk','fk');TT(svg,535,264,M?'Y (5 × 1)':'y (1 × 1)','')}
     /* titles: the matrix of each column with its shape; under the edges, the weights */
     const ttl=[[M?'X':'x',M?'5 × 3':'1 × 3'],[M?'Z^{[1]}, A^{[1]}':'z^{[1]}, a^{[1]}',M?'5 × 4':'1 × 4'],[M?'Z^{[2]}, A^{[2]}':'z^{[2]}, a^{[2]}',M?'5 × 1':'1 × 1']];
@@ -174,7 +176,7 @@ FIG['fb-concrete']=root=>{const svg=svgOf(root);const slide=root.closest('.slide
     const X=(l)=>[l||(m>1?'X':'x'),m,3,FILL.x],A1=(l)=>[l||(m>1?'A^{[1]}':'a^{[1]}'),m,4,FILL.x],Z1=[m>1?'Z^{[1]}':'z^{[1]}',m,4,FILL.z],Z2=[m>1?'Z^{[2]}':'z^{[2]}',m,1,FILL.z],
       A2=[m>1?'A^{[2]}':'ŷ',m,1,FILL.x],Y=[m>1?'Y':'y',m,1,FILL.y],D2=['δ^{[2]}',m,1,FILL.d],D1=['δ^{[1]}',m,4,FILL.d],dA=[m>1?'∂A^{[1]}':'∂a^{[1]}',m,4,FILL.d];
     const S=[[X()],[X(),'·',['W^{[1]}',3,4,FILL.w],'+',['b^{[1]}',1,4,FILL.b],'=',Z1],['g(',Z1,')','=',A1()],[A1(),'·',['W^{[2]}',4,1,FILL.w],'+',['b^{[2]}',1,1,FILL.b],'=',Z2],['g(',Z2,')','=',A2],
-      ['L(',A2,',',Y,')','=',['L',1,1,FILL.z]],[['∂L/∂L = 1',1,1,FILL.d]],[D2,'=',m>1?'(':'',A2,'−',Y,m>1?') / 5':''],
+      [m>1?'J(':'L(',A2,',',Y,')','=',[m>1?'J':'L',1,1,FILL.z]],[[m>1?'∂J/∂J = 1':'∂L/∂L = 1',1,1,FILL.d]],[D2,'=',m>1?'(':'',A2,'−',Y,m>1?') / 5':''],
       [['∂W^{[2]}',4,1,FILL.d],'=',A1((m>1?'A':'a')+'^{[1]⊤}').map((v,i)=>i===1?4:i===2?m:v),'·',D2,'  ',['∂b^{[2]}',1,1,FILL.d],'=',m>1?'Σ_{rows}':'',D2],
       [dA,'=',D2,'·',['W^{[2]⊤}',1,4,FILL.w]],[D1,'=',dA,'⊙',[m>1?'g′(Z^{[1]})':'g′(z^{[1]})',m,4,FILL.z]],
       [['∂W^{[1]}',3,4,FILL.d],'=',X(m>1?'X^⊤':'x^⊤').map((v,i)=>i===1?3:i===2?m:v),'·',D1,'  ',['∂b^{[1]}',1,4,FILL.d],'=',m>1?'Σ_{rows}':'',D1]][s].filter(v=>v!=='');

@@ -141,10 +141,14 @@ FIG['norm-axes']=root=>{const svg=initSvg(svgOf(root),620,250);const cs=22;
     T(svg,x0-6,30+3*cs,'examples','','end').setAttribute('transform','rotate(-90 '+(x0-6)+' '+(30+3*cs)+')');T(svg,x0+4*cs,30+6*cs+16,'features (units)','')};
   mat(40,'BatchNorm: one feature, over the batch','col');mat(340,'LayerNorm: one example, over its features','row');
   T(svg,310,225,'orange = the numbers whose mean and variance are computed (then γ, β per feature)','','middle')};
-/* tensor shapes through a small MLP */
-FIG['shapes-walk']=root=>{const svg=initSvg(svgOf(root),980,200);const steps=[['input','[B, 1, 28, 28]','#c5e0b4',0],['Flatten','[B, 784]','#e7e6e6',0],['Linear 784→256','[B, 256]','#8ea9db',784*256+256],['ReLU','[B, 256]','#e7e6e6',0],['Dropout 0.2','[B, 256]','#e7e6e6',0],['Linear 256→10','[B, 10]','#8ea9db',256*10+10],['CrossEntropy','scalar','#f4b183',0]];
-  steps.forEach(([name,shape,c,np],k)=>{const x=6+k*139;E('rect',{x:x,y:40,width:128,height:60,rx:6,fill:c,stroke:'#404040'},svg);T(svg,x+64,64,name,'lab');T(svg,x+64,86,shape,'mono');if(np)T(svg,x+64,124,np.toLocaleString('en-US')+' params','');if(k<steps.length-1)arrowPx(svg,x+129,70,x+138,70,'ln thin sk','fk')});
-  T(svg,490,170,'B = batch size, passes through untouched. Total: 203,530 parameters, 98.7 % of them in the first Linear.','','middle')};
+/* tensor shapes through a small MLP. data-input, data-hidden and data-drop on the svg choose the model
+   (defaults: 784→256→10 with dropout 0.2, as in the notes; the slide shows Lab 9's 784→128→10) */
+FIG['shapes-walk']=root=>{const svg=initSvg(svgOf(root),980,200);const d=root.dataset||{},h=+(d.hidden||256),p=d.drop===undefined?0.2:+d.drop,H='[B, '+h+']';
+  const steps=[['input',d.input||'[B, 1, 28, 28]','#c5e0b4',0],['Flatten','[B, 784]','#e7e6e6',0],['Linear 784→'+h,H,'#8ea9db',784*h+h],['ReLU',H,'#e7e6e6',0]];
+  if(p)steps.push(['Dropout '+p,H,'#e7e6e6',0]);steps.push(['Linear '+h+'→10','[B, 10]','#8ea9db',h*10+10],['CrossEntropy','scalar','#f4b183',0]);
+  const x0=6+(7-steps.length)*139/2,tot=steps.reduce((a,st)=>a+st[3],0);
+  steps.forEach(([name,shape,c,np],k)=>{const x=x0+k*139;E('rect',{x:x,y:40,width:128,height:60,rx:6,fill:c,stroke:'#404040'},svg);T(svg,x+64,64,name,'lab');T(svg,x+64,86,shape,'mono');if(np)T(svg,x+64,124,np.toLocaleString('en-US')+' params','');if(k<steps.length-1)arrowPx(svg,x+129,70,x+138,70,'ln thin sk','fk')});
+  T(svg,490,170,'B = batch size, passes through untouched. Total: '+tot.toLocaleString('en-US')+' parameters, '+(100*(784*h+h)/tot).toFixed(1)+' % of them in the first Linear.','','middle')};
 /* overfitting and weight decay: a 2-24-24-1 tanh network on 40 noisy "moons" points */
 function moons(n,seed,noise){const r=rng(seed);const X=[],y=[];for(let i=0;i<n;i++){const c=i%2;const t=Math.PI*r();let a,b;if(c===0){a=Math.cos(t);b=Math.sin(t)}else{a=1-Math.cos(t);b=0.5-Math.sin(t)}a+=noise*randn(r);b+=noise*randn(r);X.push([(a-0.5)/1.1,(b-0.25)/1.1]);y.push(c)}return {X,y}}
 FIG['overfit-l2']=root=>{const tr=moons(40,5,0.28),te=moons(600,99,0.28);const LAM=[0,0.001,0.003,0.01,0.03,0.1];const cache={};const inp=q(root,'l');

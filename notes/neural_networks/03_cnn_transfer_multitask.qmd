@@ -637,7 +637,7 @@ In the plain stack the first layer's gradient is already a thousand times smalle
 
 **1×1 convolution.** With $F=1$ the formula of section 5 becomes $Z_{c,ij}=\sum_{c'}X_{c',ij}K_{c,c'}+b_c$: at every pixel, the vector of $C_{\text{in}}$ channel values is multiplied by the same $C_{\text{out}}\times C_{\text{in}}$ matrix. It is **a dense layer applied at every pixel, across channels**, with $(C_{\text{in}}+1)C_{\text{out}}$ parameters ($256\cdot64+64=16{,}448$ for 256 → 64). Uses: shrinking the number of channels before an expensive 3×3 convolution (the **bottleneck** block of ResNet-50: 1×1 down to 64, 3×3, 1×1 back up to 256), and as the per-pixel classifier of segmentation heads (section 15).
 
-**Global average pooling (GAP).** Average each feature map to one number: a $7\times7\times512$ tensor becomes 512 numbers, followed by a single `Linear(512, K)`. No parameters, far fewer weights than flatten + dense, more robust to where the object is, and the network accepts any image size (the average is taken over whatever $H\times W$ arrives).
+**Global average pooling (GAP).** Average each feature map to one number: a $512\times7\times7$ tensor becomes 512 numbers, followed by a single `Linear(512, K)`. No parameters, far fewer weights than flatten + dense, more robust to where the object is, and the network accepts any image size (the average is taken over whatever $H\times W$ arrives).
 
 ```{python}
 conv1x1 = nn.Conv2d(256, 64, 1); lin = nn.Linear(256, 64)
@@ -1513,7 +1513,7 @@ Lower the backbone's learning rate (discriminative learning rates), warm up (NN 
 
 ## 20. Vocabulary
 
-- **kernel / filter**: a small $F\times F\times C_{\text{in}}$ block of weights slid over the input.
+- **kernel / filter**: a small $C_{\text{in}}\times F\times F$ block of weights slid over the input.
 - **feature map**: one output channel: where the filter's pattern appears.
 - **stride, padding**: step between positions; zeros added at the border. Output size $\lfloor(H+2P-F)/S\rfloor+1$.
 - **cross-correlation**: what deep-learning "convolution" computes (no kernel flip).

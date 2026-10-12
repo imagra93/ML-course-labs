@@ -48,6 +48,7 @@
     <div class="card g"><h3>6 · Attention and transformers</h3><p>Every token looks at every other token. GPT, decoding text, and RAG.</p><p class="tiny" style="color:#385723"><b>Labs 14, 15</b> · text generation with GPT-2 · RAG</p></div>
   </div>
   <p class="why">Every chapter follows the same pattern: a picture, the formula behind it, a small example with numbers, and a lab (a green slide with an <b>Open in Colab</b> button) as soon as the theory it needs has been explained. The course closes with a test: a multi-task network on faces.</p>
+  <div class="idea"><b>Theory and PyTorch.</b> The slides teach the ideas, independent of any library. Along the way they also show the <b>PyTorch</b> line for each piece (a layer, a loss, the training loop), because the labs use it: it is the standard library of deep learning. No PyTorch is needed beforehand: Lab 7 builds everything by hand in NumPy, chapter 2 introduces tensors and automatic gradients, chapter 3 the training loop, and from Lab 8 on every lab uses PyTorch, directly or through libraries built on it (Ultralytics YOLO, Hugging Face).</div>
 </section>
 
 <section class="slide">
@@ -161,7 +162,7 @@
     </div>
     <div class="stack" style="gap:10px">
       <p class="step small">No straight line does much better: the best of all lines, found by brute force, gets 94 of 150 right. Every half-plane that holds the blue disc also holds more orange points than blue ones.</p>
-      <div class="idea step">Both models compute the same <b>weighted sum</b> $z=\bth^\top\bx$, followed by nothing (linear) or by a sigmoid (logistic). This chapter keeps that unit and <b>stacks</b> it, so that the network learns its own features instead of us guessing $x_1^2,x_2^2$ (slides 16 and 17).</div>
+      <div class="idea step">Both models compute the same <b>weighted sum</b> $z=\bth^\top\bx$, followed by nothing (linear) or by a sigmoid (logistic). This chapter keeps that unit and <b>stacks</b> it, so that the network learns its own features instead of us guessing $x_1^2,x_2^2$ (slides 16 and 17; learned on this same circle: slides 35 and 36).</div>
     </div>
   </div>
 </section>
@@ -338,11 +339,11 @@
       <div class="ctl"><label for="fw-s">step</label><input type="range" id="fw-s" data-k="s" min="0" max="5" step="1" value="0"><span class="v" data-v="s"></span></div>
     </div>
     <div class="stack" style="gap:6px">
-      <p class="small">One example $\bx=(1,2)$, label $y=1$. Weights chosen by hand (they would normally be random).</p>
+      <p class="small">One example $\bx=(1,2)$, label $y=1$. Weights chosen by hand (they would normally be random). The hidden layer uses <b>tanh</b>, an S-curve like the sigmoid but with outputs in $(-1,1)$ (slide 24 compares the activations).</p>
       <div class="panels" style="min-height:250px">
         <div data-i="0"><p class="small">Read the weights off the edges: $\bW^{[1]}=\begin{pmatrix}0.5&-0.3\\0.2&0.4\end{pmatrix}$, $\bb^{[1]}=(0.1,-0.1)$, $\bW^{[2]}=\binom{0.7}{-0.5}$, $b^{[2]}=0.2$.</p><p class="small">Row $i$ of $\bW^{[1]}$ = the weights leaving input $x_i$; column $j$ = the weights entering hidden unit $j$.</p></div>
         <div data-i="1"><p class="small">$z_1=1\cdot0.5+2\cdot0.2+0.1=\mathbf{1.000}$</p><p class="small">$z_2=1\cdot(-0.3)+2\cdot0.4-0.1=\mathbf{0.400}$</p></div>
-        <div data-i="2"><p class="small">$a_1=\tanh(1.0)=\mathbf{0.762}$, $\ a_2=\tanh(0.4)=\mathbf{0.380}$</p><p class="small">These two numbers are the <b>learned features</b> of the example.</p></div>
+        <div data-i="2"><p class="small">$a_1=\tanh(1.0)=\mathbf{0.762}$, $\ a_2=\tanh(0.4)=\mathbf{0.380}$, with $\tanh z=\dfrac{e^{z}-e^{-z}}{e^{z}+e^{-z}}$.</p><p class="small">These two numbers are the <b>learned features</b> of the example.</p></div>
         <div data-i="3"><p class="small">$z=0.762\cdot0.7+0.380\cdot(-0.5)+0.2=\mathbf{0.543}$</p></div>
         <div data-i="4"><p class="small">$\hat y=\sigma(0.543)=\mathbf{0.633}$: the network says "63 % chance of class 1".</p></div>
         <div data-i="5"><p class="small">$L=-\log0.633=\mathbf{0.458}$. Not terrible, not great. Chapter 2 computes how to change each of the 9 parameters to lower it.</p></div>
@@ -384,7 +385,7 @@
     </div>
     <div class="stack" style="gap:10px">
       <svg class="fig" data-fig="shapes" aria-label="Block diagram of X times W plus b equals Z with the matrix shapes"></svg>
-      <p class="step why">Some books write one example as a column, $\mathbf z=\bW\bx+\bb$: the same thing, transposed. The row convention matches PyTorch: <code>nn.Linear(in_features=n, out_features=h)</code> stores its weight as $h\times n$ and computes $\bx\bW^\top+\bb$.</p>
+      <p class="step why">Some books write one example as a column, $\mathbf z=\bW\bx+\bb$: the same thing, transposed. PyTorch, the library of the labs (slide 3), also puts one example per row. Its dense layer <code>nn.Linear(n, h)</code> gives the same numbers, but stores the weight transposed, as $h\times n$, and computes $\bx\bW^\top+\bb$ (Lab 8).</p>
     </div>
   </div>
 </section>
@@ -407,7 +408,7 @@
         <div data-i="1"><p class="small"><b>$l=1$.</b> In: $\bA^{[0]}$. Out: $\bA^{[1]}$.</p><div class="eq s">$$\bA^{[1]}=\sigma\big(\bA^{[0]}\bW^{[1]}+\bb^{[1]}\big)$$</div><p class="why">$(m\times3)(3\times4)+(1\times4)=(m\times4)$</p></div>
         <div data-i="2"><p class="small"><b>$l=2$.</b> In: $\bA^{[1]}$, the output of the previous step. Out: $\bA^{[2]}$.</p><div class="eq s">$$\bA^{[2]}=\sigma\big(\bA^{[1]}\bW^{[2]}+\bb^{[2]}\big)$$</div><p class="why">$(m\times4)(4\times4)+(1\times4)=(m\times4)$</p></div>
         <div data-i="3"><p class="small"><b>$l=3=L$.</b> In: $\bA^{[2]}$. Out: the predictions.</p><div class="eq s">$$\hat\bY=\bA^{[3]}=\sigma\big(\bA^{[2]}\bW^{[3]}+\bb^{[3]}\big)$$</div><p class="why">$(m\times4)(4\times1)+(1\times1)=(m\times1)$: one probability per example.</p></div>
-        <div data-i="4"><div class="idea"><b>So far: one activation, everywhere.</b> Every layer used the sigmoid. Nothing forces that: each layer picks its own $g^{[l]}$, and hidden layers rarely use the sigmoid. Which ones exist? Next slide.</div></div>
+        <div data-i="4"><div class="idea"><b>Here: one activation, everywhere.</b> In this loop every layer used the sigmoid (the tiny network of slide 20 already had tanh in its hidden layer). Nothing forces that: each layer picks its own $g^{[l]}$, and hidden layers rarely use the sigmoid. Which ones exist? Next slide.</div></div>
       </div>
     </div>
   </div>
@@ -526,7 +527,7 @@
 </section>
 
 <section class="slide">
-  <h2>GELU: z times a smooth gate</h2>
+  <h2>GELU: z times a smooth gate (optional)</h2>
   <svg class="fig" data-fig="gelu-gate" style="max-height:215px" aria-label="The bell curve and the area to the left of z, the gate Phi of z against the hard gate of ReLU, and the outputs GELU and ReLU"></svg>
   <div class="cols">
     <div class="stack" style="gap:7px">
@@ -547,7 +548,7 @@
 </section>
 
 <section class="slide">
-  <h2>Derivative of GELU</h2>
+  <h2>Derivative of GELU (optional)</h2>
   <div class="cols">
     <svg class="fig" data-fig="act-one" data-act="gelu" style="max-height:380px" aria-label="GELU and its derivative, with the values at z = -1 and z = 1"></svg>
     <div class="stack" style="gap:5px">
@@ -681,7 +682,7 @@
 <section class="slide">
   <h2>Output layer and loss: which pair?</h2>
   <div class="stack" style="gap:12px">
-    <p>The last layer and the loss go together, exactly as in the GLMs of the ML part:</p>
+    <p>The last layer and the loss go together, exactly as in linear, logistic and softmax regression of the ML part:</p>
     <table class="t" style="font-size:18px">
       <tr><th>Problem type</th><th>Example</th><th>Last-layer activation</th><th>Loss function</th><th>PyTorch</th></tr>
       <tr><td>Binary classification</td><td>spam / not spam</td><td>sigmoid</td><td>binary cross-entropy</td><td><code>nn.BCEWithLogitsLoss</code></td></tr>
@@ -690,7 +691,8 @@
       <tr><td>Regression, any value</td><td>house price</td><td>none (linear)</td><td>MSE (or L1 / Huber)</td><td><code>nn.MSELoss</code></td></tr>
       <tr><td>Regression, values in 0–1</td><td>box coordinates</td><td>sigmoid</td><td>MSE or binary cross-entropy</td><td><code>nn.MSELoss</code></td></tr>
     </table>
-    <p class="small step"><b>PyTorch</b> is the library we will use for the labs, and the standard one in deep learning. The last column lists its loss classes. It gives <b>tensors</b> (NumPy-like arrays that can run on a GPU), <b>automatic gradients</b>, and ready-made layers, losses and optimizers: chapter 2 introduces tensors and autograd, chapter 3 the objects of a training loop.</p>
+    <p class="small step">The last column lists the loss classes of <b>PyTorch</b>, the library of the labs (slide 3). It gives <b>tensors</b> (NumPy-like arrays that can run on a GPU), <b>automatic gradients</b>, and ready-made layers, losses and optimizers: chapter 2 introduces tensors and autograd, chapter 3 the objects of a training loop.</p>
+    <p class="small step"><b>Careful:</b> <code>nn.BCEWithLogitsLoss</code> and <code>nn.CrossEntropyLoss</code> apply the sigmoid / softmax <b>themselves</b>. With them the model outputs the raw scores (the <b>logits</b>), with no activation at the end (slide 53). <code>nn.MSELoss</code> applies nothing.</p>
     <p class="small step why">The multiclass rows (softmax, one-hot targets, categorical cross-entropy) are explained later in this chapter, together with where these pairs come from and how PyTorch uses them.</p>
   </div>
 </section>
@@ -841,7 +843,7 @@
         <li><b>Probabilities, always</b>: positive and adding up to 1, whatever the scores, negative ones included.</li>
         <li><b>The order is kept</b>: the largest score gets the largest probability, so the arg-max of the scores is the predicted class.</li>
         <li><b>Only differences matter</b>: adding the same number to every score changes nothing (slider "add"). In code the maximum score is subtracted first, so $e^{z}$ cannot overflow.</li>
-        <li><b>The scale sets the confidence</b>: large scores give a nearly one-hot answer, small ones a nearly uniform one. In chapter 6 the scores are divided by a <b>temperature</b> $T$: the same thing with $s=1/T$.</li>
+        <li><b>The scale sets the confidence</b>: large scores give a nearly one-hot answer, small ones a nearly uniform one. In chapter 6 the scores are divided by a <b>temperature</b> $\tau$: the same thing with $s=1/\tau$.</li>
         <li><b>Two classes = sigmoid</b>: for $K=2$, $\hat y_1=\sigma(z_1-z_2)$. Scores $(2,1)$: $\frac{e^2}{e^2+e^1}=0.73=\sigma(1)$.</li>
       </ul>
     </div>
@@ -945,7 +947,7 @@
         <p class="small">A gradient <b>150 times smaller</b> exactly when it should learn fast. Cross-entropy cancels the sigmoid's flat tails.</p></div>
     </div>
     <div class="stack" style="gap:8px">
-      <p class="small step">For a mini-batch of $m$ examples ($J$ = the average loss), the three cases are one matrix formula. It is the <b>error at the output</b>, $\bdelta^{[L]}$ (red):</p>
+      <p class="small step">For a batch of $m$ examples ($J$ = the average loss), the three cases are one matrix formula. It is the <b>error at the output</b>, $\bdelta^{[L]}$ (red):</p>
       <svg class="fig step" data-fig="out-net" data-out="delta" aria-label="A network of any depth whose last layer is opened up in matrix form: Z of L, the activation g, A of L equal to Y hat, and the mean loss J. A red arrow from J back to Z of L is delta of L, A of L minus Y over m; a dashed red arrow carries it further back through the network: delta of L minus 1 down to delta of 1, chapter 2"></svg>
       <div class="bluebox step" style="font-size:21px">$$\bdelta^{[L]}=\frac{\partial J}{\partial\bZ^{[L]}}=\frac1m\big(\bA^{[L]}-\bY\big)$$</div>
       <p class="small step">Predictions minus targets, divided by $m$. This is the <b>first line of backpropagation</b>: chapter 2 sends $\bdelta^{[L]}$ back through the network (dashed) to get every other gradient.</p>
@@ -957,6 +959,7 @@
   <h2>Losses in PyTorch take the logits</h2>
   <div class="cols c64">
     <div class="stack" style="gap:8px">
+      <p class="small">In code, <code>model(xb)</code> is the network's output for a batch <code>xb</code> of $B$ examples ($B$ = batch size, the $m$ of this chapter): one row of raw scores per example.</p>
       <table class="t" style="font-size:17px">
         <tr><th>task</th><th>the model ends with</th><th>loss</th><th>targets</th></tr>
         <tr><td>binary</td><td>raw logit $z$</td><td><code>nn.BCEWithLogitsLoss</code></td><td>floats 0. / 1.</td></tr>
@@ -965,9 +968,9 @@
         <tr><td>regression</td><td>the value $\hat y$</td><td><code>nn.MSELoss</code></td><td>real numbers</td></tr>
       </table>
       <ul class="small step">
-        <li><code>CrossEntropyLoss</code> = softmax + log + <code>NLLLoss</code> in one step. <code>BCEWithLogitsLoss</code> = sigmoid + BCE in one step. <code>NLLLoss</code> expects <b>log-probabilities</b>, not probabilities.</li>
+        <li><code>CrossEntropyLoss</code> = softmax + log + <code>NLLLoss</code> in one step. <code>BCEWithLogitsLoss</code> = sigmoid + BCE in one step. <code>NLLLoss</code> (negative log-likelihood) expects <b>log-probabilities</b>, e.g. from <code>LogSoftmax</code> (the log of the softmax, in one step).</li>
+        <li><b>Class indices</b>: the integers of slide 43 (cat = 0, dog = 1, …), not one-hot vectors. The loss builds the one-hot itself, so the gradient is still $\hat{\mathbf y}-\mathbf y$ (slides 49 and 52).</li>
         <li><b>No softmax or sigmoid at the end of the model</b> when you use them. Applying softmax first, and then <code>CrossEntropyLoss</code>, applies it twice: it still trains, but worse.</li>
-        <li>Probabilities, only when you need them (prediction time): <code>logits.softmax(dim=1)</code>, <code>torch.sigmoid(z)</code>.</li>
       </ul>
     </div>
     <div class="stack" style="gap:8px">
@@ -976,9 +979,12 @@
         <tr><td>logits (1000, 0, 0)</td><td><code>exp(1000)</code> overflows: <code>nan</code></td><td>log-probabilities (0, −1000, −1000)</td></tr>
         <tr><td>logit −200, label 1</td><td><code>BCELoss(sigmoid)</code>: 100 (capped)</td><td><code>BCEWithLogitsLoss</code>: 200</td></tr></table>
       <p class="small step why">The one-step versions subtract the largest logit before exponentiating (the log-sum-exp trick).</p>
-      <pre class="code s step">logits = model(x)                 <span class="c"># raw scores [B, K]</span>
-loss = nn.CrossEntropyLoss()(logits, y)
-probs = logits.softmax(dim=1)     <span class="c"># to read answers</span></pre>
+      <pre class="code s step">criterion = nn.CrossEntropyLoss()
+logits = model(xb)              <span class="c"># raw scores [B, K]</span>
+loss = criterion(logits, yb)    <span class="c"># yb: class indices [B]</span>
+probs = logits.softmax(dim=1)   <span class="c"># to read answers</span></pre>
+      <p class="small step">Probabilities only when you need them (prediction time): <code>logits.softmax(dim=1)</code> applies the softmax along dimension 1, the $K$ classes of each row; <code>torch.sigmoid(z)</code> for a binary logit.</p>
+      <p class="small step why">Tensors: chapter 2. <code>model</code>, <code>criterion</code> (the loss) and <code>optimizer</code>: chapter 3. In practice: Labs 8 and 9.</p>
     </div>
   </div>
 </section>
