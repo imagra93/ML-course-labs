@@ -32,7 +32,60 @@
     </div>
     <div class="stack" style="gap:12px">
       <div class="note step"><p>The new piece is a layer with <b>memory</b>, and the trouble of training it through many time steps.</p></div>
-      <p class="step why">The plan: words as vectors (embeddings), the recurrent cell with numbers, backpropagation through time and why the gradient vanishes, the LSTM gate by gate, the GRU, practicalities. It ends with Lab 13 (sentiment of movie reviews); chapter 6 replaces the recurrence with attention.</p>
+      <p class="step why">The plan: first a model that ignores the order (bag of words, TF-IDF), then words as vectors (embeddings), the recurrent cell with numbers, backpropagation through time and why the gradient vanishes, the LSTM gate by gate, the GRU, practicalities. It ends with Lab 13 (sentiment of movie reviews); chapter 6 replaces the recurrence with attention.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>Before any network: a bag of words</h2>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p>A logistic regression or an MLP needs a <b>fixed-size vector</b>. The oldest trick for text: forget the order and <b>count</b> the words.</p>
+      <ul class="small">
+        <li>Fix a <b>vocabulary</b> of $|V|$ words (Lab 13: the 10,000 most frequent).</li>
+        <li>A document becomes $\bx\in\R^{|V|}$, with $x_j$ = how many times word $j$ appears in it.</li>
+        <li>The same size for 10 words or 2,000. <b>Sparse</b>: an IMDB review uses about 130 distinct words, 1.3&nbsp;% of the entries.</li>
+        <li>Then any model of the machine learning course. A logistic regression learns one weight per word: positive for "excellent", negative for "waste".</li>
+      </ul>
+    </div>
+    <div class="stack" style="gap:12px">
+      <table class="t xs"><tr><th>review</th><th>the</th><th>movie</th><th>great</th><th>boring</th><th>acting</th><th>not</th></tr>
+        <tr><td>the great movie, great acting</td><td>1</td><td>1</td><td>2</td><td>0</td><td>1</td><td>0</td></tr>
+        <tr><td>the boring movie</td><td>1</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td></tr>
+        <tr><td>the movie: great, not boring</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td></tr></table>
+      <pre class="code s">from sklearn.feature_extraction.text import CountVectorizer
+X = CountVectorizer().fit_transform(reviews)  <span class="c"># sparse [N, |V|]</span></pre>
+      <div class="idea step">The <b>order is lost</b>, as if the words were shaken in a bag: "not good, just bad" and "not bad, just good" give the <b>same vector</b>.</div>
+      <table class="t xs step"><tr><th>review</th><th>not</th><th>good</th><th>just</th><th>bad</th></tr>
+        <tr><td>not good, just bad</td><td>1</td><td>1</td><td>1</td><td>1</td></tr>
+        <tr><td>not bad, just good</td><td>1</td><td>1</td><td>1</td><td>1</td></tr></table>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>TF-IDF: weigh the words that tell documents apart</h2>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p class="small">Raw counts are dominated by words that are everywhere: "the" is in 99&nbsp;% of the IMDB reviews and says nothing about any of them.</p>
+      <div class="bluebox">$$\mathrm{tfidf}(t,d)=\mathrm{tf}(t,d)\cdot\ln\frac{N}{\mathrm{df}(t)}$$</div>
+      <p class="small">$\mathrm{tf}(t,d)$: count of word $t$ in document $d$. $\mathrm{df}(t)$: number of the $N$ documents that contain $t$. The second factor, the <b>idf</b>, is 0 for a word in every document and large for a rare one. Each row is then scaled to length 1, so long reviews do not dominate.</p>
+      <table class="t xs tight"><tr><th>IMDB, 20,000 reviews</th><th>the</th><th>movie</th><th>great</th><th>excellent</th><th>waste</th></tr>
+        <tr><td>in % of the reviews</td><td>99 %</td><td>61 %</td><td>25 %</td><td>7 %</td><td>5 %</td></tr>
+        <tr><td>idf</td><td>0.01</td><td>0.50</td><td>1.37</td><td>2.65</td><td>2.95</td></tr></table>
+    </div>
+    <div class="stack" style="gap:10px">
+      <table class="t xs tight"><tr><th>previous slide</th><th>the</th><th>movie</th><th>great</th><th>boring</th><th>acting</th><th>not</th></tr>
+        <tr><td><b>idf</b> ($N=3$)</td><td>0</td><td>0</td><td>0.41</td><td>0.41</td><td>1.10</td><td>1.10</td></tr>
+        <tr><td>review 1</td><td>0</td><td>0</td><td>0.59</td><td>0</td><td>0.80</td><td>0</td></tr>
+        <tr><td>review 2</td><td>0</td><td>0</td><td>0</td><td>1.00</td><td>0</td><td>0</td></tr>
+        <tr><td>review 3</td><td>0</td><td>0</td><td>0.33</td><td>0.33</td><td>0</td><td>0.89</td></tr></table>
+      <p class="small">TF-IDF knows which words are <b>rare</b>, not which are <b>positive</b>: "acting" outweighs "great" in review 1. The sentiment is learned by the classifier on top.</p>
+      <pre class="code s">X = TfidfVectorizer().fit_transform(reviews)
+clf = LogisticRegression().fit(X, y)</pre>
+      <p class="tiny">scikit-learn smooths the idf, $\ln\frac{1+N}{1+\mathrm{df}}+1$: common words are down-weighted, never erased.</p>
+      <div class="idea step">Lab 13: TF-IDF + logistic regression gets <b>90 %</b> on IMDB, in seconds. A strong baseline, but blind to word order. Next: a network that reads the words <b>in order</b>.</div>
     </div>
   </div>
 </section>
@@ -43,7 +96,7 @@
     <div class="stack" style="gap:12px">
       <p>If we want to build a NN for <b>sequential data</b>, a CNN may not be the best fit: speech, text, the S&amp;P 500, sensor logs…</p>
       <ul class="small">
-        <li>Sequences have <b>different lengths</b>: an MLP needs a fixed-size input.</li>
+        <li>Sequences have <b>different lengths</b>: an MLP needs a fixed-size input, and a bag of words gets one only by throwing the order away.</li>
         <li>The <b>order</b> matters: "not good, bad" ≠ "not bad, good".</li>
         <li>What happened earlier affects what comes next: we need <b>memory</b>.</li>
         <li>The same pattern can appear at any time step: we want to <b>share weights</b> across time, as a CNN shares them across space.</li>
@@ -385,6 +438,7 @@ nn.utils.clip_grad_norm_(model.parameters(), 1.0)</pre>
       <dt>vanishing gradient</dt><dd>a product of many factors below 1: far steps get no learning signal.</dd>
     </dl>
     <dl class="gloss">
+      <dt>bag of words, TF-IDF</dt><dd>word counts, order ignored; weighted by $\ln(N/\mathrm{df})$ so rare words count more.</dd>
       <dt>gate</dt><dd>a sigmoid vector in (0, 1) multiplying a signal: a soft switch.</dd>
       <dt>cell state $\bc_t$</dt><dd>the LSTM's long-term memory, updated additively.</dd>
       <dt>LSTM / GRU</dt><dd>gated RNNs: 3 gates + cell / 2 gates, no cell.</dd>
@@ -414,7 +468,7 @@ nn.utils.clip_grad_norm_(model.parameters(), 1.0)</pre>
       <a class="colab-ext" href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 13 - LSTM sentiment analysis - extended.ipynb" target="_blank" rel="noopener"><span class="co">CO</span> Extended version <small>RNN and LSTM from scratch, BPTT, inside the models</small></a>
       <dl class="gloss">
         <dt>notebook</dt><dd><code>lab 13 - LSTM sentiment analysis.ipynb</code></dd>
-        <dt>you need</dt><dd>this chapter: embeddings, RNN, LSTM and GRU, padding and packing</dd>
+        <dt>you need</dt><dd>this chapter: bag of words and TF-IDF, embeddings, RNN, LSTM and GRU, padding and packing</dd>
         <dt>results</dt><dd>validation accuracy: plain RNN 78 %, LSTM 87 %, GRU 88 %, and the order-free TF-IDF baseline 90 %. For sentiment, which words appear matters more than their order</dd>
         <dt>runs on</dt><dd>CPU works; a GPU is faster</dd>
       </dl>

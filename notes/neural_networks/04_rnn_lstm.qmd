@@ -55,7 +55,7 @@ A **recurrent network** reads the sequence one step at a time, with the **same w
 3. **Embed**: map each index to a dense vector $\mathbf{x}_t = \mathbf{E}[\text{index}_t]\in\mathbb{R}^d$, where $\mathbf{E}\in\mathbb{R}^{|V|\times d}$ is a learned **embedding matrix** (`nn.Embedding`). A sentence of $T$ tokens becomes a $T\times d$ matrix, one row per time step: the input of an RNN.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="tokens" style="max-height:290px" aria-label="A sentence split into tokens, mapped to integer ids and then to embedding vectors"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#4">slide 4</a> of the RNN and LSTM deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="tokens" style="max-height:290px" aria-label="A sentence split into tokens, mapped to integer ids and then to embedding vectors"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#6">slide 6</a> of the RNN and LSTM deck.</p></div>
 ```
 
 ### 2.2 An embedding is a lookup table
@@ -69,7 +69,7 @@ Each token id $k$ owns one row $\mathbf{e}_k$ of $\mathbf{E}$. Write the token a
 So "looking up a row" is exactly a dense layer without bias applied to the one-hot encoding, implemented without the huge sparse multiplication (in code, `E[ids]`). It is trained by backprop like any other weight. The gradient of the loss with respect to $\mathbf{E}$ is $\mathbf{o}_k^\top\,\partial J/\partial\mathbf{e}_k$ (the gradient of a linear layer, [NN note 01](01_backpropagation.html)), which is zero outside row $k$: **only the rows of the tokens present in the batch receive a gradient.** `nn.Embedding(|V|, d)` takes $[B,T]$ integers and returns $[B,T,d]$ floats. Typical sizes: $|V|$ = 10,000–50,000, $d$ = 50–1,024.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="lookup" style="max-height:260px" aria-label="A one-hot vector for the word movie times the embedding matrix picks out the row of movie"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#5">slide 5</a> of the RNN and LSTM deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="lookup" style="max-height:260px" aria-label="A one-hot vector for the word movie times the embedding matrix picks out the row of movie"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#7">slide 7</a> of the RNN and LSTM deck.</p></div>
 ```
 
 ```{python}
@@ -97,7 +97,7 @@ $\mathbf{E}$ is learned either by the task itself (sentiment, translation…) or
 Words used in similar contexts get similar vectors, and some relations become directions: *king − man + woman ≈ queen*. The same idea gives embeddings for whole sentences and documents, the basis of semantic search and RAG ([NN note 06](06_embeddings_rag.html), which also shows how negative sampling makes the sum over $V$ affordable).
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="embed" aria-label="One-hot vectors versus a word embedding where similar words are close"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#6">slide 6</a> of the RNN and LSTM deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="embed" aria-label="One-hot vectors versus a word embedding where similar words are close"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#8">slide 8</a> of the RNN and LSTM deck.</p></div>
 ```
 
 ## 3. The recurrent neural network (RNN)
@@ -112,7 +112,7 @@ Like reading a sentence and keeping a mental note: after each word you **update*
 <div class="widget" data-fig="rnn-read" data-auto="s=1 | s=2 | s=3 | s=4 | s=5">
   <svg class="fig" style="max-height:250px" aria-label="An RNN reading the words of a review one by one and updating its hidden state"></svg>
   <div class="ctl"><label for="rr-s">words read</label><input type="range" id="rr-s" data-k="s" min="0" max="5" step="1" value="0"><span class="v" data-v="s"></span></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#7">slide 7</a> of the RNN and LSTM deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#9">slide 9</a> of the RNN and LSTM deck.</p>
 </div>
 ```
 
@@ -131,7 +131,7 @@ $$
 Unrolled over time, an RNN is a very deep feed-forward network, one layer per time step, whose layers share their weights.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="rnn-unroll" aria-label="An RNN cell with a loop, and the same cell unrolled over time steps"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#8">slide 8</a> of the RNN and LSTM deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="rnn-unroll" aria-label="An RNN cell with a loop, and the same cell unrolled over time steps"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#10">slide 10</a> of the RNN and LSTM deck.</p></div>
 ```
 
 ### 3.3 Inside the cell
@@ -154,7 +154,7 @@ because $[\mathbf{h}_{t-1},\mathbf{x}_t]\mathbf{W} = \mathbf{h}_{t-1}\mathbf{W}_
 **Parameters**: $d\,d_h + d_h^2 + d_h$, whatever the sequence length. With $d = 100$, $d_h = 128$: $12{,}800 + 16{,}384 + 128 = 29{,}312$. PyTorch keeps two bias vectors ($\mathbf{b}_{ih}$ and $\mathbf{b}_{hh}$, whose sum plays the role of $\mathbf{b}$), so it reports $29{,}440$.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="rnn-cell" aria-label="The RNN cell: previous state times W_h plus input times W_x plus bias, through tanh"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#9">slide 9</a> of the RNN and LSTM deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="rnn-cell" aria-label="The RNN cell: previous state times W_h plus input times W_x plus bias, through tanh"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#11">slide 11</a> of the RNN and LSTM deck.</p></div>
 ```
 
 ```{python}
@@ -184,7 +184,7 @@ Each step without input **multiplies the memory by at most 0.5** (because $|\tan
   <svg class="fig" aria-label="A scalar RNN reading the sequence 1, 0, 0, -1, 0, 0 and its hidden state over time"></svg>
   <div class="ctl"><label for="rn-s">step</label><input type="range" id="rn-s" data-k="s" min="0" max="6" step="1" value="0"><span class="v" data-v="s"></span></div>
   <div class="ctl"><label for="rn-w">recurrent weight wₕ</label><input type="range" id="rn-w" data-k="w" min="0" max="1.5" step="0.05" value="0.5"><span class="v" data-v="w">0.50</span></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#10">slide 10</a> of the RNN and LSTM deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#12">slide 12</a> of the RNN and LSTM deck.</p>
 </div>
 ```
 
@@ -206,7 +206,7 @@ print(f"stable fixed point of h -> tanh(1.5 h): {h:.2f}")
 ### 3.5 Applications: input and output patterns
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="rnn-types" aria-label="One-to-many, many-to-one and many-to-many recurrent networks"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#11">slide 11</a> of the RNN and LSTM deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="rnn-types" aria-label="One-to-many, many-to-one and many-to-many recurrent networks"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#13">slide 13</a> of the RNN and LSTM deck.</p></div>
 ```
 
 | Pattern | Example | How |
@@ -330,7 +330,7 @@ $$
 - $|w|>1$: it can blow up (exploding), unless the units saturate ($1-h_t^2\approx0$). The fix is gradient clipping (section 6).
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="bptt" style="max-height:205px" aria-label="The gradient flowing back from the loss through six time steps, getting thinner at every step"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#13">slide 13</a> of the RNN and LSTM deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="bptt" style="max-height:205px" aria-label="The gradient flowing back from the loss through six time steps, getting thinner at every step"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#15">slide 15</a> of the RNN and LSTM deck.</p></div>
 ```
 
 ### 5.2 With vectors
@@ -396,7 +396,7 @@ Plain RNN: each step back multiplies the gradient by roughly $\lVert\mathbf{W}_h
   <div class="ctl"><label for="va-f">LSTM: forget gate f</label><input type="range" id="va-f" data-k="f" min="0.8" max="1" step="0.005" value="0.98"><span class="v" data-v="f">0.98</span></div>
   <div class="ro"><div class="m"><span>RNN, 50 steps back</span><b data-r="r">–</b></div><div class="m"><span>LSTM, 50 steps back</span><b data-r="l">–</b></div></div>
   <div class="legend"><span><i style="background:var(--red)"></i>RNN</span><span><i style="background:var(--blue)"></i>LSTM memory path</span></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#14">slide 14</a> of the RNN and LSTM deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#16">slide 16</a> of the RNN and LSTM deck.</p>
 </div>
 ```
 
@@ -427,7 +427,7 @@ $$
 So clipping only caps the **step length** at $\alpha\tau$ and never changes where we are going.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="clip" style="max-height:170px" aria-label="A long gradient vector rescaled to a maximum length"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#14">slide 14</a> of the RNN and LSTM deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="clip" style="max-height:170px" aria-label="A long gradient vector rescaled to a maximum length"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#16">slide 16</a> of the RNN and LSTM deck.</p></div>
 ```
  Clipping **by value** (clamping each component to $[-\tau,\tau]$) does change the direction: $\mathbf{g} = (10, 0.1)$ clamped to $[-1,1]$ becomes $(1, 0.1)$, and its angle to the first axis goes from $\arctan(0.1/10) = 0.57°$ to $\arctan(0.1/1) = 5.7°$. The norm is computed over **all** parameters together (a global norm), which keeps the relative size of the parameter groups.
 
@@ -480,7 +480,7 @@ $$
 A gate is a sigmoid: a **soft switch** between 0 (block) and 1 (let through), applied by element-wise multiplication to a signal. Each gate has its own weights $\mathbf{W}, \mathbf{U}, \mathbf{b}$ and looks at the current input and the previous state to decide. In the figure, the gate pre-activations $z = (4, -4, 0, 2)$ give $\sigma(z) = (0.98, 0.02, 0.50, 0.88)$: the first component is let through, the second blocked, the third halved.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="gate-demo" style="max-height:200px" aria-label="A signal vector multiplied element by element by a gate vector of sigmoid values"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#15">slide 15</a> of the RNN and LSTM deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="gate-demo" style="max-height:200px" aria-label="A signal vector multiplied element by element by a gate vector of sigmoid values"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#17">slide 17</a> of the RNN and LSTM deck.</p></div>
 ```
 
 | Gate | Role | Used in |
@@ -518,7 +518,7 @@ $$
 Two states travel along time: the **cell** $\mathbf{c}_t$ (long-term memory) and the **hidden state** $\mathbf{h}_t$ (what is shown to the next layer and to the next step). The memory update is a **sum**, not a product through a squashing function.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="lstm-cell" aria-label="An LSTM cell with forget, input and output gates on the cell-state line"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#16">slide 16</a> of the RNN and LSTM deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="lstm-cell" aria-label="An LSTM cell with forget, input and output gates on the cell-state line"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#18">slide 18</a> of the RNN and LSTM deck.</p></div>
 ```
 
 ### 8.2 One gate at a time
@@ -536,7 +536,7 @@ Two states travel along time: the **cell** $\mathbf{c}_t$ (long-term memory) and
     <div data-i="3"><p><b>3 · Update the memory.</b> Keep part of the old, add part of the new:</p><div class="eq">\[\mathbf{c}_t=\mathbf{f}_t\odot\mathbf{c}_{t-1}+\mathbf{i}_t\odot\tilde{\mathbf{c}}_t\]</div><p class="small">A <b>sum</b>, not a product through a squashing function: with \(\mathbf{f}\approx1\) and \(\mathbf{i}\approx0\) the memory is copied unchanged, step after step. This is what lets information (and the gradient) survive.</p></div>
     <div data-i="4"><p><b>4 · Output gate.</b> Which part of the memory to show, to the next layer and to the next step:</p><div class="eq">\[\mathbf{o}_t=\sigma\big([\mathbf{h}_{t-1},\mathbf{x}_t]\mathbf{W}_o+\mathbf{b}_o\big)\]\[\mathbf{h}_t=\mathbf{o}_t\odot\tanh(\mathbf{c}_t)\]</div><p class="small">The memory can hold something for a long time without showing it (\(\mathbf{o}\approx0\)) and reveal it exactly when it is needed.</p></div>
   </div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#17">slide 17</a> of the RNN and LSTM deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#19">slide 19</a> of the RNN and LSTM deck.</p>
 </div>
 ```
 
@@ -563,7 +563,7 @@ The memory is **mostly kept** and **slightly corrected**. With $f = 1$, $i = 0$ 
 <div class="widget" data-fig="lstm-num" data-auto="s=1 | s=2 | s=3 | s=4">
   <svg class="fig" aria-label="The four stages of an LSTM update with numbers: keep, write, new memory and output"></svg>
   <div class="ctl"><label for="ln-s">step</label><input type="range" id="ln-s" data-k="s" min="0" max="4" step="1" value="0"><span class="v" data-v="s"></span></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#18">slide 18</a> of the RNN and LSTM deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#20">slide 20</a> of the RNN and LSTM deck.</p>
 </div>
 ```
 
@@ -589,7 +589,7 @@ print(f"c_t = {c_t.item():.3f}   h_t = {h_t.item():.3f}   (by hand: 0.57 and 0.7
 <div class="widget" data-fig="lstm-story" data-auto="s=1 | s=2 | s=3 | s=5 | s=8 | s=9 | s=10">
   <svg class="fig" style="max-height:340px" aria-label="Forget, input and output gate values, the output and the memory cell over the words of a sentence"></svg>
   <div class="ctl"><label for="ls-s">words read</label><input type="range" id="ls-s" data-k="s" min="0" max="10" step="1" value="0"><span class="v" data-v="s"></span></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#19">slide 19</a> of the RNN and LSTM deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#21">slide 21</a> of the RNN and LSTM deck.</p>
 </div>
 ```
 
@@ -764,7 +764,7 @@ print("forget bias that keeps sigma(b)^T >= 0.1:", "  ".join(f"T={T}: b >= {logi
 With the same 800 steps, the vanilla RNN and the default-initialised LSTM both drop to chance once the relevant token is 25 or more steps back. The LSTM whose forget gates start **wide open** (bias 5) solves every length up to 100. That is section 9 made concrete: the LSTM *can* carry gradient over long ranges, but only if $\prod_t f_t$ is not tiny. With the default init ($f_t\approx0.5$) it is as badly off as the RNN until it slowly learns to open the gate, which takes more than this budget. The classic bias of 1 is not enough here: it fails from 25 steps on, like the default, because $0.73^{24}\approx5\times10^{-4}$ is still a vanishing factor. A rule of thumb follows from section 9.3: choose $b_f$ so that the initial memory factor $\sigma(b_f)^T$ is not tiny, say at least 0.1, i.e. $b_f\ge\mathrm{logit}(0.1^{1/T})$ (printed below: about 2.3 for $T = 25$ and 3.8 for $T = 100$). Bias 1 is a sensible default for dependencies of a few steps; for 25–100 steps use a larger bias, or a model with direct access to the past ([NN note 05](05_attention_transformers.html)).
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="memory-exp" aria-label="Accuracy against distance for a vanilla RNN, a default LSTM and an LSTM with an open forget gate"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#20">slide 20</a> of the RNN and LSTM deck (the three original curves of this experiment).</p></div>
+<div class="widget"><svg class="fig" data-fig="memory-exp" aria-label="Accuracy against distance for a vanilla RNN, a default LSTM and an LSTM with an open forget gate"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#22">slide 22</a> of the RNN and LSTM deck (the three original curves of this experiment).</p></div>
 ```
 
 Practical lessons: initialise LSTM forget-gate biases to a positive value (1 is the classic recommendation; larger for very long dependencies), and remember that "the architecture can represent it" is not the same as "gradient descent will find it quickly".
@@ -794,7 +794,7 @@ $$
 In practice the two perform similarly (the LSTM lab: GRU 88 %, LSTM 87 %); the LSTM is the safe default for long dependencies, the GRU is a bit faster.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="gru-cell" aria-label="A GRU cell with reset and update gates mixing the previous state and a candidate"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#21">slide 21</a> of the RNN and LSTM deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="gru-cell" aria-label="A GRU cell with reset and update gates mixing the previous state and a candidate"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#23">slide 23</a> of the RNN and LSTM deck.</p></div>
 ```
 
 ```{python}
@@ -812,7 +812,7 @@ for name, m, blocks in [("RNN", nn.RNN(d, dh), 1), ("GRU", nn.GRU(d, dh), 3), ("
 A bidirectional model needs the **whole sequence first**: fine for classification or tagging of a finished text, impossible for real-time forecasting or text generation. Using one where the future is not available at prediction time is a form of leakage (section 14.3 measures it).
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="birnn" aria-label="A bidirectional RNN and a deep RNN"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#22">slide 22</a> of the RNN and LSTM deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="birnn" aria-label="A bidirectional RNN and a deep RNN"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#24">slide 24</a> of the RNN and LSTM deck.</p></div>
 ```
 
 ## 12. Practicalities: padding, masking and packing
@@ -820,7 +820,7 @@ A bidirectional model needs the **whole sequence first**: fine for classificatio
 Batches need equal lengths. We **pad** short sequences with `<PAD>` (index 0) and **truncate** long ones (the LSTM lab keeps the first 100 tokens; cutting reviews loses information, since sentiment is often at the end, so check how many sequences are cut). A batch is then a tensor $[B, T_{\max}]$ plus the true lengths.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="padding" aria-label="Three sentences of different lengths padded to the same length"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#23">slide 23</a> of the RNN and LSTM deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="padding" aria-label="Three sentences of different lengths padded to the same length"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#25">slide 25</a> of the RNN and LSTM deck.</p></div>
 ```
 
 The padding is an artefact of batching: **a sequence's prediction must not depend on how much padding it got**, which depends on the other sequences in its batch. Three places where it leaks in:
@@ -893,7 +893,7 @@ Even gated RNNs have two structural limits:
 2. **Bottleneck.** Everything must pass through a fixed-size state. In an encoder–decoder (translation), the whole source sentence must fit in one vector $\mathbf{c} = \mathbf{h}_T$ that the decoder reads, and far-away words must survive many updates.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="seq2seq" style="max-height:270px" aria-label="An encoder RNN compressing a sentence into one context vector, read by a decoder RNN"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#24">slide 24</a> of the RNN and LSTM deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="seq2seq" style="max-height:270px" aria-label="An encoder RNN compressing a sentence into one context vector, read by a decoder RNN"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/05_rnn_lstm.html#26">slide 26</a> of the RNN and LSTM deck.</p></div>
 ```
 
 **Attention** lets every step look directly at every other step, with a path of length 1 between any two tokens, all in parallel. Transformers ([NN note 05](05_attention_transformers.html)) are built from attention alone and have largely replaced RNNs for text; RNNs remain common for streaming data, small models and time series, where their constant memory per step is an advantage.
