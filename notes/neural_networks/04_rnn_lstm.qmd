@@ -431,7 +431,7 @@ So clipping only caps the **step length** at $\alpha\tau$ and never changes wher
 ```
  Clipping **by value** (clamping each component to $[-\tau,\tau]$) does change the direction: $\mathbf{g} = (10, 0.1)$ clamped to $[-1,1]$ becomes $(1, 0.1)$, and its angle to the first axis goes from $\arctan(0.1/10) = 0.57°$ to $\arctan(0.1/1) = 5.7°$. The norm is computed over **all** parameters together (a global norm), which keeps the relative size of the parameter groups.
 
-In PyTorch: `nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)` after `loss.backward()` and before `opt.step()`. It **returns the norm before clipping**: log it, it is the best early warning of exploding gradients. A good $\tau$ is somewhat above the typical norm observed early in training; 1.0 is the usual default for RNNs.
+In PyTorch: `nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)` after `loss.backward()` and before `optimizer.step()`. It **returns the norm before clipping**: log it, it is the best early warning of exploding gradients. A good $\tau$ is somewhat above the typical norm observed early in training; 1.0 is the usual default for RNNs.
 
 **Demo.** A vanilla RNN ($d_h = 32$, recurrent weights initialised with spectral scale 1.5) must remember the first of 30 random inputs; plain SGD with $\alpha = 0.1$, 400 steps, the same seed and data for both runs, with and without clipping at $\tau = 1$.
 
@@ -440,14 +440,14 @@ def train_clip(clip, lr=0.1, steps=400, T=30, scale=1.5, seed=0):
     torch.manual_seed(seed); g = torch.Generator().manual_seed(seed)
     rnn = nn.RNN(1, 32, batch_first=True); head = nn.Linear(32, 1)
     with torch.no_grad(): rnn.weight_hh_l0.copy_(torch.randn(32, 32, generator=g) * scale / np.sqrt(32))
-    params = list(rnn.parameters()) + list(head.parameters()); opt = torch.optim.SGD(params, lr=lr)
+    params = list(rnn.parameters()) + list(head.parameters()); optimizer = torch.optim.SGD(params, lr=lr)
     norms, losses = [], []
     for _ in range(steps):
-        x = torch.randn(64, T, 1, generator=g); y = x[:, 0]              # target: the first input
+        optimizer.zero_grad(); x = torch.randn(64, T, 1, generator=g); y = x[:, 0]              # target: the first input
         loss = F.mse_loss(head(rnn(x)[0][:, -1]), y)
-        opt.zero_grad(); loss.backward()
+        loss.backward()
         norms.append(nn.utils.clip_grad_norm_(params, clip).item())       # returns the norm BEFORE clipping
-        losses.append(loss.item()); opt.step()
+        losses.append(loss.item()); optimizer.step()
     return np.array(norms), np.array(losses)
 
 runs = {"no clipping": train_clip(float("inf")), "clip at τ = 1": train_clip(1.0)}
@@ -722,15 +722,15 @@ We compare a vanilla RNN, an LSTM with PyTorch's default initialisation, and LST
 class SeqClassifier(nn.Module):
     def __init__(self, cell, V=20, d=16, dh=32, forget_bias=None):
         super().__init__()
-        self.emb = nn.Embedding(V, d)
+        self.embedding = nn.Embedding(V, d)
         self.rnn = nn.LSTM(d, dh, batch_first=True) if cell == "LSTM" else nn.RNN(d, dh, batch_first=True)
         if forget_bias is not None:              # PyTorch gate order: input, forget, cell, output
             with torch.no_grad():
                 self.rnn.bias_ih_l0[dh:2 * dh].fill_(forget_bias); self.rnn.bias_hh_l0[dh:2 * dh].fill_(0.0)
-        self.head = nn.Linear(dh, 1)
+        self.fc = nn.Linear(dh, 1)
     def forward(self, tokens):                   # tokens: (B, T)
-        out, _ = self.rnn(self.emb(tokens))      # out: (B, T, dh)
-        return self.head(out[:, -1]).squeeze(-1) # many-to-one: last hidden state -> logit
+        out, _ = self.rnn(self.embedding(tokens))  # out: (B, T, dh)
+        return self.fc(out[:, -1]).squeeze(-1) # many-to-one: last hidden state -> logit
 
 def batch(n, T, g):
     x = torch.randint(0, 20, (n, T), generator=g)
@@ -738,11 +738,11 @@ def batch(n, T, g):
 
 def train_and_test(cell, T, forget_bias=None, steps=800, seed=0):
     torch.manual_seed(seed); g = torch.Generator().manual_seed(seed)
-    model = SeqClassifier(cell, forget_bias=forget_bias); opt = torch.optim.Adam(model.parameters(), lr=3e-3)
+    model = SeqClassifier(cell, forget_bias=forget_bias); optimizer = torch.optim.Adam(model.parameters(), lr=3e-3)
     for _ in range(steps):
         xb, yb = batch(64, T, g)
-        opt.zero_grad(); F.binary_cross_entropy_with_logits(model(xb), yb).backward()
-        nn.utils.clip_grad_norm_(model.parameters(), 1.0); opt.step()
+        optimizer.zero_grad(); F.binary_cross_entropy_with_logits(model(xb), yb).backward()
+        nn.utils.clip_grad_norm_(model.parameters(), 1.0); optimizer.step()
     Xte, yte = batch(2000, T, torch.Generator().manual_seed(999))
     with torch.no_grad():
         return ((model(Xte) > 0).float() == yte).float().mean().item()
@@ -857,23 +857,23 @@ The unmasked loss changes when only the amount of padding changes; the masked lo
 The model of the LSTM lab puts this together (embedding with `padding_idx`, packing, the last real state, a logit head, clipping):
 
 ```{python}
-class SentimentLSTM(nn.Module):
+class SentimentRNN(nn.Module):
     def __init__(self, V, d=64, dh=64):
         super().__init__()
-        self.emb = nn.Embedding(V, d, padding_idx=0)
-        self.lstm = nn.LSTM(d, dh, batch_first=True)
-        self.head = nn.Linear(dh, 1)
+        self.embedding = nn.Embedding(V, d, padding_idx=0)
+        self.rnn = nn.LSTM(d, dh, batch_first=True)
+        self.fc = nn.Linear(dh, 1)
 
-    def forward(self, tokens, lengths):  # [B, T], [B]
-        x = self.emb(tokens)             # [B, T, d]
-        x = pack_padded_sequence(x, lengths.cpu(), batch_first=True, enforce_sorted=False)
-        _, (h, c) = self.lstm(x)         # h: [1, B, dh], the state after each sequence's last real token
-        return self.head(h[-1]).squeeze(1)  # [B] logits
+    def forward(self, x, lengths):       # [B, T], [B]
+        e = self.embedding(x)            # [B, T, d]
+        packed = pack_padded_sequence(e, lengths.cpu(), batch_first=True, enforce_sorted=False)
+        _, (h, c) = self.rnn(packed)     # h: [layers=1, B, dh], the state after each sequence's last real token
+        return self.fc(h[-1]).squeeze(1)  # h[-1]: the last layer; [B] logits
 
-model = SentimentLSTM(V=1000); loss_fn = nn.BCEWithLogitsLoss()
+model = SentimentRNN(V=1000); criterion = nn.BCEWithLogitsLoss()
 tokens, lengths, labels = torch.randint(1, 1000, (4, 12)), torch.tensor([12, 7, 3, 9]), torch.tensor([1., 0., 1., 0.])
 for b, L in enumerate(lengths): tokens[b, L:] = 0                  # pad after the true length
-loss = loss_fn(model(tokens, lengths), labels); loss.backward()
+loss = criterion(model(tokens, lengths), labels); loss.backward()
 print(f"logits shape {tuple(model(tokens, lengths).shape)}, loss {loss.item():.3f}, gradient norm before clipping"
       f" {nn.utils.clip_grad_norm_(model.parameters(), 1.0):.3f}")
 ```
@@ -1018,10 +1018,10 @@ class Forecaster(nn.Module):
     def forward(self, x): return self.head(self.rnn(x)[0]).squeeze(-1)    # a prediction of x_{t+1} at every t
 
 for bi in [False, True]:
-    torch.manual_seed(0); m = Forecaster(bi); opt = torch.optim.Adam(m.parameters(), lr=1e-2); g = torch.Generator().manual_seed(0)
+    torch.manual_seed(0); m = Forecaster(bi); optimizer = torch.optim.Adam(m.parameters(), lr=1e-2); g = torch.Generator().manual_seed(0)
     for _ in range(300):
-        ix = torch.randint(0, len(Xtr), (64,), generator=g)
-        loss = F.mse_loss(m(Xtr[ix]), Ytr[ix]); opt.zero_grad(); loss.backward(); opt.step()
+        optimizer.zero_grad(); ix = torch.randint(0, len(Xtr), (64,), generator=g)
+        loss = F.mse_loss(m(Xtr[ix]), Ytr[ix]); loss.backward(); optimizer.step()
     with torch.no_grad():
         P = m(Xte); every, deployed = F.mse_loss(P, Yte).item(), F.mse_loss(P[:, -1], Yte[:, -1]).item()
     print(f"{'bidirectional' if bi else 'unidirectional':>14} GRU: test MSE, every position {every:.3f};  deployed (last position only) {deployed:.3f}")
@@ -1081,12 +1081,12 @@ def rollout(m, starts, warm, H, p_own, g=None):
     return torch.stack(preds, 1)
 
 def train_gen(p_final, steps=400, warm=20, H=30, seed=0):
-    torch.manual_seed(seed); m = StepModel(); opt = torch.optim.Adam(m.parameters(), lr=5e-3); g = torch.Generator().manual_seed(seed)
+    torch.manual_seed(seed); m = StepModel(); optimizer = torch.optim.Adam(m.parameters(), lr=5e-3); g = torch.Generator().manual_seed(seed)
     for s in range(steps):
-        st = torch.randint(0, 3000 - warm - H - 1, (64,), generator=g)
+        optimizer.zero_grad(); st = torch.randint(0, 3000 - warm - H - 1, (64,), generator=g)
         pred = rollout(m, st, warm, H, p_own=p_final * min(1, s / (0.5 * steps)), g=g)
         loss = F.mse_loss(pred, torch.stack([xt[st + warm + k] for k in range(H)], 1))
-        opt.zero_grad(); loss.backward(); nn.utils.clip_grad_norm_(m.parameters(), 1.0); opt.step()
+        loss.backward(); nn.utils.clip_grad_norm_(m.parameters(), 1.0); optimizer.step()
     return m
 
 H = 60; starts = torch.arange(3000, 4000 - 20 - H - 1); target = torch.stack([ct[starts + 20 + k] for k in range(H)], 1)
@@ -1158,12 +1158,12 @@ def fit_and_score(Z, invert):
     X_, y_ = torch.tensor(np.array(X_), dtype=torch.float32)[..., None], torch.tensor(np.array(y_), dtype=torch.float32)
     sid, tr = np.array(sid), np.array(tpos) < tr_end
     torch.manual_seed(0); gru, head = nn.GRU(1, 32, batch_first=True), nn.Linear(32, 1)
-    params = list(gru.parameters()) + list(head.parameters()); opt = torch.optim.Adam(params, lr=3e-3); g = torch.Generator().manual_seed(0)
+    params = list(gru.parameters()) + list(head.parameters()); optimizer = torch.optim.Adam(params, lr=3e-3); g = torch.Generator().manual_seed(0)
     Xtr_, ytr_ = X_[tr], y_[tr]
     for _ in range(500):
-        ix = torch.randint(0, len(Xtr_), (128,), generator=g)
-        loss = F.mse_loss(head(gru(Xtr_[ix])[0][:, -1]).squeeze(-1), ytr_[ix]); opt.zero_grad(); loss.backward()
-        nn.utils.clip_grad_norm_(params, 1.0); opt.step()
+        optimizer.zero_grad(); ix = torch.randint(0, len(Xtr_), (128,), generator=g)
+        loss = F.mse_loss(head(gru(Xtr_[ix])[0][:, -1]).squeeze(-1), ytr_[ix]); loss.backward()
+        nn.utils.clip_grad_norm_(params, 1.0); optimizer.step()
     with torch.no_grad(): pred = head(gru(X_[~tr])[0][:, -1]).squeeze(-1).numpy()
     k = sid[~tr]; p_, y_te = invert(pred, k), invert(y_[~tr].numpy(), k)
     return [np.mean((p_[k == j] - y_te[k == j]) ** 2) / np.var(y_te[k == j]) for j in range(len(scales))]

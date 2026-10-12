@@ -39,13 +39,13 @@ FIG['outsize']=root=>{const svg=svgOf(root);const ih=q(root,'h'),iff=q(root,'f')
   [ih,iff,ip,is].forEach(i=>i.addEventListener('input',draw));draw()};
 /* ---------- channels: a filter is 3-D, many filters give many maps ---------- */
 FIG['channels']=root=>{const svg=initSvg(svgOf(root),620,300);const cs=14;
-  T(svg,110,18,'input 6×6×3','lab');[['#9dc3e6',36],['#a9d18e',18],['#f4b183',0]].forEach(([c,off])=>{for(let i=0;i<6;i++)for(let j=0;j<6;j++)E('rect',{x:30+off+j*cs,y:40+(36-off)*0.7+i*cs,width:cs,height:cs,fill:c,'fill-opacity':0.8,stroke:'#7f7f7f','stroke-width':0.5},svg)});
+  T(svg,110,18,'input 3×6×6','lab');[['#9dc3e6',36],['#a9d18e',18],['#f4b183',0]].forEach(([c,off])=>{for(let i=0;i<6;i++)for(let j=0;j<6;j++)E('rect',{x:30+off+j*cs,y:40+(36-off)*0.7+i*cs,width:cs,height:cs,fill:c,'fill-opacity':0.8,stroke:'#7f7f7f','stroke-width':0.5},svg)});
   T(svg,300,18,'one filter 3×3×3 (+ bias)','lab');[['#9dc3e6',24],['#a9d18e',12],['#f4b183',0]].forEach(([c,off])=>{for(let i=0;i<3;i++)for(let j=0;j<3;j++)E('rect',{x:250+off+j*cs,y:60+(24-off)*0.7+i*cs,width:cs,height:cs,fill:c,'fill-opacity':0.9,stroke:'#404040','stroke-width':0.6},svg)});T(svg,300,132,'28 weights','');
   arrowPx(svg,150,90,238,90,'ln thin sk','fk');T(svg,195,80,'slides over','');arrowPx(svg,340,90,395,90,'ln thin sk','fk');T(svg,368,80,'Σ','lab');
   T(svg,470,18,'one feature map 4×4','lab');for(let i=0;i<4;i++)for(let j=0;j<4;j++)E('rect',{x:420+j*cs,y:62+i*cs,width:cs,height:cs,fill:'#ffe699',stroke:'#7f7f7f','stroke-width':0.6},svg);
   T(svg,110,190,'C_out = 4 filters','lab');for(let f=0;f<4;f++)[['#9dc3e6',16],['#a9d18e',8],['#f4b183',0]].forEach(([c,off])=>{for(let i=0;i<3;i++)for(let j=0;j<3;j++)E('rect',{x:30+f*60+off+j*9,y:210+(16-off)*0.7+i*9,width:9,height:9,fill:c,'fill-opacity':0.9,stroke:'#404040','stroke-width':0.4},svg)});
   arrowPx(svg,290,235,395,235,'ln thin sk','fk');T(svg,342,225,'4 × 28 = 112 params','');T(svg,470,190,'output 4×4×4','lab');[3,2,1,0].forEach(f=>{for(let i=0;i<4;i++)for(let j=0;j<4;j++)E('rect',{x:420+f*12+j*cs,y:215+(3-f)*8+i*cs,width:cs,height:cs,fill:['#ffe699','#ffd966','#f4b183','#f8cbad'][f],stroke:'#7f7f7f','stroke-width':0.6},svg)});
-  T(svg,310,276,'filter depth = number of input channels','','middle');T(svg,310,294,'number of filters = number of output channels','','middle')};
+  T(svg,215,276,'filter depth = number of input channels','','middle');T(svg,215,294,'number of filters = number of output channels','','middle')};
 /* ---------- many filters, step by step: each filter slides over the input and adds one map to the front of the output stack.
    data-k="k": 1–4 filters, 5 = the next layer's filter. CSS animations replay the newest map (see nn.css .anim-*) ---------- */
 FIG['filter-stack']=root=>{const svg=svgOf(root);const ik=q(root,'k');const CH=['#9dc3e6','#a9d18e','#f4b183'],MC=['#ffd966','#b4a7d6','#76c5b4','#e88a8a'];
@@ -119,8 +119,8 @@ FIG['pool']=root=>{const svg=initSvg(svgOf(root),600,210);const M=[[3,2,0,0],[0,
   [['Max pooling (2×2, stride 2)',(a)=>Math.max(...a),0],['Average pooling (2×2, stride 2)',(a)=>a.reduce((x,y)=>x+y,0)/a.length,300]].forEach(([lab,fn,x0])=>{T(svg,x0+140,18,lab,'lab');
     grid(svg,x0+10,34,M,38,(i,j)=>cols[(i<2?0:2)+(j<2?0:1)],(i,j,v)=>String(v));const out=[[0,0],[0,0]];for(let a=0;a<2;a++)for(let b=0;b<2;b++)out[a][b]=fn([M[2*a][2*b],M[2*a][2*b+1],M[2*a+1][2*b],M[2*a+1][2*b+1]]);
     arrowPx(svg,x0+168,110,x0+196,110,'ln thin sk','fk');grid(svg,x0+200,72,out,38,(i,j)=>cols[i*2+j],(i,j,v)=>f1(v))});T(svg,300,205,'A summarized, down-sampled version of the features: 4× fewer numbers, no parameters.','','middle')};
-FIG['cnn-arch']=root=>{const svg=initSvg(svgOf(root),960,270);cube(svg,20,60,90,90,10,'#d9d9d9','input','28×28×1');cube(svg,150,50,80,110,40,'#8ea9db','conv 3×3 + ReLU','28×28×32');cube(svg,280,70,56,70,40,'#b4c7e7','max pool','14×14×32');
-  cube(svg,380,60,50,90,70,'#8ea9db','conv 3×3 + ReLU','14×14×64');cube(svg,500,80,36,50,70,'#b4c7e7','max pool','7×7×64');
+FIG['cnn-arch']=root=>{const svg=initSvg(svgOf(root),960,270);cube(svg,20,60,90,90,10,'#d9d9d9','input','1×28×28');cube(svg,150,50,80,110,40,'#8ea9db','conv 3×3 + ReLU','32×28×28');cube(svg,280,70,56,70,40,'#b4c7e7','max pool','32×14×14');
+  cube(svg,380,60,50,90,70,'#8ea9db','conv 3×3 + ReLU','64×14×14');cube(svg,500,80,36,50,70,'#b4c7e7','max pool','64×7×7');
   E('rect',{x:630,y:30,width:24,height:170,fill:'#f4b183',stroke:'#404040'},svg);T(svg,642,222,'flatten','');T(svg,642,238,'3136','');E('rect',{x:700,y:70,width:24,height:90,fill:'#f4b183',stroke:'#404040'},svg);T(svg,712,182,'dense','');T(svg,712,198,'128','');
   E('rect',{x:770,y:100,width:24,height:36,fill:'#ffc000',stroke:'#404040'},svg);T(svg,782,158,'softmax','');T(svg,782,174,'10','');
   E('line',{x1:20,x2:590,y1:252,y2:252,class:'ln thin sb'},svg);T(svg,305,268,'FEATURE LEARNING','lab');E('line',{x1:620,x2:810,y1:252,y2:252,class:'ln thin so'},svg);T(svg,715,268,'CLASSIFICATION','lab')};
@@ -220,18 +220,18 @@ FIG['seg-pix']=root=>{const svg=svgOf(root);const N=8;const lab=[];for(let i=0;i
     T(svg,320,240,'shown: the "'+names[k]+'" map is outlined in red (orange = high score, blue = low)','','middle')}
   inp.addEventListener('input',draw);draw()};
 /* ---------- fully convolutional: classification head vs segmentation head ---------- */
-FIG['fcn']=root=>{const svg=initSvg(svgOf(root),960,270);cube(svg,20,80,80,80,10,'#d9d9d9','image','H×W×3');cube(svg,140,90,56,56,30,'#8ea9db','conv + pool','H/2 × W/2 × 64');cube(svg,250,100,36,36,50,'#8ea9db','conv + pool','H/4 × W/4 × 128');cube(svg,360,108,22,22,70,'#8ea9db','conv + pool','H/8 × W/8 × 256');
+FIG['fcn']=root=>{const svg=initSvg(svgOf(root),960,270);cube(svg,20,80,80,80,10,'#d9d9d9','image','3×H×W');cube(svg,140,90,56,56,30,'#8ea9db','conv + pool','64×H/2×W/2');cube(svg,250,100,36,36,50,'#8ea9db','conv + pool','128×H/4×W/4');cube(svg,360,108,22,22,70,'#8ea9db','conv + pool','256×H/8×W/8');
   [[100,120,138],[200,120,248],[290,120,358]].forEach(a=>arrowPx(svg,a[0],a[1],a[2],a[1],'ln thin sk','fk'));T(svg,220,40,'shared backbone (any CNN)','lab');
   E('path',{d:'M455,110 C520,60 560,60 600,60',fill:'none',stroke:'#404040','stroke-width':1.2},svg);E('path',{d:'M455,130 C520,190 560,190 600,190',fill:'none',stroke:'#404040','stroke-width':1.2},svg);
   box(svg,590,36,150,48,'global avg pool\n+ Linear → K','#fbe5d6',{lh:17,cls:''});arrowPx(svg,742,60,770,60,'ln thin sk','fk');for(let k=0;k<4;k++)E('rect',{x:775,y:44+k*9,width:40,height:8,fill:'#ffc000',stroke:'#404040','stroke-width':0.5},svg);T(svg,795,100,'K scores','');T(svg,870,60,'classification','lab','start');
-  box(svg,590,166,150,48,'1×1 conv → K maps\n+ upsample ×8','#e2f0d9',{lh:17,cls:''});arrowPx(svg,742,190,770,190,'ln thin sk','fk');cube(svg,775,150,60,60,14,'#70ad47','H×W×K','');T(svg,880,190,'segmentation','lab','start');
+  box(svg,590,166,150,48,'1×1 conv → K maps\n+ upsample ×8','#e2f0d9',{lh:17,cls:''});arrowPx(svg,742,190,770,190,'ln thin sk','fk');cube(svg,775,150,60,60,14,'#70ad47','K×H×W','');T(svg,880,190,'segmentation','lab','start');
   T(svg,480,250,'"fully convolutional": no Flatten, so the spatial layout survives to the output and any image size works (Long et al. 2015)','','middle')};
 /* ---------- build-along helper: [data-l] elements up to step k shown, the one of step k highlighted ---------- */
 function markSteps(root,k){root.querySelectorAll('[data-l]').forEach(m=>{const l=+m.dataset.l;m.classList.toggle('off',l>k);m.classList.toggle('cur',l===k)})}
 /* ---------- fully convolutional networks, in three steps: backbone, classification head, segmentation head ---------- */
 FIG['fcn-build']=root=>{const svg=svgOf(root);const ik=q(root,'k');
   function draw(){const k=+ik.value;initSvg(svg,960,250);const gi=i=>E('g',{class:i===k?'anim-in':''},svg);
-    let g=gi(1);cube(g,20,80,80,80,10,'#d9d9d9','image','3×H×W');cube(g,140,90,56,56,30,'#8ea9db','conv + pool','64 × H/2 × W/2');cube(g,250,100,36,36,50,'#8ea9db','conv + pool','128 × H/4 × W/4');cube(g,360,108,22,22,70,'#8ea9db','conv + pool','256 × H/8 × W/8');
+    let g=gi(1);cube(g,20,80,80,80,10,'#d9d9d9','image','3×H×W');cube(g,140,90,56,56,30,'#8ea9db','conv + pool','64×H/2×W/2');cube(g,250,100,36,36,50,'#8ea9db','conv + pool','128×H/4×W/4');cube(g,360,108,22,22,70,'#8ea9db','conv + pool','256×H/8×W/8');
     [[100,120,138],[200,120,248],[290,120,358]].forEach(a=>arrowPx(g,a[0],a[1],a[2],a[1],'ln thin sk','fk'));T(g,220,40,'shared backbone (any CNN)','lab');
     if(k>=2){g=gi(2);E('path',{d:'M455,110 C520,60 560,60 600,60',fill:'none',stroke:'#404040','stroke-width':1.2},g);box(g,590,36,150,48,'global avg pool\n+ Linear → K','#fbe5d6',{lh:17,cls:''});arrowPx(g,742,60,770,60,'ln thin sk','fk');
       for(let r=0;r<4;r++)E('rect',{x:775,y:44+r*9,width:40,height:8,fill:'#ffc000',stroke:'#404040','stroke-width':0.5},g);T(g,795,100,'K scores','');T(g,870,64,'classification','lab','start')}

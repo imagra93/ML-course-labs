@@ -247,10 +247,10 @@ window.Quarto = {
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>Xm_t, ym_t <span class="op">=</span> torch.tensor(Xm, dtype<span class="op">=</span>torch.float32), torch.tensor(ym, dtype<span class="op">=</span>torch.float32)</span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>torch.manual_seed(<span class="dv">0</span>)</span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>net <span class="op">=</span> nn.Sequential(nn.Linear(<span class="dv">2</span>, <span class="dv">16</span>), nn.Tanh(), nn.Linear(<span class="dv">16</span>, <span class="dv">1</span>))</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>opt <span class="op">=</span> torch.optim.Adam(net.parameters(), lr<span class="op">=</span><span class="fl">0.02</span>)</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>optimizer <span class="op">=</span> torch.optim.Adam(net.parameters(), lr<span class="op">=</span><span class="fl">0.02</span>)</span>
 <span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>bce <span class="op">=</span> nn.BCEWithLogitsLoss()</span>
 <span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">500</span>):                                   <span class="co"># full-batch training on 200 points</span></span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    opt.zero_grad()<span class="op">;</span> bce(net(Xm_t).squeeze(<span class="dv">1</span>), ym_t).backward()<span class="op">;</span> opt.step()</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    optimizer.zero_grad()<span class="op">;</span> bce(net(Xm_t).squeeze(<span class="dv">1</span>), ym_t).backward()<span class="op">;</span> optimizer.step()</span>
 <span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>perm <span class="op">=</span> torch.randperm(<span class="dv">16</span>)                              <span class="co"># permute the 16 hidden units</span></span>
 <span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>net_p <span class="op">=</span> nn.Sequential(nn.Linear(<span class="dv">2</span>, <span class="dv">16</span>), nn.Tanh(), nn.Linear(<span class="dv">16</span>, <span class="dv">1</span>))</span>
@@ -479,14 +479,14 @@ v &amp;= \frac{\alpha\,\sigma^2}{B\,h\,(2-\alpha h)}\;\approx\;\frac{\sigma^2}{2
 <span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> sgd_curve(B, lr, epochs<span class="op">=</span><span class="dv">30</span>, seed<span class="op">=</span><span class="dv">0</span>):</span>
 <span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>    torch.manual_seed(seed)<span class="op">;</span> model <span class="op">=</span> make_mlp()</span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>    opt <span class="op">=</span> torch.optim.SGD(model.parameters(), lr<span class="op">=</span>lr, momentum<span class="op">=</span><span class="fl">0.9</span>)</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>    optimizer <span class="op">=</span> torch.optim.SGD(model.parameters(), lr<span class="op">=</span>lr, momentum<span class="op">=</span><span class="fl">0.9</span>)</span>
 <span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>    loader <span class="op">=</span> DataLoader(to_ds(X_tr, y_tr), batch_size<span class="op">=</span>B, shuffle<span class="op">=</span><span class="va">True</span>,</span>
 <span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>                        generator<span class="op">=</span>torch.Generator().manual_seed(seed))</span>
 <span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>    curve <span class="op">=</span> []</span>
 <span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(epochs):</span>
 <span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>        model.train()</span>
 <span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> xb, yb <span class="kw">in</span> loader:</span>
-<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>            opt.zero_grad()<span class="op">;</span> F.cross_entropy(model(xb), yb).backward()<span class="op">;</span> opt.step()</span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a>            optimizer.zero_grad()<span class="op">;</span> F.cross_entropy(model(xb), yb).backward()<span class="op">;</span> optimizer.step()</span>
 <span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a>        model.<span class="bu">eval</span>()</span>
 <span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>        <span class="cf">with</span> torch.no_grad(): curve.append(F.cross_entropy(model(Xtr_t), ytr_t).item())</span>
 <span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.array(curve)</span>
@@ -534,15 +534,15 @@ B = 128, α = 0.05  (not scaled)  loss after 10 epochs 0.545, after 30 0.0690</c
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>train_loader <span class="op">=</span> DataLoader(to_ds(X_tr, y_tr), batch_size<span class="op">=</span><span class="dv">32</span>, shuffle<span class="op">=</span><span class="va">True</span>,</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>                          generator<span class="op">=</span>torch.Generator().manual_seed(<span class="dv">0</span>))</span>
 <span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> lr_range_test(model, opt, lr_min<span class="op">=</span><span class="fl">1e-5</span>, lr_max<span class="op">=</span><span class="fl">10.0</span>, steps<span class="op">=</span><span class="dv">200</span>, beta<span class="op">=</span><span class="fl">0.9</span>):</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> lr_range_test(model, optimizer, lr_min<span class="op">=</span><span class="fl">1e-5</span>, lr_max<span class="op">=</span><span class="fl">10.0</span>, steps<span class="op">=</span><span class="dv">200</span>, beta<span class="op">=</span><span class="fl">0.9</span>):</span>
 <span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    q <span class="op">=</span> (lr_max <span class="op">/</span> lr_min) <span class="op">**</span> (<span class="dv">1</span> <span class="op">/</span> (steps <span class="op">-</span> <span class="dv">1</span>))</span>
 <span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    lrs, losses, avg, best, batches <span class="op">=</span> [], [], <span class="fl">0.0</span>, np.inf, <span class="bu">iter</span>(train_loader)</span>
 <span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> k <span class="kw">in</span> <span class="bu">range</span>(steps):</span>
 <span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>        lr <span class="op">=</span> lr_min <span class="op">*</span> q <span class="op">**</span> k</span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> group <span class="kw">in</span> opt.param_groups: group[<span class="st">"lr"</span>] <span class="op">=</span> lr</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> group <span class="kw">in</span> optimizer.param_groups: group[<span class="st">"lr"</span>] <span class="op">=</span> lr</span>
 <span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">try</span>: xb, yb <span class="op">=</span> <span class="bu">next</span>(batches)</span>
 <span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>        <span class="cf">except</span> <span class="pp">StopIteration</span>: batches <span class="op">=</span> <span class="bu">iter</span>(train_loader)<span class="op">;</span> xb, yb <span class="op">=</span> <span class="bu">next</span>(batches)</span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>        opt.zero_grad()<span class="op">;</span> loss <span class="op">=</span> F.cross_entropy(model(xb), yb)<span class="op">;</span> loss.backward()<span class="op">;</span> opt.step()</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>        optimizer.zero_grad()<span class="op">;</span> loss <span class="op">=</span> F.cross_entropy(model(xb), yb)<span class="op">;</span> loss.backward()<span class="op">;</span> optimizer.step()</span>
 <span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>        avg <span class="op">=</span> beta <span class="op">*</span> avg <span class="op">+</span> (<span class="dv">1</span> <span class="op">-</span> beta) <span class="op">*</span> loss.item()<span class="op">;</span> smooth <span class="op">=</span> avg <span class="op">/</span> (<span class="dv">1</span> <span class="op">-</span> beta <span class="op">**</span> (k <span class="op">+</span> <span class="dv">1</span>))</span>
 <span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>        lrs.append(lr)<span class="op">;</span> losses.append(smooth)<span class="op">;</span> best <span class="op">=</span> <span class="bu">min</span>(best, smooth)</span>
 <span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> smooth <span class="op">&gt;</span> <span class="dv">4</span> <span class="op">*</span> best <span class="kw">or</span> <span class="kw">not</span> np.isfinite(smooth): <span class="cf">break</span></span>
@@ -898,17 +898,17 @@ Adam             : loss after 60 steps 3.54e-02</code></pre>
 <tr class="even">
 <td>step decay</td>
 <td><span class="math inline">\(\alpha_t=\alpha_0\,\gamma^{\lfloor t/k\rfloor}\)</span> (e.g.&nbsp;<span class="math inline">\(\gamma=0.1\)</span> every 30 epochs)</td>
-<td><code>StepLR(opt, step_size=k, gamma=γ)</code></td>
+<td><code>StepLR(optimizer, step_size=k, gamma=γ)</code></td>
 </tr>
 <tr class="odd">
 <td>exponential</td>
 <td><span class="math inline">\(\alpha_t=\alpha_0\,\gamma^{t}\)</span> (<span class="math inline">\(\gamma\)</span> slightly below 1)</td>
-<td><code>ExponentialLR(opt, gamma=γ)</code></td>
+<td><code>ExponentialLR(optimizer, gamma=γ)</code></td>
 </tr>
 <tr class="even">
 <td>cosine</td>
 <td><span class="math inline">\(\alpha_t=\alpha_{\min}+\frac12(\alpha_0-\alpha_{\min})\big(1+\cos(\pi t/T)\big)\)</span></td>
-<td><code>CosineAnnealingLR(opt, T_max=T)</code></td>
+<td><code>CosineAnnealingLR(optimizer, T_max=T)</code></td>
 </tr>
 <tr class="odd">
 <td>linear warm-up</td>
@@ -918,12 +918,12 @@ Adam             : loss after 60 steps 3.54e-02</code></pre>
 <tr class="even">
 <td>one-cycle</td>
 <td>up from <span class="math inline">\(\alpha_0/25\)</span> to <span class="math inline">\(\alpha_0\)</span> in the first 30 % of steps, then cosine down to <span class="math inline">\(\alpha_0/(25\cdot10^4)\)</span></td>
-<td><code>OneCycleLR(opt, max_lr=α₀, total_steps=T)</code></td>
+<td><code>OneCycleLR(optimizer, max_lr=α₀, total_steps=T)</code></td>
 </tr>
 <tr class="odd">
 <td>reduce on plateau</td>
 <td><span class="math inline">\(\alpha\leftarrow\gamma\,\alpha\)</span> after <code>patience</code> epochs without improvement of the validation loss</td>
-<td><code>ReduceLROnPlateau(opt, factor=γ, patience=p)</code></td>
+<td><code>ReduceLROnPlateau(optimizer, factor=γ, patience=p)</code></td>
 </tr>
 </tbody>
 </table>
@@ -931,9 +931,9 @@ Adam             : loss after 60 steps 3.54e-02</code></pre>
 <p>We implement the formulas and check them against PyTorch’s schedulers, stepping each one 100 times:</p>
 <div id="ec588658" class="cell" data-execution_count="11">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> lrs_from(sched_fn, steps<span class="op">=</span><span class="dv">100</span>, lr<span class="op">=</span><span class="fl">1.0</span>):</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    p <span class="op">=</span> torch.nn.Parameter(torch.zeros(<span class="dv">1</span>))<span class="op">;</span> o <span class="op">=</span> torch.optim.SGD([p], lr<span class="op">=</span>lr)<span class="op">;</span> s <span class="op">=</span> sched_fn(o)<span class="op">;</span> out <span class="op">=</span> []</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>    p <span class="op">=</span> torch.nn.Parameter(torch.zeros(<span class="dv">1</span>))<span class="op">;</span> optimizer <span class="op">=</span> torch.optim.SGD([p], lr<span class="op">=</span>lr)<span class="op">;</span> s <span class="op">=</span> sched_fn(optimizer)<span class="op">;</span> out <span class="op">=</span> []</span>
 <span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(steps):</span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>        out.append(o.param_groups[<span class="dv">0</span>][<span class="st">"lr"</span>])<span class="op">;</span> o.step()<span class="op">;</span> s.step()</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>        out.append(optimizer.param_groups[<span class="dv">0</span>][<span class="st">"lr"</span>])<span class="op">;</span> optimizer.step()<span class="op">;</span> s.step()</span>
 <span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.array(out)</span>
 <span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>S <span class="op">=</span> torch.optim.lr_scheduler<span class="op">;</span> t <span class="op">=</span> np.arange(<span class="dv">100</span>)<span class="op">;</span> T_ <span class="op">=</span> <span class="dv">100</span></span>
@@ -971,7 +971,7 @@ one-cycle                    max |formula - PyTorch| = 0.0e+00</code></pre>
 </div>
 <div class="widget"><svg class="fig" data-fig="sched" aria-label="Constant, step decay, warm-up plus cosine and reduce-on-plateau learning-rate schedules"></svg>
 <p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#17">slide 17</a> of the Training deck: constant, step decay, warm-up + cosine and reduce-on-plateau.</p></div>
-<p><strong>Where <code>sched.step()</code> goes.</strong> After <code>opt.step()</code>: once per epoch for epoch-based schedules (<code>StepLR</code>, <code>CosineAnnealingLR</code> with <code>T_max=epochs</code>), once per mini-batch for step-based ones (<code>OneCycleLR</code>, warm-up counted in steps), and <code>ReduceLROnPlateau.step(val_loss)</code> after each validation.</p>
+<p><strong>Where <code>sched.step()</code> goes.</strong> After <code>optimizer.step()</code>: once per epoch for epoch-based schedules (<code>StepLR</code>, <code>CosineAnnealingLR</code> with <code>T_max=epochs</code>), once per mini-batch for step-based ones (<code>OneCycleLR</code>, warm-up counted in steps), and <code>ReduceLROnPlateau.step(val_loss)</code> after each validation.</p>
 </section>
 <section id="the-model-and-the-pytorch-training-loop" class="level2">
 <h2 class="anchored" data-anchor-id="the-model-and-the-pytorch-training-loop">6. The model and the PyTorch training loop</h2>
@@ -985,7 +985,7 @@ one-cycle                    max |formula - PyTorch| = 0.0e+00</code></pre>
 <span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>    nn.Dropout(<span class="fl">0.2</span>),</span>
 <span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>    nn.Linear(<span class="dv">256</span>, <span class="dv">10</span>),           <span class="co"># logits, one per class</span></span>
 <span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>loss_fn <span class="op">=</span> nn.CrossEntropyLoss()  <span class="co"># softmax inside</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>criterion <span class="op">=</span> nn.CrossEntropyLoss()  <span class="co"># softmax inside</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="widget"><svg class="fig" data-fig="shapes-walk" style="max-height:210px" aria-label="Tensor shapes and parameter counts through Flatten, Linear, ReLU, Dropout, Linear and the loss"></svg>
 <p class="from">The same walk for Lab 9's MLP (784 → 128 → 10, no dropout) is on <a href="../../slides/neural_networks/03_training.html#31">slide 31</a> of the Training deck.</p></div>
 <p><code>model(xb).shape</code> and <code>sum(p.numel() for p in model.parameters())</code> are the two commands you will type most. A <code>Linear(n_in, n_out)</code> has <span class="math inline">\(n_{\text{in}}n_{\text{out}}\)</span> weights plus <span class="math inline">\(n_{\text{out}}\)</span> biases. Layers with parameters: <code>Linear</code>, <code>Conv2d</code>, <code>Embedding</code>, <code>BatchNorm</code>, <code>LSTM</code>; layers without: <code>ReLU</code>, <code>Dropout</code>, <code>Flatten</code>, <code>MaxPool2d</code>.</p>
@@ -1017,18 +1017,18 @@ total 203,530; share of the first Linear 200960 / 203530 = 98.7%</code></pre>
 <span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"train </span><span class="sc">{</span><span class="bu">len</span>(y_tr)<span class="sc">}</span><span class="ss">, validation </span><span class="sc">{</span><span class="bu">len</span>(y_va)<span class="sc">}</span><span class="ss">, test </span><span class="sc">{</span><span class="bu">len</span>(y_te)<span class="sc">}</span><span class="ss">; input dim </span><span class="sc">{</span>Xd<span class="sc">.</span>shape[<span class="dv">1</span>]<span class="sc">}</span><span class="ss">, 10 classes; "</span></span>
 <span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"MLP parameters </span><span class="sc">{</span><span class="bu">sum</span>(p.numel() <span class="cf">for</span> p <span class="kw">in</span> make_mlp().parameters())<span class="sc">:,d}</span><span class="ss">"</span>)</span>
 <span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> evaluate(model, loader, loss_fn):</span>
+<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> evaluate(model, loader, criterion):</span>
 <span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>    model.<span class="bu">eval</span>()                                   <span class="co"># dropout off, batch-norm uses running statistics</span></span>
 <span id="cb25-8"><a href="#cb25-8" aria-hidden="true" tabindex="-1"></a>    total_loss, correct, n <span class="op">=</span> <span class="fl">0.0</span>, <span class="dv">0</span>, <span class="dv">0</span></span>
 <span id="cb25-9"><a href="#cb25-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> torch.no_grad():                          <span class="co"># no graph: faster, less memory</span></span>
 <span id="cb25-10"><a href="#cb25-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> xb, yb <span class="kw">in</span> loader:</span>
 <span id="cb25-11"><a href="#cb25-11" aria-hidden="true" tabindex="-1"></a>            out <span class="op">=</span> model(xb)</span>
-<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>            total_loss <span class="op">+=</span> loss_fn(out, yb).item() <span class="op">*</span> <span class="bu">len</span>(yb)      <span class="co"># weight by batch size</span></span>
+<span id="cb25-12"><a href="#cb25-12" aria-hidden="true" tabindex="-1"></a>            total_loss <span class="op">+=</span> criterion(out, yb).item() <span class="op">*</span> <span class="bu">len</span>(yb)      <span class="co"># weight by batch size</span></span>
 <span id="cb25-13"><a href="#cb25-13" aria-hidden="true" tabindex="-1"></a>            correct <span class="op">+=</span> (out.argmax(<span class="dv">1</span>) <span class="op">==</span> yb).<span class="bu">sum</span>().item()<span class="op">;</span> n <span class="op">+=</span> <span class="bu">len</span>(yb)</span>
 <span id="cb25-14"><a href="#cb25-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> total_loss <span class="op">/</span> n, correct <span class="op">/</span> n</span>
 <span id="cb25-15"><a href="#cb25-15" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb25-16"><a href="#cb25-16" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> train(model, optimizer, epochs<span class="op">=</span><span class="dv">150</span>, patience<span class="op">=</span><span class="va">None</span>, loader<span class="op">=</span><span class="va">None</span>):</span>
-<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a>    loss_fn <span class="op">=</span> nn.CrossEntropyLoss()<span class="op">;</span> loader <span class="op">=</span> loader <span class="kw">or</span> train_loader</span>
+<span id="cb25-17"><a href="#cb25-17" aria-hidden="true" tabindex="-1"></a>    criterion <span class="op">=</span> nn.CrossEntropyLoss()<span class="op">;</span> loader <span class="op">=</span> loader <span class="kw">or</span> train_loader</span>
 <span id="cb25-18"><a href="#cb25-18" aria-hidden="true" tabindex="-1"></a>    hist <span class="op">=</span> {<span class="st">"train_loss"</span>: [], <span class="st">"val_loss"</span>: [], <span class="st">"val_acc"</span>: []}</span>
 <span id="cb25-19"><a href="#cb25-19" aria-hidden="true" tabindex="-1"></a>    best, best_state, wait <span class="op">=</span> np.inf, <span class="va">None</span>, <span class="dv">0</span></span>
 <span id="cb25-20"><a href="#cb25-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> epoch <span class="kw">in</span> <span class="bu">range</span>(epochs):</span>
@@ -1036,11 +1036,11 @@ total 203,530; share of the first Linear 200960 / 203530 = 98.7%</code></pre>
 <span id="cb25-22"><a href="#cb25-22" aria-hidden="true" tabindex="-1"></a>        run_loss, n <span class="op">=</span> <span class="fl">0.0</span>, <span class="dv">0</span></span>
 <span id="cb25-23"><a href="#cb25-23" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> xb, yb <span class="kw">in</span> loader:</span>
 <span id="cb25-24"><a href="#cb25-24" aria-hidden="true" tabindex="-1"></a>            optimizer.zero_grad()                  <span class="co"># 1. reset accumulated gradients</span></span>
-<span id="cb25-25"><a href="#cb25-25" aria-hidden="true" tabindex="-1"></a>            loss <span class="op">=</span> loss_fn(model(xb), yb)          <span class="co"># 2. forward pass + loss</span></span>
+<span id="cb25-25"><a href="#cb25-25" aria-hidden="true" tabindex="-1"></a>            loss <span class="op">=</span> criterion(model(xb), yb)          <span class="co"># 2. forward pass + loss</span></span>
 <span id="cb25-26"><a href="#cb25-26" aria-hidden="true" tabindex="-1"></a>            loss.backward()                        <span class="co"># 3. backprop</span></span>
 <span id="cb25-27"><a href="#cb25-27" aria-hidden="true" tabindex="-1"></a>            optimizer.step()                       <span class="co"># 4. parameter update</span></span>
 <span id="cb25-28"><a href="#cb25-28" aria-hidden="true" tabindex="-1"></a>            run_loss <span class="op">+=</span> loss.item() <span class="op">*</span> <span class="bu">len</span>(yb)<span class="op">;</span> n <span class="op">+=</span> <span class="bu">len</span>(yb)</span>
-<span id="cb25-29"><a href="#cb25-29" aria-hidden="true" tabindex="-1"></a>        vl, va <span class="op">=</span> evaluate(model, val_loader, loss_fn)</span>
+<span id="cb25-29"><a href="#cb25-29" aria-hidden="true" tabindex="-1"></a>        vl, va <span class="op">=</span> evaluate(model, val_loader, criterion)</span>
 <span id="cb25-30"><a href="#cb25-30" aria-hidden="true" tabindex="-1"></a>        hist[<span class="st">"train_loss"</span>].append(run_loss <span class="op">/</span> n)<span class="op">;</span> hist[<span class="st">"val_loss"</span>].append(vl)<span class="op">;</span> hist[<span class="st">"val_acc"</span>].append(va)</span>
 <span id="cb25-31"><a href="#cb25-31" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> vl <span class="op">&lt;</span> best:                              <span class="co"># keep the best weights (checkpoint)</span></span>
 <span id="cb25-32"><a href="#cb25-32" aria-hidden="true" tabindex="-1"></a>            best, wait <span class="op">=</span> vl, <span class="dv">0</span><span class="op">;</span> best_state <span class="op">=</span> {k: v.clone() <span class="cf">for</span> k, v <span class="kw">in</span> model.state_dict().items()}</span>
@@ -1059,16 +1059,16 @@ total 203,530; share of the first Linear 200960 / 203530 = 98.7%</code></pre>
 final: train loss 0.0003, val loss 0.205, val acc 0.963</code></pre>
 </div>
 </div>
-<p><strong>The lines that every loop has</strong>: <code>zero_grad()</code> → forward → loss → <code>backward()</code> → <code>step()</code>. PyTorch <em>adds</em> each new gradient to <code>.grad</code>, so forgetting <code>zero_grad()</code> sums the gradients of all previous steps (section 11.1). Plus the two modes: <code>model.train()</code> for training and <code>model.eval()</code> with <code>torch.no_grad()</code> for evaluation; they switch dropout and BatchNorm (sections 8.5 and 9). With a schedule, <code>sched.step()</code> goes after the epoch’s last <code>opt.step()</code>:</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>opt <span class="op">=</span> torch.optim.AdamW(model.parameters(), lr<span class="op">=</span><span class="fl">1e-3</span>, weight_decay<span class="op">=</span><span class="fl">1e-2</span>)</span>
-<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>sched <span class="op">=</span> torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max<span class="op">=</span>epochs)</span>
+<p><strong>The lines that every loop has</strong>: <code>zero_grad()</code> → forward → loss → <code>backward()</code> → <code>step()</code>. PyTorch <em>adds</em> each new gradient to <code>.grad</code>, so forgetting <code>zero_grad()</code> sums the gradients of all previous steps (section 11.1). Plus the two modes: <code>model.train()</code> for training and <code>model.eval()</code> with <code>torch.no_grad()</code> for evaluation; they switch dropout and BatchNorm (sections 8.5 and 9). With a schedule, <code>sched.step()</code> goes after the epoch’s last <code>optimizer.step()</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb27"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>optimizer <span class="op">=</span> torch.optim.AdamW(model.parameters(), lr<span class="op">=</span><span class="fl">1e-3</span>, weight_decay<span class="op">=</span><span class="fl">1e-2</span>)</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>sched <span class="op">=</span> torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max<span class="op">=</span>epochs)</span>
 <span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> epoch <span class="kw">in</span> <span class="bu">range</span>(epochs):</span>
 <span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>    model.train()                  <span class="co"># training mode</span></span>
 <span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> xb, yb <span class="kw">in</span> train_loader:    <span class="co"># mini-batches</span></span>
-<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>        loss <span class="op">=</span> loss_fn(model(xb), yb)</span>
-<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>        opt.zero_grad()</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>        optimizer.zero_grad()</span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>        loss <span class="op">=</span> criterion(model(xb), yb)</span>
 <span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>        loss.backward()            <span class="co"># backprop</span></span>
-<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>        opt.step()                 <span class="co"># update</span></span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>        optimizer.step()                 <span class="co"># update</span></span>
 <span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>    sched.step()                   <span class="co"># once per epoch</span></span>
 <span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a>    model.<span class="bu">eval</span>()                   <span class="co"># evaluation mode</span></span>
 <span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> torch.no_grad():</span>
@@ -1192,11 +1192,11 @@ J_{\text{reg}}(\mathbf{w})=J(\mathbf{w})+\frac{\lambda}{2}\lVert\mathbf{w}\rVert
 <span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>    torch.manual_seed(<span class="dv">0</span>)</span>
 <span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>    w <span class="op">=</span> torch.nn.Parameter(torch.ones(<span class="dv">2</span> <span class="op">*</span> n))</span>
 <span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>    sc <span class="op">=</span> torch.cat([torch.full((n,), scales[<span class="dv">0</span>]), torch.full((n,), scales[<span class="dv">1</span>])])</span>
-<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>    opt <span class="op">=</span> (torch.optim.Adam([w], lr<span class="op">=</span>lr, weight_decay<span class="op">=</span>lam) <span class="cf">if</span> opt_name <span class="op">==</span> <span class="st">"Adam + L2"</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>    optimizer <span class="op">=</span> (torch.optim.Adam([w], lr<span class="op">=</span>lr, weight_decay<span class="op">=</span>lam) <span class="cf">if</span> opt_name <span class="op">==</span> <span class="st">"Adam + L2"</span></span>
 <span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>           <span class="cf">else</span> torch.optim.AdamW([w], lr<span class="op">=</span>lr, weight_decay<span class="op">=</span>lam))</span>
 <span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>    out <span class="op">=</span> []</span>
 <span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(T):</span>
-<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>        opt.zero_grad()<span class="op">;</span> w.grad <span class="op">=</span> sc <span class="op">*</span> torch.randn(<span class="dv">2</span> <span class="op">*</span> n)<span class="op">;</span> opt.step()     <span class="co"># noise-only data gradient</span></span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>        optimizer.zero_grad()<span class="op">;</span> w.grad <span class="op">=</span> sc <span class="op">*</span> torch.randn(<span class="dv">2</span> <span class="op">*</span> n)<span class="op">;</span> optimizer.step()     <span class="co"># noise-only data gradient</span></span>
 <span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>        out.append([w[:n].mean().item(), w[n:].mean().item()])</span>
 <span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.array(out)</span>
 <span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a></span>
@@ -1538,11 +1538,11 @@ running var : by hand [1.4705 2.0456 2.4511]  PyTorch [1.4705 2.0456 2.4511]</co
 <span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a>    torch.manual_seed(seed)</span>
 <span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a>    loader <span class="op">=</span> DataLoader(to_ds(X, y), batch_size<span class="op">=</span>B, shuffle<span class="op">=</span><span class="va">True</span>, drop_last<span class="op">=</span><span class="va">True</span>,</span>
 <span id="cb47-9"><a href="#cb47-9" aria-hidden="true" tabindex="-1"></a>                        generator<span class="op">=</span>torch.Generator().manual_seed(seed))</span>
-<span id="cb47-10"><a href="#cb47-10" aria-hidden="true" tabindex="-1"></a>    opt <span class="op">=</span> torch.optim.Adam(model.parameters(), lr<span class="op">=</span>lr)</span>
+<span id="cb47-10"><a href="#cb47-10" aria-hidden="true" tabindex="-1"></a>    optimizer <span class="op">=</span> torch.optim.Adam(model.parameters(), lr<span class="op">=</span>lr)</span>
 <span id="cb47-11"><a href="#cb47-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(epochs):</span>
 <span id="cb47-12"><a href="#cb47-12" aria-hidden="true" tabindex="-1"></a>        model.train()</span>
 <span id="cb47-13"><a href="#cb47-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> xb, yb <span class="kw">in</span> loader:</span>
-<span id="cb47-14"><a href="#cb47-14" aria-hidden="true" tabindex="-1"></a>            opt.zero_grad()<span class="op">;</span> F.cross_entropy(model(xb), yb).backward()<span class="op">;</span> opt.step()</span>
+<span id="cb47-14"><a href="#cb47-14" aria-hidden="true" tabindex="-1"></a>            optimizer.zero_grad()<span class="op">;</span> F.cross_entropy(model(xb), yb).backward()<span class="op">;</span> optimizer.step()</span>
 <span id="cb47-15"><a href="#cb47-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> model.<span class="bu">eval</span>()</span>
 <span id="cb47-16"><a href="#cb47-16" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb47-17"><a href="#cb47-17" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> acc_in_mode(model, X, y, mode, bs):</span>
@@ -1788,19 +1788,19 @@ identical in train and eval mode: True</code></pre>
 </table>
 <p><strong>Golden rule</strong>: make the pipeline work on a tiny problem (one batch, a small network) before scaling anything up.</p>
 <div id="67f66b72" class="cell" data-execution_count="28">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb57"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> quick_run(X<span class="op">=</span>X_tr, y<span class="op">=</span>y_tr, lr<span class="op">=</span><span class="fl">0.05</span>, opt<span class="op">=</span><span class="st">"sgd"</span>, momentum<span class="op">=</span><span class="fl">0.0</span>, epochs<span class="op">=</span><span class="dv">5</span>, shuffle<span class="op">=</span><span class="va">True</span>, seed<span class="op">=</span><span class="dv">0</span>, clip<span class="op">=</span><span class="va">None</span>, net_<span class="op">=</span><span class="va">None</span>):</span>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb57"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb57-1"><a href="#cb57-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> quick_run(X<span class="op">=</span>X_tr, y<span class="op">=</span>y_tr, lr<span class="op">=</span><span class="fl">0.05</span>, method<span class="op">=</span><span class="st">"sgd"</span>, momentum<span class="op">=</span><span class="fl">0.0</span>, epochs<span class="op">=</span><span class="dv">5</span>, shuffle<span class="op">=</span><span class="va">True</span>, seed<span class="op">=</span><span class="dv">0</span>, clip<span class="op">=</span><span class="va">None</span>, net_<span class="op">=</span><span class="va">None</span>):</span>
 <span id="cb57-2"><a href="#cb57-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""Train an MLP; return the per-iteration training losses and the model."""</span></span>
 <span id="cb57-3"><a href="#cb57-3" aria-hidden="true" tabindex="-1"></a>    torch.manual_seed(seed)<span class="op">;</span> net_ <span class="op">=</span> net_ <span class="kw">or</span> make_mlp()</span>
-<span id="cb57-4"><a href="#cb57-4" aria-hidden="true" tabindex="-1"></a>    o <span class="op">=</span> (torch.optim.SGD(net_.parameters(), lr<span class="op">=</span>lr, momentum<span class="op">=</span>momentum) <span class="cf">if</span> opt <span class="op">==</span> <span class="st">"sgd"</span></span>
+<span id="cb57-4"><a href="#cb57-4" aria-hidden="true" tabindex="-1"></a>    optimizer <span class="op">=</span> (torch.optim.SGD(net_.parameters(), lr<span class="op">=</span>lr, momentum<span class="op">=</span>momentum) <span class="cf">if</span> method <span class="op">==</span> <span class="st">"sgd"</span></span>
 <span id="cb57-5"><a href="#cb57-5" aria-hidden="true" tabindex="-1"></a>         <span class="cf">else</span> torch.optim.Adam(net_.parameters(), lr<span class="op">=</span>lr))</span>
 <span id="cb57-6"><a href="#cb57-6" aria-hidden="true" tabindex="-1"></a>    loader <span class="op">=</span> DataLoader(to_ds(X, y), batch_size<span class="op">=</span><span class="dv">32</span>, shuffle<span class="op">=</span>shuffle, generator<span class="op">=</span>torch.Generator().manual_seed(seed))</span>
 <span id="cb57-7"><a href="#cb57-7" aria-hidden="true" tabindex="-1"></a>    losses <span class="op">=</span> []</span>
 <span id="cb57-8"><a href="#cb57-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(epochs):</span>
 <span id="cb57-9"><a href="#cb57-9" aria-hidden="true" tabindex="-1"></a>        net_.train()</span>
 <span id="cb57-10"><a href="#cb57-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> xb, yb <span class="kw">in</span> loader:</span>
-<span id="cb57-11"><a href="#cb57-11" aria-hidden="true" tabindex="-1"></a>            o.zero_grad()<span class="op">;</span> loss <span class="op">=</span> F.cross_entropy(net_(xb), yb)<span class="op">;</span> loss.backward()</span>
+<span id="cb57-11"><a href="#cb57-11" aria-hidden="true" tabindex="-1"></a>            optimizer.zero_grad()<span class="op">;</span> loss <span class="op">=</span> F.cross_entropy(net_(xb), yb)<span class="op">;</span> loss.backward()</span>
 <span id="cb57-12"><a href="#cb57-12" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> clip: torch.nn.utils.clip_grad_norm_(net_.parameters(), clip)</span>
-<span id="cb57-13"><a href="#cb57-13" aria-hidden="true" tabindex="-1"></a>            o.step()<span class="op">;</span> losses.append(loss.item())</span>
+<span id="cb57-13"><a href="#cb57-13" aria-hidden="true" tabindex="-1"></a>            optimizer.step()<span class="op">;</span> losses.append(loss.item())</span>
 <span id="cb57-14"><a href="#cb57-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.array(losses), net_.<span class="bu">eval</span>()</span>
 <span id="cb57-15"><a href="#cb57-15" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb57-16"><a href="#cb57-16" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> val_acc(net_, X<span class="op">=</span>X_va, y<span class="op">=</span>y_va):</span>
@@ -1821,12 +1821,12 @@ identical in train and eval mode: True</code></pre>
 <span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"initial loss of the untrained MLP: </span><span class="sc">{</span>F<span class="sc">.</span>cross_entropy(make_mlp()(Xtr_t), ytr_t)<span class="sc">.</span>item()<span class="sc">:.3f}</span><span class="ss">  (log 10 = </span><span class="sc">{</span>np<span class="sc">.</span>log(<span class="dv">10</span>)<span class="sc">:.3f}</span><span class="ss">)"</span>)</span>
 <span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>xb1, yb1 <span class="op">=</span> Xtr_t[:<span class="dv">16</span>], ytr_t[:<span class="dv">16</span>]                           <span class="co"># one fixed mini-batch</span></span>
 <span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> overfit_one_batch(variant, steps<span class="op">=</span><span class="dv">200</span>):</span>
-<span id="cb58-5"><a href="#cb58-5" aria-hidden="true" tabindex="-1"></a>    torch.manual_seed(<span class="dv">0</span>)<span class="op">;</span> net_ <span class="op">=</span> make_mlp()<span class="op">;</span> o <span class="op">=</span> torch.optim.Adam(net_.parameters(), lr<span class="op">=</span><span class="fl">1e-3</span>)<span class="op">;</span> L <span class="op">=</span> []</span>
+<span id="cb58-5"><a href="#cb58-5" aria-hidden="true" tabindex="-1"></a>    torch.manual_seed(<span class="dv">0</span>)<span class="op">;</span> net_ <span class="op">=</span> make_mlp()<span class="op">;</span> optimizer <span class="op">=</span> torch.optim.Adam(net_.parameters(), lr<span class="op">=</span><span class="fl">1e-3</span>)<span class="op">;</span> L <span class="op">=</span> []</span>
 <span id="cb58-6"><a href="#cb58-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(steps):</span>
-<span id="cb58-7"><a href="#cb58-7" aria-hidden="true" tabindex="-1"></a>        o.zero_grad()<span class="op">;</span> out <span class="op">=</span> net_(xb1)</span>
+<span id="cb58-7"><a href="#cb58-7" aria-hidden="true" tabindex="-1"></a>        optimizer.zero_grad()<span class="op">;</span> out <span class="op">=</span> net_(xb1)</span>
 <span id="cb58-8"><a href="#cb58-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> variant <span class="op">==</span> <span class="st">"softmax before CrossEntropyLoss"</span>: out <span class="op">=</span> torch.softmax(out, dim<span class="op">=</span><span class="dv">1</span>)   <span class="co"># bug: double softmax</span></span>
 <span id="cb58-9"><a href="#cb58-9" aria-hidden="true" tabindex="-1"></a>        loss <span class="op">=</span> F.cross_entropy(out, yb1)<span class="op">;</span> loss.backward()</span>
-<span id="cb58-10"><a href="#cb58-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> variant <span class="op">!=</span> <span class="st">"forgot optimizer.step()"</span>: o.step()</span>
+<span id="cb58-10"><a href="#cb58-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> variant <span class="op">!=</span> <span class="st">"forgot optimizer.step()"</span>: optimizer.step()</span>
 <span id="cb58-11"><a href="#cb58-11" aria-hidden="true" tabindex="-1"></a>        L.append(loss.item())</span>
 <span id="cb58-12"><a href="#cb58-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> np.array(L)</span>
 <span id="cb58-13"><a href="#cb58-13" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">7</span>, <span class="fl">3.4</span>))</span>
@@ -1905,7 +1905,7 @@ StandardScaler (scale 1 for constant features): largest value 89.5</code></pre>
 <p><strong>Check 2: the labels.</strong> Look at a few <span class="math inline">\((x,y)\)</span> pairs, and check that inputs and labels were shuffled together. With labels misaligned, the network can only memorise:</p>
 <div id="15d08629" class="cell" data-execution_count="33">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb67"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb67-1"><a href="#cb67-1" aria-hidden="true" tabindex="-1"></a>y_bad <span class="op">=</span> rng.permutation(y_tr)                                <span class="co"># labels no longer match the images</span></span>
-<span id="cb67-2"><a href="#cb67-2" aria-hidden="true" tabindex="-1"></a>L, net_ <span class="op">=</span> quick_run(X_tr, y_bad, lr<span class="op">=</span><span class="fl">1e-3</span>, opt<span class="op">=</span><span class="st">"adam"</span>, epochs<span class="op">=</span><span class="dv">60</span>)</span>
+<span id="cb67-2"><a href="#cb67-2" aria-hidden="true" tabindex="-1"></a>L, net_ <span class="op">=</span> quick_run(X_tr, y_bad, lr<span class="op">=</span><span class="fl">1e-3</span>, method<span class="op">=</span><span class="st">"adam"</span>, epochs<span class="op">=</span><span class="dv">60</span>)</span>
 <span id="cb67-3"><a href="#cb67-3" aria-hidden="true" tabindex="-1"></a>per_epoch <span class="op">=</span> L.reshape(<span class="dv">60</span>, <span class="op">-</span><span class="dv">1</span>).mean(<span class="dv">1</span>)</span>
 <span id="cb67-4"><a href="#cb67-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"training loss by epoch: 1: </span><span class="sc">{</span>per_epoch[<span class="dv">0</span>]<span class="sc">:.3f}</span><span class="ss">, 20: </span><span class="sc">{</span>per_epoch[<span class="dv">19</span>]<span class="sc">:.3f}</span><span class="ss">, 60: </span><span class="sc">{</span>per_epoch[<span class="op">-</span><span class="dv">1</span>]<span class="sc">:.3f}</span><span class="ss">;  "</span></span>
 <span id="cb67-5"><a href="#cb67-5" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f"validation accuracy </span><span class="sc">{</span>val_acc(net_)<span class="sc">:.3f}</span><span class="ss"> (chance 0.1)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
@@ -1981,7 +1981,7 @@ with logits: [200.          0.6931472 200.       ]</code></pre>
 <div id="deb0af60" class="cell" data-execution_count="36">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb74"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a>tiny <span class="op">=</span> nn.Sequential(nn.Linear(<span class="dv">64</span>, <span class="dv">2</span>), nn.ReLU(), nn.Linear(<span class="dv">2</span>, <span class="dv">10</span>))      <span class="co"># a 2-unit bottleneck</span></span>
 <span id="cb74-2"><a href="#cb74-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, net_ <span class="kw">in</span> [(<span class="st">"64-2-10 (too small)"</span>, tiny), (<span class="st">"64-256-256-10"</span>, make_mlp())]:</span>
-<span id="cb74-3"><a href="#cb74-3" aria-hidden="true" tabindex="-1"></a>    torch.manual_seed(<span class="dv">0</span>)<span class="op">;</span> L, net_ <span class="op">=</span> quick_run(lr<span class="op">=</span><span class="fl">1e-3</span>, opt<span class="op">=</span><span class="st">"adam"</span>, epochs<span class="op">=</span><span class="dv">60</span>, net_<span class="op">=</span>net_)</span>
+<span id="cb74-3"><a href="#cb74-3" aria-hidden="true" tabindex="-1"></a>    torch.manual_seed(<span class="dv">0</span>)<span class="op">;</span> L, net_ <span class="op">=</span> quick_run(lr<span class="op">=</span><span class="fl">1e-3</span>, method<span class="op">=</span><span class="st">"adam"</span>, epochs<span class="op">=</span><span class="dv">60</span>, net_<span class="op">=</span>net_)</span>
 <span id="cb74-4"><a href="#cb74-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>name<span class="sc">:20s}</span><span class="ss">: training accuracy </span><span class="sc">{</span>val_acc(net_, X_tr, y_tr)<span class="sc">:.3f}</span><span class="ss">, validation accuracy </span><span class="sc">{</span>val_acc(net_)<span class="sc">:.3f}</span><span class="ss">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>64-2-10 (too small) : training accuracy 0.282, validation accuracy 0.253
@@ -2228,13 +2228,13 @@ new camera                   : domain AUC 1.000; KS on mean brightness D = 1.000
 <p><strong>Why it matters.</strong> Cross-entropy is the negative log-likelihood of the labels <em>as given</em>; a network with enough capacity fits them all, errors included (section 11.2 showed it memorising random labels). Wrong labels in the training set degrade <strong>prediction</strong>; wrong labels in the validation or test set corrupt the <strong>evaluation</strong>, and hence every decision based on it. Below, a fraction of the 500 training labels is replaced by a random wrong digit:</p>
 <div id="e3f77a9e" class="cell" data-execution_count="44">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb90"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb90-1"><a href="#cb90-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> train_acc_curve(X, y, epochs<span class="op">=</span><span class="dv">60</span>, seed<span class="op">=</span><span class="dv">0</span>, label_smoothing<span class="op">=</span><span class="fl">0.0</span>):</span>
-<span id="cb90-2"><a href="#cb90-2" aria-hidden="true" tabindex="-1"></a>    torch.manual_seed(seed)<span class="op">;</span> net_ <span class="op">=</span> make_mlp()<span class="op">;</span> o <span class="op">=</span> torch.optim.Adam(net_.parameters(), lr<span class="op">=</span><span class="fl">1e-3</span>)</span>
+<span id="cb90-2"><a href="#cb90-2" aria-hidden="true" tabindex="-1"></a>    torch.manual_seed(seed)<span class="op">;</span> net_ <span class="op">=</span> make_mlp()<span class="op">;</span> optimizer <span class="op">=</span> torch.optim.Adam(net_.parameters(), lr<span class="op">=</span><span class="fl">1e-3</span>)</span>
 <span id="cb90-3"><a href="#cb90-3" aria-hidden="true" tabindex="-1"></a>    loader <span class="op">=</span> DataLoader(to_ds(X, y), batch_size<span class="op">=</span><span class="dv">32</span>, shuffle<span class="op">=</span><span class="va">True</span>, generator<span class="op">=</span>torch.Generator().manual_seed(seed))</span>
 <span id="cb90-4"><a href="#cb90-4" aria-hidden="true" tabindex="-1"></a>    yt, H <span class="op">=</span> torch.tensor(y), []</span>
 <span id="cb90-5"><a href="#cb90-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(epochs):</span>
 <span id="cb90-6"><a href="#cb90-6" aria-hidden="true" tabindex="-1"></a>        net_.train()</span>
 <span id="cb90-7"><a href="#cb90-7" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> xb, yb <span class="kw">in</span> loader:</span>
-<span id="cb90-8"><a href="#cb90-8" aria-hidden="true" tabindex="-1"></a>            o.zero_grad()<span class="op">;</span> F.cross_entropy(net_(xb), yb, label_smoothing<span class="op">=</span>label_smoothing).backward()<span class="op">;</span> o.step()</span>
+<span id="cb90-8"><a href="#cb90-8" aria-hidden="true" tabindex="-1"></a>            optimizer.zero_grad()<span class="op">;</span> F.cross_entropy(net_(xb), yb, label_smoothing<span class="op">=</span>label_smoothing).backward()<span class="op">;</span> optimizer.step()</span>
 <span id="cb90-9"><a href="#cb90-9" aria-hidden="true" tabindex="-1"></a>        net_.<span class="bu">eval</span>()</span>
 <span id="cb90-10"><a href="#cb90-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">with</span> torch.no_grad():</span>
 <span id="cb90-11"><a href="#cb90-11" aria-hidden="true" tabindex="-1"></a>            H.append(((net_(Xtr_t).argmax(<span class="dv">1</span>) <span class="op">==</span> yt).<span class="bu">float</span>().mean().item(), (net_(Xte_t).argmax(<span class="dv">1</span>) <span class="op">==</span> yte_t).<span class="bu">float</span>().mean().item()))</span>
@@ -2283,7 +2283,7 @@ label smoothing 0.1 with 20% wrong labels: final test accuracy 0.924 (vs 0.904 w
 <span id="cb94-4"><a href="#cb94-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"training counts per class:"</span>, counts)</span>
 <span id="cb94-5"><a href="#cb94-5" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb94-6"><a href="#cb94-6" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> fit_imb(mode, seed<span class="op">=</span><span class="dv">0</span>, epochs<span class="op">=</span><span class="dv">40</span>):</span>
-<span id="cb94-7"><a href="#cb94-7" aria-hidden="true" tabindex="-1"></a>    torch.manual_seed(seed)<span class="op">;</span> net_ <span class="op">=</span> make_mlp()<span class="op">;</span> o <span class="op">=</span> torch.optim.Adam(net_.parameters(), lr<span class="op">=</span><span class="fl">1e-3</span>)</span>
+<span id="cb94-7"><a href="#cb94-7" aria-hidden="true" tabindex="-1"></a>    torch.manual_seed(seed)<span class="op">;</span> net_ <span class="op">=</span> make_mlp()<span class="op">;</span> optimizer <span class="op">=</span> torch.optim.Adam(net_.parameters(), lr<span class="op">=</span><span class="fl">1e-3</span>)</span>
 <span id="cb94-8"><a href="#cb94-8" aria-hidden="true" tabindex="-1"></a>    g <span class="op">=</span> torch.Generator().manual_seed(seed)</span>
 <span id="cb94-9"><a href="#cb94-9" aria-hidden="true" tabindex="-1"></a>    weight <span class="op">=</span> torch.tensor(<span class="bu">len</span>(yi) <span class="op">/</span> (<span class="dv">10</span> <span class="op">*</span> counts), dtype<span class="op">=</span>torch.float32) <span class="cf">if</span> mode <span class="op">==</span> <span class="st">"weighted CE"</span> <span class="cf">else</span> <span class="va">None</span></span>
 <span id="cb94-10"><a href="#cb94-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> mode <span class="op">==</span> <span class="st">"resampling"</span>:</span>
@@ -2294,7 +2294,7 @@ label smoothing 0.1 with 20% wrong labels: final test accuracy 0.924 (vs 0.904 w
 <span id="cb94-15"><a href="#cb94-15" aria-hidden="true" tabindex="-1"></a>        loader <span class="op">=</span> DataLoader(to_ds(Xi, yi), batch_size<span class="op">=</span><span class="dv">32</span>, shuffle<span class="op">=</span><span class="va">True</span>, generator<span class="op">=</span>g)</span>
 <span id="cb94-16"><a href="#cb94-16" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(epochs):</span>
 <span id="cb94-17"><a href="#cb94-17" aria-hidden="true" tabindex="-1"></a>        net_.train()</span>
-<span id="cb94-18"><a href="#cb94-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> xb, yb <span class="kw">in</span> loader: o.zero_grad()<span class="op">;</span> F.cross_entropy(net_(xb), yb, weight<span class="op">=</span>weight).backward()<span class="op">;</span> o.step()</span>
+<span id="cb94-18"><a href="#cb94-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> xb, yb <span class="kw">in</span> loader: optimizer.zero_grad()<span class="op">;</span> F.cross_entropy(net_(xb), yb, weight<span class="op">=</span>weight).backward()<span class="op">;</span> optimizer.step()</span>
 <span id="cb94-19"><a href="#cb94-19" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> net_.<span class="bu">eval</span>()</span>
 <span id="cb94-20"><a href="#cb94-20" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb94-21"><a href="#cb94-21" aria-hidden="true" tabindex="-1"></a>adjust <span class="op">=</span> torch.tensor(np.log(<span class="fl">0.1</span> <span class="op">/</span> (counts <span class="op">/</span> counts.<span class="bu">sum</span>())), dtype<span class="op">=</span>torch.float32)   <span class="co"># log(pi_test / pi_train)</span></span>

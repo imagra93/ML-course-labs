@@ -272,7 +272,7 @@ The running example is a network with one hidden layer; the superscript $[l]$ is
 **Try it.** Steps 1–5 are the forward pass ($\mathbf{Z}^{[1]}$, $\mathbf{A}^{[1]}$, $\mathbf{Z}^{[2]}$, $\mathbf{A}^{[2]}$, $L$); steps 6–11 the backward pass, the mirror image: the output error $\boldsymbol{\delta}^{[2]}$, the gradients of layer 2, the error sent back through $\mathbf{W}^{[2]\top}$, the hidden error $\boldsymbol{\delta}^{[1]}$ and the gradients of layer 1.
 
 ```{=html}
-<div class="widget" data-fig="fb-walk" data-auto="s=1 :: | s=2 :: | s=3 :: | s=4 :: | s=5 :: | s=6 :: | s=7 :: | s=8 :: | s=9 :: | s=10 :: | s=11 ::">
+<div class="widget" data-fig="fb-walk" data-loss="J" data-auto="s=1 :: | s=2 :: | s=3 :: | s=4 :: | s=5 :: | s=6 :: | s=7 :: | s=8 :: | s=9 :: | s=10 :: | s=11 ::">
     <svg class="fig" style="max-height:190px" aria-label="Forward chain X, Z1, A1, Z2, A2, L and backward chain of gradients"></svg>
     <div class="ctl"><label for="fb-s">Step</label><input type="range" id="fb-s" data-k="s" min="0" max="11" step="1" value="0"><span class="v" data-v="s" style="min-width:150px">forward 1/6</span></div>
     <div style="min-height:230px;background:#f5f7fb;padding:14px 20px">
@@ -281,13 +281,13 @@ The running example is a network with one hidden layer; the superscript $[l]$ is
       <div data-i="2"><p><b>2 · Hidden layer, activation step.</b> \(g\) can be any differentiable function: sigmoid, ReLU, tanh…</p><div class="eq big">\[\mathbf{A}^{[1]}=g(\mathbf{Z}^{[1]})\]</div></div>
       <div data-i="3"><p><b>3 · Output layer, linear step.</b> Same move as step 1, one layer over:</p><div class="eq big">\[\mathbf{Z}^{[2]}=\mathbf{A}^{[1]}\mathbf{W}^{[2]}+\mathbf{b}^{[2]}\]</div></div>
       <div data-i="4"><p><b>4 · Output layer, activation step.</b> \(\mathbf{A}^{[2]}\) is the network's final prediction:</p><div class="eq big">\[\mathbf{A}^{[2]}=g(\mathbf{Z}^{[2]})\]</div></div>
-      <div data-i="5"><p><b>5 · The loss</b> compares predictions and targets: \(\ L(\mathbf{A}^{[2]},\mathbf{Y})\). Forward done: every \(\mathbf{Z}\) and \(\mathbf{A}\) is stored.</p></div>
+      <div data-i="5"><p><b>5 · The loss</b> compares predictions and targets: \(\ J(\mathbf{A}^{[2]},\mathbf{Y})\), the average over the \(m\) examples. Forward done: every \(\mathbf{Z}\) and \(\mathbf{A}\) is stored.</p></div>
       <div data-i="6"><p><b>Backward starts at the loss.</b> The error signal travels backward, the mirror image of the forward pass.</p></div>
-      <div data-i="7"><p><b>Error term at the output, \(\boldsymbol{\delta}^{[2]}\).</b> By the chain rule:</p><div class="eq big">\[\boldsymbol{\delta}^{[2]}=\frac{\partial L}{\partial\mathbf{Z}^{[2]}}=\frac{\partial L}{\partial\mathbf{A}^{[2]}}\odot g'(\mathbf{Z}^{[2]})\]</div><p class="small">"How sensitive the loss is to the output layer's raw input." For sigmoid + BCE or softmax + CE it simplifies to \(\frac1m(\mathbf{A}^{[2]}-\mathbf{Y})\) (chapter 1).</p></div>
-      <div data-i="8"><p><b>Gradient with respect to \(\mathbf{W}^{[2]}\) and \(\mathbf{b}^{[2]}\).</b> Since \(\mathbf{Z}^{[2]}=\mathbf{A}^{[1]}\mathbf{W}^{[2]}+\mathbf{b}^{[2]}\) (multiply gate: "the other input"):</p><div class="eq big">\[\frac{\partial L}{\partial\mathbf{W}^{[2]}}=\mathbf{A}^{[1]\top}\boldsymbol{\delta}^{[2]},\qquad\frac{\partial L}{\partial\mathbf{b}^{[2]}}=\sum_{i=1}^m\boldsymbol{\delta}^{[2]}_{i}\]</div><p class="small">The bias gradient sums \(\boldsymbol{\delta}^{[2]}\) over the \(m\) rows (samples), since every sample shares the same bias.</p></div>
-      <div data-i="9"><p><b>Send the error back through \(\mathbf{W}^{[2]}\):</b></p><div class="eq big">\[\frac{\partial L}{\partial\mathbf{A}^{[1]}}=\boldsymbol{\delta}^{[2]}\mathbf{W}^{[2]\top}\]</div><p class="small">This is why it's called back-propagation: \(\boldsymbol{\delta}^{[2]}\) flows backward through \(\mathbf{W}^{[2]\top}\) to reach the hidden layer.</p></div>
-      <div data-i="10"><p><b>Error term at the hidden layer, \(\boldsymbol{\delta}^{[1]}\).</b> Same chain rule, one layer further back:</p><div class="eq big">\[\boldsymbol{\delta}^{[1]}=\frac{\partial L}{\partial\mathbf{Z}^{[1]}}=\big(\boldsymbol{\delta}^{[2]}\mathbf{W}^{[2]\top}\big)\odot g'(\mathbf{Z}^{[1]})\]</div></div>
-      <div data-i="11"><p><b>Gradient with respect to \(\mathbf{W}^{[1]}\) and \(\mathbf{b}^{[1]}\).</b> Exactly the same shape as step 8, one layer earlier (\(\mathbf{X}\) plays the role \(\mathbf{A}^{[1]}\) played):</p><div class="eq big">\[\frac{\partial L}{\partial\mathbf{W}^{[1]}}=\mathbf{X}^\top\boldsymbol{\delta}^{[1]},\qquad\frac{\partial L}{\partial\mathbf{b}^{[1]}}=\sum_{i=1}^m\boldsymbol{\delta}^{[1]}_{i}\]</div></div>
+      <div data-i="7"><p><b>Error term at the output, \(\boldsymbol{\delta}^{[2]}\).</b> By the chain rule:</p><div class="eq big">\[\boldsymbol{\delta}^{[2]}=\frac{\partial J}{\partial\mathbf{Z}^{[2]}}=\frac{\partial J}{\partial\mathbf{A}^{[2]}}\odot g'(\mathbf{Z}^{[2]})\]</div><p class="small">"How sensitive the loss is to the output layer's raw input." For sigmoid + BCE or softmax + CE it simplifies to \(\frac1m(\mathbf{A}^{[2]}-\mathbf{Y})\) (chapter 1).</p></div>
+      <div data-i="8"><p><b>Gradient with respect to \(\mathbf{W}^{[2]}\) and \(\mathbf{b}^{[2]}\).</b> Since \(\mathbf{Z}^{[2]}=\mathbf{A}^{[1]}\mathbf{W}^{[2]}+\mathbf{b}^{[2]}\) (multiply gate: "the other input"):</p><div class="eq big">\[\frac{\partial J}{\partial\mathbf{W}^{[2]}}=\mathbf{A}^{[1]\top}\boldsymbol{\delta}^{[2]},\qquad\frac{\partial J}{\partial\mathbf{b}^{[2]}}=\sum_{i=1}^m\boldsymbol{\delta}^{[2]}_{i}\]</div><p class="small">The bias gradient sums \(\boldsymbol{\delta}^{[2]}\) over the \(m\) rows (samples), since every sample shares the same bias.</p></div>
+      <div data-i="9"><p><b>Send the error back through \(\mathbf{W}^{[2]}\):</b></p><div class="eq big">\[\frac{\partial J}{\partial\mathbf{A}^{[1]}}=\boldsymbol{\delta}^{[2]}\mathbf{W}^{[2]\top}\]</div><p class="small">This is why it's called back-propagation: \(\boldsymbol{\delta}^{[2]}\) flows backward through \(\mathbf{W}^{[2]\top}\) to reach the hidden layer.</p></div>
+      <div data-i="10"><p><b>Error term at the hidden layer, \(\boldsymbol{\delta}^{[1]}\).</b> Same chain rule, one layer further back:</p><div class="eq big">\[\boldsymbol{\delta}^{[1]}=\frac{\partial J}{\partial\mathbf{Z}^{[1]}}=\big(\boldsymbol{\delta}^{[2]}\mathbf{W}^{[2]\top}\big)\odot g'(\mathbf{Z}^{[1]})\]</div></div>
+      <div data-i="11"><p><b>Gradient with respect to \(\mathbf{W}^{[1]}\) and \(\mathbf{b}^{[1]}\).</b> Exactly the same shape as step 8, one layer earlier (\(\mathbf{X}\) plays the role \(\mathbf{A}^{[1]}\) played):</p><div class="eq big">\[\frac{\partial J}{\partial\mathbf{W}^{[1]}}=\mathbf{X}^\top\boldsymbol{\delta}^{[1]},\qquad\frac{\partial J}{\partial\mathbf{b}^{[1]}}=\sum_{i=1}^m\boldsymbol{\delta}^{[1]}_{i}\]</div></div>
     </div>
   <p class="from">Same figure as <a href="../../slides/neural_networks/02_backpropagation.html#11">slide 11</a> of the Backpropagation deck.</p>
 </div>
@@ -836,9 +836,9 @@ PyTorch does exactly this, with tensors instead of scalars and a hand-written ba
 PyTorch records every operation on tensors with `requires_grad=True` during the forward pass. `loss.backward()` runs reverse-mode autodiff through that graph and stores each gradient in `param.grad`. It is exactly the algorithm of section 11, derived automatically for any architecture. The standard training step:
 
 ```python
-logits = model(X)          # forward: builds the graph
-loss = loss_fn(logits, y)
 optimizer.zero_grad()      # .grad accumulates: reset
+logits = model(X)          # forward: builds the graph
+loss = criterion(logits, y)
 loss.backward()            # backward: fills p.grad
 optimizer.step()           # update
 ```
@@ -1286,15 +1286,15 @@ for cls in [MSEShortcut, MSECorrect]:
 ```{python}
 torch.manual_seed(0)
 X_nan = torch.randn(200, 5); y_nan = (X_nan @ torch.tensor([1.0, -2.0, 3.0, 0.0, 0.5]))[:, None] * 100   # target not scaled
-net_nan = nn.Sequential(nn.Linear(5, 32), nn.ReLU(), nn.Linear(32, 1)); opt_nan = torch.optim.SGD(net_nan.parameters(), lr=0.01)
+net_nan = nn.Sequential(nn.Linear(5, 32), nn.ReLU(), nn.Linear(32, 1)); optimizer = torch.optim.SGD(net_nan.parameters(), lr=0.01)
 for step in range(100):
-    loss = nn.functional.mse_loss(net_nan(X_nan), y_nan)
+    optimizer.zero_grad(); loss = nn.functional.mse_loss(net_nan(X_nan), y_nan)
     if not torch.isfinite(loss):
         print(f"step {step}: non-finite loss ({loss.item()}), stopping"); break
-    opt_nan.zero_grad(); loss.backward()
+    loss.backward()
     gnorm = torch.sqrt(sum((p_.grad ** 2).sum() for p_ in net_nan.parameters()))
     print(f"step {step}: loss {loss.item():.3e}, gradient norm {gnorm.item():.3e}")
-    opt_nan.step()
+    optimizer.step()
 print("log(0) =", torch.log(torch.tensor(0.0)).item(), "; 0 * log(0) =", (torch.tensor(0.0) * torch.log(torch.tensor(0.0))).item())
 ```
 

@@ -988,15 +988,15 @@ def make_mlp(n_in, hidden, n_out=1, act=nn.Tanh, seed=0):
         layers += [nn.Linear(n_in, h), act()]; n_in = h
     return nn.Sequential(*layers, nn.Linear(n_in, n_out))
 
-def fit(net, X, Y, loss_fn, steps=1000, lr=0.01, sgd=False, wd=0.0):
+def fit(net, X, Y, criterion, steps=1000, lr=0.01, sgd=False, wd=0.0):
     """Full-batch training (Adam, or plain gradient descent if sgd=True). Returns the training loss at every step."""
     X = torch.as_tensor(X, dtype=torch.float32); Y = torch.as_tensor(Y)
     Y = Y.float() if Y.is_floating_point() else Y          # float targets for BCE/MSE, integer classes for CE
-    opt = (torch.optim.SGD if sgd else torch.optim.Adam)(net.parameters(), lr=lr, weight_decay=wd)
+    optimizer = (torch.optim.SGD if sgd else torch.optim.Adam)(net.parameters(), lr=lr, weight_decay=wd)
     hist = []
     for _ in range(steps):
-        loss = loss_fn(net(X), Y)
-        opt.zero_grad(); loss.backward(); opt.step()
+        optimizer.zero_grad(); loss = criterion(net(X), Y)
+        loss.backward(); optimizer.step()
         hist.append(loss.item())
     return np.array(hist)
 
@@ -1190,9 +1190,9 @@ def curves(m_, wd=0.0, steps=1500, every=25):
     """Train on the first m_ examples; record the training and validation MSE every `every` steps."""
     net_ = make_mlp(10, (64,), seed=0)
     Xa = torch.tensor(Xf[:m_], dtype=torch.float32); Ya = torch.tensor(yf[:m_, None], dtype=torch.float32)
-    opt = torch.optim.Adam(net_.parameters(), lr=0.003, weight_decay=wd); tr, va = [], []
+    optimizer = torch.optim.Adam(net_.parameters(), lr=0.003, weight_decay=wd); tr, va = [], []
     for t in range(steps):
-        loss = mse(net_(Xa), Ya); opt.zero_grad(); loss.backward(); opt.step()
+        optimizer.zero_grad(); loss = mse(net_(Xa), Ya); loss.backward(); optimizer.step()
         if t % every == 0:
             with torch.no_grad(): tr.append(loss.item()); va.append(mse(net_(X_va), Y_va).item())
     return np.array(tr), np.array(va)
@@ -1562,10 +1562,10 @@ print(f"imbalanced binary, p = {p_pos}: loss with bias 0 = {np.log(2):.3f}, with
 tiny_X, tiny_y = Xd_t[:16], yd_t[:16]
 curves_tiny = {}
 for name, double_softmax in [("correct", False), ("bug: softmax + CrossEntropyLoss", True)]:
-    net_ = make_mlp(64, (64,), n_out=10, act=nn.ReLU, seed=0); opt = torch.optim.Adam(net_.parameters(), lr=0.01); hist = []
+    net_ = make_mlp(64, (64,), n_out=10, act=nn.ReLU, seed=0); optimizer = torch.optim.Adam(net_.parameters(), lr=0.01); hist = []
     for _ in range(300):
-        out = net_(tiny_X); out = out.softmax(dim=1) if double_softmax else out
-        loss = ce(out, tiny_y); opt.zero_grad(); loss.backward(); opt.step(); hist.append(loss.item())
+        optimizer.zero_grad(); out = net_(tiny_X); out = out.softmax(dim=1) if double_softmax else out
+        loss = ce(out, tiny_y); loss.backward(); optimizer.step(); hist.append(loss.item())
     curves_tiny[name] = hist; print(f"{name:32s} loss on 16 examples after 300 steps: {hist[-1]:.4f}")
 print(f"floor for the bug, log(1 + 9/e) = {np.log(1 + 9 / np.e):.4f}")
 plt.figure(figsize=(6.5, 3.4))

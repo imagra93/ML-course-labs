@@ -422,14 +422,14 @@ def fit(model, epochs=60, augment=None, seed=0, X=None, y=None, curve=True):
     torch.manual_seed(seed); np.random.seed(seed)
     for mod in model.modules():                                     # re-initialise from the seed: reproducible runs
         if isinstance(mod, (nn.Conv2d, nn.Linear)): mod.reset_parameters()
-    opt = torch.optim.Adam(model.parameters(), lr=3e-3)
+    optimizer = torch.optim.Adam(model.parameters(), lr=3e-3)
     loader = DataLoader(TensorDataset(X, y), batch_size=32, shuffle=True, generator=torch.Generator().manual_seed(seed))
     accs = []
     for _ in range(epochs):
         model.train()
         for xb, yb in loader:
             if augment: xb = augment(xb)
-            opt.zero_grad(); F.cross_entropy(model(xb), yb).backward(); opt.step()
+            optimizer.zero_grad(); F.cross_entropy(model(xb), yb).backward(); optimizer.step()
         if curve:
             model.eval()
             with torch.no_grad(): accs.append((model(Xte_t).argmax(1) == yte_t).float().mean().item())
@@ -725,13 +725,13 @@ def bn_backbone():
 def train_tl(model, X, y, epochs, params, bs=10, seed=0, freeze_bn=False):
     torch.manual_seed(seed)
     loader = DataLoader(TensorDataset(X, torch.tensor(y)), batch_size=bs, shuffle=True, generator=torch.Generator().manual_seed(seed))
-    opt = torch.optim.Adam(params)
+    optimizer = torch.optim.Adam(params)
     for _ in range(epochs):
         model.train()
         if freeze_bn:
             for mod in model.modules():
                 if isinstance(mod, nn.BatchNorm2d): mod.eval()             # keep the pre-trained statistics
-        for xb, yb in loader: opt.zero_grad(); F.cross_entropy(model(xb), yb).backward(); opt.step()
+        for xb, yb in loader: optimizer.zero_grad(); F.cross_entropy(model(xb), yb).backward(); optimizer.step()
     return model.eval()
 
 torch.manual_seed(0); pretrained = nn.Sequential(bn_backbone(), nn.Linear(256, 10))
@@ -867,20 +867,20 @@ def mtl_run(aux, seed=0, epochs=30):
     trunk = nn.Sequential(nn.Conv2d(1, 16, 3, padding=1), nn.ReLU(), nn.MaxPool2d(2),
                           nn.Conv2d(16, 32, 3, padding=1), nn.ReLU(), nn.MaxPool2d(2), nn.Flatten())
     h_main, h_aux = nn.Linear(128, 10), nn.Linear(128, 2)
-    opt = torch.optim.Adam([*trunk.parameters(), *h_main.parameters(), *h_aux.parameters()], lr=1e-3)
+    optimizer = torch.optim.Adam([*trunk.parameters(), *h_main.parameters(), *h_aux.parameters()], lr=1e-3)
     ya = aux_tasks[aux] if aux else np.zeros_like(y3)
     loader = DataLoader(TensorDataset(torch.tensor(X3), torch.tensor(y3), torch.tensor(ya)), batch_size=32, shuffle=True,
                         generator=torch.Generator().manual_seed(seed))
     shared, cos = list(trunk.parameters()), []
     for _ in range(epochs):
         for xb, yb, ab in loader:
-            h = trunk(xb); l1 = F.cross_entropy(h_main(h), yb); loss = l1
+            optimizer.zero_grad(); h = trunk(xb); l1 = F.cross_entropy(h_main(h), yb); loss = l1
             if aux:
                 l2 = F.cross_entropy(h_aux(h), ab); loss = l1 + l2
                 g1 = torch.cat([g.flatten() for g in torch.autograd.grad(l1, shared, retain_graph=True)])
                 g2 = torch.cat([g.flatten() for g in torch.autograd.grad(l2, shared, retain_graph=True)])
                 cos.append((g1 @ g2 / (g1.norm() * g2.norm())).item())
-            opt.zero_grad(); loss.backward(); opt.step()
+            loss.backward(); optimizer.step()
     with torch.no_grad(): a = acc(lambda x: h_main(trunk(x)), torch.tensor(X3_te), torch.tensor(y3_te))
     return a, np.array(cos)
 
@@ -1049,13 +1049,13 @@ def iou_dice(pred, true):
 rng_u = np.random.default_rng(0); Xs_seg, Ms_seg = make_scenes(512, rng_u); Xv_seg, Mv_seg = make_scenes(128, rng_u)
 seg_models = {}
 for skips in [True, False]:
-    torch.manual_seed(0); net_s = TinyUNet(skips=skips); opt = torch.optim.Adam(net_s.parameters(), lr=3e-3)
+    torch.manual_seed(0); net_s = TinyUNet(skips=skips); optimizer = torch.optim.Adam(net_s.parameters(), lr=3e-3)
     for ep in range(12):
         net_s.train(); order = torch.randperm(512)
         for i in range(0, 512, 32):
-            idx = order[i:i + 32]; out = net_s(Xs_seg[idx])
+            optimizer.zero_grad(); idx = order[i:i + 32]; out = net_s(Xs_seg[idx])
             loss = F.cross_entropy(out, Ms_seg[idx]) + soft_dice_loss(out, Ms_seg[idx])
-            opt.zero_grad(); loss.backward(); opt.step()
+            loss.backward(); optimizer.step()
     net_s.eval(); seg_models[skips] = net_s
     with torch.no_grad(): P_ = net_s(Xv_seg).argmax(1)
     iou_v, dice_v = iou_dice(P_ == 1, Mv_seg == 1)
@@ -1160,9 +1160,9 @@ All of them reuse a classification CNN as the backbone; they differ in how they 
 
 ### 16.3 YOLO: every grid cell predicts
 
-The backbone turns the image into an $S\times S$ grid of feature vectors. A 1×1-conv head predicts, **for every cell at once**: an **objectness** score (is there an object whose centre is here?), the **box** (centre offset inside the cell, width, height) and **class probabilities**. One forward pass gives all boxes: "You Only Look Once", which is why it runs in real time. The original YOLO (v1) outputs a tensor $S\times S\times(5B+C)$: $7\times7\times30$ for $B=2$ boxes per cell and $C=20$ classes.
+The backbone turns the image into an $S\times S$ grid of feature vectors. A 1×1-conv head predicts, **for every cell at once**: an **objectness** score (is there an object whose centre is here?), the **box** (centre offset inside the cell, width, height) and **class probabilities**. One forward pass gives all boxes: "You Only Look Once", which is why it runs in real time. The original YOLO (v1) outputs a tensor $(5n_b+K)\times S\times S$: $30\times7\times7$ for $n_b=2$ boxes per cell and $K=20$ classes.
 
-**Try it.** Pick a cell: the one containing the car's centre predicts a high objectness, a box and $p(\text{car})$; the person's cell its own box and class; a sky cell has objectness ≈ 0 and reports nothing. The widget's output tensor is $7\times7\times8$ (one box: objectness, 4 box numbers, 3 classes).
+**Try it.** Pick a cell: the one containing the car's centre predicts a high objectness, a box and $p(\text{car})$; the person's cell its own box and class; a sky cell has objectness ≈ 0 and reports nothing. The widget's output tensor is $8\times7\times7$ (one box: objectness, 4 box numbers, 3 classes).
 
 ```{=html}
 <div class="widget" data-fig="yolo-grid" data-auto="c=30 :: the cell that contains the car's centre: high objectness, a box and p(car) | c=33 :: the person's cell: its own box and class | c=3 :: a sky cell: objectness ≈ 0, nothing is reported">
@@ -1350,8 +1350,8 @@ class TinyGap(nn.Module):                                                  # con
     def forward(self, x): return self.head(self.c(x).mean((2, 3)))
 rng_b = np.random.default_rng(0); Xb_tr, yb_tr = blob_images(400, rng_b); Xb_te, yb_te = blob_images(400, rng_b)
 for name, tf, cin in [("CNN + global pooling", lambda X: X, 1), ("same + coordinate channels", add_coords, 3)]:
-    torch.manual_seed(0); m = TinyGap(cin); o = torch.optim.Adam(m.parameters(), lr=3e-3)
-    for _ in range(300): o.zero_grad(); F.cross_entropy(m(tf(Xb_tr)), yb_tr).backward(); o.step()
+    torch.manual_seed(0); m = TinyGap(cin); optimizer = torch.optim.Adam(m.parameters(), lr=3e-3)
+    for _ in range(300): optimizer.zero_grad(); F.cross_entropy(m(tf(Xb_tr)), yb_tr).backward(); optimizer.step()
     with torch.no_grad(): print(f"{name:28s}: test accuracy on 'is the blob on the right?' {acc(m, tf(Xb_te), yb_te):.3f}")
 ```
 

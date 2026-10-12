@@ -844,11 +844,11 @@ def estimate(model, src, n=20):
 
 def train(model, steps, src, val, seed=0, every=100):
     torch.manual_seed(seed); g = torch.Generator().manual_seed(seed)
-    opt = torch.optim.AdamW(model.parameters(), lr=3e-3, weight_decay=0.01); log = []
+    optimizer = torch.optim.AdamW(model.parameters(), lr=3e-3, weight_decay=0.01); log = []
     for step in range(steps):
-        x, y = get_batch(src, g)
+        optimizer.zero_grad(); x, y = get_batch(src, g)
         loss = F.cross_entropy(model(x).flatten(0, 1), y.flatten())    # all T positions at once
-        opt.zero_grad(); loss.backward(); nn.utils.clip_grad_norm_(model.parameters(), 1.0); opt.step()
+        loss.backward(); nn.utils.clip_grad_norm_(model.parameters(), 1.0); optimizer.step()
         if step % every == 0: log.append((step, estimate(model, src), estimate(model, val)))
     return [np.array(c) for c in zip(*log)]
 
@@ -924,7 +924,7 @@ $$p_\tau(k) = \frac{e^{z_k/\tau}}{\sum_l e^{z_l/\tau}} = \frac{\big(e^{z_k}\big)
 **Try it.** "Can you please come ___?": at $\tau = 1$ "here" has probability 0.45. At $\tau = 0.3$ it gets 0.92 (almost greedy); at $\tau = 1.8$ only 0.28 and the distribution is flat. With top-$k = 3$ at $\tau = 1$, only "here", "back" and "home" survive, renormalised to 0.58, 0.26, 0.16.
 
 ```{=html}
-<div class="widget" data-fig="decode" data-auto="t=0.3 :: low temperature T = 0.3: almost greedy, &quot;here&quot; gets 0.92 | t=1.8 :: high temperature T = 1.8: a flatter distribution, &quot;here&quot; only 0.28 and unlikely words get real chances | t=1; k=3 :: top-k = 3 at T = 1: only here, back and home survive, renormalised to 0.58, 0.26, 0.16">
+<div class="widget" data-fig="decode" data-auto="t=0.3 :: low temperature τ = 0.3: almost greedy, &quot;here&quot; gets 0.92 | t=1.8 :: high temperature τ = 1.8: a flatter distribution, &quot;here&quot; only 0.28 and unlikely words get real chances | t=1; k=3 :: top-k = 3 at τ = 1: only here, back and home survive, renormalised to 0.58, 0.26, 0.16">
   <svg class="fig" aria-label="Next-token probabilities after temperature and top-k"></svg>
   <div class="ctl"><label for="dc-t">temperature</label><input type="range" id="dc-t" data-k="t" min="0.1" max="2.5" step="0.05" value="1"><span class="v" data-v="t">1.00</span></div>
   <div class="ctl"><label for="dc-k">top-k</label><input type="range" id="dc-k" data-k="k" min="1" max="8" step="1" value="8"><span class="v" data-v="k">8</span>

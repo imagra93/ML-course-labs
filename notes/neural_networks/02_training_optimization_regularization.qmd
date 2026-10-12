@@ -50,10 +50,10 @@ Xm, ym = make_moons(200, noise=0.2, random_state=0)
 Xm_t, ym_t = torch.tensor(Xm, dtype=torch.float32), torch.tensor(ym, dtype=torch.float32)
 torch.manual_seed(0)
 net = nn.Sequential(nn.Linear(2, 16), nn.Tanh(), nn.Linear(16, 1))
-opt = torch.optim.Adam(net.parameters(), lr=0.02)
+optimizer = torch.optim.Adam(net.parameters(), lr=0.02)
 bce = nn.BCEWithLogitsLoss()
 for _ in range(500):                                   # full-batch training on 200 points
-    opt.zero_grad(); bce(net(Xm_t).squeeze(1), ym_t).backward(); opt.step()
+    optimizer.zero_grad(); bce(net(Xm_t).squeeze(1), ym_t).backward(); optimizer.step()
 
 perm = torch.randperm(16)                              # permute the 16 hidden units
 net_p = nn.Sequential(nn.Linear(2, 16), nn.Tanh(), nn.Linear(16, 1))
@@ -269,14 +269,14 @@ def make_mlp(p_drop=0.0):
 
 def sgd_curve(B, lr, epochs=30, seed=0):
     torch.manual_seed(seed); model = make_mlp()
-    opt = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+    optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9)
     loader = DataLoader(to_ds(X_tr, y_tr), batch_size=B, shuffle=True,
                         generator=torch.Generator().manual_seed(seed))
     curve = []
     for _ in range(epochs):
         model.train()
         for xb, yb in loader:
-            opt.zero_grad(); F.cross_entropy(model(xb), yb).backward(); opt.step()
+            optimizer.zero_grad(); F.cross_entropy(model(xb), yb).backward(); optimizer.step()
         model.eval()
         with torch.no_grad(): curve.append(F.cross_entropy(model(Xtr_t), ytr_t).item())
     return np.array(curve)
@@ -314,15 +314,15 @@ The four scaled runs follow nearly the same curve per epoch, although the $B=128
 train_loader = DataLoader(to_ds(X_tr, y_tr), batch_size=32, shuffle=True,
                           generator=torch.Generator().manual_seed(0))
 
-def lr_range_test(model, opt, lr_min=1e-5, lr_max=10.0, steps=200, beta=0.9):
+def lr_range_test(model, optimizer, lr_min=1e-5, lr_max=10.0, steps=200, beta=0.9):
     q = (lr_max / lr_min) ** (1 / (steps - 1))
     lrs, losses, avg, best, batches = [], [], 0.0, np.inf, iter(train_loader)
     for k in range(steps):
         lr = lr_min * q ** k
-        for group in opt.param_groups: group["lr"] = lr
+        for group in optimizer.param_groups: group["lr"] = lr
         try: xb, yb = next(batches)
         except StopIteration: batches = iter(train_loader); xb, yb = next(batches)
-        opt.zero_grad(); loss = F.cross_entropy(model(xb), yb); loss.backward(); opt.step()
+        optimizer.zero_grad(); loss = F.cross_entropy(model(xb), yb); loss.backward(); optimizer.step()
         avg = beta * avg + (1 - beta) * loss.item(); smooth = avg / (1 - beta ** (k + 1))
         lrs.append(lr); losses.append(smooth); best = min(best, smooth)
         if smooth > 4 * best or not np.isfinite(smooth): break
@@ -604,12 +604,12 @@ Gradient descent ($\alpha=0.075$: factors $0.925$ along $w_1$ and $1-25\cdot0.07
 | Schedule | Formula | PyTorch (`torch.optim.lr_scheduler`) |
 |---|---|---|
 | constant | $\alpha_t=\alpha_0$ | — |
-| step decay | $\alpha_t=\alpha_0\,\gamma^{\lfloor t/k\rfloor}$ (e.g. $\gamma=0.1$ every 30 epochs) | `StepLR(opt, step_size=k, gamma=γ)` |
-| exponential | $\alpha_t=\alpha_0\,\gamma^{t}$ ($\gamma$ slightly below 1) | `ExponentialLR(opt, gamma=γ)` |
-| cosine | $\alpha_t=\alpha_{\min}+\frac12(\alpha_0-\alpha_{\min})\big(1+\cos(\pi t/T)\big)$ | `CosineAnnealingLR(opt, T_max=T)` |
+| step decay | $\alpha_t=\alpha_0\,\gamma^{\lfloor t/k\rfloor}$ (e.g. $\gamma=0.1$ every 30 epochs) | `StepLR(optimizer, step_size=k, gamma=γ)` |
+| exponential | $\alpha_t=\alpha_0\,\gamma^{t}$ ($\gamma$ slightly below 1) | `ExponentialLR(optimizer, gamma=γ)` |
+| cosine | $\alpha_t=\alpha_{\min}+\frac12(\alpha_0-\alpha_{\min})\big(1+\cos(\pi t/T)\big)$ | `CosineAnnealingLR(optimizer, T_max=T)` |
 | linear warm-up | $\alpha_t=\alpha_0\,t/T_w$ for $t<T_w$, then any of the above | `LinearLR` + `SequentialLR` |
-| one-cycle | up from $\alpha_0/25$ to $\alpha_0$ in the first 30 % of steps, then cosine down to $\alpha_0/(25\cdot10^4)$ | `OneCycleLR(opt, max_lr=α₀, total_steps=T)` |
-| reduce on plateau | $\alpha\leftarrow\gamma\,\alpha$ after `patience` epochs without improvement of the validation loss | `ReduceLROnPlateau(opt, factor=γ, patience=p)` |
+| one-cycle | up from $\alpha_0/25$ to $\alpha_0$ in the first 30 % of steps, then cosine down to $\alpha_0/(25\cdot10^4)$ | `OneCycleLR(optimizer, max_lr=α₀, total_steps=T)` |
+| reduce on plateau | $\alpha\leftarrow\gamma\,\alpha$ after `patience` epochs without improvement of the validation loss | `ReduceLROnPlateau(optimizer, factor=γ, patience=p)` |
 
 **Warm-up**, in more detail. Adam's first step moves every parameter by the full $\alpha$ (section 4.4), whatever the quality of that first gradient, and $\hat{\mathbf{s}}_t$ is an average of only $t$ squared gradients, so early steps are large and poorly informed. Large-batch SGD has the same problem (section 2.5). A warm-up of a few hundred to a few thousand steps (or ~5 % of training) is standard for transformers. **One-cycle** (Smith & Topin, 2019) combines a long warm-up, a high peak, and a very low final rate (PyTorch's `OneCycleLR` also cycles the momentum the opposite way, from 0.95 down to 0.85 and back). **Reduce on plateau** needs no planning: it divides $\alpha$ when the validation loss stalls (used in the face test notebooks).
 
@@ -617,9 +617,9 @@ We implement the formulas and check them against PyTorch's schedulers, stepping 
 
 ```{python}
 def lrs_from(sched_fn, steps=100, lr=1.0):
-    p = torch.nn.Parameter(torch.zeros(1)); o = torch.optim.SGD([p], lr=lr); s = sched_fn(o); out = []
+    p = torch.nn.Parameter(torch.zeros(1)); optimizer = torch.optim.SGD([p], lr=lr); s = sched_fn(optimizer); out = []
     for _ in range(steps):
-        out.append(o.param_groups[0]["lr"]); o.step(); s.step()
+        out.append(optimizer.param_groups[0]["lr"]); optimizer.step(); s.step()
     return np.array(out)
 
 S = torch.optim.lr_scheduler; t = np.arange(100); T_ = 100
@@ -648,7 +648,7 @@ plt.tight_layout(); plt.show()
 <p class="from">Same figure as <a href="../../slides/neural_networks/03_training.html#17">slide 17</a> of the Training deck: constant, step decay, warm-up + cosine and reduce-on-plateau.</p></div>
 ```
 
-**Where `sched.step()` goes.** After `opt.step()`: once per epoch for epoch-based schedules (`StepLR`, `CosineAnnealingLR` with `T_max=epochs`), once per mini-batch for step-based ones (`OneCycleLR`, warm-up counted in steps), and `ReduceLROnPlateau.step(val_loss)` after each validation.
+**Where `sched.step()` goes.** After `optimizer.step()`: once per epoch for epoch-based schedules (`StepLR`, `CosineAnnealingLR` with `T_max=epochs`), once per mini-batch for step-based ones (`OneCycleLR`, warm-up counted in steps), and `ReduceLROnPlateau.step(val_loss)` after each validation.
 
 ## 6. The model and the PyTorch training loop
 
@@ -664,7 +664,7 @@ model = nn.Sequential(
     nn.Dropout(0.2),
     nn.Linear(256, 10),           # logits, one per class
 )
-loss_fn = nn.CrossEntropyLoss()  # softmax inside
+criterion = nn.CrossEntropyLoss()  # softmax inside
 ```
 
 ```{=html}
@@ -695,18 +695,18 @@ test_loader = DataLoader(to_ds(X_te, y_te), batch_size=256)
 print(f"train {len(y_tr)}, validation {len(y_va)}, test {len(y_te)}; input dim {Xd.shape[1]}, 10 classes; "
       f"MLP parameters {sum(p.numel() for p in make_mlp().parameters()):,d}")
 
-def evaluate(model, loader, loss_fn):
+def evaluate(model, loader, criterion):
     model.eval()                                   # dropout off, batch-norm uses running statistics
     total_loss, correct, n = 0.0, 0, 0
     with torch.no_grad():                          # no graph: faster, less memory
         for xb, yb in loader:
             out = model(xb)
-            total_loss += loss_fn(out, yb).item() * len(yb)      # weight by batch size
+            total_loss += criterion(out, yb).item() * len(yb)      # weight by batch size
             correct += (out.argmax(1) == yb).sum().item(); n += len(yb)
     return total_loss / n, correct / n
 
 def train(model, optimizer, epochs=150, patience=None, loader=None):
-    loss_fn = nn.CrossEntropyLoss(); loader = loader or train_loader
+    criterion = nn.CrossEntropyLoss(); loader = loader or train_loader
     hist = {"train_loss": [], "val_loss": [], "val_acc": []}
     best, best_state, wait = np.inf, None, 0
     for epoch in range(epochs):
@@ -714,11 +714,11 @@ def train(model, optimizer, epochs=150, patience=None, loader=None):
         run_loss, n = 0.0, 0
         for xb, yb in loader:
             optimizer.zero_grad()                  # 1. reset accumulated gradients
-            loss = loss_fn(model(xb), yb)          # 2. forward pass + loss
+            loss = criterion(model(xb), yb)          # 2. forward pass + loss
             loss.backward()                        # 3. backprop
             optimizer.step()                       # 4. parameter update
             run_loss += loss.item() * len(yb); n += len(yb)
-        vl, va = evaluate(model, val_loader, loss_fn)
+        vl, va = evaluate(model, val_loader, criterion)
         hist["train_loss"].append(run_loss / n); hist["val_loss"].append(vl); hist["val_acc"].append(va)
         if vl < best:                              # keep the best weights (checkpoint)
             best, wait = vl, 0; best_state = {k: v.clone() for k, v in model.state_dict().items()}
@@ -734,18 +734,18 @@ hist_plain, _ = train(model, torch.optim.Adam(model.parameters(), lr=1e-3))
 print(f"final: train loss {hist_plain['train_loss'][-1]:.4f}, val loss {hist_plain['val_loss'][-1]:.3f}, val acc {hist_plain['val_acc'][-1]:.3f}")
 ```
 
-**The lines that every loop has**: `zero_grad()` → forward → loss → `backward()` → `step()`. PyTorch *adds* each new gradient to `.grad`, so forgetting `zero_grad()` sums the gradients of all previous steps (section 11.1). Plus the two modes: `model.train()` for training and `model.eval()` with `torch.no_grad()` for evaluation; they switch dropout and BatchNorm (sections 8.5 and 9). With a schedule, `sched.step()` goes after the epoch's last `opt.step()`:
+**The lines that every loop has**: `zero_grad()` → forward → loss → `backward()` → `step()`. PyTorch *adds* each new gradient to `.grad`, so forgetting `zero_grad()` sums the gradients of all previous steps (section 11.1). Plus the two modes: `model.train()` for training and `model.eval()` with `torch.no_grad()` for evaluation; they switch dropout and BatchNorm (sections 8.5 and 9). With a schedule, `sched.step()` goes after the epoch's last `optimizer.step()`:
 
 ```python
-opt = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-2)
-sched = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs)
+optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=1e-2)
+sched = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs)
 for epoch in range(epochs):
     model.train()                  # training mode
     for xb, yb in train_loader:    # mini-batches
-        loss = loss_fn(model(xb), yb)
-        opt.zero_grad()
+        optimizer.zero_grad()
+        loss = criterion(model(xb), yb)
         loss.backward()            # backprop
-        opt.step()                 # update
+        optimizer.step()                 # update
     sched.step()                   # once per epoch
     model.eval()                   # evaluation mode
     with torch.no_grad():
@@ -851,11 +851,11 @@ def decay_demo(opt_name, lam=0.1, lr=1e-2, T=2000, n=500, scales=(10.0, 0.1)):
     torch.manual_seed(0)
     w = torch.nn.Parameter(torch.ones(2 * n))
     sc = torch.cat([torch.full((n,), scales[0]), torch.full((n,), scales[1])])
-    opt = (torch.optim.Adam([w], lr=lr, weight_decay=lam) if opt_name == "Adam + L2"
+    optimizer = (torch.optim.Adam([w], lr=lr, weight_decay=lam) if opt_name == "Adam + L2"
            else torch.optim.AdamW([w], lr=lr, weight_decay=lam))
     out = []
     for _ in range(T):
-        opt.zero_grad(); w.grad = sc * torch.randn(2 * n); opt.step()     # noise-only data gradient
+        optimizer.zero_grad(); w.grad = sc * torch.randn(2 * n); optimizer.step()     # noise-only data gradient
         out.append([w[:n].mean().item(), w[n:].mean().item()])
     return np.array(out)
 
@@ -1194,11 +1194,11 @@ def fit(model, B=32, epochs=30, lr=1e-3, seed=0, X=X_tr, y=y_tr):
     torch.manual_seed(seed)
     loader = DataLoader(to_ds(X, y), batch_size=B, shuffle=True, drop_last=True,
                         generator=torch.Generator().manual_seed(seed))
-    opt = torch.optim.Adam(model.parameters(), lr=lr)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     for _ in range(epochs):
         model.train()
         for xb, yb in loader:
-            opt.zero_grad(); F.cross_entropy(model(xb), yb).backward(); opt.step()
+            optimizer.zero_grad(); F.cross_entropy(model(xb), yb).backward(); optimizer.step()
     return model.eval()
 
 def acc_in_mode(model, X, y, mode, bs):
@@ -1333,19 +1333,19 @@ The loss curve is the main diagnostic. The recipe of the slides, then each situa
 **Golden rule**: make the pipeline work on a tiny problem (one batch, a small network) before scaling anything up.
 
 ```{python}
-def quick_run(X=X_tr, y=y_tr, lr=0.05, opt="sgd", momentum=0.0, epochs=5, shuffle=True, seed=0, clip=None, net_=None):
+def quick_run(X=X_tr, y=y_tr, lr=0.05, method="sgd", momentum=0.0, epochs=5, shuffle=True, seed=0, clip=None, net_=None):
     """Train an MLP; return the per-iteration training losses and the model."""
     torch.manual_seed(seed); net_ = net_ or make_mlp()
-    o = (torch.optim.SGD(net_.parameters(), lr=lr, momentum=momentum) if opt == "sgd"
+    optimizer = (torch.optim.SGD(net_.parameters(), lr=lr, momentum=momentum) if method == "sgd"
          else torch.optim.Adam(net_.parameters(), lr=lr))
     loader = DataLoader(to_ds(X, y), batch_size=32, shuffle=shuffle, generator=torch.Generator().manual_seed(seed))
     losses = []
     for _ in range(epochs):
         net_.train()
         for xb, yb in loader:
-            o.zero_grad(); loss = F.cross_entropy(net_(xb), yb); loss.backward()
+            optimizer.zero_grad(); loss = F.cross_entropy(net_(xb), yb); loss.backward()
             if clip: torch.nn.utils.clip_grad_norm_(net_.parameters(), clip)
-            o.step(); losses.append(loss.item())
+            optimizer.step(); losses.append(loss.item())
     return np.array(losses), net_.eval()
 
 def val_acc(net_, X=X_va, y=y_va):
@@ -1368,12 +1368,12 @@ torch.manual_seed(0)
 print(f"initial loss of the untrained MLP: {F.cross_entropy(make_mlp()(Xtr_t), ytr_t).item():.3f}  (log 10 = {np.log(10):.3f})")
 xb1, yb1 = Xtr_t[:16], ytr_t[:16]                           # one fixed mini-batch
 def overfit_one_batch(variant, steps=200):
-    torch.manual_seed(0); net_ = make_mlp(); o = torch.optim.Adam(net_.parameters(), lr=1e-3); L = []
+    torch.manual_seed(0); net_ = make_mlp(); optimizer = torch.optim.Adam(net_.parameters(), lr=1e-3); L = []
     for _ in range(steps):
-        o.zero_grad(); out = net_(xb1)
+        optimizer.zero_grad(); out = net_(xb1)
         if variant == "softmax before CrossEntropyLoss": out = torch.softmax(out, dim=1)   # bug: double softmax
         loss = F.cross_entropy(out, yb1); loss.backward()
-        if variant != "forgot optimizer.step()": o.step()
+        if variant != "forgot optimizer.step()": optimizer.step()
         L.append(loss.item())
     return np.array(L)
 plt.figure(figsize=(7, 3.4))
@@ -1436,7 +1436,7 @@ Guard constant features (drop them, or use a scale of 1 as scikit-learn does), a
 
 ```{python}
 y_bad = rng.permutation(y_tr)                                # labels no longer match the images
-L, net_ = quick_run(X_tr, y_bad, lr=1e-3, opt="adam", epochs=60)
+L, net_ = quick_run(X_tr, y_bad, lr=1e-3, method="adam", epochs=60)
 per_epoch = L.reshape(60, -1).mean(1)
 print(f"training loss by epoch: 1: {per_epoch[0]:.3f}, 20: {per_epoch[19]:.3f}, 60: {per_epoch[-1]:.3f};  "
       f"validation accuracy {val_acc(net_):.3f} (chance 0.1)")
@@ -1497,7 +1497,7 @@ print("two steps  :", manual.numpy()); print("with logits:", fused.numpy())
 ```{python}
 tiny = nn.Sequential(nn.Linear(64, 2), nn.ReLU(), nn.Linear(2, 10))      # a 2-unit bottleneck
 for name, net_ in [("64-2-10 (too small)", tiny), ("64-256-256-10", make_mlp())]:
-    torch.manual_seed(0); L, net_ = quick_run(lr=1e-3, opt="adam", epochs=60, net_=net_)
+    torch.manual_seed(0); L, net_ = quick_run(lr=1e-3, method="adam", epochs=60, net_=net_)
     print(f"{name:20s}: training accuracy {val_acc(net_, X_tr, y_tr):.3f}, validation accuracy {val_acc(net_):.3f}")
 ```
 
@@ -1681,13 +1681,13 @@ Augmenting with random contrast, background level and noise recovers most of the
 
 ```{python}
 def train_acc_curve(X, y, epochs=60, seed=0, label_smoothing=0.0):
-    torch.manual_seed(seed); net_ = make_mlp(); o = torch.optim.Adam(net_.parameters(), lr=1e-3)
+    torch.manual_seed(seed); net_ = make_mlp(); optimizer = torch.optim.Adam(net_.parameters(), lr=1e-3)
     loader = DataLoader(to_ds(X, y), batch_size=32, shuffle=True, generator=torch.Generator().manual_seed(seed))
     yt, H = torch.tensor(y), []
     for _ in range(epochs):
         net_.train()
         for xb, yb in loader:
-            o.zero_grad(); F.cross_entropy(net_(xb), yb, label_smoothing=label_smoothing).backward(); o.step()
+            optimizer.zero_grad(); F.cross_entropy(net_(xb), yb, label_smoothing=label_smoothing).backward(); optimizer.step()
         net_.eval()
         with torch.no_grad():
             H.append(((net_(Xtr_t).argmax(1) == yt).float().mean().item(), (net_(Xte_t).argmax(1) == yte_t).float().mean().item()))
@@ -1732,7 +1732,7 @@ Xi, yi = X_tr[keep], y_tr[keep]; counts = np.bincount(yi, minlength=10)
 print("training counts per class:", counts)
 
 def fit_imb(mode, seed=0, epochs=40):
-    torch.manual_seed(seed); net_ = make_mlp(); o = torch.optim.Adam(net_.parameters(), lr=1e-3)
+    torch.manual_seed(seed); net_ = make_mlp(); optimizer = torch.optim.Adam(net_.parameters(), lr=1e-3)
     g = torch.Generator().manual_seed(seed)
     weight = torch.tensor(len(yi) / (10 * counts), dtype=torch.float32) if mode == "weighted CE" else None
     if mode == "resampling":
@@ -1743,7 +1743,7 @@ def fit_imb(mode, seed=0, epochs=40):
         loader = DataLoader(to_ds(Xi, yi), batch_size=32, shuffle=True, generator=g)
     for _ in range(epochs):
         net_.train()
-        for xb, yb in loader: o.zero_grad(); F.cross_entropy(net_(xb), yb, weight=weight).backward(); o.step()
+        for xb, yb in loader: optimizer.zero_grad(); F.cross_entropy(net_(xb), yb, weight=weight).backward(); optimizer.step()
     return net_.eval()
 
 adjust = torch.tensor(np.log(0.1 / (counts / counts.sum())), dtype=torch.float32)   # log(pi_test / pi_train)
