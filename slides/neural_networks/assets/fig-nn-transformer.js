@@ -21,14 +21,6 @@ FIG['attn-num']=root=>{const svg=svgOf(root);const toks=['I','love','pizza'];con
     box(svg,15,232,300,40,'query of "pizza": q = (2, 1)','#fbe5d6',{cls:''});
     if(st>=4)box(svg,330,232,280,40,'output = Σ α v = ('+f2(out[0])+', '+f2(out[1])+')','#dae3f3',{cls:'lab'});
     T(svg,310,292,['q is compared with every key','dot products, divided by √dₖ = √2','softmax: positive weights that sum to 1','each value is weighted by its α','the new vector for "pizza": mostly its own value, some of "I"'][st],'','middle')})};
-/* ---------- the matrix pipeline ---------- */
-FIG['qkv']=root=>{const svg=initSvg(svgOf(root),960,250);const blk=(x,y,w,h,c,t,sh)=>{E('rect',{x:x,y:y,width:w,height:h,fill:c,stroke:'#404040'},svg);T(svg,x+w/2,y+h/2+6,t,'lab big');T(svg,x+w/2,y+h+18,sh,'')};
-  blk(10,60,60,120,'#e2f0d9','X','n × d');[['Q','#fbe5d6',50],['K','#dae3f3',110],['V','#fff2cc',170]].forEach(([t,c,y],k)=>{arrowPx(svg,72,120,128,y+20-40*0+0,'ln thin sk','fk');blk(130,y-10,40,60,c,t,'')});
-  T(svg,40,36,'· W_Q, W_K, W_V','','start');T(svg,150,240,'n × dₖ each','');
-  arrowPx(svg,172,70,238,110,'ln thin sk','fk');arrowPx(svg,172,130,238,120,'ln thin sk','fk');blk(240,60,110,110,'#ededed','QKᵀ/√dₖ','n × n scores');
-  arrowPx(svg,352,115,398,115,'ln thin sk','fk');T(svg,375,100,'softmax','');T(svg,375,140,'per row','');blk(400,60,110,110,'#f8cbad','A','n × n weights');
-  arrowPx(svg,512,115,558,115,'ln thin sk','fk');T(svg,535,100,'· V','');E('path',{d:'M172,190 C400,240 520,220 560,140',fill:'none',stroke:'#bf9000','stroke-width':1.5,'stroke-dasharray':'5 4'},svg);
-  blk(560,60,60,120,'#c5e0b4','Z','n × dᵥ');T(svg,780,90,'row i of Z = new vector of token i:','','middle');T(svg,780,112,'a weighted average of all value rows,','','middle');T(svg,780,134,'weights = row i of A','','middle');T(svg,780,170,'three matrix products: fully parallel on a GPU','lab','middle')};
 /* ---------- a full attention matrix ---------- */
 FIG['attn-matrix']=root=>{const svg=initSvg(svgOf(root),560,400);const toks=TOK.slice();const S=scores('tired');const A=S.map(r=>softmax(r.map(v=>v*1.3)));const cs=36;
   toks.forEach((w,j)=>{const t=T(svg,120+j*cs+cs/2,70,w,'');t.setAttribute('transform','rotate(-45 '+(120+j*cs+cs/2)+' 70)');t.setAttribute('text-anchor','start')});toks.forEach((w,i)=>T(svg,112,80+i*cs+cs/2+5,w,i===7?'lab':'','end'));
@@ -56,10 +48,6 @@ FIG['bpe']=root=>{const svg=svgOf(root);const cnt=[5,2,6,3];const rows=[['l o w'
 FIG['lm-train']=root=>{const svg=initSvg(svgOf(root),960,200);const toks=['The','cat','sat','on','the','mat'];
   T(svg,40,50,'input','lab','end');T(svg,40,150,'target','lab','end');toks.forEach((t,k)=>{const x=70+k*140;if(k<5){box(svg,x,30,110,34,t,'#e2f0d9');arrowPx(svg,x+55,66,x+55,128,'ln thin sk','fk');T(svg,x+60,100,'predict','','start')}if(k>0)box(svg,x-140,130,110,34,t,'#fbe5d6')});
   T(svg,480,190,'one sequence of 6 tokens = 5 classification problems, trained in a single forward pass thanks to the causal mask','','middle')};
-/* ---------- encoder (BERT) vs decoder (GPT) masks ---------- */
-FIG['bert-gpt']=root=>{const svg=initSvg(svgOf(root),620,260);const n=6,cs=28;
-  [['BERT (encoder): sees both sides',(i,j)=>1,'fill-in-the-blank, classification, embeddings'],['GPT (decoder): sees only the past',(i,j)=>j<=i?1:0,'next-token prediction, generation']].forEach(([t,f,s],k)=>{const x0=40+k*310;T(svg,x0+n*cs/2,20,t,'lab');const M=[];for(let i=0;i<n;i++){const r=[];for(let j=0;j<n;j++)r.push(f(i,j));M.push(r)}
-    grid(svg,x0,34,M,cs,(i,j,v)=>v?'#4472c4':'#f2f2f2',null,{stroke:'#fff'});T(svg,x0+n*cs/2,34+n*cs+22,s,'')})};
 /* ---------- autoregressive generation loop ---------- */
 FIG['gen-loop']=root=>{const svg=svgOf(root);const words=['Can','you','please','come','here','?'];const P=[[],[],[],[],[['here',0.41],['back',0.22],['home',0.15]],[['?',0.62],['now',0.14],['.',0.1]],[['<end>',0.8],['Thanks',0.05],['I',0.03]]];
   stepper(root,s=>{initSvg(svg,620,280);const n=4+s;const shown=words.slice(0,n);let x=20;shown.forEach((w,k)=>{const wd=20+w.length*11;box(svg,x,40,wd,32,w,k>=4?'#fbe5d6':'#e2f0d9');x+=wd+6});
@@ -84,11 +72,6 @@ FIG['sqrtd']=root=>{const svg=svgOf(root);const inp=q(root,'d');
     [['softmax(q·k): raw scores',pr,raw,'#c00000'],['softmax(q·k / √dₖ): scaled',ps,sc,'#4472c4']].forEach(([lab,p,s,c],k)=>{const x0=k*305;T(svg,x0+148,18,lab,'lab');
       p.forEach((v,i)=>{E('rect',{x:x0+20+i*34,y:250-200*v,width:26,height:200*v+0.5,fill:c},svg);T(svg,x0+33+i*34,272,fmt(s[i],1),'')});T(svg,x0+148,294,'scores (std ≈ '+(k?'1':'√'+d+' = '+fmt(Math.sqrt(d),1))+')','')});
     setR(root,'mx',fmt(Math.max(...pr),3));setR(root,'ms',fmt(Math.max(...ps),3))}inp.addEventListener('input',draw);draw()};
-FIG['mask']=root=>{const svg=initSvg(svgOf(root),620,250);const n=5;const r=rng(9);const S=[...Array(n)].map(()=>[...Array(n)].map(()=>randn(r)));const cs=34;
-  const grid=(x0,title,cell)=>{T(svg,x0+n*cs/2,18,title,'lab');for(let i=0;i<n;i++)for(let j=0;j<n;j++){const [fill,txt]=cell(i,j);E('rect',{x:x0+j*cs,y:30+i*cs,width:cs-2,height:cs-2,fill:fill},svg);const tt=T(svg,x0+j*cs+cs/2-1,30+i*cs+cs/2+4,txt,'');if(fill==='#595959')tt.style.fill='#fff'}};
-  grid(10,'scores QKᵀ/√d',(i,j)=>['#dae3f3',fmt(S[i][j],1)]);grid(220,'mask: −∞ if j > i',(i,j)=>j>i?['#595959','−∞']:['#dae3f3',fmt(S[i][j],1)]);
-  const W=S.map((row,i)=>softmax(row.slice(0,i+1)).concat(new Array(n-i-1).fill(0)));grid(430,'softmax: weights',(i,j)=>j>i?['#f2f2f2','0']:['rgba(237,125,49,'+(0.2+0.8*W[i][j]).toFixed(2)+')',fmt(W[i][j],2)]);
-  T(svg,310,232,'Row i = the token being predicted. It may only look at tokens 1…i, never at the future.','','middle')};
 FIG['posenc']=root=>{const svg=initSvg(svgOf(root),600,300);const P=50,D=32;const cw=520/P,ch=200/D;
   for(let p=0;p<P;p++)for(let i=0;i<D;i++){const k=Math.floor(i/2);const ang=p/Math.pow(10000,2*k/D);const v=i%2===0?Math.sin(ang):Math.cos(ang);E('rect',{x:50+p*cw,y:30+i*ch,width:cw+0.3,height:ch+0.3,fill:v>=0?'#4472c4':'#ed7d31','fill-opacity':Math.abs(v).toFixed(2)},svg)}
   T(svg,310,20,'PE(pos, i) for 50 positions × 32 dimensions','lab');T(svg,310,250,'position →','','middle');T(svg,40,130,'dim','','end');T(svg,310,285,'Low dimensions oscillate fast, high dimensions slowly: every position gets a unique pattern.','','middle')};
@@ -96,16 +79,6 @@ FIG['mha']=root=>{const svg=initSvg(svgOf(root),560,330);const box=(x,y,w,t,c)=>
   ['Q','K','V'].forEach((t,k)=>{const x=80+k*150;T(svg,x+50,326,t,'lab big');for(let h=2;h>=0;h--)box(x+h*6,262-h*6,100,'Linear','#f8cbad');arrowPx(svg,x+50,300,x+50,294,'ln thin sk','fk');arrowPx(svg,x+50,250,250+k*30,212,'ln thin sk','fk')});
   for(let h=2;h>=0;h--)box(170+h*6,176-h*6,220,'Scaled dot-product attention','#b4c7e7');T(svg,470,170,'h heads','lab','start');arrowPx(svg,280,164,280,128,'ln thin sk','fk');
   box(210,96,140,'Concatenate','#ffe699');arrowPx(svg,280,94,280,70,'ln thin sk','fk');box(230,38,100,'Linear W_O','#f8cbad');T(svg,280,22,'output','lab')};
-FIG['block']=root=>{const svg=initSvg(svgOf(root),620,400);const box=(x,y,w,h,t,c)=>{E('rect',{x:x,y:y,width:w,height:h,rx:5,fill:c,stroke:'#404040'},svg);T(svg,x+w/2,y+h/2+5,t,'')};
-  E('rect',{x:60,y:170,width:190,height:150,rx:12,fill:'#f2f2f2',stroke:'#7f7f7f'},svg);T(svg,40,250,'N×','lab','end');
-  box(75,280,160,28,'Multi-head attention','#ffe699');box(75,244,160,24,'Add & Norm','#f8cbad');box(75,212,160,24,'Feed forward','#b4c7e7');box(75,180,160,24,'Add & Norm','#f8cbad');
-  box(75,340,160,26,'Input embedding + PE','#e2f0d9');arrowPx(svg,155,340,155,310,'ln thin sk','fk');T(svg,155,392,'inputs','');
-  E('rect',{x:360,y:100,width:200,height:220,rx:12,fill:'#f2f2f2',stroke:'#7f7f7f'},svg);T(svg,580,210,'×N','lab','start');
-  box(380,284,160,26,'Masked multi-head att.','#ffe699');box(380,254,160,22,'Add & Norm','#f8cbad');box(380,222,160,26,'Cross attention','#ffe699');box(380,192,160,22,'Add & Norm','#f8cbad');box(380,160,160,24,'Feed forward','#b4c7e7');box(380,130,160,22,'Add & Norm','#f8cbad');
-  box(380,340,160,26,'Output embedding + PE','#e2f0d9');arrowPx(svg,460,340,460,312,'ln thin sk','fk');T(svg,460,392,'outputs (shifted right)','');
-  box(400,60,120,24,'Linear','#dae3f3');box(400,28,120,24,'Softmax','#dae3f3');arrowPx(svg,460,100,460,86,'ln thin sk','fk');T(svg,460,18,'next-token probabilities','');
-  E('path',{d:'M155,170 C155,120 300,240 378,236',fill:'none',stroke:'#c00000','stroke-width':2},svg);T(svg,300,160,'K, V from the encoder','','middle');
-  T(svg,155,140,'Encoder (BERT)','lab big');T(svg,352,112,'Decoder (GPT)','lab big','end')};
 FIG['decode']=root=>{const words=['here','back','home','over','in','now','soon','inside'];const logits=[3.0,2.2,1.7,1.2,0.9,0.7,0.5,0.1];const svg=svgOf(root);const it=q(root,'t'),ik=q(root,'k');let picked='';
   function probs(){const t=+it.value,k=+ik.value;const z=logits.map(v=>v/t);const idx=z.map((v,i)=>i).sort((a,b)=>z[b]-z[a]).slice(0,k);const zz=z.map((v,i)=>idx.includes(i)?v:-1e9);return softmax(zz)}
   function draw(){setV(root,'t',fmt(+it.value,2));setV(root,'k',ik.value);const p=probs();initSvg(svg,600,300);T(svg,20,24,'Can you please come ___ ?','lab big','start');
@@ -242,24 +215,6 @@ FIG['perm']=root=>{const svg=svgOf(root);const get=segs(root,'p',()=>draw());con
     T(svg,320,280,on?'(the same word at a different position is a different input)':'(and so does every other word: who bit whom is lost)','');setR(root,'d',f2(dz))}
   draw()};
 
-/* multi-head attention as slices: 12 heads of 64 columns cost what one head of 768 costs */
-FIG['mha-split']=root=>{const svg=initSvg(svgOf(root),980,300);const H=12,HC=['#4472c4','#ed7d31','#70ad47','#ffc000','#5b9bd5','#a5a5a5','#c00000','#7030a0','#00b0f0','#92d050','#ff66cc','#996633'];
-  const cut=(x,y,w,h)=>{for(let k=0;k<H;k++)E('rect',{x:x+k*w/H,y:y,width:w/H,height:h,fill:HC[k],'fill-opacity':0.55,stroke:'#fff','stroke-width':0.8},svg);E('rect',{x:x,y:y,width:w,height:h,fill:'none',stroke:'#404040'},svg)};
-  E('rect',{x:10,y:70,width:72,height:140,fill:'#e2f0d9',stroke:'#404040'},svg);T(svg,46,146,'X','lab big');T(svg,46,230,'n × 768','');
-  arrowPx(svg,86,140,150,140,'ln thin sk','fk');TT(svg,118,124,'· W_Q, W_K, W_V','');T(svg,118,162,'768 × 768','');
-  [[174,54],[166,62]].forEach(([xx,yy])=>E('rect',{x:xx,y:yy,width:144,height:140,fill:'#f2f2f2',stroke:'#7f7f7f'},svg));T(svg,326,62,'V','lab','start');T(svg,318,76,'K','lab','start');
-  cut(158,70,144,140);T(svg,150,96,'Q','lab','end');T(svg,230,230,'Q, K, V: n × 768 each','lab');T(svg,230,248,'cut into 12 slices of 64 columns','');
-  const heads=[[0,'previous token',(i,j)=>j===Math.max(0,i-1)?1:0],[1,'itself',(i,j)=>i===j?1:0.08],[2,'first token',(i,j)=>j===0?1:(j<=i?0.15:0)],[11,'broad average',(i,j)=>j<=i?1:0]];
-  heads.forEach(([k,lab,f],m)=>{const y=24+m*64+(m===3?10:0),xx=410,c=10;E('line',{x1:158+(k+0.5)*12,y1:70,x2:xx-4,y2:y+25,stroke:HC[k],'stroke-width':1.6},svg);
-    for(let i=0;i<5;i++){const row=[];for(let j=0;j<5;j++)row.push(j<=i?f(i,j):0);const s=row.reduce((a,b)=>a+b,0)||1;row.forEach((v,j)=>E('rect',{x:xx+j*c,y:y+i*c,width:c,height:c,fill:heat(Math.min(1,v/s*1.3),true),stroke:'#fff','stroke-width':0.5},svg))}
-    E('rect',{x:xx,y:y,width:5*c,height:5*c,fill:'none',stroke:HC[k],'stroke-width':2.5},svg);T(svg,xx+60,y+20,'head '+(k+1),'lab','start').style.fill=HC[k];T(svg,xx+60,y+38,lab,'','start');
-    arrowPx(svg,xx+160,y+25,556,140,'ln thin sm','fm')});
-  T(svg,435,214,'⋮','lab big');
-  cut(560,70,144,140);T(svg,632,230,'concatenate: n × 768','lab');T(svg,632,248,'head k fills slice k','');
-  arrowPx(svg,708,140,770,140,'ln thin sk','fk');TT(svg,739,124,'· W_O','');T(svg,739,162,'768 × 768','');
-  E('rect',{x:774,y:70,width:72,height:140,fill:'#c5e0b4',stroke:'#404040'},svg);T(svg,810,146,'Z','lab big');T(svg,810,230,'n × 768','');T(svg,810,248,'W_O mixes the heads','');
-  T(svg,490,290,'each head uses only its own 64 columns of Q, K and V: 12 × 64 = 768, the same size and cost as one head of 768','','middle')};
-
 /* one transformer block (pre-norm): communicate, then think, each with a residual */
 FIG['block-one']=root=>{const svg=initSvg(svgOf(root),940,330);const y=128,h=56;
   const bx=(x,w,t,c)=>box(svg,x,y-h/2,w,h,t,c,{cls:'lab'});const plus=x=>{E('circle',{cx:x,cy:y,r:15,fill:'#fff',stroke:'#404040','stroke-width':1.6},svg);T(svg,x,y+7,'+','lab big')};
@@ -275,5 +230,248 @@ FIG['block-one']=root=>{const svg=initSvg(svgOf(root),940,330);const y=128,h=56;
   const B=dots(635,262);B.forEach(([x,yy])=>{E('rect',{x:x-11,y:210,width:22,height:18,rx:3,fill:'#b4c7e7',stroke:'#404040'},svg);arrowPx(svg,x,230,x,250,'ln thin sk','fk');E('circle',{cx:x,cy:yy,r:9,fill:'#b4c7e7',stroke:'#404040'},svg)});
   T(svg,695,292,'think: each token alone,','lab');T(svg,695,310,'the same MLP for all','lab');
   [[305,y+h/2+4,305,200],[695,y+h/2+4,695,204]].forEach(([a,b,c,dd])=>E('line',{x1:a,y1:b,x2:c,y2:dd,stroke:'#bfbfbf','stroke-width':1.2,'stroke-dasharray':'4 3'},svg))};
+
+/* ===================== chapter rework (2026-10-12): attention in matrices, multi-head, encoder-decoder, BERT, GPT, ViT ===================== */
+const nm=v=>String(Math.round(v*100)/100).replace('-','−');
+const mmul=(A,B)=>A.map(r=>B[0].map((_,j)=>r.reduce((s,v,k)=>s+v*B[k][j],0)));
+const mxAbs=M=>Math.max(...M.flat().map(Math.abs));
+const tint=(hex,t)=>{const c=hexRGB(hex);t=Math.max(0,Math.min(1,t));return 'rgb('+c.map(v=>Math.round(255-(255-v)*t)).join(',')+')'};
+/* a stepper when the widget has a step slider; a bare <svg> (the notes) gets the last step */
+const steps=(root,last,draw)=>root.querySelector('input[data-k="s"]')?stepper(root,draw):draw(last);
+/* a vector drawn as a strip of coloured cells (orange = positive, blue = negative) */
+const strip=(g,x,y,v,cw,ch,mx)=>v.forEach((a,i)=>E('rect',{x:x+i*cw,y:y,width:cw,height:ch,fill:heat(a/mx),stroke:'#fff','stroke-width':0.6},g));
+/* toy token vectors (the same word gets the same embedding, plus a position term) and a toy 2-layer attention, for the colours */
+const toyVecs=(toks,seed)=>{const r=rng(seed),emb={};return toks.map((w,k)=>{if(!emb[w])emb[w]=[...Array(8)].map(()=>randn(r));return emb[w].map((v,i)=>v+0.4*Math.sin((k+1)*(i+1)*0.7))})};
+const att=(X,i,causal)=>softmax(X.map((k,j)=>causal&&j>i?-1e9:X[i].reduce((s,v,d)=>s+v*k[d],0)/Math.sqrt(8)));
+const toyAttend=(X,causal)=>{let H=X;for(let l=0;l<2;l++){const A=H.map((_,i)=>att(H,i,causal));H=H.map((x,i)=>x.map((v,d)=>0.4*v+0.6*A[i].reduce((s,a,j)=>s+a*H[j][d],0)))}return H};
+/* an arc between two positions on the bottom line of a band; width = attention weight */
+const arc=(g,x1,x2,yb,w,col)=>{const h=Math.min(40,12+Math.abs(x2-x1)*0.1);E('path',{d:'M'+x1+','+yb+' Q'+((x1+x2)/2)+','+(yb-2*h)+' '+x2+','+yb,fill:'none',stroke:col,'stroke-width':w,'stroke-linecap':'round','stroke-opacity':0.8},g)};
+const HC12=['#4472c4','#ed7d31','#70ad47','#ffc000','#5b9bd5','#a5a5a5','#c00000','#7030a0','#00b0f0','#92d050','#ff66cc','#996633'];
+
+/* self-attention in matrices, step by step: the I / love / pizza example of slides 8-9 (same x, W_Q, W_K, W_V), all tokens at once */
+FIG['qkv']=root=>{const svg=svgOf(root);const toks=['I','love','pizza'];
+  const X=[[0,1,1],[2,0,2],[1,1,1]],WQ=[[1,0],[0,1],[1,0]],WK=[[0,1],[1,0.5],[0,-0.5]],WV=[[-0.5,0.5],[0.5,0],[0.5,0]];
+  const Q=mmul(X,WQ),K=mmul(X,WK),V=mmul(X,WV),KT=[0,1].map(j=>K.map(r=>r[j]));
+  const S=mmul(Q,KT).map(r=>r.map(v=>v/Math.SQRT2)),A=S.map(r=>softmax(r)),Z=mmul(A,V);
+  const c=34,y0=148,R='#c00000',xX=72,xQ=228,xS=330,xA=494,xZ=650,yK=y0-2*c-14,yV=y0-3*c-14;
+  const mat=(x,y,M,fill,o)=>grid(svg,x,y,M,c,fill,(i,j,v)=>nm(v),Object.assign({stroke:'#8c8c8c'},o||{}));
+  const one=col=>()=>col;
+  const hi=(x,y,w,h)=>E('rect',{x:x-1.5,y:y-1.5,width:w+3,height:h+3,fill:'none',stroke:R,'stroke-width':3,rx:2},svg);
+  const under=(x,a,b)=>{TT(svg,x,y0+3*c+20,a,'lab');if(b)T(svg,x,y0+3*c+38,b,'')};
+  const caps=['the sentence as a matrix X: one row per token, d = 3 numbers each',
+    'three matrix products give every token its query, key and value (the W_Q, W_K, W_V of slide 9)',
+    'S = QKᵀ/√2: entry (pizza, I) = q_pizza · k_I / √2 = (2·1 + 1·0) / √2 = 1.41. Every token against every token',
+    'softmax of each row: weights that sum to 1. "love" looks at "I" and at "pizza" (0.49 each), hardly at itself',
+    'Z = AV: row i is a weighted average of the rows of V. The red row is slide 8: (0.57, 0.43)',
+    'the same weights as a picture: every new vector reads from every token; line width = weight'];
+  steps(root,5,s=>{initSvg(svg,1000,324);
+    toks.forEach((t,i)=>box(svg,4,y0+i*c+4,60,c-8,t,'#e2f0d9'));
+    mat(xX,y0,X,one('#e2f0d9'));T(svg,xX+1.5*c,y0-10,'X','lab');under(xX+1.5*c,'n × d = 3 × 3');
+    if(s>=1){arrowPx(svg,xX+3*c+6,y0+1.5*c,xQ-6,y0+1.5*c,'ln thin sk','fk');TT(svg,(xX+3*c+xQ)/2,y0+1.5*c-8,'·W_Q','');
+      mat(xQ,y0,Q,one('#fbe5d6'));TT(svg,xQ+c,y0-10,'Q = XW_Q','lab');
+      mat(xS,yK,KT,one('#dae3f3'));TT(svg,xS+1.5*c,yK-10,'Kᵀ = (XW_K)ᵀ','lab');
+      mat(xZ,yV,V,one('#fff2cc'));TT(svg,xZ+c,yV-10,'V = XW_V','lab')}
+    if(s>=2){mat(xS,y0,S,one('#ededed'));under(xS+1.5*c,'S = QKᵀ / √2','scores, n × n')}
+    if(s>=3){const xm=(xS+3*c+xA)/2;arrowPx(svg,xS+3*c+8,y0+1.5*c,xA-8,y0+1.5*c,'ln thin sk','fk');T(svg,xm,y0+1.5*c-10,'softmax','');T(svg,xm,y0+1.5*c+24,'each row','');
+      mat(xA,y0,A,(i,j,v)=>heat(v*1.3,true),{tcol:(i,j,v)=>v>0.4?'#fff':'#1f1f1f'});under(xA+1.5*c,'A: weights','each row sums to 1')}
+    if(s>=4){mat(xZ,y0,Z,one('#c5e0b4'));under(xZ+c,'Z = AV','new vectors')}
+    if(s===2){hi(xQ,y0+2*c,2*c,c);hi(xS,yK,c,2*c);hi(xS,y0+2*c,c,c)}
+    if(s===3)hi(xA,y0+2*c,3*c,c);
+    if(s>=4){hi(xA,y0+2*c,3*c,c);hi(xZ,y0+2*c,2*c,c)}
+    if(s>=5){const xs=[812,884,956],yt=y0-96,yb=y0+76;T(svg,884,yt-10,'new vectors (rows of Z)','lab');T(svg,884,yb+44,'values (rows of V)','lab');
+      [0,1,2].forEach(i=>[0,1,2].forEach(j=>{if(i===2)return;E('line',{x1:xs[j],y1:yb,x2:xs[i],y2:yt+26,stroke:'#7f7f7f','stroke-width':1+14*A[i][j],'stroke-opacity':0.3},svg)}));
+      [0,1,2].forEach(j=>{E('line',{x1:xs[j],y1:yb,x2:xs[2],y2:yt+26,stroke:R,'stroke-width':1+14*A[2][j],'stroke-opacity':0.85},svg);
+        const t=T(svg,xs[j]+(xs[2]-xs[j])*0.22,yb-(yb-yt-26)*0.22+5,f2(A[2][j]),'lab');t.setAttribute('style','fill:'+R+';paint-order:stroke;stroke:#fff;stroke-width:4px')});
+      toks.forEach((t,i)=>{box(svg,xs[i]-31,yt,62,26,t,'#c5e0b4');box(svg,xs[i]-31,yb,62,26,t,'#fff2cc')})}
+    T(svg,500,318,caps[s],'','middle')})};
+
+/* multi-head attention, step by step: three small heads with their own projections and patterns, concatenated and mixed by W_O */
+FIG['mha-lanes']=root=>{const svg=svgOf(root);const toks=['the','cat','sat','on','the','mat'],n=6,HC=['#4472c4','#ed7d31','#70ad47'];
+  const r=rng(11),rnd=(a,b)=>[...Array(a)].map(()=>[...Array(b)].map(()=>randn(r)));
+  const X=rnd(n,6),W=[0,1,2].map(()=>[rnd(6,2),rnd(6,2),rnd(6,2)]),WO=rnd(6,6);
+  const norm=M=>M.map(row=>{const t=row.reduce((a,b)=>a+b,0);return row.map(v=>v/t)}),u=[1,1,1,1,1,1];
+  /* hand-drawn patterns (rows = queries, columns = keys) */
+  const P=[norm(toks.map((_,i)=>toks.map((_,j)=>j===Math.max(0,i-1)?1:0.03))),
+    norm([[.55,.15,.15,.05,.05,.05],[.05,.15,.7,.04,.03,.03],[.03,.8,.1,.03,.02,.02],[.05,.1,.15,.5,.1,.1],[.05,.05,.05,.1,.6,.15],[.05,.1,.15,.1,.1,.5]]),
+    norm([[.03,.8,.07,.03,.03,.04],u,u,u,[.02,.03,.05,.07,.03,.8],u])];
+  const names=['previous word','subject ↔ verb (cat ↔ sat)','"the" → its noun (it looks ahead)'];
+  const QKV=W.map(w=>w.map(m=>mmul(X,m))),Zh=QKV.map((h,k)=>mmul(P[k],h[2])),Zc=X.map((_,i)=>[].concat(...Zh.map(z=>z[i]))),O=mmul(Zc,WO);
+  const hm=(x,y,M,cs)=>{const m=mxAbs(M);grid(svg,x,y,M,cs,(i,j,v)=>heat(v/m),null,{stroke:'#fff',sw:0.8})};
+  const frame=(x,y,w,h,col)=>E('rect',{x:x,y:y,width:w,height:h,fill:'none',stroke:col,'stroke-width':1.5},svg);
+  const small=(x,y,t,anchor)=>{const tt=T(svg,x,y,t,'',anchor);tt.style.fontSize='11px';return tt};
+  const lane=k=>4+k*110,mid=k=>lane(k)+67,yX=133,xA=300,cA=14;
+  const caps=['the sentence as a matrix X: 6 tokens × d = 6 numbers (toy sizes)',
+    'each head has its own small W_Q, W_K, W_V (d × d_k = 6 × 2), so its own queries, keys and values',
+    'each head computes its own attention matrix: three different patterns over the same six words',
+    'each head outputs Z_i = A_i V_i: one small vector (d_k = 2) per token',
+    'concatenate the three outputs (6 × 6) and mix them with W_O: the result has the shape of X'];
+  steps(root,4,s=>{initSvg(svg,880,372);
+    toks.forEach((t,i)=>T(svg,30,yX+i*16+12,t,'','end'));hm(34,yX,X,16);T(svg,82,yX-10,'X','lab');T(svg,82,yX+6*16+18,'6 × 6','');
+    if(s>=1){[0,1,2].forEach(k=>{const y0=lane(k);E('line',{x1:132,y1:yX+48,x2:186,y2:mid(k),stroke:HC[k],'stroke-width':1.6},svg);
+      T(svg,190,y0+14,'head '+(k+1)+(s>=2?':  '+names[k]:''),'lab','start').style.fill=HC[k];
+      QKV[k].forEach((M,m)=>{hm(190+m*28,y0+34,M,11);frame(190+m*28,y0+34,22,66,HC[k]);TT(svg,201+m*28,y0+30,['Q','K','V'][m]+'_'+(k+1),'')})});
+      [['GPT-2 small:',1],['d = 768',0],['12 heads',0],['d_k = 64 each',0]].forEach(([t,b],i)=>TT(svg,820,yX+12+i*20,t,b?'lab':''))}
+    if(s>=2)[0,1,2].forEach(k=>{const y0=lane(k);grid(svg,xA,y0+25,P[k],cA,(i,j,v)=>tint(HC[k],v*1.4),null,{stroke:'#fff',sw:0.6});frame(xA,y0+25,6*cA,6*cA,HC[k]);
+      toks.forEach((t,i)=>{small(xA-4,y0+25+i*cA+11,t,'end');if(k===2){const x=xA+i*cA+cA/2+3,y=y0+25+6*cA+6;small(x,y,t,'end').setAttribute('transform','rotate(-55 '+x+' '+y+')')}})});
+    if(s>=3)[0,1,2].forEach(k=>{const y0=lane(k);arrowPx(svg,xA+6*cA+4,mid(k),420,mid(k),'ln thin sm','fm');TT(svg,(xA+6*cA+420)/2+2,mid(k)-8,'·V_'+(k+1),'');
+      hm(424,y0+34,Zh[k],11);frame(424,y0+34,22,66,HC[k]);TT(svg,435,y0+30,'Z_'+(k+1),'')});
+    if(s>=4){[0,1,2].forEach(k=>{E('line',{x1:448,y1:mid(k),x2:480+k*32+16,y2:yX-9,stroke:HC[k],'stroke-width':1.6},svg);E('rect',{x:480+k*32,y:yX-8,width:32,height:6,fill:HC[k]},svg)});
+      hm(480,yX,Zc,16);T(svg,528,yX+6*16+18,'concat: 6 × 6','');
+      arrowPx(svg,580,yX+48,630,yX+48,'ln thin sk','fk');TT(svg,605,yX+40,'·W_O','');
+      hm(636,yX,O,16);T(svg,684,yX-10,'output','lab');T(svg,684,yX+6*16+18,'6 × 6, like X','')}
+    T(svg,440,366,caps[s],'','middle')})};
+
+/* multi-head attention in practice: one big projection, cut into 12 slices of 64 columns (GPT-2 small) */
+FIG['mha-split']=root=>{const svg=initSvg(svgOf(root),1000,276);const H=12,y=84,h=120,o=52;
+  const lab=(x,a,b)=>{TT(svg,x+o,y+h+24,a,'lab');if(b)T(svg,x+o,y+h+42,b,'')};
+  const arr=(x1,x2,t1,t2)=>{arrowPx(svg,x1+o,y+h/2,x2+o,y+h/2,'ln thin sk','fk');TT(svg,(x1+x2)/2+o,y+h/2-(t2?28:10),t1,'');if(t2)TT(svg,(x1+x2)/2+o,y+h/2-10,t2,'')};
+  const striped=(x,w)=>{for(let k=0;k<H;k++)E('rect',{x:x+o+k*w/H,y:y,width:w/H,height:h,fill:HC12[k],'fill-opacity':0.55,stroke:'#fff','stroke-width':0.8},svg);E('rect',{x:x+o,y:y,width:w,height:h,fill:'none',stroke:'#404040'},svg)};
+  const stack=(x,w,front)=>{for(let k=H-1;k>=0;k--){const xx=x+o+k*4,yy=y-k*4;E('rect',{x:xx,y:yy,width:w,height:h,fill:'#fff',stroke:HC12[k],'stroke-width':1.2},svg);E('rect',{x:xx,y:yy,width:w,height:h,fill:HC12[k],'fill-opacity':0.3},svg);if(k===0&&front)front(xx,yy)}};
+  const solid=(x,w,fill,t)=>{E('rect',{x:x+o,y:y,width:w,height:h,fill:fill,stroke:'#404040'},svg);T(svg,x+o+w/2,y+h/2+7,t,'lab big')};
+  solid(0,50,'#e2f0d9','X');lab(25,'X','n × 768');
+  arr(54,118,'·W_Q');T(svg,86+o,y+h/2+20,'768 × 768','');
+  striped(122,96);lab(170,'Q = XW_Q','n × 768 (K, V too)');
+  arr(222,262,'cut');
+  stack(266,14);lab(298,'12 slices Q_i','12 × n × 64');
+  arr(330,370,'softmax','(Q_iK_iᵀ/8)');
+  stack(374,120,(xx,yy)=>{const m=10,cc=h/m;for(let i=0;i<m;i++)for(let j=0;j<=i;j++)E('rect',{x:xx+j*cc,y:yy+i*cc,width:cc,height:cc,fill:tint(HC12[0],j===i?0.9:j===i-1?0.6:0.25),stroke:'#fff','stroke-width':0.5},svg)});lab(456,'12 attention matrices','12 × n × n');
+  arr(542,582,'·V_i');
+  stack(586,14);lab(616,'12 outputs','12 × n × 64');
+  arr(648,688,'concat');
+  striped(692,96);lab(740,'concatenated','n × 768');
+  arr(792,832,'·W_O');
+  solid(836,50,'#c5e0b4','Z');lab(861,'output','n × 768');
+  T(svg,500,270,'each head reads only its own 64 columns of Q, K and V: 12 × 64 = 768, the same size and cost as one head of 768','','middle')};
+
+/* the original transformer (2017) on a translation example: encoder, decoder, cross-attention */
+FIG['block']=root=>{const svg=initSvg(svgOf(root),640,452);
+  const sub=(x,y,w,t,c,o)=>box(svg,x,y,w,26,t,c,Object.assign({cls:''},o||{}));
+  const row=(cx,y,ws,fill)=>ws.forEach((w,k)=>box(svg,cx-94+k*64,y,60,24,w,fill,{cls:''}));
+  const up=(x,y1,y2)=>arrowPx(svg,x,y1,x,y2,'ln thin sk','fk');
+  /* encoder */
+  row(150,404,['the','black','cat'],'#e2f0d9');T(svg,150,446,'source sentence','');
+  up(150,402,388);sub(55,360,190,'embedding + position','#e2f0d9');up(150,358,342);
+  E('rect',{x:45,y:200,width:210,height:140,rx:12,fill:'#f2f2f2',stroke:'#7f7f7f'},svg);T(svg,38,276,'N×','lab','end');
+  sub(55,304,190,'Self-attention (both sides)','#ffe699');sub(55,272,190,'Add & Norm','#f8cbad');sub(55,240,190,'MLP','#b4c7e7');sub(55,208,190,'Add & Norm','#f8cbad');
+  up(150,198,182);const r=rng(3);for(let k=0;k<3;k++)strip(svg,150-94+k*64+3,160,[...Array(6)].map(()=>randn(r)),9,16,2);
+  T(svg,150,150,'one vector per source word','');T(svg,150,118,'Encoder','lab big');
+  /* decoder */
+  row(470,404,['<s>','el','gato'],'#fbe5d6');T(svg,470,446,'translation so far (shifted right)','');
+  up(470,402,388);sub(375,360,190,'embedding + position','#fbe5d6');up(470,358,342);
+  E('rect',{x:365,y:136,width:210,height:204,rx:12,fill:'#f2f2f2',stroke:'#7f7f7f'},svg);T(svg,584,244,'×N','lab','start');
+  sub(375,304,190,'Masked self-attention','#ffe699');sub(375,272,190,'Add & Norm','#f8cbad');sub(375,240,190,'Cross-attention','#ffe699',{stroke:'#c00000',sw:2});
+  sub(375,208,190,'Add & Norm','#f8cbad');sub(375,176,190,'MLP','#b4c7e7');sub(375,144,190,'Add & Norm','#f8cbad');
+  up(470,134,114);sub(395,86,150,'Linear + softmax','#dae3f3');up(470,84,66);
+  row(470,38,['el','gato','negro'],'#c5e0b4');T(svg,470,24,'next words: one per position','');T(svg,584,160,'Decoder','lab big','start');
+  /* cross-attention: keys and values from the encoder, queries from the decoder */
+  E('path',{d:'M246,168 C320,168 300,253 360,253',fill:'none',stroke:'#c00000','stroke-width':2.2},svg);arrowPx(svg,352,253,373,253,'ln thin sr','fr');
+  [['keys and values',134],['from the encoder',150]].forEach(([t,yy])=>{const tt=T(svg,306,yy,t,'','middle');tt.style.fill='#c00000'})};
+
+/* attention masks with the words: BERT sees both sides, GPT only the past */
+FIG['bert-gpt']=root=>{const svg=initSvg(svgOf(root),1000,256);const toks=['the','cat','sat','on','the','mat'],n=6,cs=28;
+  [[170,'BERT (encoder): every token sees every token',()=>true,'#4472c4','fill in a hidden word: from both sides'],
+   [670,'GPT (decoder): each token sees only the past',(i,j)=>j<=i,'#ed7d31','predict the next word: from the left only']].forEach(([x0,ttl,ok,col,sub])=>{
+    T(svg,x0+n*cs/2,18,ttl,'lab');
+    toks.forEach((t,j)=>{const x=x0+j*cs+cs/2,tt=T(svg,x,54,t,'','start');tt.setAttribute('transform','rotate(-50 '+x+' 54)')});
+    toks.forEach((t,i)=>T(svg,x0-6,60+i*cs+cs/2+5,t,'','end'));
+    for(let i=0;i<n;i++)for(let j=0;j<n;j++)E('rect',{x:x0+j*cs,y:60+i*cs,width:cs-2,height:cs-2,fill:ok(i,j)?col:'#f2f2f2'},svg);
+    T(svg,x0+n*cs/2,60+n*cs+22,sub,'')});
+  [['row = the token that reads',112],['column = the token it reads from',134],['coloured = allowed',166],['grey = masked: weight 0',188]].forEach(([t,yy])=>T(svg,504,yy,t,'','middle'))};
+
+/* the causal mask, on the words of the GPT example */
+FIG['mask']=root=>{const svg=initSvg(svgOf(root),640,262);const n=5,r=rng(9),cs=34,toks=['The','cat','sat','on','the'];const S=[...Array(n)].map(()=>[...Array(n)].map(()=>randn(r)));
+  const g3=(x0,title,cell,rows)=>{T(svg,x0+n*cs/2,16,title,'lab');toks.forEach((t,j)=>T(svg,x0+j*cs+cs/2-1,42,t,'').style.fontSize='12px');if(rows)toks.forEach((t,i)=>T(svg,x0-6,50+i*cs+cs/2+4,t,'','end'));
+    for(let i=0;i<n;i++)for(let j=0;j<n;j++){const [fill,txt]=cell(i,j);E('rect',{x:x0+j*cs,y:50+i*cs,width:cs-2,height:cs-2,fill:fill},svg);const tt=T(svg,x0+j*cs+cs/2-1,50+i*cs+cs/2+4,txt,'');if(fill==='#595959')tt.style.fill='#fff'}};
+  g3(62,'scores QKᵀ/√d',(i,j)=>['#dae3f3',fmt(S[i][j],1)],true);g3(252,'mask: −∞ if j > i',(i,j)=>j>i?['#595959','−∞']:['#dae3f3',fmt(S[i][j],1)]);
+  const W=S.map((row,i)=>softmax(row.slice(0,i+1)).concat(new Array(n-i-1).fill(0)));g3(442,'softmax: weights',(i,j)=>j>i?['#f2f2f2','0']:['rgba(237,125,49,'+(0.2+0.8*W[i][j]).toFixed(2)+')',fmt(W[i][j],2)]);
+  T(svg,320,248,'Row i = the token that reads. It may only look at tokens 1…i, never at the future.','','middle')};
+
+/* BERT step by step: tokens -> vectors -> encoder blocks (both sides) -> vectors in context -> fill in the blank / classify.
+   The [MASK] probabilities are those of bert-base-uncased on "the cat [MASK] on the mat." */
+FIG['bert-flow']=root=>{const svg=svgOf(root);const toks=['[CLS]','the','cat','[MASK]','on','the','mat','.','[SEP]'],M=3,cx=k=>184+k*94;
+  const X=toyVecs(toks,31),Y=toyAttend(X,false),mx=mxAbs(X),my=mxAbs(Y),w=att(X,M,false),wm=Math.max(...w.filter((_,j)=>j!==M));
+  const top=[['sat',0.168],['lay',0.083],['was',0.062]];const fill=t=>t==='[MASK]'?'#fbe5d6':t[0]==='['?'#e7e6e6':'#e2f0d9';
+  const caps=['WordPiece tokens: [CLS] starts every input, [SEP] ends it, and one word is hidden behind [MASK]',
+    'each token becomes a vector: its embedding plus its position (768 numbers in BERT-base; 8 drawn)',
+    '12 encoder blocks, no mask: every token attends to every token, on its left and on its right',
+    'out: one vector per token, the same size as in, but now each one depends on the whole sentence',
+    'pre-training: the [MASK] vector predicts the hidden word. bert-base-uncased: sat 0.17, lay 0.08, was 0.06',
+    'after pre-training, small heads read the vectors: [CLS] → one label for the sentence; the mean → a sentence embedding'];
+  steps(root,5,s=>{initSvg(svg,1000,358);const L=(y,a,b)=>{T(svg,6,y,a,'lab','start');if(b)T(svg,6,y+17,b,'','start')};
+    L(322,'tokens');toks.forEach((t,k)=>box(svg,cx(k)-40,304,80,26,t,fill(t),{cls:t.length>5?'':'lab'}));
+    if(s>=1){L(258,'input vectors','embedding + position');toks.forEach((t,k)=>{arrowPx(svg,cx(k),302,cx(k),278,'ln thin sm','fm');strip(svg,cx(k)-36,258,X[k],9,16,mx)})}
+    if(s>=2){E('rect',{x:136,y:166,width:852,height:72,rx:10,fill:'#eef3fb',stroke:'#4472c4'},svg);L(196,'12 encoder blocks','attention + MLP');
+      toks.forEach((t,k)=>arrowPx(svg,cx(k),256,cx(k),240,'ln thin sm','fm'));toks.forEach((t,j)=>{if(j!==M)arc(svg,cx(M),cx(j),234,1.2+5*w[j]/wm,'#c00000')});
+      T(svg,980,184,'[MASK] reads its left and its right','','end').style.fill='#c00000'}
+    if(s>=3){L(128,'output vectors','in context');toks.forEach((t,k)=>{arrowPx(svg,cx(k),164,cx(k),142,'ln thin sm','fm');strip(svg,cx(k)-36,122,Y[k],9,16,my)})}
+    if(s>=4){arrowPx(svg,cx(M),120,cx(M),100,'ln thin sk','fk');box(svg,cx(M)-82,74,164,24,'word predictor','#fbe5d6',{cls:''});
+      top.forEach(([wd,p],i)=>{const y=6+i*21;T(svg,cx(M)-30,y+13,wd,'lab','end');E('rect',{x:cx(M)-24,y:y,width:p*420,height:15,fill:i?'#4472c4':'#c00000'},svg);T(svg,cx(M)-20+p*420,y+12,f2(p),'','start')})}
+    if(s>=5){arrowPx(svg,cx(0),120,cx(0),100,'ln thin sk','fk');box(svg,cx(0)-50,74,100,24,'classifier','#e7e6e6',{cls:''});T(svg,cx(0),44,'one label for','');T(svg,cx(0),62,'the sentence','');
+      T(svg,980,44,'or: the mean of all the output vectors','','end');T(svg,980,62,'= a sentence embedding (Part D)','','end')}
+    T(svg,500,352,caps[s],'','middle')})};
+
+/* GPT step by step: the prompt -> vectors -> causal blocks -> the last vector predicts the next token -> append, repeat.
+   The probabilities are those of GPT-2 small, greedy, from "The cat sat on the". */
+FIG['gpt-flow']=root=>{const svg=svgOf(root);const toks=['The','cat','sat','on','the','floor',',','and'],P=5,cx=k=>184+k*98;
+  const X=toyVecs(toks,47),Y=toyAttend(X,true),mx=mxAbs(X),my=mxAbs(Y);
+  const pred=[[['floor',0.076],['bed',0.065],['couch',0.054]],[[',',0.261],['and',0.122],['of',0.086]],[['and',0.048],['his',0.042],['her',0.037]],[['the',0.128],['he',0.047],['his',0.045]]];
+  const caps=['the prompt: 5 GPT-2 tokens, each turned into a vector (embedding + position)',
+    '12 decoder blocks with the causal mask: each token reads only itself and the tokens before it',
+    'only the last vector is used: ·Eᵀ and a softmax give 50,257 probabilities. Greedy: "floor" (7.6 %)',
+    'append "floor" and run again: only the new token is computed, the past comes from the KV cache. Next: ","',
+    'append ",": next "and" (4.8 %, just ahead of "his", 4.2 %)',
+    '"The cat sat on the floor, and" → "the" (12.8 %) … and so on, until an end token or a length limit'];
+  steps(root,5,s=>{initSvg(svg,1000,358);const last=s<3?P-1:P-1+(s-2),fresh=k=>s<3||k===last;
+    const L=(y,a,b)=>{T(svg,6,y,a,'lab','start');if(b)T(svg,6,y+17,b,'','start')};
+    L(322,'tokens');L(258,'input vectors','embedding + position');
+    if(s>=1){E('rect',{x:136,y:166,width:852,height:72,rx:10,fill:'#fdf1e7',stroke:'#ed7d31'},svg);L(196,'12 decoder blocks','causal mask');L(128,'output vectors')}
+    for(let k=0;k<=last;k++){const g=E('g',{opacity:fresh(k)?1:0.4},svg);box(g,cx(k)-40,304,80,26,toks[k],k<P?'#e2f0d9':'#fbe5d6',{stroke:s>=3&&k===last?'#c00000':'#404040',sw:s>=3&&k===last?2.5:1});
+      arrowPx(g,cx(k),302,cx(k),278,'ln thin sm','fm');strip(g,cx(k)-36,258,X[k],9,16,mx);
+      if(s>=1){arrowPx(g,cx(k),256,cx(k),240,'ln thin sm','fm');arrowPx(g,cx(k),164,cx(k),142,'ln thin sm','fm');strip(g,cx(k)-36,122,Y[k],9,16,my)}}
+    if(s>=1){const w=att(X.slice(0,last+1),last,true),wm=Math.max(...w.slice(0,last));for(let j=0;j<last;j++)arc(svg,cx(last),cx(j),234,1.2+5*w[j]/wm,'#c00000');
+      T(svg,980,184,'"'+toks[last]+'" reads only the past','','end').style.fill='#c00000'}
+    if(s>=2){const pr=pred[s-2];E('rect',{x:722,y:4,width:270,height:92,rx:6,fill:'#fff',stroke:'#bfbfbf'},svg);T(svg,857,21,'next token (softmax over 50,257)','');
+      pr.forEach(([wd,p],i)=>{const y=30+i*21;T(svg,796,y+13,'"'+wd+'"','lab','end');E('rect',{x:802,y:y,width:p*560,height:15,fill:i?'#4472c4':'#c00000'},svg);T(svg,806+p*560,y+12,f2(p).replace('0.','.'),'','start')});
+      arrowPx(svg,cx(last),120,Math.max(740,Math.min(cx(last),960)),99,'ln thin sk','fk')}
+    T(svg,500,352,caps[s],'','middle')})};
+
+/* ViT step by step: an image -> patches -> a sequence of vectors -> the encoder -> [CLS] -> the class */
+let vitN=0;
+FIG['vit']=root=>{const svg=svgOf(root);const id='vit-img-'+(vitN++),Sz=168,p=56,ix=24,iy=8,cx=k=>286+k*74;
+  const V=toyVecs(['[CLS]',1,2,3,4,5,6,7,8,9].map(String),5),Y=toyAttend(V,false),mv=mxAbs(V),my=mxAbs(Y),w=att(V,5,false),wm=Math.max(...w.filter((_,j)=>j!==5));
+  const cat=g=>{E('rect',{width:Sz,height:Sz,fill:'#cfe2f3'},g);E('rect',{y:140,width:Sz,height:28,fill:'#a9d18e'},g);
+    E('polygon',{points:'34,84 44,14 86,52',fill:'#ed7d31',stroke:'#843c0c','stroke-width':2},g);E('polygon',{points:'134,84 124,14 82,52',fill:'#ed7d31',stroke:'#843c0c','stroke-width':2},g);
+    E('polygon',{points:'48,64 52,32 72,52',fill:'#f8cbad'},g);E('polygon',{points:'120,64 116,32 96,52',fill:'#f8cbad'},g);
+    E('ellipse',{cx:84,cy:102,rx:58,ry:50,fill:'#ed7d31',stroke:'#843c0c','stroke-width':2},g);
+    [62,106].forEach(x=>{E('ellipse',{cx:x,cy:94,rx:11,ry:13,fill:'#fff'},g);E('ellipse',{cx:x+1,cy:96,rx:4,ry:9,fill:'#1f1f1f'},g)});
+    E('polygon',{points:'77,114 91,114 84,122',fill:'#c00000'},g);E('path',{d:'M84,122 Q84,132 74,132 M84,122 Q84,132 94,132',fill:'none',stroke:'#843c0c','stroke-width':2},g);
+    [[60,116,20,110],[60,123,20,128],[108,116,148,110],[108,123,148,128]].forEach(([a,b,c,d])=>E('line',{x1:a,y1:b,x2:c,y2:d,stroke:'#404040','stroke-width':1.4},g))};
+  const caps=['an image is a grid of numbers: H × W pixels × 3 colours (toy: 48 × 48 × 3; ViT-B/16 reads 224 × 224 × 3)',
+    'cut it into P × P patches with P = 16: here 3 × 3 = 9 patches (ViT-B/16: 14 × 14 = 196)',
+    'read the patches in order, row by row, like the words of a sentence; put a learned [CLS] token in front',
+    'flatten each patch (16 · 16 · 3 = 768 numbers) and multiply it by one learned matrix E; add a position vector',
+    'from here on it is BERT: 12 encoder blocks, every patch attends to every patch (here: patch 5) from the first layer',
+    'the [CLS] output vector goes to a small MLP head: the class of the image'];
+  steps(root,5,s=>{initSvg(svg,1000,374);drawCatImage();
+    function drawCatImage(){const defs=E('defs',{},svg);cat(E('g',{id:id},defs));E('use',{href:'#'+id,x:ix,y:iy},svg);E('rect',{x:ix,y:iy,width:Sz,height:Sz,fill:'none',stroke:'#404040'},svg)}
+    if(s>=1){for(let k=1;k<3;k++){E('line',{x1:ix+k*p,y1:iy,x2:ix+k*p,y2:iy+Sz,stroke:'#fff','stroke-width':3},svg);E('line',{x1:ix,y1:iy+k*p,x2:ix+Sz,y2:iy+k*p,stroke:'#fff','stroke-width':3},svg)}
+      for(let k=0;k<9;k++){const x=ix+(k%3)*p+11,y=iy+Math.floor(k/3)*p+11;E('circle',{cx:x,cy:y,r:9,fill:'#404040'},svg);T(svg,x,y+4,String(k+1),'w').style.fontSize='12px'}}
+    if(s>=2){T(svg,250,309,'patches, in order','','end');box(svg,cx(0)-24,284,48,46,'[CLS]','#e7e6e6',{cls:''});
+      for(let k=1;k<=9;k++){const q=k-1,nest=E('svg',{x:cx(k)-23,y:284,width:46,height:46,viewBox:(q%3)*p+' '+Math.floor(q/3)*p+' '+p+' '+p},svg);E('use',{href:'#'+id},nest);
+        E('rect',{x:cx(k)-23,y:284,width:46,height:46,fill:'none',stroke:'#404040'},svg);T(svg,cx(k),346,String(k),'lab')}}
+    if(s>=3){T(svg,250,246,'flatten · E','','end');T(svg,250,263,'+ position','','end');for(let k=0;k<=9;k++){arrowPx(svg,cx(k),282,cx(k),260,'ln thin sm','fm');strip(svg,cx(k)-24,240,V[k],6,16,mv)}}
+    if(s>=4){E('rect',{x:256,y:150,width:736,height:70,rx:10,fill:'#eef3fb',stroke:'#4472c4'},svg);T(svg,250,190,'12 encoder blocks','lab','end');T(svg,250,207,'the same as BERT','','end');
+      for(let k=0;k<=9;k++){arrowPx(svg,cx(k),238,cx(k),222,'ln thin sm','fm');arrowPx(svg,cx(k),148,cx(k),130,'ln thin sm','fm');strip(svg,cx(k)-24,110,Y[k],6,16,my)}
+      for(let j=0;j<=9;j++)if(j!==5)arc(svg,cx(5),cx(j),216,1.2+5*w[j]/wm,'#c00000')}
+    if(s>=5){arrowPx(svg,cx(0),108,cx(0),88,'ln thin sk','fk');box(svg,cx(0)-50,62,100,24,'MLP head','#e7e6e6',{cls:''});const t=T(svg,cx(0)+62,80,'→ "cat"','lab big','start');t.style.fill='#c00000'}
+    T(svg,500,368,caps[s],'','middle')})};
+
+/* the first layer of a CNN sees a small window; the first layer of a ViT sees every patch */
+FIG['vit-vs-cnn']=root=>{const svg=initSvg(svgOf(root),560,240);const n=7,cs=24,c0=3,r=rng(8);
+  const W=[...Array(n)].map(()=>[...Array(n)].map(()=>0.08+0.9*Math.pow(r(),3)));
+  [[52,'CNN, layer 1: a 3 × 3 window','local; the same weights everywhere',(i,j)=>Math.abs(i-c0)<=1&&Math.abs(j-c0)<=1?'#f8cbad':'#fff'],
+   [340,'ViT, layer 1: every patch','global; weights computed from the content',(i,j)=>heat(W[i][j],true)]].forEach(([x0,ttl,sub,f])=>{
+    T(svg,x0+n*cs/2,20,ttl,'lab');for(let i=0;i<n;i++)for(let j=0;j<n;j++)E('rect',{x:x0+j*cs,y:34+i*cs,width:cs,height:cs,fill:i===c0&&j===c0?'#404040':f(i,j),stroke:'#bfbfbf'},svg);
+    T(svg,x0+n*cs/2,34+n*cs+24,sub,'')})};
 
 })();

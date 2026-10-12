@@ -39,7 +39,7 @@ The **distributional hypothesis** ("you shall know a word by the company it keep
 **A real example ([Lab 15](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 15 - RAG embeddings and similarity search - extended.ipynb)).** A multilingual sentence encoder maps a question and two pages of a coffee-shop guide to unit vectors of 384 numbers; the figure shows the first 24 of each. The cosine is the sum of the products of their entries: 0.70 for the page that answers the question, 0.29 for an unrelated bakery. No single number means anything; only comparisons do. (Lab 15 works in Spanish; the texts are shown translated.)
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="embed-strip" style="max-height:330px" aria-label="A question and two documents turned into rows of colored numbers by a sentence encoder, with the products of their numbers"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#42">slide 42</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="embed-strip" style="max-height:330px" aria-label="A question and two documents turned into rows of colored numbers by a sentence encoder, with the products of their numbers"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#46">slide 46</a> of the Attention and Transformers deck.</p></div>
 ```
 
 ### 1.1 How do companies build bots with custom data?
@@ -49,11 +49,11 @@ An LLM only knows what was in its training data: up to a cut-off date, and never
 Of the three ways to give an LLM your documents, retraining is expensive and freezes the facts at training time, and pasting everything into the prompt does not scale beyond a few documents. Retrieving the few relevant pieces is what companies mostly do; fine-tuning is used to change how a model behaves (tone, format), not to teach it facts.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="rag-options" style="max-height:340px" aria-label="Three ways to give a language model your documents: retrain it, paste everything in the prompt, or retrieve only the relevant pieces"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#40">slide 40</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="rag-options" style="max-height:340px" aria-label="Three ways to give a language model your documents: retrain it, paste everything in the prompt, or retrieve only the relevant pieces"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#44">slide 44</a> of the Attention and Transformers deck.</p></div>
 ```
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="rag" aria-label="Retrieval-augmented generation: embed documents, store them, retrieve the most similar chunks and give them to the LLM"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#41">slide 41</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="rag" aria-label="Retrieval-augmented generation: embed documents, store them, retrieve the most similar chunks and give them to the LLM"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#45">slide 45</a> of the Attention and Transformers deck.</p></div>
 ```
 
 1. **Index** (offline): split the knowledge base into chunks, embed each chunk, store the vectors (with the text and metadata) in a vector database.
@@ -106,7 +106,7 @@ $$
       <div class="ctl"><label for="sm-th">angle between a and b</label><input type="range" id="sm-th" data-k="th" min="-180" max="180" step="0.01" value="40"><span class="v" data-v="th" style="min-width:80px">40°</span></div>
       <div class="ctl"><label for="sm-r">length of b ÷ length of a</label><input type="range" id="sm-r" data-k="r" min="0.2" max="10" step="0.1" value="1"><span class="v" data-v="r">1.0</span><span class="seg" role="group" aria-label="Vectors"><button type="button" data-m="raw" aria-pressed="true">as they are</button><button type="button" data-m="unit" aria-pressed="false">normalized</button></span></div>
       <div class="ro"><div class="m"><span>a · b</span><b data-r="dot">–</b></div><div class="m"><span>cosine</span><b data-r="cos">–</b></div><div class="m"><span>distance</span><b data-r="eu">–</b></div><div class="m"><span>distance²</span><b data-r="eu2" style="font-size:16px">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#44">slide 44</a> of the Attention and Transformers deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#48">slide 48</a> of the Attention and Transformers deck.</p>
 </div>
 ```
 
@@ -320,7 +320,7 @@ $$
 Gradient descent raises the positive's similarity with strength $1 - \pi_+$ and lowers each negative's with strength $\pi_j$. A negative that already scores low gets almost no push; a **hard negative** (a passage that looks relevant and is not) gets the largest. The temperature sets how sharp $\pi$ is: a small $\tau$ (often around 0.05) concentrates the push on the hardest negatives. In-batch negatives make it cheap: a batch of $B$ pairs gives every question $B - 1$ negatives for free, the other questions' passages.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="contrastive" style="max-height:320px" aria-label="Pairs of related texts scattered before training and pulled together after training"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#43">slide 43</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="contrastive" style="max-height:320px" aria-label="Pairs of related texts scattered before training and pulled together after training"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#47">slide 47</a> of the Attention and Transformers deck.</p></div>
 ```
 
 ```python
@@ -386,7 +386,7 @@ for q in ["tyre pressure", "my automobile has engine trouble"]:
       <label for="es-k">k</label><input type="range" id="es-k" data-k="k" min="1" max="5" step="1" value="3" style="max-width:130px"><span class="v" data-v="k" style="min-width:16px">3</span>
       <span class="small" style="margin-left:auto">right chunk at rank <b data-r="rank">–</b> · in the top k? <b data-r="hit">–</b></span></div>
     <svg class="fig" style="max-height:400px" aria-label="A two-dimensional map of the coffee-shop pages with the question and its nearest pages, and the ranking of all 24 pages by cosine similarity"></svg>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#45">slide 45</a> of the Attention and Transformers deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#49">slide 49</a> of the Attention and Transformers deck.</p>
 </div>
 ```
 
@@ -422,7 +422,7 @@ With 100 lists, probing only the closest list finds 59 % of the true top 10 whil
       <svg class="fig" style="max-height:395px" aria-label="Points grouped in cells around centroids, a question, the scanned cells and the true nearest neighbours found or missed"></svg>
       <div class="ctl"><label for="iv-q">question</label><input type="range" id="iv-q" data-k="qi" min="1" max="4" step="1" value="1" style="max-width:130px"><span class="v" data-v="qi" style="min-width:20px">1</span><label for="iv-n">cells to scan (nprobe)</label><input type="range" id="iv-n" data-k="np" min="1" max="6" step="1" value="1" style="max-width:170px"><span class="v" data-v="np" style="min-width:20px">1</span></div>
       <div class="ro"><div class="m"><span>cells scanned</span><b data-r="cells">–</b></div><div class="m"><span>vectors compared</span><b data-r="scan">–</b></div><div class="m"><span>true 5 nearest found</span><b data-r="found">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#47">slide 47</a> of the Attention and Transformers deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#51">slide 51</a> of the Attention and Transformers deck.</p>
 </div>
 ```
 
@@ -492,7 +492,7 @@ where $\mathrm{IDCG}$ is the DCG of the ideal ordering (the relevance grades sor
       <svg class="fig" style="max-height:290px" aria-label="Four test questions with the rank of their relevant chunk and a cutoff at k"></svg>
       <div class="ctl"><label for="rs-k">k</label><input type="range" id="rs-k" data-k="k" min="1" max="5" step="1" value="3"><span class="v" data-v="k">3</span></div>
       <div class="ro"><div class="m"><span>hit rate@k</span><b data-r="h">–</b></div><div class="m"><span>MRR</span><b data-r="m">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#48">slide 48</a> of the Attention and Transformers deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#52">slide 52</a> of the Attention and Transformers deck.</p>
 </div>
 ```
 
@@ -570,13 +570,13 @@ LSA is also visibly noisy. With 4 dimensions learned from 24 documents, a cookin
 [Lab 15](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 15 - RAG embeddings and similarity search - extended.ipynb) compares four embeddings on its 24 pages and 16 questions (in Spanish): word TF-IDF, character $n$-grams (pieces of 3 to 5 letters), LSA with 12 dimensions, and the neural sentence encoder (384 dimensions).
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="methods" style="max-height:300px" aria-label="Hit rate at 1, 3 and 5 and MRR for four embedding methods on the 16 questions of Lab 15"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#50">slide 50</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="methods" style="max-height:300px" aria-label="Hit rate at 1, 3 and 5 and MRR for four embedding methods on the 16 questions of Lab 15"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#54">slide 54</a> of the Attention and Transformers deck.</p></div>
 ```
 
 Word TF-IDF fails when the question uses other word forms or other words: "perro" against "perros", "bicicleta pinchada" against "taller de reparación"; its similarity is exactly 0 when no word is shared. Character $n$-grams share pieces between word forms and are a strong baseline here. LSA has almost no co-occurrence to learn from in 24 short pages. The neural encoder only **ties** with character $n$-grams at hit@1 (0.81 for both) and is slightly below them in MRR (0.89 against 0.91): the questions share many word pieces with their answers. Its advantage should show on paraphrases that share no letters, and across languages. Sixteen questions are very few: one question moves hit@1 by $1/16\approx0.06$.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="sim-heatmaps" style="max-height:340px" aria-label="Question by document similarity matrices for word TF-IDF and for the neural encoder"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#51">slide 51</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="sim-heatmaps" style="max-height:340px" aria-label="Question by document similarity matrices for word TF-IDF and for the neural encoder"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#55">slide 55</a> of the Attention and Transformers deck.</p></div>
 ```
 
 The similarity matrices show why word TF-IDF struggles: its matrix (left) is mostly white, because most question–page pairs share no word at all. The encoder (right) gives a graded similarity to every pair, and the right pages (red boxes) are usually the darkest cells of their row.
@@ -611,7 +611,7 @@ Reciprocal rank fusion keeps the best of both: the lexical retriever's perfect k
     <div class="ctl"><label>question</label><span class="seg" role="group" aria-label="Question"><button type="button" data-q="13" aria-pressed="true">waffles with chocolate</button><button type="button" data-q="5" aria-pressed="false">coffee tastings</button><button type="button" data-q="3" aria-pressed="false">take my dog</button></span>
       <span class="small" style="margin-left:auto">rank of the right page: keywords <b data-r="rw">–</b> · meaning <b data-r="rn">–</b> · fused <b data-r="rf">–</b></span></div>
     <svg class="fig" style="max-height:286px" aria-label="Top five pages by word TF-IDF, by the neural encoder, and after reciprocal rank fusion, for one Lab 15 question"></svg>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#52">slide 52</a> of the Attention and Transformers deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#56">slide 56</a> of the Attention and Transformers deck.</p>
 </div>
 ```
 
@@ -639,7 +639,7 @@ Documents are split into **chunks** (a few hundred tokens, with some overlap) be
     <div class="ctl"><label for="ck-s">chunk size (words)</label><input type="range" id="ck-s" data-k="size" min="10" max="80" step="5" value="40" style="max-width:200px"><span class="v" data-v="size" style="min-width:30px">40</span><label for="ck-o">overlap</label><input type="range" id="ck-o" data-k="ov" min="0" max="40" step="5" value="10" style="max-width:200px"><span class="v" data-v="ov" style="min-width:30px">10</span>
       <span class="seg" role="group" aria-label="Question"><button type="button" data-a="hours" aria-pressed="true">when does Grano Norte open?</button><button type="button" data-a="tasting" aria-pressed="false">how much are the tastings?</button></span></div>
     <div class="ro"><div class="m"><span>chunks</span><b data-r="n">–</b></div><div class="m"><span>new words per chunk</span><b data-r="step">–</b></div><div class="m"><span>answer inside one chunk?</span><b data-r="in">–</b></div></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#46">slide 46</a> of the Attention and Transformers deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#50">slide 50</a> of the Attention and Transformers deck.</p>
 </div>
 ```
 

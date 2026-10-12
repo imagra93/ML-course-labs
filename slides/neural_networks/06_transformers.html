@@ -24,7 +24,7 @@
   <h2>Where we are</h2>
   <div class="cards c4">
     <div class="card"><h3>A · Attention</h3><ul><li>why RNNs need help</li><li>a soft dictionary lookup, with numbers</li><li>queries, keys and values</li><li>$\sqrt{d_k}$, multi-head, positions, the mask</li></ul></div>
-    <div class="card o"><h3>B · The transformer</h3><ul><li>one block: attention + MLP</li><li>encoder, decoder, cross-attention</li><li>BERT vs GPT</li></ul></div>
+    <div class="card o"><h3>B · The transformer</h3><ul><li>one block: attention + MLP</li><li>encoder, decoder, cross-attention</li><li>BERT encodes, GPT generates</li><li>ViT: an image as a sequence of patches</li></ul></div>
     <div class="card g"><h3>C · GPT: generating text</h3><ul><li>tokens, the next-token objective</li><li>GPT-2 end to end: 124 M parameters</li><li>decoding, KV cache, perplexity</li><li><b>Lab 14</b></li></ul></div>
     <div class="card y"><h3>D · RAG: your documents</h3><ul><li>embeddings and similarity</li><li>search, chunking, search at scale</li><li>measuring and improving retrieval</li><li><b>Lab 15</b></li></ul></div>
   </div>
@@ -143,18 +143,19 @@
 </section>
 
 <section class="slide">
-  <h2>Self-attention: all tokens at once</h2>
-  <svg class="fig" data-fig="qkv" style="max-height:200px" aria-label="X projected into Q, K and V; QK transpose gives an n by n score matrix; softmax gives A; A times V gives Z"></svg>
+  <h2>Self-attention in matrices: the whole sentence at once</h2>
+  <div class="widget" data-fig="qkv" data-auto="s=1 | s=2 | s=3 | s=4 | s=5">
+    <svg class="fig" style="max-height:326px" aria-label="The three tokens I, love, pizza as a matrix X; Q, K transposed and V; the score matrix QK transpose over root 2; its row-wise softmax A; Z equals A times V; and the weights drawn as lines between tokens"></svg>
+    <div class="ctl"><label for="qk-s">step</label><input type="range" id="qk-s" data-k="s" min="0" max="5" step="1" value="0"><span class="v" data-v="s"></span></div>
+  </div>
   <div class="cols">
-    <div class="stack" style="gap:6px">
-      <div class="step"><p class="small"><b>1 · Score.</b> How much token $i$ should look at token $j$:</p><div class="eq s">$$\text{score}(i,j)=\frac{\bq_i\cdot\bk_j}{\sqrt{d_k}}$$</div></div>
-      <div class="step"><p class="small"><b>2 · Normalise.</b> A softmax over $j$ turns each row of scores into weights that sum to 1:</p><div class="eq s">$$\alpha_{ij}=\frac{e^{\,\text{score}(i,j)}}{\sum_{l=1}^ne^{\,\text{score}(i,l)}}$$</div></div>
-      <div class="step"><p class="small"><b>3 · Mix.</b> The new vector of token $i$ is a weighted average of the values: $\ \bz_i=\sum_{j=1}^n\alpha_{ij}\,\bv_j$.</p></div>
+    <div class="stack" style="gap:4px">
+      <p class="small">Slide 8 did the row of "pizza". Stacking the tokens as the rows of $\bX$ ($n\times d$) does <b>every row at once</b>, with three entries to read:</p>
+      <div class="eq s">$$S_{ij}=\frac{\bq_i\cdot\bk_j}{\sqrt{d_k}},\qquad A_{ij}=\frac{e^{S_{ij}}}{\sum_{l}e^{S_{il}}},\qquad \bz_i=\sum_{j}A_{ij}\,\bv_j$$</div>
     </div>
-    <div class="stack" style="gap:8px">
-      <p class="small step">Stack the tokens as the rows of $\bX$ ($n\times d$): $\bQ=\bX\bW_Q$, $\bK=\bX\bW_K$, $\bV=\bX\bW_V$. Entry $(i,j)$ of $\bQ\bK^\top$ is $\bq_i\cdot\bk_j$, so the three steps become one line:</p>
-      <div class="bluebox step">$$\mathrm{Attention}(\bQ,\bK,\bV)=\mathrm{softmax}\Big(\frac{\bQ\bK^\top}{\sqrt{d_k}}\Big)\bV$$</div>
-      <p class="small step">Example: $n=10$ tokens, $d=512$, $d_k=64$. $\bQ,\bK,\bV$ are $10\times64$, the scores $10\times10$, the output again $10\times64$. Cost $O(n^2d)$: twice the context, four times the work.</p>
+    <div class="stack" style="gap:4px">
+      <div class="bluebox" style="font-size:21px;padding:6px 16px">$$\mathrm{Attention}(\bQ,\bK,\bV)=\mathrm{softmax}\Big(\frac{\bQ\bK^\top}{\sqrt{d_k}}\Big)\bV$$</div>
+      <p class="small">Real sizes: $n=10$ tokens, $d=512$, $d_k=64$: $\bQ,\bK,\bV$ are $10\times64$, the scores $10\times10$. Cost $O(n^2d)$: twice the context, four times the work.</p>
     </div>
   </div>
 </section>
@@ -207,23 +208,35 @@
 
 <section class="slide">
   <h2>Multi-head attention: several attentions in parallel</h2>
-  <svg class="fig" data-fig="mha-split" style="max-height:300px" aria-label="Q, K and V cut into 12 slices; each slice feeds its own attention head; the heads are concatenated and mixed by W_O"></svg>
+  <div class="widget" data-fig="mha-lanes" data-auto="s=1 | s=2 | s=3 | s=4">
+    <svg class="fig" style="max-height:372px" aria-label="A sentence matrix X feeds three heads; each head has its own Q, K and V, its own attention pattern (previous word, subject and verb, article to noun) and its own output; the outputs are concatenated and multiplied by W_O"></svg>
+    <div class="ctl"><label for="mh-s">step</label><input type="range" id="mh-s" data-k="s" min="0" max="4" step="1" value="0"><span class="v" data-v="s"></span></div>
+  </div>
   <div class="cols">
-    <div class="stack" style="gap:6px">
-      <p class="small">One head gives one weighted average per token: it cannot look at the previous word <b>and</b> at the subject at the same time. So we run $h$ heads, each with its own projections:</p>
-      <div class="eq s">$$\mathrm{head}_i=\mathrm{Attention}\big(\bX\bW_Q^{(i)},\bX\bW_K^{(i)},\bX\bW_V^{(i)}\big)$$</div>
-    </div>
-    <div class="stack" style="gap:6px">
-      <div class="bluebox">$$\mathrm{MultiHead}(\bX)=\mathrm{Concat}(\mathrm{head}_1,\dots,\mathrm{head}_h)\,\bW_O$$</div>
-      <p class="small">GPT-2 small: $d=768$, $h=12$ heads of $d_k=64$. Twelve heads of 64 have the same parameters and cost as one head of 768: the slices only split the work. $\bW_O$ mixes what the heads found.</p>
+    <p class="small">One head gives each token <b>one</b> weighted average: it cannot look at the previous word <b>and</b> at the subject at once. So $h$ small heads run side by side, each with its own $\bW_Q^{(i)},\bW_K^{(i)},\bW_V^{(i)}$ ($d\times d_k$, $d_k=d/h$), its own pattern and its own output. Heads like these are found in trained models (here drawn by hand).</p>
+    <div class="stack" style="gap:2px">
+      <div class="eq s">$$\mathrm{head}_i=\mathrm{softmax}\Big(\frac{\bQ_i\bK_i^\top}{\sqrt{d_k}}\Big)\bV_i,\qquad \bQ_i=\bX\bW_Q^{(i)}$$</div>
+      <div class="bluebox" style="font-size:21px;padding:6px 16px">$$\mathrm{MultiHead}(\bX)=\big[\,\mathrm{head}_1\,|\,\mathrm{head}_2\,|\,\cdots\,|\,\mathrm{head}_h\,\big]\,\bW_O$$</div>
     </div>
   </div>
 </section>
 
 <section class="slide">
-  <h2>Different heads, different jobs</h2>
-  <svg class="fig" data-fig="heads" style="max-height:310px" aria-label="Four attention matrices: previous token, same word, pronoun to noun, and a broad average"></svg>
-  <p class="small">With several heads, each builds its own pattern, and $\bW_O$ mixes their results. Researchers find heads like these (previous-token, coreference, "induction" heads that copy patterns) in trained language models.</p>
+  <h2>Multi-head in practice: one big matrix, cut into heads</h2>
+  <svg class="fig" data-fig="mha-split" style="max-height:290px" aria-label="X times W_Q gives Q, which is cut into 12 slices of 64 columns; each slice computes its own attention matrix and output; the outputs are concatenated and multiplied by W_O"></svg>
+  <div class="cols">
+    <div class="stack" style="gap:8px">
+      <p class="small">Nobody builds $h$ small matrices. One $768\times768$ matrix $\bW_Q$ computes all the queries at once, and its 768 columns are cut into 12 slices of 64: slice $i$ is $\bQ_i$ (the same for $\bK$ and $\bV$). In code the cut is a reshape:</p>
+      <pre class="code s">Q = (X @ Wq).view(n, 12, 64).transpose(0, 1)   <span class="c"># [12, n, 64]</span>
+A = (Q @ K.transpose(-2, -1) / 8).softmax(-1)  <span class="c"># [12, n, n]</span>
+Z = (A @ V).transpose(0, 1).reshape(n, 768) @ Wo  <span class="c"># [n, 768]</span></pre>
+    </div>
+    <div class="stack" style="gap:8px">
+      <p class="small step"><b>Parameters.</b> $\bW_Q,\bW_K,\bW_V,\bW_O$ are $d\times d$ whatever $h$ is: $4d^2=4\cdot768^2\approx2.36$ M per block.</p>
+      <p class="small step"><b>Cost.</b> The scores cost $h\cdot n^2\cdot d_k=n^2d$: twelve heads of 64 cost what one head of 768 costs. Multi-head is free; it only splits the work.</p>
+      <p class="small step"><b>Scale.</b> Each head lives in $d_k=64$ dimensions, so it divides by $\sqrt{64}=8$ (slide 13), not by $\sqrt{768}$.</p>
+    </div>
+  </div>
 </section>
 
 <section class="slide">
@@ -236,9 +249,9 @@
     </div>
     <div class="stack" style="gap:12px;padding-top:10px">
       <p>Attention compares every token with every token, but <b>nothing in the formula says which word came first</b>.</p>
-      <p class="small step">Shuffle the input words and the outputs are shuffled the same way, nothing else changes. "dog bites man" and "man bites dog" give each word the <b>same</b> vector. Attention is <b>permutation-equivariant</b> (a three-line proof in the notes).</p>
-      <p class="small step">An RNN got the order for free: it reads one word after another. A transformer reads all the words at once, so we must <b>tell</b> it where each word is.</p>
-      <p class="small step why">The fix, on the next slide: add to each word a vector that encodes its position.</p>
+      <p class="small step">Shuffle the input words and the outputs are shuffled the same way, nothing else changes. "dog bites man" and "man bites dog" give each word the <b>same</b> vector. Attention is <b>permutation-equivariant</b>. With $\bP$ a permutation matrix (it reorders the rows; $\bP^\top\bP=\bI$) and $\mathbf S=\bQ\bK^\top/\sqrt{d_k}$:</p>
+      <div class="eq xs step">$$\mathrm{Attn}(\bP\bX)=\mathrm{softmax}(\bP\mathbf S\bP^\top)\,\bP\bV$$$$=\bP\,\mathrm{softmax}(\mathbf S)\,\bP^\top\bP\,\bV=\bP\,\mathrm{Attn}(\bX)$$</div>
+      <p class="small step">An RNN got the order for free: it reads one word after another. A transformer reads all the words at once, so we must <b>tell</b> it where each word is: next slide.</p>
     </div>
   </div>
 </section>
@@ -306,7 +319,7 @@ Z = self_attention(X, Wq, Wk, Wv, causal=True)   <span class="c"># [10, 64]</spa
   </table>
 </section>
 
-<section class="slide divider"><div class="card coral"><h1><b>Part B</b><br>The transformer</h1><ul class="small" style="color:#fff"><li>one block: communicate, then think</li><li>the original encoder–decoder</li><li>cross-attention</li><li>BERT vs GPT</li></ul></div></section>
+<section class="slide divider"><div class="card coral"><h1><b>Part B</b><br>The transformer</h1><ul class="small" style="color:#fff"><li>one block: communicate, then think</li><li>the original encoder–decoder</li><li>BERT encodes, GPT generates</li><li>ViT: images as patches</li></ul></div></section>
 
 <section class="slide">
   <h2>One transformer block: communicate, then think</h2>
@@ -328,7 +341,7 @@ Z = self_attention(X, Wq, Wk, Wv, causal=True)   <span class="c"># [10, 64]</spa
   <div class="cols c64">
     <svg class="fig" data-fig="block" aria-label="The transformer: an encoder stack and a decoder stack with masked attention and cross attention"></svg>
     <div class="stack" style="gap:10px">
-      <p class="small">Built for translation (2017). The <b>encoder</b> reads the whole source sentence; the <b>decoder</b> writes the translation one token at a time.</p>
+      <p class="small">Built for translation (2017). The <b>encoder</b> reads the whole source sentence ("the black cat") once; the <b>decoder</b> writes the translation one token at a time ("el gato negro"), reading what it wrote so far.</p>
       <ul class="small">
         <li><b>Encoder</b> blocks: full self-attention, every word sees every word.</li>
         <li><b>Decoder</b> blocks: masked self-attention (only the past), then <b>cross-attention</b>.</li>
@@ -341,16 +354,82 @@ Z = self_attention(X, Wq, Wk, Wv, causal=True)   <span class="c"># [10, 64]</spa
 </section>
 
 <section class="slide">
+  <h2>BERT: an encoder turns every token into a vector in context</h2>
+  <div class="widget" data-fig="bert-flow" data-auto="s=1 | s=2 | s=3 | s=4 | s=5">
+    <svg class="fig" style="max-height:336px" aria-label="BERT: tokens with CLS, MASK and SEP become input vectors, pass through 12 encoder blocks where the MASK token attends to both sides, come out as vectors in context; the MASK vector predicts sat, the CLS vector feeds a classifier"></svg>
+    <div class="ctl"><label for="bf-s">step</label><input type="range" id="bf-s" data-k="s" min="0" max="5" step="1" value="0"><span class="v" data-v="s"></span></div>
+  </div>
+  <div class="cols">
+    <div class="stack" style="gap:4px">
+      <p class="small"><b>Pre-training</b> (masked language model, 2018): hide 15 % of the tokens of any text and predict them from <b>both sides</b>. No labels needed:</p>
+      <div class="eq s">$$J=-\frac{1}{|M|}\sum_{i\in M}\log P\big(x_i\mid\text{all the tokens not in }M\big)$$</div>
+    </div>
+    <p class="small"><b>What we keep is the vectors.</b> The same word gets a different vector in each sentence: the "bank" of "river bank" and of "money in the bank" have cosine 0.49, two money banks 0.79 (bert-base-uncased). BERT-base: 12 blocks, $d=768$, 12 heads, 110 M parameters. Lab 15's sentence encoder is a small BERT (12 blocks, $d=384$).</p>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>GPT: a decoder generates text, one token at a time</h2>
+  <div class="widget" data-fig="gpt-flow" data-auto="s=1 | s=2 | s=3 | s=4 | s=5">
+    <svg class="fig" style="max-height:336px" aria-label="GPT-2: the prompt The cat sat on the becomes vectors, passes through 12 causal decoder blocks, and the last vector gives next-token probabilities; floor, a comma and and are appended one at a time"></svg>
+    <div class="ctl"><label for="gf-s">step</label><input type="range" id="gf-s" data-k="s" min="0" max="5" step="1" value="0"><span class="v" data-v="s"></span></div>
+  </div>
+  <div class="cols">
+    <div class="stack" style="gap:4px">
+      <p class="small"><b>Pre-training</b>: predict the next token of any text, from the left only (Part C):</p>
+      <div class="eq s">$$J=-\frac1T\sum_{t=1}^T\log P(x_t\mid x_1,\dots,x_{t-1})$$</div>
+    </div>
+    <p class="small"><b>Decoding.</b> Only the last vector is used: $\bh_T\bE^\top$ gives 50,257 scores, a softmax turns them into probabilities, one token is chosen and appended. The causal mask means old vectors never change, so each new step only computes the new token. Greedy GPT-2 small: "The cat sat on the floor, and the cat was…". Same blocks as BERT: only the mask and the objective differ.</p>
+  </div>
+</section>
+
+<section class="slide">
   <h2>Encoders and decoders: BERT vs GPT</h2>
+  <svg class="fig" data-fig="bert-gpt" style="max-height:232px" aria-label="Attention masks on the words the cat sat on the mat: full for BERT, lower-triangular for GPT"></svg>
+  <table class="t xs">
+    <tr><th></th><th>Encoder only</th><th>Decoder only</th><th>Encoder–decoder</th></tr>
+    <tr><td>attention</td><td>bidirectional</td><td>causal</td><td>both + cross</td></tr>
+    <tr><td>trained to</td><td>fill in hidden words (a different "mask" from the causal one)</td><td>predict the next token</td><td>map input → output</td></tr>
+    <tr><td>used for</td><td>classification, embeddings, search</td><td>chatbots, code, text generation</td><td>translation, summarization, speech</td></tr>
+    <tr><td>examples</td><td>BERT, RoBERTa, sentence encoders, ViT</td><td>GPT, Llama, Claude</td><td>original transformer, T5, Whisper</td></tr>
+  </table>
+  <p class="small why">The same guess, seen from two sides. BERT on "the cat sat on the [MASK].": floor 0.31, bed 0.12, couch 0.11. GPT-2 on "The cat sat on the": floor 0.076, bed 0.065, couch 0.054. BERT is surer because it also sees the full stop after the blank; GPT-2 cannot know that the sentence ends there.</p>
+</section>
+
+<section class="slide">
+  <h2>Vision transformer (ViT): an image is a sequence of patches</h2>
+  <div class="widget" data-fig="vit" data-auto="s=1 | s=2 | s=3 | s=4 | s=5">
+    <svg class="fig" style="max-height:340px" aria-label="An image of a cat cut into 3 by 3 patches; the patches laid out in a row after a CLS token, turned into vectors, passed through the encoder blocks, and the CLS output classified as cat"></svg>
+    <div class="ctl"><label for="vt-s">step</label><input type="range" id="vt-s" data-k="s" min="0" max="5" step="1" value="0"><span class="v" data-v="s"></span></div>
+  </div>
+  <div class="cols">
+    <p class="small">"An image is worth 16×16 words" (Dosovitskiy et al., 2020). Cut the image into patches, flatten each one and multiply it by one learned matrix: every patch becomes a vector, exactly like a word. Add a position vector to each (otherwise the order of the patches is lost, slide 16) and a learned [CLS] vector in front.</p>
+    <p class="small">From there on it <b>is BERT</b>: the same encoder blocks, bidirectional attention, and the [CLS] output feeds a classifier. Text: token → a row of the embedding matrix. Image: patch → a linear projection. That is the only new piece.</p>
+  </div>
+</section>
+
+<section class="slide">
+  <h2>ViT in numbers, and how it differs from a CNN</h2>
   <div class="cols c46">
-    <svg class="fig" data-fig="bert-gpt" aria-label="A full attention mask for BERT and a lower-triangular causal mask for GPT"></svg>
-    <table class="t xs">
-      <tr><th></th><th>Encoder only</th><th>Decoder only</th><th>Encoder–decoder</th></tr>
-      <tr><td>attention</td><td>bidirectional</td><td>causal</td><td>both + cross</td></tr>
-      <tr><td>trained to</td><td>fill in hidden words (a different "mask" from the causal one)</td><td>predict the next token</td><td>map input → output</td></tr>
-      <tr><td>used for</td><td>classification, embeddings, search</td><td>chatbots, code, text generation</td><td>translation, summarization, speech</td></tr>
-      <tr><td>examples</td><td>BERT, RoBERTa, sentence encoders</td><td>GPT, Llama, Claude</td><td>original transformer, T5, Whisper</td></tr>
-    </table>
+    <div class="stack" style="gap:8px">
+      <p class="small">An image $H\times W$ with $C$ channels, cut into $P\times P$ patches:</p>
+      <div class="eq s">$$N=\frac{HW}{P^2}\ \text{patches},\qquad \bx_i\in\mathbb R^{P^2C},\qquad \bE\in\mathbb R^{P^2C\times d}$$$$\bz_0=\big[\,\bx_{\text{cls}};\ \bx_1\bE;\ \dots;\ \bx_N\bE\,\big]+\bE_{\text{pos}}$$</div>
+      <p class="small">ViT-B/16: $224\times224\times3$ images and $P=16$ give $N=14\times14=196$ patches of $16\cdot16\cdot3=768$ numbers; with [CLS], 197 tokens.</p>
+      <p class="small step"><b>A patch embedding is a convolution</b> (chapter 4) with a $16\times16$ kernel and stride 16: <code>nn.Conv2d(3, 768, 16, stride=16)</code> maps $[B,3,224,224]\to[B,768,14,14]$; flatten to $[B,196,768]$.</p>
+      <table class="t xs tight step">
+        <tr><th></th><th>BERT-base</th><th>ViT-B/16</th><th>GPT-2 small</th></tr>
+        <tr><td>a token is</td><td>a word piece</td><td>a 16×16 patch</td><td>a BPE piece</td></tr>
+        <tr><td>to a vector</td><td>lookup in $\bE$</td><td>patch $\cdot\,\bE$</td><td>lookup in $\bE$</td></tr>
+        <tr><td>blocks · $d$ · heads</td><td>12 · 768 · 12</td><td>12 · 768 · 12</td><td>12 · 768 · 12</td></tr>
+        <tr><td>attention</td><td>both sides</td><td>both sides</td><td>causal</td></tr>
+        <tr><td>parameters</td><td>110 M</td><td>86 M</td><td>124 M</td></tr>
+      </table>
+    </div>
+    <div class="stack" style="gap:8px">
+      <svg class="fig" data-fig="vit-vs-cnn" style="max-height:230px" aria-label="A CNN's first layer sees a 3 by 3 window around a pixel; a ViT's first layer sees every patch with weights that depend on the content"></svg>
+      <p class="small step"><b>Built-in assumptions.</b> A CNN assumes that nearby pixels matter most (small kernels) and that a pattern means the same everywhere (shared weights). ViT assumes neither: attention links any two patches from the first layer, and it must <b>learn</b> what is near from the data.</p>
+      <p class="small step"><b>So it needs more data.</b> Trained on ImageNet alone (1.3 M images), ViT is a few points below a ResNet of the same size; pre-trained on 14 M or 300 M images, it is better. Strong augmentation (DeiT, 2021) closes most of the gap with ImageNet alone.</p>
+    </div>
   </div>
 </section>
 
@@ -542,7 +621,7 @@ Z = self_attention(X, Wq, Wk, Wv, causal=True)   <span class="c"># [10, 64]</spa
   <div class="cols">
     <div class="stack" style="gap:10px">
       <p class="small">The <b>Hugging Face Hub</b> hosts thousands of pre-trained models, downloaded by name. The <code>transformers</code> library loads any of them with <code>from_pretrained(name)</code>, as <b>two objects</b>:</p>
-      <div class="card y"><h3>tokenizer: text ⇄ token ids</h3><p>The sub-word tokens of slide 26, with the model's own vocabulary: <code>tok.encode(text)</code> gives ids, <code>tok.decode(ids)</code> gives text back.</p></div>
+      <div class="card y"><h3>tokenizer: text ⇄ token ids</h3><p>The sub-word tokens of slide 30, with the model's own vocabulary: <code>tok.encode(text)</code> gives ids, <code>tok.decode(ids)</code> gives text back.</p></div>
       <div class="card step"><h3>model: token ids → numbers</h3><p>An <code>nn.Module</code> like ours: <code>.to(device)</code>, <code>.eval()</code> and <code>torch.no_grad()</code> work as usual.</p><ul><li><code>AutoModelForCausalLM</code>: next-token logits $[B,T,|V|]$ (GPT-2, Lab 14).</li><li><code>AutoModel</code>: hidden states $[B,T,d]$, one vector per token (embeddings, Lab 15).</li></ul></div>
     </div>
     <div class="stack step" style="gap:8px">
@@ -809,7 +888,8 @@ print(tok.decode(out[0]))   <span class="c"># decoding, done for you</span></pre
       <li>order must be added (positions); the causal mask hides the future</li></ul></div>
     <div class="card o"><h3>B · The transformer</h3><ul>
       <li>block = attention (communicate) + MLP (think), with residuals and LayerNorm</li>
-      <li>encoder (BERT: both sides) · decoder (GPT: causal) · cross-attention links them</li>
+      <li>encoder (BERT: both sides, fills in [MASK]) · decoder (GPT: causal, generates) · cross-attention links them</li>
+      <li>ViT: image patches · $\bE$ are the tokens; the rest is BERT</li>
       <li>one step between any two tokens, parallel training; the price is $n^2$</li></ul></div>
     <div class="card g"><h3>C · GPT</h3><ul>
       <li>BPE tokens; learn $P(x_t\mid x_{\lt t})$ with cross-entropy</li>
@@ -835,6 +915,8 @@ print(tok.decode(out[0]))   <span class="c"># decoding, done for you</span></pre
       <dt>positional encoding</dt><dd>added to the embeddings, since attention ignores order.</dd>
       <dt>causal mask</dt><dd>$-\infty$ above the diagonal: no peeking at the future.</dd>
       <dt>transformer block</dt><dd>attention + MLP, each with a residual and LayerNorm.</dd>
+      <dt>[CLS], [MASK]</dt><dd>BERT's summary token, and a hidden word to predict.</dd>
+      <dt>ViT, patch embedding</dt><dd>an image cut into patches, each projected to a token vector.</dd>
       <dt>BPE token</dt><dd>a sub-word unit from repeated merges of frequent pairs.</dd>
       <dt>temperature, top-k, top-p</dt><dd>how the next token is sampled from the probabilities.</dd>
       <dt>KV cache</dt><dd>keys and values of past tokens kept in memory during generation.</dd>
@@ -865,7 +947,7 @@ print(tok.decode(out[0]))   <span class="c"># decoding, done for you</span></pre
 <script src="assets/nn-core.js?v=20260930"></script>
 <script src="assets/fig-nn-rnn.js?v=20261012b"></script>
 <script src="assets/rag-data.js?v=20261005"></script>
-<script src="assets/fig-nn-transformer.js?v=20261006"></script>
+<script src="assets/fig-nn-transformer.js?v=20261012"></script>
 <script src="assets/fig-nn-rag.js?v=20261012"></script>
 <script src="../assets/deck.js?v=20260930"></script>
 </body>

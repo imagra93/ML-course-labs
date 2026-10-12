@@ -536,9 +536,9 @@ d_k=512 scaled: std of scores   1.00   mean max attention weight 0.25</code></pr
 <p><strong>The cost is about the same as one big head.</strong> The projections of all heads together are <span class="math inline">\(h\)</span> matrices of size <span class="math inline">\(d\times d/h\)</span>, i.e.&nbsp;the same <span class="math inline">\(d\times d\)</span> parameters as one full-width head; the score products cost <span class="math inline">\(h\cdot n^2\cdot d_k = n^2d\)</span>, the same as one head of size <span class="math inline">\(d\)</span>. In code, all heads are computed at once by reshaping <span class="math inline">\([n, d]\)</span> to <span class="math inline">\([h, n, d_k]\)</span>.</p>
 <div class="widget"><svg class="fig" data-fig="mha" aria-label="Multi-head attention: linear projections of Q, K, V, parallel attention heads, concatenation and a final linear layer"></svg><p class="from">The classic diagram of Vaswani et al. (2017). The deck draws the same computation as slices (next figure).</p></div>
 <p>The same computation drawn as slices: one projection <span class="math inline">\(\mathbf{X}\mathbf{W}_Q\)</span> with <span class="math inline">\(\mathbf{W}_Q\in\mathbb{R}^{768\times768}\)</span> is cut into 12 slices of 64 columns (likewise for <span class="math inline">\(\mathbf{K}\)</span> and <span class="math inline">\(\mathbf{V}\)</span>), slice <span class="math inline">\(k\)</span> feeds head <span class="math inline">\(k\)</span>, and the concatenation puts each head’s output back in its slice before <span class="math inline">\(\mathbf{W}_O\)</span> mixes them.</p>
-<div class="widget"><svg class="fig" data-fig="mha-split" style="max-height:300px" aria-label="Q, K and V cut into 12 slices; each slice feeds its own attention head; the heads are concatenated and mixed by W_O"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#14">slide 14</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="mha-split" style="max-height:300px" aria-label="Q, K and V cut into 12 slices; each slice feeds its own attention head; the heads are concatenated and mixed by W_O"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#15">slide 15</a> of the Attention and Transformers deck.</p></div>
 <p>Researchers find heads like these in trained language models: previous-token heads, heads that attend to the same word, coreference heads (“it” → noun), broad averaging heads, and “induction” heads that copy patterns seen earlier in the context. Section 12 shows the heads of our tiny GPT.</p>
-<div class="widget"><svg class="fig" data-fig="heads" style="max-height:310px" aria-label="Four attention matrices: previous token, same word, pronoun to noun, and a broad average"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#15">slide 15</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="heads" style="max-height:310px" aria-label="Four attention matrices: previous token, same word, pronoun to noun, and a broad average"></svg><p class="from">The deck draws patterns like these head by head, inside the multi-head computation, in <a href="../../slides/neural_networks/06_transformers.html#14">slide 14</a> of the Attention and Transformers deck.</p></div>
 </section>
 <section id="positional-encodings" class="level2">
 <h2 class="anchored" data-anchor-id="positional-encodings">6. Positional encodings</h2>
@@ -797,7 +797,7 @@ RoPE scores for (m, n) = (2, 5), (10, 13), (40, 43): [-0.0352, -0.0352, -0.0352]
 <div class="widget" data-fig="kv-cache" data-auto="s=2 :: after 2 tokens: 1 + 2 = 3 computations of K and V without a cache, 2 with it|s=3 :: after 3 tokens: 6 without, 3 with|s=4 :: after 4 tokens: 10 without, 4 with|s=5 :: after 5 tokens: 15 without, 5 with: the gap keeps growing">
     <svg class="fig" style="max-height:292px" aria-label="Keys and values recomputed at every step without a cache, and computed once with a cache"></svg>
     <div class="ctl"><label for="kv-s">tokens so far</label><input type="range" id="kv-s" data-k="s" min="1" max="5" step="1" value="1"><span class="v" data-v="s"></span></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#34">slide 34</a> of the Attention and Transformers deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#38">slide 38</a> of the Attention and Transformers deck.</p>
 </div>
 </section>
 </section>
@@ -838,7 +838,7 @@ RoPE scores for (m, n) = (2, 5), (10, 13), (40, 43): [-0.0352, -0.0352, -0.0352]
 </section>
 <section id="encoders-and-decoders-bert-vs-gpt" class="level3">
 <h3 class="anchored" data-anchor-id="encoders-and-decoders-bert-vs-gpt">9.3 Encoders and decoders: BERT vs GPT</h3>
-<div class="widget"><svg class="fig" data-fig="bert-gpt" aria-label="A full attention mask for BERT and a lower-triangular causal mask for GPT"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#24">slide 24</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="bert-gpt" aria-label="A full attention mask for BERT and a lower-triangular causal mask for GPT"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#26">slide 26</a> of the Attention and Transformers deck.</p></div>
 <table class="caption-top table">
 <thead>
 <tr class="header">
@@ -940,7 +940,7 @@ J(\mathbf{w}) = -\frac{1}{T}\sum_{t=1}^{T}\log P_{\mathbf{w}}(x_t\mid x_{&lt;t})
 </tbody>
 </table>
 <p>By the chain rule the probability of the continuation is the product, <span class="math inline">\(0.0116\times0.0658\times0.0158\times0.725\times0.0413\times0.179\approx6.4\times10^{-8}\)</span> (with the unrounded probabilities). The log turns the product into a sum, <span class="math inline">\(-\ln P = 4.46 + 2.72 + 4.15 + 0.32 + 3.19 + 1.72 = 16.56\)</span>, and the average over the 6 predictions is the loss on this sentence, <span class="math inline">\(J = 16.56/6 = 2.76\)</span> nats per token. It returns in section 14: <span class="math inline">\(e^{2.76} = 15.8\)</span> is the perplexity of this sentence in Lab 14’s table. After “capital of”, GPT-2’s most likely next token was ” the” (0.26); “France” (0.041) came third.</p>
-<div class="widget"><svg class="fig" data-fig="lm-train" style="max-height:190px" aria-label="Input tokens and the same tokens shifted by one as targets"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#27">slide 27</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="lm-train" style="max-height:190px" aria-label="Input tokens and the same tokens shifted by one as targets"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#31">slide 31</a> of the Attention and Transformers deck.</p></div>
 </section>
 <section id="tokenisation-byte-pair-encoding" class="level3">
 <h3 class="anchored" data-anchor-id="tokenisation-byte-pair-encoding">10.2 Tokenisation: byte-pair encoding</h3>
@@ -955,7 +955,7 @@ J(\mathbf{w}) = -\frac{1}{T}\sum_{t=1}^{T}\log P_{\mathbf{w}}(x_t\mid x_{&lt;t})
 <div class="widget" data-fig="bpe" data-auto="s=1 | s=2 | s=3 | s=4">
   <svg class="fig" aria-label="Byte-pair encoding merging characters into sub-words over four merges"></svg>
   <div class="ctl"><label for="bp-s">merges</label><input type="range" id="bp-s" data-k="s" min="0" max="4" step="1" value="0"><span class="v" data-v="s"></span></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#26">slide 26</a> of the Attention and Transformers deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#30">slide 30</a> of the Attention and Transformers deck.</p>
 </div>
 <div id="b151e3d1" class="cell" data-execution_count="11">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> collections <span class="im">import</span> Counter</span>
@@ -1024,7 +1024,7 @@ a second corpus, with an end-of-word marker '_'
 \]</span></p>
 <p>Modern LLMs follow the same recipe with <span class="math inline">\(N\approx80\)</span> and <span class="math inline">\(d\approx8{,}000\)</span>: <span class="math inline">\(12\cdot80\cdot8000^2\approx61\)</span> billion parameters in the blocks alone.</p>
 <p><strong>GPT-2 end to end, with its real shapes.</strong> For the prompt “The cat sat on the” (5 tokens, ids 464, 3797, 3332, 319, 262), the embedding lookup plus the position embeddings give a <span class="math inline">\(5\times768\)</span> matrix; each of the 12 blocks maps <span class="math inline">\(5\times768\)</span> to <span class="math inline">\(5\times768\)</span>; the final LayerNorm and the product with <span class="math inline">\(\mathbf{E}^\top\)</span> give <span class="math inline">\(5\times50{,}257\)</span> logits. Only the softmax of the last row is needed to continue the text: floor 7.6 %, bed 6.5 %, couch 5.4 %, ground 5.2 %, edge 4.8 %. During training every row is used, each predicting its own next token.</p>
-<div class="widget"><svg class="fig" data-fig="gpt-shapes" style="max-height:370px" aria-label="Text, token ids, embedding matrix, twelve blocks, logits and next-token probabilities with their shapes"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#29">slide 29</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="gpt-shapes" style="max-height:370px" aria-label="Text, token ids, embedding matrix, twelve blocks, logits and next-token probabilities with their shapes"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#33">slide 33</a> of the Attention and Transformers deck.</p></div>
 </section>
 <section id="a-tiny-gpt-trained-from-scratch" class="level2">
 <h2 class="anchored" data-anchor-id="a-tiny-gpt-trained-from-scratch">12. A tiny GPT, trained from scratch</h2>
@@ -1206,7 +1206,7 @@ head 4: mean weight on itself 0.36, on the previous character 0.15, mean distanc
 <div class="widget" data-fig="gen-loop" data-auto="s=1 :: &quot;here&quot; was chosen: append it and run again | s=2 :: &quot;?&quot; appended; the model now predicts <end>">
   <svg class="fig" aria-label="The prompt goes into GPT, which outputs next-token probabilities; the chosen token is appended and the loop repeats"></svg>
   <div class="ctl"><label for="gl-s">step</label><input type="range" id="gl-s" data-k="s" min="0" max="2" step="1" value="0"><span class="v" data-v="s"></span></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#31">slide 31</a> of the Attention and Transformers deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#35">slide 35</a> of the Attention and Transformers deck.</p>
 </div>
 </section>
 <section id="decoding-strategies" class="level3">
@@ -1231,7 +1231,7 @@ head 4: mean weight on itself 0.36, on the previous character 0.15, mean distanc
   <div class="ctl"><label for="dc-t">temperature</label><input type="range" id="dc-t" data-k="t" min="0.1" max="2.5" step="0.05" value="1"><span class="v" data-v="t">1.00</span></div>
   <div class="ctl"><label for="dc-k">top-k</label><input type="range" id="dc-k" data-k="k" min="1" max="8" step="1" value="8"><span class="v" data-v="k">8</span>
     <button type="button" data-k="go" hidden="">Sample a word</button></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#32">slide 32</a> of the Attention and Transformers deck (without its "sample a word" button).</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#36">slide 36</a> of the Attention and Transformers deck (without its "sample a word" button).</p>
 </div>
 <div id="7a47e567" class="cell" data-execution_count="16">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>z <span class="op">=</span> torch.tensor([<span class="fl">3.0</span>, <span class="fl">2.2</span>, <span class="fl">1.7</span>, <span class="fl">1.2</span>, <span class="fl">0.9</span>, <span class="fl">0.7</span>, <span class="fl">0.5</span>, <span class="fl">0.1</span>])       <span class="co"># the widget's logits: here, back, home, over, in, now, soon, inside</span></span>
@@ -1397,7 +1397,7 @@ J = -\frac1T\sum_{t=1}^{T}\log p(x_t\mid x_{&lt;t}), \qquad \text{perplexity} = 
 </table>
 <p>Word order matters a lot (<span class="math inline">\(1536/21.7\approx71\)</span> times), GPT-2 saw little Spanish, and it prefers the true fact only slightly: it learned statistics about words, not facts.</p>
 <p><strong>Surprisal: the loss token by token.</strong> The terms of <span class="math inline">\(J\)</span>, measured in bits, are the <strong>surprisals</strong> <span class="math inline">\(-\log_2 p(x_t\mid x_{&lt;t})\)</span>. For GPT-2 small on “I went to the bakery this morning and bought a fresh loaf of bread and a large elephant.” (<a href="https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab%2014%20-%20Text%20generation%20with%20Transformers%20-%20extended.ipynb">Lab 14</a>), “bread” after “a fresh loaf of” costs 0.3 bits (<span class="math inline">\(p = 0.81\)</span>), while “elephant” costs 17.3 bits, about 1 chance in 160,000: GPT-2 expected “bag”, “amount” or “bowl” (about 5 % each). The average over the sentence is 4.7 bits per token, so its perplexity is <span class="math inline">\(2^{4.7}\approx26\)</span>.</p>
-<div class="widget"><svg class="fig" data-fig="surprisal" style="max-height:350px" aria-label="Bars with the surprisal in bits that GPT-2 assigns to each token of a sentence that ends in an unexpected word"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#35">slide 35</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="surprisal" style="max-height:350px" aria-label="Bars with the surprisal in bits that GPT-2 assigns to each token of a sentence that ends in an unexpected word"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#39">slide 39</a> of the Attention and Transformers deck.</p></div>
 </section>
 <section id="perplexities-from-different-tokenisers-are-not-comparable" class="level3">
 <h3 class="anchored" data-anchor-id="perplexities-from-different-tokenisers-are-not-comparable">14.2 Perplexities from different tokenisers are not comparable</h3>

@@ -357,13 +357,13 @@ with $\mathbf{W}_Q^{(i)},\mathbf{W}_K^{(i)},\mathbf{W}_V^{(i)}\in\mathbb{R}^{d\t
 The same computation drawn as slices: one projection $\mathbf{X}\mathbf{W}_Q$ with $\mathbf{W}_Q\in\mathbb{R}^{768\times768}$ is cut into 12 slices of 64 columns (likewise for $\mathbf{K}$ and $\mathbf{V}$), slice $k$ feeds head $k$, and the concatenation puts each head's output back in its slice before $\mathbf{W}_O$ mixes them.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="mha-split" style="max-height:300px" aria-label="Q, K and V cut into 12 slices; each slice feeds its own attention head; the heads are concatenated and mixed by W_O"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#14">slide 14</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="mha-split" style="max-height:300px" aria-label="Q, K and V cut into 12 slices; each slice feeds its own attention head; the heads are concatenated and mixed by W_O"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#15">slide 15</a> of the Attention and Transformers deck.</p></div>
 ```
 
 Researchers find heads like these in trained language models: previous-token heads, heads that attend to the same word, coreference heads ("it" → noun), broad averaging heads, and "induction" heads that copy patterns seen earlier in the context. Section 12 shows the heads of our tiny GPT.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="heads" style="max-height:310px" aria-label="Four attention matrices: previous token, same word, pronoun to noun, and a broad average"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#15">slide 15</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="heads" style="max-height:310px" aria-label="Four attention matrices: previous token, same word, pronoun to noun, and a broad average"></svg><p class="from">The deck draws patterns like these head by head, inside the multi-head computation, in <a href="../../slides/neural_networks/06_transformers.html#14">slide 14</a> of the Attention and Transformers deck.</p></div>
 ```
 
 ## 6. Positional encodings
@@ -570,7 +570,7 @@ For GPT-2 small in 16-bit precision ($N = 12$, $d = 768$, $b = 2$): $2\cdot12\cd
 <div class="widget" data-fig="kv-cache" data-auto="s=2 :: after 2 tokens: 1 + 2 = 3 computations of K and V without a cache, 2 with it|s=3 :: after 3 tokens: 6 without, 3 with|s=4 :: after 4 tokens: 10 without, 4 with|s=5 :: after 5 tokens: 15 without, 5 with: the gap keeps growing">
     <svg class="fig" style="max-height:292px" aria-label="Keys and values recomputed at every step without a cache, and computed once with a cache"></svg>
     <div class="ctl"><label for="kv-s">tokens so far</label><input type="range" id="kv-s" data-k="s" min="1" max="5" step="1" value="1"><span class="v" data-v="s"></span></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#34">slide 34</a> of the Attention and Transformers deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#38">slide 38</a> of the Attention and Transformers deck.</p>
 </div>
 ```
 
@@ -622,7 +622,7 @@ In words: pre-LN keeps a highway from the loss to every layer; post-LN normalise
 ### 9.3 Encoders and decoders: BERT vs GPT
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="bert-gpt" aria-label="A full attention mask for BERT and a lower-triangular causal mask for GPT"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#24">slide 24</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="bert-gpt" aria-label="A full attention mask for BERT and a lower-triangular causal mask for GPT"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#26">slide 26</a> of the Attention and Transformers deck.</p></div>
 ```
 
 | | encoder only | decoder only | encoder–decoder |
@@ -664,7 +664,7 @@ This is **self-supervised**: the targets are the inputs shifted by one, so any a
 By the chain rule the probability of the continuation is the product, $0.0116\times0.0658\times0.0158\times0.725\times0.0413\times0.179\approx6.4\times10^{-8}$ (with the unrounded probabilities). The log turns the product into a sum, $-\ln P = 4.46 + 2.72 + 4.15 + 0.32 + 3.19 + 1.72 = 16.56$, and the average over the 6 predictions is the loss on this sentence, $J = 16.56/6 = 2.76$ nats per token. It returns in section 14: $e^{2.76} = 15.8$ is the perplexity of this sentence in Lab 14's table. After "capital of", GPT-2's most likely next token was " the" (0.26); "France" (0.041) came third.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="lm-train" style="max-height:190px" aria-label="Input tokens and the same tokens shifted by one as targets"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#27">slide 27</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="lm-train" style="max-height:190px" aria-label="Input tokens and the same tokens shifted by one as targets"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#31">slide 31</a> of the Attention and Transformers deck.</p></div>
 ```
 
 ### 10.2 Tokenisation: byte-pair encoding
@@ -683,7 +683,7 @@ Frequent words end up as single tokens; rare words are split into pieces ("token
 <div class="widget" data-fig="bpe" data-auto="s=1 | s=2 | s=3 | s=4">
   <svg class="fig" aria-label="Byte-pair encoding merging characters into sub-words over four merges"></svg>
   <div class="ctl"><label for="bp-s">merges</label><input type="range" id="bp-s" data-k="s" min="0" max="4" step="1" value="0"><span class="v" data-v="s"></span></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#26">slide 26</a> of the Attention and Transformers deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#30">slide 30</a> of the Attention and Transformers deck.</p>
 </div>
 ```
 
@@ -742,7 +742,7 @@ Modern LLMs follow the same recipe with $N\approx80$ and $d\approx8{,}000$: $12\
 **GPT-2 end to end, with its real shapes.** For the prompt "The cat sat on the" (5 tokens, ids 464, 3797, 3332, 319, 262), the embedding lookup plus the position embeddings give a $5\times768$ matrix; each of the 12 blocks maps $5\times768$ to $5\times768$; the final LayerNorm and the product with $\mathbf{E}^\top$ give $5\times50{,}257$ logits. Only the softmax of the last row is needed to continue the text: floor 7.6 %, bed 6.5 %, couch 5.4 %, ground 5.2 %, edge 4.8 %. During training every row is used, each predicting its own next token.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="gpt-shapes" style="max-height:370px" aria-label="Text, token ids, embedding matrix, twelve blocks, logits and next-token probabilities with their shapes"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#29">slide 29</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="gpt-shapes" style="max-height:370px" aria-label="Text, token ids, embedding matrix, twelve blocks, logits and next-token probabilities with their shapes"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#33">slide 33</a> of the Attention and Transformers deck.</p></div>
 ```
 
 ## 12. A tiny GPT, trained from scratch
@@ -900,7 +900,7 @@ Each row is one query position; the lower-triangular shape is the causal mask. A
 <div class="widget" data-fig="gen-loop" data-auto="s=1 :: &quot;here&quot; was chosen: append it and run again | s=2 :: &quot;?&quot; appended; the model now predicts &lt;end&gt;">
   <svg class="fig" aria-label="The prompt goes into GPT, which outputs next-token probabilities; the chosen token is appended and the loop repeats"></svg>
   <div class="ctl"><label for="gl-s">step</label><input type="range" id="gl-s" data-k="s" min="0" max="2" step="1" value="0"><span class="v" data-v="s"></span></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#31">slide 31</a> of the Attention and Transformers deck.</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#35">slide 35</a> of the Attention and Transformers deck.</p>
 </div>
 ```
 
@@ -929,7 +929,7 @@ $$p_\tau(k) = \frac{e^{z_k/\tau}}{\sum_l e^{z_l/\tau}} = \frac{\big(e^{z_k}\big)
   <div class="ctl"><label for="dc-t">temperature</label><input type="range" id="dc-t" data-k="t" min="0.1" max="2.5" step="0.05" value="1"><span class="v" data-v="t">1.00</span></div>
   <div class="ctl"><label for="dc-k">top-k</label><input type="range" id="dc-k" data-k="k" min="1" max="8" step="1" value="8"><span class="v" data-v="k">8</span>
     <button type="button" data-k="go" hidden>Sample a word</button></div>
-  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#32">slide 32</a> of the Attention and Transformers deck (without its "sample a word" button).</p>
+  <p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#36">slide 36</a> of the Attention and Transformers deck (without its "sample a word" button).</p>
 </div>
 ```
 
@@ -1061,7 +1061,7 @@ Word order matters a lot ($1536/21.7\approx71$ times), GPT-2 saw little Spanish,
 **Surprisal: the loss token by token.** The terms of $J$, measured in bits, are the **surprisals** $-\log_2 p(x_t\mid x_{<t})$. For GPT-2 small on "I went to the bakery this morning and bought a fresh loaf of bread and a large elephant." ([Lab 14](https://colab.research.google.com/github/imagra93/ML-course-labs/blob/main/notebooks/neural_networks/lab 14 - Text generation with Transformers - extended.ipynb)), "bread" after "a fresh loaf of" costs 0.3 bits ($p = 0.81$), while "elephant" costs 17.3 bits, about 1 chance in 160,000: GPT-2 expected "bag", "amount" or "bowl" (about 5 % each). The average over the sentence is 4.7 bits per token, so its perplexity is $2^{4.7}\approx26$.
 
 ```{=html}
-<div class="widget"><svg class="fig" data-fig="surprisal" style="max-height:350px" aria-label="Bars with the surprisal in bits that GPT-2 assigns to each token of a sentence that ends in an unexpected word"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#35">slide 35</a> of the Attention and Transformers deck.</p></div>
+<div class="widget"><svg class="fig" data-fig="surprisal" style="max-height:350px" aria-label="Bars with the surprisal in bits that GPT-2 assigns to each token of a sentence that ends in an unexpected word"></svg><p class="from">Same figure as <a href="../../slides/neural_networks/06_transformers.html#39">slide 39</a> of the Attention and Transformers deck.</p></div>
 ```
 
 ### 14.2 Perplexities from different tokenisers are not comparable
