@@ -48,7 +48,32 @@
     <div class="card g"><h3>6 · Attention and transformers</h3><p>Every token looks at every other token. GPT, decoding text, and RAG.</p><p class="tiny" style="color:#385723"><b>Labs 14, 15</b> · text generation with GPT-2 · RAG</p></div>
   </div>
   <p class="why">Every chapter follows the same pattern: a picture, the formula behind it, a small example with numbers, and a lab (a green slide with an <b>Open in Colab</b> button) as soon as the theory it needs has been explained. The course closes with a test: a multi-task network on faces.</p>
-  <div class="idea"><b>Theory and PyTorch.</b> The slides teach the ideas, independent of any library. Along the way they also show the <b>PyTorch</b> line for each piece (a layer, a loss, the training loop), because the labs use it: it is the standard library of deep learning. No PyTorch is needed beforehand: Lab 7 builds everything by hand in NumPy, chapter 2 introduces tensors and automatic gradients, chapter 3 the training loop, and from Lab 8 on every lab uses PyTorch, directly or through libraries built on it (Ultralytics YOLO, Hugging Face).</div>
+  <div class="idea"><b>Theory and PyTorch.</b> The slides teach the ideas; the labs use <b>PyTorch</b>, the standard library of deep learning. Next slide: what it is and how the course uses it.</div>
+</section>
+
+<section class="slide">
+  <h2>Theory first, PyTorch for the labs</h2>
+  <div class="cols">
+    <div class="stack" style="gap:10px">
+      <p>The slides teach the <b>ideas</b>: a picture, the formula, an example with numbers. They don't depend on any library.</p>
+      <p>The labs need code, and they use <b>PyTorch</b>: an open-source Python library for deep learning, created at Facebook (now Meta) in 2016. It gives three things:</p>
+      <ul class="small">
+        <li><b>Tensors</b>: NumPy-like arrays that can also run on a <b>GPU</b>, much faster.</li>
+        <li><b>Automatic gradients</b>: it computes backpropagation (chapter 2) for you.</li>
+        <li><b>Ready-made blocks</b>: layers, losses, optimizers, data loading.</li>
+      </ul>
+      <div class="idea">It is <b>the standard</b> today: most research code and most pre-trained models (Hugging Face, torchvision, YOLO) are written in PyTorch. Alternatives such as TensorFlow/Keras or JAX follow the same ideas.</div>
+    </div>
+    <div class="stack" style="gap:10px">
+      <p class="small">Along the way, each new piece of theory comes with its PyTorch line:</p>
+      <table class="t xs"><tr><th>idea</th><th>PyTorch</th><th>chapter</th></tr>
+        <tr><td>a layer of neurons</td><td><code>nn.Linear</code></td><td>1</td></tr>
+        <tr><td>a loss</td><td><code>nn.CrossEntropyLoss</code></td><td>1</td></tr>
+        <tr><td>backpropagation</td><td><code>loss.backward()</code></td><td>2</td></tr>
+        <tr><td>a gradient-descent step</td><td><code>optimizer.step()</code></td><td>3</td></tr></table>
+      <p class="small"><b>No PyTorch is needed beforehand.</b> Lab 7 builds a network by hand in NumPy, so you see what PyTorch automates. Chapter 2 introduces tensors and autograd, chapter 3 the training loop, and from Lab 8 on every lab uses PyTorch, directly or through libraries built on it (Ultralytics YOLO, Hugging Face).</p>
+    </div>
+  </div>
 </section>
 
 <section class="slide">
@@ -162,7 +187,7 @@
     </div>
     <div class="stack" style="gap:10px">
       <p class="step small">No straight line does much better: the best of all lines, found by brute force, gets 94 of 150 right. Every half-plane that holds the blue disc also holds more orange points than blue ones.</p>
-      <div class="idea step">Both models compute the same <b>weighted sum</b> $z=\bth^\top\bx$, followed by nothing (linear) or by a sigmoid (logistic). This chapter keeps that unit and <b>stacks</b> it, so that the network learns its own features instead of us guessing $x_1^2,x_2^2$ (slides 16 and 17; learned on this same circle: slides 35 and 36).</div>
+      <div class="idea step">Both models compute the same <b>weighted sum</b> $z=\bth^\top\bx$, followed by nothing (linear) or by a sigmoid (logistic). This chapter keeps that unit and <b>stacks</b> it, so that the network learns its own features instead of us guessing $x_1^2,x_2^2$ (slides 17 and 18; learned on this same circle: slides 36 and 37).</div>
     </div>
   </div>
 </section>
@@ -339,7 +364,7 @@
       <div class="ctl"><label for="fw-s">step</label><input type="range" id="fw-s" data-k="s" min="0" max="5" step="1" value="0"><span class="v" data-v="s"></span></div>
     </div>
     <div class="stack" style="gap:6px">
-      <p class="small">One example $\bx=(1,2)$, label $y=1$. Weights chosen by hand (they would normally be random). The hidden layer uses <b>tanh</b>, an S-curve like the sigmoid but with outputs in $(-1,1)$ (slide 24 compares the activations).</p>
+      <p class="small">One example $\bx=(1,2)$, label $y=1$. Weights chosen by hand (they would normally be random). The hidden layer uses <b>tanh</b>, an S-curve like the sigmoid but with outputs in $(-1,1)$ (slide 25 compares the activations).</p>
       <div class="panels" style="min-height:250px">
         <div data-i="0"><p class="small">Read the weights off the edges: $\bW^{[1]}=\begin{pmatrix}0.5&-0.3\\0.2&0.4\end{pmatrix}$, $\bb^{[1]}=(0.1,-0.1)$, $\bW^{[2]}=\binom{0.7}{-0.5}$, $b^{[2]}=0.2$.</p><p class="small">Row $i$ of $\bW^{[1]}$ = the weights leaving input $x_i$; column $j$ = the weights entering hidden unit $j$.</p></div>
         <div data-i="1"><p class="small">$z_1=1\cdot0.5+2\cdot0.2+0.1=\mathbf{1.000}$</p><p class="small">$z_2=1\cdot(-0.3)+2\cdot0.4-0.1=\mathbf{0.400}$</p></div>
@@ -385,7 +410,7 @@
     </div>
     <div class="stack" style="gap:10px">
       <svg class="fig" data-fig="shapes" aria-label="Block diagram of X times W plus b equals Z with the matrix shapes"></svg>
-      <p class="step why">Some books write one example as a column, $\mathbf z=\bW\bx+\bb$: the same thing, transposed. PyTorch, the library of the labs (slide 3), also puts one example per row. Its dense layer <code>nn.Linear(n, h)</code> gives the same numbers, but stores the weight transposed, as $h\times n$, and computes $\bx\bW^\top+\bb$ (Lab 8).</p>
+      <p class="step why">Some books write one example as a column, $\mathbf z=\bW\bx+\bb$: the same thing, transposed. PyTorch, the library of the labs (slide 4), also puts one example per row. Its dense layer <code>nn.Linear(n, h)</code> gives the same numbers, but stores the weight transposed, as $h\times n$, and computes $\bx\bW^\top+\bb$ (Lab 8).</p>
     </div>
   </div>
 </section>
@@ -408,7 +433,7 @@
         <div data-i="1"><p class="small"><b>$l=1$.</b> In: $\bA^{[0]}$. Out: $\bA^{[1]}$.</p><div class="eq s">$$\bA^{[1]}=\sigma\big(\bA^{[0]}\bW^{[1]}+\bb^{[1]}\big)$$</div><p class="why">$(m\times3)(3\times4)+(1\times4)=(m\times4)$</p></div>
         <div data-i="2"><p class="small"><b>$l=2$.</b> In: $\bA^{[1]}$, the output of the previous step. Out: $\bA^{[2]}$.</p><div class="eq s">$$\bA^{[2]}=\sigma\big(\bA^{[1]}\bW^{[2]}+\bb^{[2]}\big)$$</div><p class="why">$(m\times4)(4\times4)+(1\times4)=(m\times4)$</p></div>
         <div data-i="3"><p class="small"><b>$l=3=L$.</b> In: $\bA^{[2]}$. Out: the predictions.</p><div class="eq s">$$\hat\bY=\bA^{[3]}=\sigma\big(\bA^{[2]}\bW^{[3]}+\bb^{[3]}\big)$$</div><p class="why">$(m\times4)(4\times1)+(1\times1)=(m\times1)$: one probability per example.</p></div>
-        <div data-i="4"><div class="idea"><b>Here: one activation, everywhere.</b> In this loop every layer used the sigmoid (the tiny network of slide 20 already had tanh in its hidden layer). Nothing forces that: each layer picks its own $g^{[l]}$, and hidden layers rarely use the sigmoid. Which ones exist? Next slide.</div></div>
+        <div data-i="4"><div class="idea"><b>Here: one activation, everywhere.</b> In this loop every layer used the sigmoid (the tiny network of slide 21 already had tanh in its hidden layer). Nothing forces that: each layer picks its own $g^{[l]}$, and hidden layers rarely use the sigmoid. Which ones exist? Next slide.</div></div>
       </div>
     </div>
   </div>
@@ -691,8 +716,8 @@
       <tr><td>Regression, any value</td><td>house price</td><td>none (linear)</td><td>MSE (or L1 / Huber)</td><td><code>nn.MSELoss</code></td></tr>
       <tr><td>Regression, values in 0–1</td><td>box coordinates</td><td>sigmoid</td><td>MSE or binary cross-entropy</td><td><code>nn.MSELoss</code></td></tr>
     </table>
-    <p class="small step">The last column lists the loss classes of <b>PyTorch</b>, the library of the labs (slide 3). It gives <b>tensors</b> (NumPy-like arrays that can run on a GPU), <b>automatic gradients</b>, and ready-made layers, losses and optimizers: chapter 2 introduces tensors and autograd, chapter 3 the objects of a training loop.</p>
-    <p class="small step"><b>Careful:</b> <code>nn.BCEWithLogitsLoss</code> and <code>nn.CrossEntropyLoss</code> apply the sigmoid / softmax <b>themselves</b>. With them the model outputs the raw scores (the <b>logits</b>), with no activation at the end (slide 53). <code>nn.MSELoss</code> applies nothing.</p>
+    <p class="small step">The last column lists the loss classes of <b>PyTorch</b>, the library of the labs (slide 4). It gives <b>tensors</b> (NumPy-like arrays that can run on a GPU), <b>automatic gradients</b>, and ready-made layers, losses and optimizers: chapter 2 introduces tensors and autograd, chapter 3 the objects of a training loop.</p>
+    <p class="small step"><b>Careful:</b> <code>nn.BCEWithLogitsLoss</code> and <code>nn.CrossEntropyLoss</code> apply the sigmoid / softmax <b>themselves</b>. With them the model outputs the raw scores (the <b>logits</b>), with no activation at the end (slide 54). <code>nn.MSELoss</code> applies nothing.</p>
     <p class="small step why">The multiclass rows (softmax, one-hot targets, categorical cross-entropy) are explained later in this chapter, together with where these pairs come from and how PyTorch uses them.</p>
   </div>
 </section>
@@ -969,7 +994,7 @@
       </table>
       <ul class="small step">
         <li><code>CrossEntropyLoss</code> = softmax + log + <code>NLLLoss</code> in one step. <code>BCEWithLogitsLoss</code> = sigmoid + BCE in one step. <code>NLLLoss</code> (negative log-likelihood) expects <b>log-probabilities</b>, e.g. from <code>LogSoftmax</code> (the log of the softmax, in one step).</li>
-        <li><b>Class indices</b>: the integers of slide 43 (cat = 0, dog = 1, …), not one-hot vectors. The loss builds the one-hot itself, so the gradient is still $\hat{\mathbf y}-\mathbf y$ (slides 49 and 52).</li>
+        <li><b>Class indices</b>: the integers of slide 44 (cat = 0, dog = 1, …), not one-hot vectors. The loss builds the one-hot itself, so the gradient is still $\hat{\mathbf y}-\mathbf y$ (slides 50 and 53).</li>
         <li><b>No softmax or sigmoid at the end of the model</b> when you use them. Applying softmax first, and then <code>CrossEntropyLoss</code>, applies it twice: it still trains, but worse.</li>
       </ul>
     </div>
